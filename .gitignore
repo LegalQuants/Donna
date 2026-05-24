@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# SvelteKit / Vite build output
+.svelte-kit/
+build/
+dist/
+/package
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Test / coverage artifacts
+/coverage/
+/playwright-report/
+/test-results/
+/.playwright/
+
+# Editor / OS
+.DS_Store
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local backend volumes (if mounted outside named volumes)
+/.data/
+
+# Claude Code local settings
+.claude/settings.local.json
