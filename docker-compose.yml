@@ -1,0 +1,39 @@
+# Donna — top-level compose.
+#
+# Mechanism: include lq-ai's compose to pull in all backend services; Donna
+# defines its own web frontend as `donna-web`. Docker Compose v2 include
+# semantics do not allow overriding imported services, so lq-ai's `web`
+# service remains in the spec under its original name. To prevent it from
+# starting alongside donna-web, either:
+#   - Run:  docker compose up --scale web=0
+#   - Or explicitly list services: docker compose up donna-web api gateway postgres redis minio ingest-worker arq-worker
+#
+# Redirect lq-ai's `web` host port away from 3000 (set WEB_HOST_PORT=13000
+# in .env) so it does not conflict with donna-web's port 3000 at runtime.
+
+include:
+  - vendor/lq-ai/docker-compose.yml
+
+services:
+  donna-web:
+    # Donna's SvelteKit frontend (adapter-node). Replaces lq-ai's OpenWebUI fork.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      # adapter-node rejects POST form actions (login, etc.) in production
+      # unless ORIGIN is set. Without this the login flow returns 403.
+      ORIGIN: ${ORIGIN:-http://localhost:3000}
+      # Reach the lq-ai api by its compose service name on its internal port.
+      LQ_API_INTERNAL_URL: http://api:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
