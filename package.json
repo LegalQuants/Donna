@@ -45,8 +45,8 @@
 		"vitest": "^4.1.3"
 	},
 	"dependencies": {
+		"@lucide/svelte": "^1.16.0",
 		"@sveltejs/adapter-node": "^5.5.4",
-		"bits-ui": "^2.18.1",
-		"lucide-svelte": "^1.0.1"
+		"bits-ui": "^2.18.1"
 	}
 }

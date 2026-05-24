@@ -12,6 +12,8 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	// The vendored lq-ai backend is a separate upstream monorepo — never lint it.
+	{ ignores: ['vendor/'] },
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,
