@@ -45,6 +45,8 @@ docker compose up -d --build postgres redis minio gateway api donna-web
 
 With the default `.env`, Donna is then at **http://localhost:13002** (the lq-ai `api` is at `http://localhost:18000`).
 
+> **Deploying beyond localhost:** the production build sets session cookies with the `Secure` flag, which browsers only store over HTTPS (with a `localhost` exemption). Any non-`localhost` deployment must terminate TLS in front of `donna-web`, or login will silently fail (cookies dropped).
+
 > **Why not `docker compose up` (everything)?** Compose v2 `include:` won't let us override lq-ai's `web` service, so it still exists in the merged spec. Starting the explicit service list above avoids building/running it. (lq-ai's `web` host port is also shifted to `WEB_HOST_PORT=13000` in `.env` as a backstop.)
 
 ### First-run admin (login-ready fixture)

@@ -41,3 +41,8 @@ docker compose exec api python -m app.cli reset-admin-password \
 - Donna's refresh-cookie TTL is 8h (`REFRESH_TTL_SECONDS`) while lq-ai's refresh
   token default is 7d (`JWT_REFRESH_TOKEN_TTL_SECONDS=604800`) — users re-auth sooner
   than necessary. Consider aligning when chat/session UX lands in P2.
+- Reliability (P2 follow-up, from the final review): `hooks.server.ts` treats any
+  non-200/403 from `/users/me` (e.g. a 5xx when the api is briefly down) as
+  logged-out, and `auth.login` collapses a 500 into "invalid credentials". Both
+  should distinguish "auth invalid" from "backend unavailable" (surface a 503)
+  rather than silently logging users out / mislabeling outages.

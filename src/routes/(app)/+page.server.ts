@@ -11,7 +11,8 @@ export const actions: Actions = {
 
     const chat = (await res.json()) as { id: string };
     if (message) {
-      event.cookies.set('donna_draft', message, { path: '/', httpOnly: false, sameSite: 'lax', maxAge: 120 });
+      // Read server-side only by the chat route's load; keep it httpOnly.
+      event.cookies.set('donna_draft', message, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
     }
     throw redirect(303, `/chats/${chat.id}`);
   }
