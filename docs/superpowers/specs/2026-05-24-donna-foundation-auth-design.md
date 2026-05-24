@@ -143,8 +143,7 @@ Donna/
 ### 5.1 Auth screens
 
 - **Login** (`/login`): email + password; MikeOSS visual language. Submits to a form action → `/auth/login`. On MFA challenge, reveal a TOTP code step → `/auth/mfa/verify`. On success, set cookies, redirect to `/`.
-- **Signup** (`/signup`): per lq-ai's account-creation contract. (If lq-ai gates signup to admin/bootstrap-only, signup links to the appropriate flow rather than exposing open registration — confirmed against the `auth`/`users` contract during planning.)
-- **Bootstrap** (first-run password): the lq-ai fresh-install bootstrap-password UX, surfaced when the deployment reports an unbootstrapped state.
+- **Bootstrap / forced password change** (first-run): **Resolved during planning** — lq-ai exposes **no `/auth/signup`**; account creation is admin-side, and first-run is the `must_change_password` flag (authed endpoints return `403 password_change_required` until `POST /auth/change-password` succeeds). So P1 has **no public signup page**; instead a forced password-change screen is surfaced whenever the session reports `must_change_password`.
 - **Logout:** clears cookies via `/auth/logout`, redirects to `/login`.
 - Errors render inline (invalid credentials, locked, MFA-required, network) — no silent failures.
 
@@ -210,7 +209,7 @@ Donna/
 
 ## 10. Open questions / assumptions to confirm during planning
 
-1. **Signup exposure:** does lq-ai allow open self-signup, or is account creation admin/bootstrap-gated? (Confirm against `auth`/`users`/`bootstrap` contracts; §5.1 adapts accordingly.)
+1. ~~**Signup exposure:**~~ **RESOLVED** — no `/auth/signup`; account creation is admin-side and first-run is the `must_change_password` forced rotation. No public signup page (see §5.1).
 2. **lq-ai pin SHA:** capture the exact `main` SHA at submodule-add time (D-2 / `docs/decisions/lq-ai-pin.md`).
 3. **Compose build contexts:** confirm lq-ai's service `build:` contexts resolve cleanly when referenced from `vendor/lq-ai/` in Donna's compose (vs. needing lq-ai's own compose as a base via `extends`/`-f`).
 4. **`GET /users/me` claim shape:** confirm the fields needed for `event.locals.user` and the landing greeting (display name vs. email).
