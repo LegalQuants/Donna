@@ -29,6 +29,7 @@
   <nav class="flex-1 space-y-1 px-2">
     {#each nav as item}
       <a href={item.href}
+         aria-current={isActive(item.href) ? 'page' : undefined}
          class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
                 {isActive(item.href) ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text'}">
         <item.icon size={18} />
