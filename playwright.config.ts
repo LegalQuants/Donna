@@ -1,6 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-	webServer: { command: 'npm run build && npm run preview', port: 4173 },
-	testMatch: '**/*.e2e.{ts,js}'
+  testDir: 'tests',
+  globalSetup: './tests/global-setup.ts',
+  use: { baseURL: process.env.DONNA_BASE_URL ?? 'http://localhost:3000' },
+  reporter: 'list'
 });
