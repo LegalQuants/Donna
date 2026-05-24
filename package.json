@@ -14,7 +14,8 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright install && playwright test"
+		"test:e2e": "playwright install && playwright test",
+		"gen:api": "node scripts/sanitize-openapi.js vendor/lq-ai/docs/api/backend-openapi.yaml /tmp/donna-backend-openapi.yaml && openapi-typescript /tmp/donna-backend-openapi.yaml -o src/lib/api/backend.d.ts && node scripts/sanitize-openapi.js vendor/lq-ai/docs/api/gateway-openapi.yaml /tmp/donna-gateway-openapi.yaml && openapi-typescript /tmp/donna-gateway-openapi.yaml -o src/lib/api/gateway.d.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.4",
