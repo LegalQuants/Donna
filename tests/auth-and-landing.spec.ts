@@ -8,6 +8,9 @@ async function login(page: any) {
   await page.fill('input[name="email"]', EMAIL);
   await page.fill('input[name="password"]', PASSWORD);
   await page.click('button:has-text("Sign in")');
+  // Wait for the post-login redirect to the landing before continuing, so
+  // session cookies are set and the shell has rendered.
+  await page.waitForURL('/');
 }
 
 test('rejects invalid credentials with an inline error', async ({ page }) => {

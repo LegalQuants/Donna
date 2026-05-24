@@ -10,6 +10,12 @@
 #
 # Redirect lq-ai's `web` host port away from 3000 (set WEB_HOST_PORT=13000
 # in .env) so it does not conflict with donna-web's port 3000 at runtime.
+#
+# Donna runs as its own compose project ("donna") with its own network, so it
+# can run alongside a separate lq-ai dev stack — provided the host ports don't
+# collide. Shift every host port via .env (see .env.example, "shifted ports").
+
+name: donna
 
 include:
   - vendor/lq-ai/docker-compose.yml
@@ -31,9 +37,16 @@ services:
       # Reach the lq-ai api by its compose service name on its internal port.
       LQ_API_INTERNAL_URL: http://api:8000
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${DONNA_WEB_HOST_PORT:-3000}:3000"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1"]
+      # node:alpine has no reliable wget/curl; use Node's global fetch against a
+      # stable 200 route (/ redirects to /login when logged out).
+      test:
+        [
+          'CMD-SHELL',
+          "node -e \"fetch('http://localhost:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
