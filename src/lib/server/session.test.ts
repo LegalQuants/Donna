@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { setSessionCookies, clearSessionCookies, AT_COOKIE, RT_COOKIE } from './session';
+import {
+  setSessionCookies,
+  clearSessionCookies,
+  AT_COOKIE,
+  RT_COOKIE,
+  REFRESH_TTL_SECONDS
+} from './session';
 
 function fakeEvent() {
   const calls: any[] = [];
@@ -24,7 +30,9 @@ describe('session cookies', () => {
     expect(at.opts.path).toBe('/');
     expect(at.opts.maxAge).toBe(900);
     expect(rt.value).toBe('RT');
-    expect(rt.opts.maxAge).toBeGreaterThan(900);
+    expect(rt.opts.httpOnly).toBe(true);
+    expect(rt.opts.sameSite).toBe('lax');
+    expect(rt.opts.maxAge).toBe(REFRESH_TTL_SECONDS);
   });
 
   it('omits refresh cookie when no refresh token is given', () => {
@@ -33,9 +41,12 @@ describe('session cookies', () => {
     expect(e.calls.some((c: any) => c.name === RT_COOKIE)).toBe(false);
   });
 
-  it('clears both cookies', () => {
+  it('clears both cookies at the root path', () => {
     const e = fakeEvent();
     clearSessionCookies(e);
-    expect(e.calls.filter((c: any) => c.op === 'delete')).toHaveLength(2);
+    const deletes = e.calls.filter((c: any) => c.op === 'delete');
+    expect(deletes).toHaveLength(2);
+    expect(deletes.map((c: any) => c.name)).toEqual(expect.arrayContaining([AT_COOKIE, RT_COOKIE]));
+    deletes.forEach((c: any) => expect(c.opts.path).toBe('/'));
   });
 });
