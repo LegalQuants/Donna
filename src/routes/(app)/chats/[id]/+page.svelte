@@ -1,12 +1,16 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import Composer from '$lib/components/Composer.svelte';
   import Message from '$lib/components/Message.svelte';
   import { createChatStream } from '$lib/chat/chatStream.svelte';
 
   let { data } = $props();
 
-  const chat = createChatStream(data.chatId, data.messages);
+  // Seed the controller once from the initial server load (untrack documents the
+  // intentional one-time read). NOTE: if direct chat→chat navigation is added
+  // later (e.g. sidebar recents), wrap this page's body in {#key data.chatId} via
+  // a child component so the controller re-initializes per chat.
+  const chat = untrack(() => createChatStream(data.chatId, data.messages));
   let draftValue = $state('');
   let scroller = $state<HTMLElement>();
   let lastUserContent = '';
