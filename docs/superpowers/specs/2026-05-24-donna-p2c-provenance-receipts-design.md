@@ -31,11 +31,25 @@ Real detail shapes observed live (the spec's source of truth for `describeEvent`
 | `skill` | skill name (one event per applied skill) |
 | `audit` | `action`, `actor_user_id`, `details` |
 
-**Anonymization semantics (important for honest UI):** `anonymization_applied=true`
-means the gateway's middleware actually redacted something before the request left the
-environment. `false` means it ran and redacted nothing (or was skipped for a privileged
-chat) — it does **not** mean "your data leaked." This drives the affirmative-only badge
-in §4.
+**Anonymization semantics (CORRECTED 2026-05-25 after a code check — supersedes the
+earlier "redacted something" reading):** `anonymization_applied` records that the
+gateway's anonymization **layer ran** on the request (`anon_mapper is not None`;
+`gateway/.../openai_schema.py`: "whether the M2 middleware ran"). It is `true` for **every**
+cloud turn (routed tier 3–5, non-privileged) when anonymization is **enabled** — regardless
+of whether any entity was actually redacted. `false` means the layer did **not** run
+(disabled deployment, tier-1 local inference, or a privileged chat). So the badge is an
+honest "this request passed through the anonymization layer" signal — **not** a claim that
+PII existed and was scrubbed. Wording must avoid overclaiming redaction (see §4).
+
+> **STATUS (2026-05-25): live e2e PAUSED.** A second finding — streamed turns don't
+> persist an `inference_routing_log` row (success-path write happens after the SSE
+> `[DONE]`; the connection closes first) — means the drawer's inference row and the
+> anonymization indicator are blank for **streamed** (i.e. all UI-created) chats; only
+> `stream:false`/API-seeded chats populate. Donna's code is correct and unit/component-
+> tested; the surfaces light up once lq-ai fixes streamed logging. Upstream report:
+> `docs/upstream-requests/lq-ai-streaming-inference-routing-log.md`. The two live e2e
+> (drawer + indicator) are deferred until that lands; the drawer e2e is committed as
+> `test.skip`. When fixed: bump the pin, un-skip/finalize both e2e, then PR.
 
 ---
 
