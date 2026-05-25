@@ -4,6 +4,8 @@ import type { PageServerLoad } from './$types';
 import type { ChatMessage } from '$lib/chat/chatStream.svelte';
 import { hasCitationMarkers } from '$lib/citations/transform';
 import type { Citation } from '$lib/citations/types';
+import { anonymizedByMessage } from '$lib/receipts/format';
+import type { ReceiptEvent } from '$lib/receipts/types';
 
 export const load: PageServerLoad = async (event) => {
   const draft = event.cookies.get('donna_draft') ?? null;
@@ -35,6 +37,19 @@ export const load: PageServerLoad = async (event) => {
       }
     })
   );
+
+  // Per-message anonymization status from the inference receipts (M2-D2).
+  try {
+    const r = await lqFetch(event, `/api/v1/chats/${event.params.id}/receipts?event_kinds=inference`);
+    if (r.ok) {
+      const map = anonymizedByMessage((await r.json()) as ReceiptEvent[]);
+      for (const m of messages) {
+        if (m.role === 'assistant' && map.has(m.id)) m.anonymized = map.get(m.id);
+      }
+    }
+  } catch {
+    /* non-blocking — badges simply absent */
+  }
 
   return { chatId: event.params.id, messages, draft };
 };
