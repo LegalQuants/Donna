@@ -13,15 +13,13 @@
   const chat = untrack(() => createChatStream(data.chatId, data.messages));
   let draftValue = $state('');
   let scroller = $state<HTMLElement>();
-  let lastUserContent = '';
 
   function submit(text: string) {
-    lastUserContent = text;
     draftValue = '';
     chat.send(text);
   }
   function retry() {
-    if (lastUserContent) chat.send(lastUserContent);
+    chat.retry();
   }
 
   // Auto-scroll to the newest content as messages/stream update.
@@ -42,7 +40,7 @@
 <div class="flex h-full flex-col">
   <div bind:this={scroller} class="flex-1 overflow-y-auto">
     <div class="mx-auto max-w-2xl px-6 py-8">
-      {#each chat.messages as m (m.id + m.role)}
+      {#each chat.messages as m (m.key)}
         <Message message={m} onretry={retry} />
       {/each}
     </div>

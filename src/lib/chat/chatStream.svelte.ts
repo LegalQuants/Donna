@@ -1,6 +1,10 @@
 import { createSseParser, type StreamFrame } from './sse';
 
 export interface ChatMessage {
+  /** Stable client-side identity for list keying; never changes after creation.
+   *  (`id` tracks the backend message id and CAN change when the start/complete
+   *  frame lands, so it must not be used as the {#each} key.) */
+  key: string;
   id: string;
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
@@ -40,14 +44,11 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     }
   }
 
-  async function send(content: string) {
-    if (status === 'streaming') return;
-    messages = [
-      ...messages,
-      { id: crypto.randomUUID(), role: 'user', content },
-      { id: 'pending', role: 'assistant', content: '', status: 'streaming' }
-    ];
-    const idx = messages.length - 1;
+  let lastUserContent = '';
+
+  // Stream a response into the assistant message at `idx` (already present and
+  // reset to a streaming state by the caller). Shared by send() and retry().
+  async function runStream(idx: number, content: string) {
     status = 'streaming';
     controller = new AbortController();
     try {
@@ -101,6 +102,30 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     }
   }
 
+  async function send(content: string) {
+    if (status === 'streaming') return;
+    lastUserContent = content;
+    messages = [
+      ...messages,
+      { key: crypto.randomUUID(), id: crypto.randomUUID(), role: 'user', content },
+      { key: crypto.randomUUID(), id: 'pending', role: 'assistant', content: '', status: 'streaming' }
+    ];
+    await runStream(messages.length - 1, content);
+  }
+
+  // Re-run the last exchange in place (no duplicate user/assistant turns): reset
+  // the trailing assistant message and stream a fresh response for it.
+  async function retry() {
+    if (status === 'streaming') return;
+    const idx = messages.length - 1;
+    if (idx < 0 || messages[idx].role !== 'assistant') return;
+    messages[idx].content = '';
+    messages[idx].error = undefined;
+    messages[idx].routed_inference_tier = undefined;
+    messages[idx].status = 'streaming';
+    await runStream(idx, lastUserContent);
+  }
+
   function stop() {
     controller?.abort();
   }
@@ -113,6 +138,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
       return status;
     },
     send,
+    retry,
     stop
   };
 }

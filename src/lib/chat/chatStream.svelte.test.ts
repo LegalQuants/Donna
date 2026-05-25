@@ -51,6 +51,32 @@ describe('createChatStream', () => {
     expect(chat.messages[1].status).toBe('done');
   });
 
+  it('retry re-runs the last exchange in place without duplicating turns', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"detail":{"code":"gateway_timeout","message":"timed out"}}\n\n'
+      ]))
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"delta","delta":"ok now","lq_ai_message_id":"a1","routed_inference_tier":3}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok now","routed_inference_tier":3}}\n\n',
+        'data: [DONE]\n\n'
+      ]));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi');
+    expect(chat.messages[1].status).toBe('error');
+
+    await chat.retry();
+    // No duplicate user/assistant turns appended.
+    expect(chat.messages).toHaveLength(2);
+    expect(chat.messages[0]).toMatchObject({ role: 'user', content: 'hi' });
+    expect(chat.messages[1]).toMatchObject({ role: 'assistant', content: 'ok now', status: 'done' });
+    expect(chat.status).toBe('idle');
+  });
+
   it('preserves partial text when the reader aborts mid-stream', async () => {
     let pulls = 0;
     const body = new ReadableStream<Uint8Array>({
