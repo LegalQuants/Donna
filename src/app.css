@@ -1,0 +1,36 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Typography — serif headings AND body is the signature MikeOSS trait. */
+  --font-serif: ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Restrained gray palette */
+  --color-mlq-surface: #ffffff;
+  --color-mlq-surface-alt: #f7f7f8;     /* gray-50/100 */
+  --color-mlq-subtle: #e5e7eb;          /* border */
+  --color-mlq-muted: #9ca3af;           /* gray-400, disclaimers/labels */
+  --color-mlq-text: #374151;            /* gray-700 body */
+  --color-mlq-strong: #111827;          /* near-black headings */
+
+  /* Semantic accents */
+  --color-mlq-workflow: #2563eb;        /* blue */
+  --color-mlq-error: #dc2626;           /* red — PDF/error/alert */
+  --color-mlq-success: #16a34a;         /* green */
+  --color-mlq-doc: #111827;             /* black document chips */
+  --color-mlq-privileged: #7f1d1d;      /* reserved for P4 (high-contrast) */
+
+  /* Radii */
+  --radius-mlq-composer: 20px;
+  --radius-mlq-control: 0.5rem;         /* rounded-lg */
+}
+
+@layer base {
+  html { font-family: var(--font-serif); color: var(--color-mlq-text); background: var(--color-mlq-surface); }
+}
+
+/* Motion */
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes mlq-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.mlq-rise { animation: mlq-rise 600ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.mlq-rise-delay { animation: mlq-rise 600ms cubic-bezier(0.22, 1, 0.36, 1) 300ms both; }

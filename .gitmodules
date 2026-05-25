@@ -1,0 +1,3 @@
+[submodule "vendor/lq-ai"]
+	path = vendor/lq-ai
+	url = https://github.com/LegalQuants/lq-ai
