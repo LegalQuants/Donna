@@ -51,6 +51,11 @@ describe('transformCitations', () => {
     expect(transformCitations(html, [])).toBe(html);
   });
 
+  it('treats (Source: [0]) as unverified (no citations[-1])', () => {
+    const out = transformCitations('<p>"x" (Source: [0]).</p>', [cite({})]);
+    expect(out).toContain('cite-tab cite-unverified');
+  });
+
   it('handles repeated indices', () => {
     const html = '<p>"a" (Source: [1]) then "b" (Source: [1])</p>';
     const out = transformCitations(html, [cite({})]);

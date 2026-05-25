@@ -35,6 +35,10 @@ export function transformCitations(sanitizedHtml: string, citations: Citation[] 
         const state = stateFor(citations, idx);
         return `<span class="cite-quote cite-${state}">&quot;${quote}&quot;</span>${tab(idx, state)}`;
       });
+      // Second pass: plain (Source: [N]) not already consumed by QUOTE_MARKER above.
+      // Because both passes run on the same segment, a (Source: [N]) literal that
+      // appears *inside* a quoted passage (pathological content) would survive the first
+      // pass and land here as a spurious bare pill — acceptable/graceful degradation.
       out = out.replace(BARE_MARKER, (_m, n: string) => {
         const idx = Number(n);
         return tab(idx, stateFor(citations, idx));
