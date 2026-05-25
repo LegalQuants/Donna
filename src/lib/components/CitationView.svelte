@@ -12,7 +12,7 @@
 
   let container = $state<HTMLElement | null>(null);
   let openIndex = $state<number | null>(null);
-  let anchor: HTMLElement | null = null;
+  let anchor = $state<HTMLElement | null>(null);
   let popStyle = $state('position:absolute;');
 
   function position() {
@@ -40,6 +40,7 @@
   function onKeydown(e: KeyboardEvent) {
     const t = (e.target as HTMLElement).closest('[data-cite-index]') as HTMLElement | null;
     if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openFrom(t); }
+    else if (e.key === 'Escape' && openIndex !== null) { const a = anchor; close(); a?.focus(); }
   }
 
   // While a popover is open, close on Escape (anywhere) or an outside click.
@@ -63,7 +64,7 @@
 <div bind:this={container} class="cite-view" style="position:relative">
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <!-- eslint-disable-next-line svelte/no-at-html-tags -- input is DOMPurify-sanitized in renderMarkdown -->
-  <div class="prose-mlq" role="presentation" onclick={onClick} onkeydown={onKeydown}>{@html html}</div>
+  <div class="prose-mlq" onclick={onClick} onkeydown={onKeydown}>{@html html}</div>
   {#if openIndex !== null}
     <div style={popStyle}>
       <CitationPopover index={openIndex} citation={citations[openIndex - 1]} />

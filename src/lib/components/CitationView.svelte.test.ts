@@ -27,6 +27,18 @@ describe('CitationView', () => {
     expect(queryByRole('dialog')).toBeNull();
   });
 
+  it('closes the popover when Escape is pressed on the focused pill', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ filename: 'A.pdf' }), { status: 200 })));
+    const { container, getByRole, queryByRole } = render(CitationView, {
+      props: { content: 'Terminate on "thirty days" (Source: [1]).', citations: cites }
+    });
+    const tab = container.querySelector('.cite-tab.cite-verified') as HTMLElement;
+    await fireEvent.click(tab);
+    expect(getByRole('dialog')).toBeInTheDocument();
+    await fireEvent.keyDown(tab, { key: 'Escape' });
+    expect(queryByRole('dialog')).toBeNull();
+  });
+
   it('opens an unverified popover for an out-of-range marker', async () => {
     const { container, getByText } = render(CitationView, {
       props: { content: 'Claim "x" (Source: [2]).', citations: cites }
