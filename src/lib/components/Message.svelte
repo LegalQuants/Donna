@@ -1,6 +1,7 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte';
   import CitationView from './CitationView.svelte';
+  import { ShieldCheck } from '@lucide/svelte';
   import type { ChatMessage } from '$lib/chat/chatStream.svelte';
   import type { Citation } from '$lib/citations/types';
 
@@ -28,6 +29,12 @@
       <span class="float-right ml-2 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-muted">Tier {message.routed_inference_tier}</span>
     {:else if message.status === 'streaming'}
       <span class="float-right ml-2 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-muted">Tier…</span>
+    {/if}
+
+    {#if message.anonymized === true}
+      <span class="float-right ml-2 inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-success" title="This request was processed by the anonymization layer before leaving your environment">
+        <ShieldCheck size={11} /> Anonymized
+      </span>
     {/if}
 
     {#if message.status === 'error'}
