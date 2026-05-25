@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { ArrowRight } from '@lucide/svelte';
+  import { ArrowRight, Square } from '@lucide/svelte';
 
   let {
     value = $bindable(''),
     placeholder = 'Ask a question about your documents…',
-    onsubmit
-  }: { value?: string; placeholder?: string; onsubmit?: (text: string) => void } = $props();
+    onsubmit,
+    streaming = false,
+    onstop
+  }: { value?: string; placeholder?: string; onsubmit?: (text: string) => void; streaming?: boolean; onstop?: () => void } = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
 
@@ -22,7 +24,7 @@
   function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      submit();
+      if (!streaming) submit();
     }
   }
 </script>
@@ -37,13 +39,13 @@
     {onkeydown}
     class="max-h-48 flex-1 resize-none bg-transparent font-serif text-mlq-text outline-none placeholder:text-mlq-muted"
   ></textarea>
-  <button
-    type="button"
-    onclick={submit}
-    disabled={!value.trim()}
-    aria-label="Send"
-    class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40"
-  >
-    <ArrowRight size={18} />
-  </button>
+  {#if streaming}
+    <button type="button" onclick={() => onstop?.()} aria-label="Stop" class="rounded-mlq-control bg-mlq-strong p-2 text-white">
+      <Square size={18} />
+    </button>
+  {:else}
+    <button type="button" onclick={submit} disabled={!value.trim()} aria-label="Send" class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40">
+      <ArrowRight size={18} />
+    </button>
+  {/if}
 </div>
