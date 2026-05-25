@@ -108,8 +108,9 @@ lucide icon + "Anonymized" (neutral-green, `mlq-success`), shown **only when** t
 message's inference had `anonymization_applied === true`. When `false`, **show nothing**
 on the bubble (absence = nothing was redacted / not applicable) — the full per-message
 status (applied / none) lives in the Receipts drawer's inference row (§3), which is the
-complete-transparency surface. Tooltip: "Personal data was anonymized before this
-request left your environment." This avoids overclaiming in either direction.
+complete-transparency surface. Tooltip (non-overclaiming — `anonymization_applied` means
+the layer *ran*, not that PII was found): "This request was processed by the anonymization
+layer before leaving your environment."
 
 **Data flow — correlate inference→message by `message_id`:**
 - A `ChatMessage.anonymized?: boolean` field (on the P2a `ChatMessage` interface).
