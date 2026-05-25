@@ -28,8 +28,19 @@ export function parseDataPayload(payload: string): StreamFrame | null {
   }
   if (obj && typeof obj === 'object') {
     const o = obj as Record<string, unknown>;
-    if (o.type === 'start' || o.type === 'delta' || o.type === 'complete') {
-      return o as unknown as StreamFrame;
+    // Validate required fields per frame type so a malformed frame is skipped
+    // rather than corrupting content (e.g. appending "undefined") or throwing.
+    if (o.type === 'start') {
+      return typeof o.lq_ai_message_id === 'string' ? (o as unknown as StreamFrame) : null;
+    }
+    if (o.type === 'delta') {
+      return typeof o.delta === 'string' ? (o as unknown as StreamFrame) : null;
+    }
+    if (o.type === 'complete') {
+      return o.message && typeof o.message === 'object' ? (o as unknown as StreamFrame) : null;
+    }
+    if (o.type === 'error') {
+      return { type: 'error', code: o.code as string | undefined, message: (o.message as string) ?? 'Stream failed' };
     }
     if (o.detail && typeof o.detail === 'object') {
       const d = o.detail as Record<string, unknown>;

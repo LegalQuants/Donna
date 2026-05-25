@@ -50,4 +50,25 @@ describe('createChatStream', () => {
     expect(chat.status).toBe('idle');
     expect(chat.messages[1].status).toBe('done');
   });
+
+  it('preserves partial text when the reader aborts mid-stream', async () => {
+    let pulls = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const enc = new TextEncoder();
+        if (pulls === 0) {
+          controller.enqueue(enc.encode('data: {"type":"delta","delta":"partial answer","lq_ai_message_id":"a1"}\n\n'));
+          pulls++;
+        } else {
+          controller.error(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+        }
+      }
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 200 })));
+    const chat = createChatStream('c1');
+    await chat.send('hi');
+    expect(chat.messages[1].content).toBe('partial answer');
+    expect(chat.messages[1].status).toBe('done');
+    expect(chat.status).toBe('idle');
+  });
 });

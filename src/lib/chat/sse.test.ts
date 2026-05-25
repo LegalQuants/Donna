@@ -16,6 +16,16 @@ describe('parseDataPayload', () => {
   it('returns null for non-JSON', () => {
     expect(parseDataPayload('not json')).toBeNull();
   });
+  it('skips a malformed delta frame missing its delta field', () => {
+    expect(parseDataPayload('{"type":"delta","lq_ai_message_id":"m1"}')).toBeNull();
+  });
+  it('skips a complete frame missing its message', () => {
+    expect(parseDataPayload('{"type":"complete","lq_ai_message_id":"m1"}')).toBeNull();
+  });
+  it('parses a bare typed error frame (no detail wrapper)', () => {
+    expect(parseDataPayload('{"type":"error","code":"x","message":"boom"}'))
+      .toEqual({ type: 'error', code: 'x', message: 'boom' });
+  });
 });
 
 describe('createSseParser', () => {
