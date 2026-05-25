@@ -11,6 +11,7 @@ export type StreamFrame =
       type: 'complete';
       lq_ai_message_id: string;
       message: { id: string; content: string; routed_inference_tier?: number | null; routed_provider?: string | null };
+      /** Deprecated: empty under M2-A2; citations come from the per-message endpoint. */
       citations?: unknown[];
       routed_inference_tier?: number | null;
     }
