@@ -2,11 +2,17 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `4df3b9b` (bumped 2026-05-24 from `8b8e549`)
+- Pinned SHA: `7c7ce14` (bumped 2026-05-25 from `4df3b9b`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+- `4df3b9b` → `7c7ce14` (2026-05-25): lq-ai #103 fixes the gateway so **streamed**
+  completions persist their `inference_routing_log` row (the success-path write was after
+  the SSE `[DONE]`, so connection teardown cancelled it). Without it, the P2c Receipts
+  drawer + anonymization indicator were blank for UI (streamed) chats. Verified live: a
+  streamed turn now yields one inference receipt. `npm run gen:api` produced no type diff.
+  See `docs/upstream-requests/lq-ai-streaming-inference-routing-log.md`.
 - `8b8e549` → `4df3b9b` (2026-05-24): lq-ai #102 surfaces `anonymization_applied`
   and `message_id` in the receipts `inference`/`error` event detail — the data
   source for Donna's P2c anonymization indicator (the indicator was deferred until
