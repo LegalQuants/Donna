@@ -57,8 +57,12 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const res = await fetch(`/chats/${chatId}/messages/${id}/citations`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          if (import.meta.env.DEV) console.warn(`loadCitations: ${res.status} for message ${id}`);
+          return;
+        }
         const cites = (await res.json()) as Citation[];
+        // attempt 0: only accept a non-empty result (covers the persist/fetch race); attempt 1: accept whatever (give up).
         if (cites.length > 0 || attempt === 1) { messages[idx].citations = cites; return; }
       } catch {
         return;
