@@ -1,0 +1,51 @@
+<script lang="ts">
+  import Markdown from './Markdown.svelte';
+  import type { ChatMessage } from '$lib/chat/chatStream.svelte';
+
+  let { message, onretry }: { message: ChatMessage; onretry?: () => void } = $props();
+  let copied = $state(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      copied = true;
+      setTimeout(() => (copied = false), 1500);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  }
+</script>
+
+{#if message.role === 'user'}
+  <div class="my-2 text-right">
+    <span class="inline-block max-w-[80%] rounded-2xl bg-mlq-surface-alt px-3 py-1.5 text-left text-sm text-mlq-text">{message.content}</span>
+  </div>
+{:else}
+  <div class="my-4 text-sm">
+    {#if message.routed_inference_tier != null}
+      <span class="float-right ml-2 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-muted">Tier {message.routed_inference_tier}</span>
+    {:else if message.status === 'streaming'}
+      <span class="float-right ml-2 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-muted">Tier…</span>
+    {/if}
+
+    {#if message.status === 'error'}
+      <p class="text-mlq-error">⚠ {message.error}
+        <button type="button" onclick={() => onretry?.()} class="ml-2 rounded-mlq-control border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text">Retry</button>
+      </p>
+    {:else}
+      {#if message.content === '' && message.status === 'streaming'}
+        <span class="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-mlq-workflow align-middle" aria-label="Generating"></span>
+      {:else}
+        <Markdown content={message.content} />
+      {/if}
+      {#if message.status === 'streaming' && message.content !== ''}
+        <span class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-mlq-text align-text-bottom"></span>
+      {/if}
+      {#if message.status === 'done'}
+        <div class="mt-2 text-xs text-mlq-muted">
+          <button type="button" onclick={copy} class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5">{copied ? '✓ copied' : '⧉ Copy'}</button>
+        </div>
+      {/if}
+    {/if}
+  </div>
+{/if}

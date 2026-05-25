@@ -29,4 +29,12 @@ describe('Composer', () => {
     await userEvent.type(getByRole('textbox'), '   {Enter}');
     expect(onsubmit).not.toHaveBeenCalled();
   });
+
+  it('shows a Stop button while streaming and calls onstop', async () => {
+    const onstop = vi.fn();
+    const { getByRole } = render(Composer, { props: { streaming: true, onstop } });
+    const btn = getByRole('button', { name: /stop/i });
+    btn.click();
+    expect(onstop).toHaveBeenCalledTimes(1);
+  });
 });

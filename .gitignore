@@ -37,3 +37,6 @@ vite.config.ts.timestamp-*
 
 # Local backend volumes
 /.data/
+
+# Visual brainstorming companion
+.superpowers/
