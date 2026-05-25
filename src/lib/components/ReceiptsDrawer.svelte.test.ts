@@ -43,4 +43,15 @@ describe('ReceiptsDrawer', () => {
     await fireEvent.keyDown(container, { key: 'Escape' });
     expect(closed).toBe(true);
   });
+
+  it('shows "No receipts yet" only after a successful empty fetch, not before loading', async () => {
+    let resolve!: (v: Response) => void;
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise<Response>((r) => { resolve = r; })));
+    const { queryByText } = render(ReceiptsDrawer, { props: { chatId: 'c1', open: true, onclose: () => {} } });
+    // While fetch is in-flight, empty-state must not appear
+    expect(queryByText(/no receipts yet/i)).toBeNull();
+    // Resolve with an empty array
+    resolve(new Response('[]', { status: 200 }));
+    await waitFor(() => expect(queryByText(/no receipts yet/i)).toBeInTheDocument());
+  });
 });

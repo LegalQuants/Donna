@@ -72,10 +72,10 @@
         <p class="state">Loading…</p>
       {:else if status === 'error'}
         <p class="state">Couldn't load receipts. <button type="button" class="retry" onclick={load}>Retry</button></p>
-      {:else if events.length === 0}
+      {:else if status === 'ready' && events.length === 0}
         <p class="state">No receipts yet for this chat.</p>
       {:else}
-        {#each shown as e (e.ts + e.kind + JSON.stringify(e.detail).length)}
+        {#each shown as e (e.ts + e.kind + JSON.stringify(e.detail))}
           <ReceiptEventRow event={e} />
         {/each}
       {/if}
