@@ -1,6 +1,8 @@
 import { createSseParser, type StreamFrame } from './sse';
 import { hasCitationMarkers } from '$lib/citations/transform';
 import type { Citation } from '$lib/citations/types';
+import { anonymizedByMessage } from '$lib/receipts/format';
+import type { ReceiptEvent } from '$lib/receipts/types';
 
 export interface ChatMessage {
   /** Stable client-side identity for list keying; never changes after creation.
@@ -14,6 +16,7 @@ export interface ChatMessage {
   status?: 'streaming' | 'done' | 'error';
   error?: string;
   citations?: Citation[];
+  anonymized?: boolean;
 }
 
 export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
@@ -71,6 +74,20 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     }
   }
 
+  // Anonymization is recorded on the inference receipt, correlated by message_id.
+  async function loadAnonymization(idx: number) {
+    const id = messages[idx].id;
+    if (!id || id === 'pending') return;
+    try {
+      const res = await fetch(`/chats/${chatId}/receipts?event_kinds=inference`);
+      if (!res.ok) return;
+      const map = anonymizedByMessage((await res.json()) as ReceiptEvent[]);
+      if (map.has(id)) messages[idx].anonymized = map.get(id);
+    } catch {
+      /* non-blocking — badge simply absent */
+    }
+  }
+
   // Stream a response into the assistant message at `idx` (already present and
   // reset to a streaming state by the caller). Shared by send() and retry().
   async function runStream(idx: number, content: string) {
@@ -116,6 +133,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
       if (messages[idx].status === 'streaming') messages[idx].status = 'done';
       if (status === 'streaming') status = 'idle';
       await loadCitations(idx);
+      await loadAnonymization(idx);
     } catch (e) {
       if ((e as Error).name === 'AbortError') {
         messages[idx].status = 'done';
@@ -149,6 +167,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     messages[idx].error = undefined;
     messages[idx].routed_inference_tier = undefined;
     messages[idx].citations = undefined;
+    messages[idx].anonymized = undefined;
     messages[idx].status = 'streaming';
     await runStream(idx, lastUserContent);
   }
