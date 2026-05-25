@@ -32,7 +32,7 @@
     {/if}
 
     {#if message.anonymized === true}
-      <span class="float-right ml-2 inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-success" title="Personal data was anonymized before this request left your environment">
+      <span class="float-right ml-2 inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-success" title="This request was processed by the anonymization layer before leaving your environment">
         <ShieldCheck size={11} /> Anonymized
       </span>
     {/if}
