@@ -12,11 +12,15 @@
   $effect(() => {
     filename = null;
     const fid = citation?.source_file_id;
-    if (fid) fileName(fid).then((n) => (filename = n));
+    if (!fid) return;
+    let cancelled = false;
+    fileName(fid).then((n) => { if (!cancelled) filename = n; });
+    return () => { cancelled = true; };
   });
 </script>
 
-<div class="pop pop-{cstate}" role="dialog" aria-label={`Citation ${index} detail`}>
+<!-- non-modal: click-to-open detail panel; CitationView (Task 8) mounts/unmounts it -->
+<div class="pop pop-{cstate}" role="dialog" aria-modal="false" aria-label={`Citation ${index} detail`}>
   <div class="bar">{label}</div>
   {#if citation}
     <blockquote class="quote">{citation.source_text}</blockquote>

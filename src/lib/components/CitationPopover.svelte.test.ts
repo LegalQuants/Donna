@@ -28,4 +28,11 @@ describe('CitationPopover', () => {
     const { getByText } = render(CitationPopover, { props: { citation: undefined, index: 3 } });
     expect(getByText(/could not be matched/i)).toBeInTheDocument();
   });
+
+  it('omits the page line when source_page is absent', () => {
+    const { queryByText } = render(CitationPopover, {
+      props: { citation: { ...c, source_page: undefined }, index: 1 }
+    });
+    expect(queryByText(/^Page /)).toBeNull();
+  });
 });
