@@ -21,6 +21,11 @@
   --color-mlq-doc: #111827;             /* black document chips */
   --color-mlq-privileged: #7f1d1d;      /* reserved for P4 (high-contrast) */
 
+  /* Citation pill states (P2b) */
+  --color-mlq-verified: #16a34a;        /* green */
+  --color-mlq-caveats: #c9a227;         /* amber — verified with caveats */
+  --color-mlq-unverified: #dc2626;      /* red */
+
   /* Radii */
   --radius-mlq-composer: 20px;
   --radius-mlq-control: 0.5rem;         /* rounded-lg */
@@ -50,3 +55,19 @@
 .prose-mlq th, .prose-mlq td { border: 1px solid var(--color-mlq-subtle); padding: 4px 8px; }
 .prose-mlq blockquote { border-left: 3px solid var(--color-mlq-subtle); margin: 0 0 0.75rem; padding-left: 0.75rem; color: var(--color-mlq-muted); }
 .prose-mlq code { background: var(--color-mlq-surface-alt); padding: 1px 4px; border-radius: 4px; font-size: 0.9em; }
+
+/* Verified citation pills (P2b) — rendered inside sanitized {@html}, so global. */
+.cite-quote { border-bottom: 2px solid; padding-bottom: 1px; }
+.cite-quote.cite-verified { border-color: var(--color-mlq-verified); }
+.cite-quote.cite-caveats { border-color: var(--color-mlq-caveats); }
+.cite-quote.cite-unverified { border-color: var(--color-mlq-unverified); border-bottom-style: dashed; }
+
+.cite-tab {
+  font-family: var(--font-sans); font-size: 0.7em; font-weight: 600; line-height: 1;
+  padding: 0.1em 0.4em; border-radius: 4px; margin-left: 2px;
+  position: relative; top: -0.35em; color: #fff; cursor: pointer; user-select: none;
+}
+.cite-tab.cite-verified { background: var(--color-mlq-verified); }
+.cite-tab.cite-caveats { background: var(--color-mlq-caveats); }
+.cite-tab.cite-unverified { background: var(--color-mlq-unverified); }
+.cite-tab:focus-visible { outline: 2px solid var(--color-mlq-strong); outline-offset: 1px; }

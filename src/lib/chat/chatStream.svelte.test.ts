@@ -97,4 +97,55 @@ describe('createChatStream', () => {
     expect(chat.messages[1].status).toBe('done');
     expect(chat.status).toBe('idle');
   });
+
+  it('fetches citations for the assistant message after completion when markers are present', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"Terminate on \\"thirty days\\" (Source: [1])."}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([
+        { id: 'cit1', source_file_id: 'f1', source_text: 'thirty days', partial: false, verified: true, verification_method: 'exact_match' }
+      ]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('when can I terminate?');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toBe('/chats/c1/messages/a1/citations');
+    expect(chat.messages[1].citations).toHaveLength(1);
+    expect(chat.messages[1].citations?.[0].verification_method).toBe('exact_match');
+  });
+
+  it('does not fetch citations when the answer has no markers', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(streamResponse([
+      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"No citations here."}}\n\n',
+      'data: [DONE]\n\n'
+    ]));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi');
+    expect(fetchMock).toHaveBeenCalledTimes(1); // SSE only
+  });
+
+  it('retries the citations fetch once when the first response is empty (persist/fetch race)', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"Quote \\"x\\" (Source: [1])."}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([
+        { id: 'cit1', source_file_id: 'f1', source_text: 'x', partial: false, verified: true, verification_method: 'exact_match' }
+      ]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('q');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(chat.messages[1].citations).toHaveLength(1);
+  });
 });
