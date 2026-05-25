@@ -2,6 +2,8 @@ import { error } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
 import type { PageServerLoad } from './$types';
 import type { ChatMessage } from '$lib/chat/chatStream.svelte';
+import { hasCitationMarkers } from '$lib/citations/transform';
+import type { Citation } from '$lib/citations/types';
 
 export const load: PageServerLoad = async (event) => {
   const draft = event.cookies.get('donna_draft') ?? null;
@@ -19,6 +21,20 @@ export const load: PageServerLoad = async (event) => {
     routed_inference_tier: m.routed_inference_tier,
     status: 'done'
   }));
+
+  // Citations are served per-message (M2-A2), not inline in the messages list.
+  // Fetch them in parallel for assistant turns that actually contain markers.
+  await Promise.all(
+    messages.map(async (m) => {
+      if (m.role !== 'assistant' || !hasCitationMarkers(m.content)) return;
+      try {
+        const r = await lqFetch(event, `/api/v1/chats/${event.params.id}/messages/${m.id}/citations`);
+        if (r.ok) m.citations = (await r.json()) as Citation[];
+      } catch {
+        /* leave undefined — message degrades to plain markers */
+      }
+    })
+  );
 
   return { chatId: event.params.id, messages, draft };
 };
