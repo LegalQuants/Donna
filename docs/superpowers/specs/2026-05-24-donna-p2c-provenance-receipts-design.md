@@ -146,13 +146,21 @@ assistant turn), rendered only when `message.anonymized === true`.
   - `ReceiptEventRow` — two-line render per kind; details expander toggles raw JSON.
   - `Message` — renders the "Anonymized" badge when `anonymized===true`, and **not** when
     `false`/undefined (the reliably-testable invariant, since live `true` needs real PII).
-- **e2e (Playwright, live):** open the seeded chat → click **Receipts** → assert an
-  `inference` row (Opus 4.7 · Tier 4) and a `retrieval` row render, the inference row
-  shows an anonymization status, a filter chip narrows the list, and the export link is
-  present. Assert structural invariants (not exact counts/text). The per-bubble badge's
-  **true** state is covered at the component level (dev anonymization is commonly `false`,
-  so we don't depend on the live engine redacting); the e2e asserts **no** false-positive
-  badge on the seeded (`anonymization_applied=false`) turn.
+- **e2e (Playwright, live):**
+  - *Receipts drawer:* open the seeded (project-backed) chat → click **Receipts** →
+    assert an `inference` row (Opus 4.7 · Tier 4) and a `retrieval` row render, the
+    inference row shows an anonymization status, a filter chip narrows the list, and the
+    export link is present. Assert structural invariants (not exact counts/text).
+  - *Anonymization indicator — live `true`:* a spike confirmed we **can** produce a real
+    `anonymization_applied=true`. Stack prereq: `anonymization.enabled: true` in
+    `gateway.yaml` (applies at tiers 3–5; our chats route Tier 4) — flip + restart the
+    gateway. The test seeds a **project-less** chat (anonymization is independent of
+    retrieval) and posts a message containing recognized PII (a person name + email +
+    phone + organization, e.g. *"…John Smith (john.smith@acme.com, 555-123-4567) of Acme
+    Corporation…"*), then loads `/chats/{id}` in the UI and asserts the **"Anonymized"
+    badge** is visible on the assistant turn.
+  - *No false positive:* on a non-PII turn (`anonymization_applied=false`) assert the
+    badge is **absent**.
 - Quality bar: `npm run check` = **0 errors, 0 warnings**; `npx vitest run`;
   `npx playwright test` (vendor `ERR_MODULE_NOT_FOUND` stderr is harmless; exit 0 + the
   "0 errors and 0 warnings" line is the signal).
@@ -165,8 +173,10 @@ assistant turn), rendered only when `message.anonymized === true`.
    actually redacted; `false` shows nothing (full status in the drawer). Alternative —
    show a two-state badge (Anonymized / Not anonymized) — was rejected as misleading given
    `false` usually means "nothing to redact."
-2. **Indicator live-test approach** (§7): true-state via component tests, not live e2e,
-   because forcing real anonymization in dev isn't reliable. The live e2e proves the
-   drawer + the no-false-positive invariant.
+2. **Indicator live-test approach** (§7): a spike confirmed a live `true` IS reproducible
+   — enable `anonymization.enabled` in `gateway.yaml` (tiers 3–5) and post recognized PII
+   (person/email/phone/org). So the live e2e covers BOTH the badge's `true` state (PII
+   chat) and the no-false-positive invariant (non-PII chat), plus component tests for both
+   states. Stack prereq for the suite: anonymization enabled (recorded in the runbook + dev-stack memory).
 3. **Client-side filtering** (§3): fetch-all-then-filter (chats are small), so chips are
    instant and export stays full-log.
