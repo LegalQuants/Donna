@@ -1,4 +1,6 @@
 import { createSseParser, type StreamFrame } from './sse';
+import { hasCitationMarkers } from '$lib/citations/transform';
+import type { Citation } from '$lib/citations/types';
 
 export interface ChatMessage {
   /** Stable client-side identity for list keying; never changes after creation.
@@ -11,7 +13,7 @@ export interface ChatMessage {
   routed_inference_tier?: number | null;
   status?: 'streaming' | 'done' | 'error';
   error?: string;
-  citations?: unknown[];
+  citations?: Citation[];
 }
 
 export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
@@ -37,7 +39,6 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
       m.content = frame.message.content ?? m.content;
       const tier = frame.message.routed_inference_tier ?? frame.routed_inference_tier;
       if (tier != null) m.routed_inference_tier = tier;
-      m.citations = frame.citations ?? [];
       m.status = 'done';
     } else if (frame.type === 'error') {
       setError(idx, frame.message);
@@ -45,6 +46,26 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
   }
 
   let lastUserContent = '';
+
+  // Citations live in the M2-A2 relational table, not the SSE complete frame.
+  // Fetch them by message id once the assistant turn is persisted (one retry to
+  // cover the persist/fetch race).
+  async function loadCitations(idx: number) {
+    const id = messages[idx].id;
+    if (!id || id === 'pending') return;
+    if (!hasCitationMarkers(messages[idx].content)) return;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch(`/chats/${chatId}/messages/${id}/citations`);
+        if (!res.ok) return;
+        const cites = (await res.json()) as Citation[];
+        if (cites.length > 0 || attempt === 1) { messages[idx].citations = cites; return; }
+      } catch {
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 400));
+    }
+  }
 
   // Stream a response into the assistant message at `idx` (already present and
   // reset to a streaming state by the caller). Shared by send() and retry().
@@ -90,6 +111,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
       }
       if (messages[idx].status === 'streaming') messages[idx].status = 'done';
       if (status === 'streaming') status = 'idle';
+      await loadCitations(idx);
     } catch (e) {
       if ((e as Error).name === 'AbortError') {
         messages[idx].status = 'done';
@@ -122,6 +144,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     messages[idx].content = '';
     messages[idx].error = undefined;
     messages[idx].routed_inference_tier = undefined;
+    messages[idx].citations = undefined;
     messages[idx].status = 'streaming';
     await runStream(idx, lastUserContent);
   }
