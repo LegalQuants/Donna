@@ -14,6 +14,7 @@ describe('citeState', () => {
   it('judge / ensemble methods → caveats (yellow)', () => {
     expect(citeState(base({ verification_method: 'paraphrase_judge' }))).toBe('caveats');
     expect(citeState(base({ verification_method: 'ensemble_majority' }))).toBe('caveats');
+    expect(citeState(base({ verification_method: 'ensemble_strict' }))).toBe('caveats');
   });
   it('partial → caveats even if method is green', () => {
     expect(citeState(base({ verification_method: 'exact_match', partial: true }))).toBe('caveats');
@@ -22,6 +23,7 @@ describe('citeState', () => {
     expect(citeState(base({ verified: false }))).toBe('unverified');
     expect(citeState(undefined)).toBe('unverified');
   });
+  it('verified: undefined → unverified', () => { expect(citeState(base({ verified: undefined }))).toBe('unverified'); });
   it('verified with unknown method → green (defensive)', () => {
     expect(citeState(base({ verification_method: undefined }))).toBe('verified');
   });
@@ -38,5 +40,17 @@ describe('tooltipFor', () => {
   });
   it('unverified label', () => {
     expect(tooltipFor(base({ verified: false }))).toMatch(/could not confirm/i);
+  });
+  it('tolerant_match tooltip', () => {
+    expect(tooltipFor(base({ verification_method: 'tolerant_match', verification_confidence: 1 })))
+      .toBe('Verified — matches source (normalized) (100%)');
+  });
+  it('ensemble_strict tooltip', () => {
+    expect(tooltipFor(base({ verification_method: 'ensemble_strict', verification_confidence: 1, partial: false })))
+      .toBe('Verified by ensemble — all judges agreed (100%)');
+  });
+  it('ensemble_majority tooltip', () => {
+    expect(tooltipFor(base({ verification_method: 'ensemble_majority', verification_confidence: 1, partial: false })))
+      .toBe('Verified by ensemble — majority of judges agreed (100%)');
   });
 });
