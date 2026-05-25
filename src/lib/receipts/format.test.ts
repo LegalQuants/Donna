@@ -50,6 +50,9 @@ describe('anonStatus', () => {
     expect(anonStatus(ev('inference', { anonymization_applied: false }))).toBe('none');
     expect(anonStatus(ev('message', { anonymization_applied: true }))).toBeNull();
   });
+  it('applies to error events too', () => {
+    expect(anonStatus(ev('error', { anonymization_applied: true }))).toBe('applied');
+  });
 });
 
 describe('anonymizedByMessage', () => {
@@ -64,5 +67,11 @@ describe('anonymizedByMessage', () => {
     expect(m.get('b')).toBe(false);
     expect(m.has('c')).toBe(false);
     expect(m.size).toBe(2);
+  });
+  it('includes error (refused) inference events', () => {
+    const m = anonymizedByMessage([
+      ev('error', { message_id: 'e', anonymization_applied: true, refused: true })
+    ]);
+    expect(m.get('e')).toBe(true);
   });
 });
