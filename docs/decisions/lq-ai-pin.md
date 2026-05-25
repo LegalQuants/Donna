@@ -2,10 +2,17 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `8b8e5496e7464d3e15fb8890ad9ebdde4257e724`
-- Captured: 2026-05-24
+- Pinned SHA: `4df3b9b` (bumped 2026-05-24 from `8b8e549`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
+
+### Bump log
+- `8b8e549` → `4df3b9b` (2026-05-24): lq-ai #102 surfaces `anonymization_applied`
+  and `message_id` in the receipts `inference`/`error` event detail — the data
+  source for Donna's P2c anonymization indicator (the indicator was deferred until
+  this landed; see `docs/upstream-requests/lq-ai-expose-anonymization-in-receipts.md`).
+  `npm run gen:api` produced no type diff (the receipts `detail` is
+  `additionalProperties: true`), but was re-run to confirm.
 
 ## Compose bundling mechanism (resolves plan open-question #3)
 
