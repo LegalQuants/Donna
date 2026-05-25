@@ -41,15 +41,14 @@ of whether any entity was actually redacted. `false` means the layer did **not**
 honest "this request passed through the anonymization layer" signal — **not** a claim that
 PII existed and was scrubbed. Wording must avoid overclaiming redaction (see §4).
 
-> **STATUS (2026-05-25): live e2e PAUSED.** A second finding — streamed turns don't
-> persist an `inference_routing_log` row (success-path write happens after the SSE
-> `[DONE]`; the connection closes first) — means the drawer's inference row and the
-> anonymization indicator are blank for **streamed** (i.e. all UI-created) chats; only
-> `stream:false`/API-seeded chats populate. Donna's code is correct and unit/component-
-> tested; the surfaces light up once lq-ai fixes streamed logging. Upstream report:
-> `docs/upstream-requests/lq-ai-streaming-inference-routing-log.md`. The two live e2e
-> (drawer + indicator) are deferred until that lands; the drawer e2e is committed as
-> `test.skip`. When fixed: bump the pin, un-skip/finalize both e2e, then PR.
+> **STATUS (2026-05-25): RESOLVED.** The streamed-logging bug was fixed upstream
+> (lq-ai #103, pin bumped to `7c7ce14`): the gateway now writes the
+> `inference_routing_log` row before the SSE `[DONE]`. Verified live — a streamed turn
+> yields an inference receipt, so the drawer's inference row and the anonymization
+> indicator now populate for normal UI (streamed) chats. Both live e2e (drawer +
+> indicator) are active and green. The indicator's live e2e proves the positive
+> (badge on a streamed turn with the layer on); the negative (no badge when the layer
+> didn't run) is component-tested.
 
 ---
 
