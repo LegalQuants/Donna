@@ -58,12 +58,16 @@ describe('createChatStream', () => {
         'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
         'data: {"detail":{"code":"gateway_timeout","message":"timed out"}}\n\n'
       ]))
+      // loadAnonymization after first (error) send
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
       .mockResolvedValueOnce(streamResponse([
         'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
         'data: {"type":"delta","delta":"ok now","lq_ai_message_id":"a1","routed_inference_tier":3}\n\n',
         'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok now","routed_inference_tier":3}}\n\n',
         'data: [DONE]\n\n'
-      ]));
+      ]))
+      // loadAnonymization after retry send
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const chat = createChatStream('c1');
     await chat.send('hi');
@@ -112,8 +116,8 @@ describe('createChatStream', () => {
     vi.stubGlobal('fetch', fetchMock);
     const chat = createChatStream('c1');
     await chat.send('when can I terminate?');
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[1][0]).toBe('/chats/c1/messages/a1/citations');
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls).toContain('/chats/c1/messages/a1/citations');
     expect(chat.messages[1].citations).toHaveLength(1);
     expect(chat.messages[1].citations?.[0].verification_method).toBe('exact_match');
   });
@@ -127,7 +131,8 @@ describe('createChatStream', () => {
     vi.stubGlobal('fetch', fetchMock);
     const chat = createChatStream('c1');
     await chat.send('hi');
-    expect(fetchMock).toHaveBeenCalledTimes(1); // SSE only
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes('/citations'))).toBe(false);
   });
 
   it('retries the citations fetch once when the first response is empty (persist/fetch race)', async () => {
@@ -145,7 +150,25 @@ describe('createChatStream', () => {
     vi.stubGlobal('fetch', fetchMock);
     const chat = createChatStream('c1');
     await chat.send('q');
-    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(chat.messages[1].citations).toHaveLength(1);
+  });
+
+  it('sets anonymized from the inference receipt after completion', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi"}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([
+        { ts: 't', kind: 'inference', detail: { message_id: 'a1', anonymization_applied: true } }
+      ]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hello');
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls).toContain('/chats/c1/receipts?event_kinds=inference');
+    expect(chat.messages[1].anonymized).toBe(true);
   });
 });
