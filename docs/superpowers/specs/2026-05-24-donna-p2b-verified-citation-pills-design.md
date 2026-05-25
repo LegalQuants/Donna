@@ -231,6 +231,10 @@ only on interaction).
 
 - Document side-panel + offset highlighting using `source_offset_*` (**P3**).
 - Per-message "Sources" footer list (decided out; inline pills only).
+- **Attaching a project/KB to a chat from the UI** (**P4** Projects/Matters). Until then,
+  citations appear only for chats whose `project_id` resolves to an embedded-file KB —
+  reachable in P2b via seeded chats (see Testing §9). The pill-rendering layer itself is
+  agnostic to how citations got persisted, so it lights up automatically once P4 lands.
 - Receipts, anonymization indicator, skill-attach, Enhance Prompt, model/tier picker (**P2c**).
 - Configuring a production embeddings provider / dimension migration (ops concern).
 
@@ -248,10 +252,16 @@ only on interaction).
   popover content (state label, source_text, page, lazily-fetched filename), and keyboard
   (Enter opens, Esc closes). The only reliable way to cover yellow/red (live engine output
   is nondeterministic).
-- **Live-stack Playwright smoke (real backend)** — the spike chain is now reproducible:
-  seed a KB-attached PDF, **wait for embedding**, ask a grounding question, assert ≥1
-  `cite-tab` renders, the popover opens, `source_text` is non-empty, and the filename
-  resolves. Assert structural invariants, not exact engine text.
+- **Live-stack Playwright smoke (real backend)** — **constraint:** Donna's UI creates
+  *project-less* chats (`POST /chats` with `{}`; no project picker until P4), and RAG only
+  runs when `chat.project_id` resolves to a KB with embedded files. So the smoke **seeds a
+  project-backed chat via the API** (project → KB → upload PDF → wait ready → attach →
+  **wait for embedding** → post a grounding message so a cited assistant turn persists),
+  then loads `/chats/{seeded_id}` in the Donna UI and asserts the **history** path renders
+  ≥1 `cite-tab`, the popover opens, `source_text` is non-empty, and the filename resolves.
+  Because the seeded chat has a `project_id`, sending a follow-up grounding message in the
+  UI also exercises the **fresh-stream** path live. Assert structural invariants, not exact
+  engine text.
 - Quality bar (per workflow): `npm run check` = **0 errors, 0 warnings**; `npx vitest run`;
   `npx playwright test`. (Harmless vendor `ERR_MODULE_NOT_FOUND` stderr is not a failure.)
 
