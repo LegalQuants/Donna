@@ -37,4 +37,17 @@ describe('Message', () => {
     });
     expect(container.querySelector('.cite-tab.cite-verified')).not.toBeNull();
   });
+
+  it('shows the Anonymized badge when message.anonymized is true', () => {
+    const { getByText } = render(Message, {
+      props: { message: { key: 'a3', id: 'a3', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4, anonymized: true } }
+    });
+    expect(getByText(/Anonymized/i)).toBeInTheDocument();
+  });
+  it('does not show the badge when anonymized is false/undefined', () => {
+    const { queryByText } = render(Message, {
+      props: { message: { key: 'a4', id: 'a4', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4, anonymized: false } }
+    });
+    expect(queryByText(/Anonymized/i)).toBeNull();
+  });
 });
