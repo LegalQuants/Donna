@@ -26,4 +26,15 @@ describe('Message', () => {
     getByRole('button', { name: /retry/i }).click();
     expect(retried).toBe(true);
   });
+
+  it('renders citation pills for a done assistant message with citations', () => {
+    const { container } = render(Message, {
+      props: { message: {
+        key: 'a2', id: 'a2', role: 'assistant', status: 'done',
+        content: 'Terminate on "thirty days" (Source: [1]).',
+        citations: [{ id: 'c1', source_file_id: 'f1', source_text: 'thirty days', partial: false, verified: true, verification_method: 'exact_match' }]
+      } }
+    });
+    expect(container.querySelector('.cite-tab.cite-verified')).not.toBeNull();
+  });
 });

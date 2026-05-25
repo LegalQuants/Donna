@@ -1,6 +1,8 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte';
+  import CitationView from './CitationView.svelte';
   import type { ChatMessage } from '$lib/chat/chatStream.svelte';
+  import type { Citation } from '$lib/citations/types';
 
   let { message, onretry }: { message: ChatMessage; onretry?: () => void } = $props();
   let copied = $state(false);
@@ -35,6 +37,8 @@
     {:else}
       {#if message.content === '' && message.status === 'streaming'}
         <span class="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-mlq-workflow align-middle" aria-label="Generating"></span>
+      {:else if message.status === 'done' && message.citations && message.citations.length > 0}
+        <CitationView content={message.content} citations={message.citations as Citation[]} />
       {:else}
         <Markdown content={message.content} />
       {/if}
