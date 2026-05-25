@@ -12,6 +12,7 @@ export const load: PageServerLoad = async (event) => {
   const page = (await res.json()) as { items: ChatMessage[] };
 
   const messages: ChatMessage[] = page.items.map((m) => ({
+    key: m.id, // history rows have stable backend ids — safe as the list key
     id: m.id,
     role: m.role,
     content: m.content,
