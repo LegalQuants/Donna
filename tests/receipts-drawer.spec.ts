@@ -19,12 +19,8 @@ async function newChatWithATurn(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
 }
 
-// PAUSED pending lq-ai streaming inference-routing-log fix (see
-// docs/upstream-requests/lq-ai-streaming-inference-routing-log.md). Streamed turns
-// (the whole UI) don't persist an inference_routing_log row, so the drawer's inference
-// row is empty for UI-created chats. Un-skip + finalize once the gateway fix lands
-// (then this can seed a chat and assert the inference row).
-test.skip('Receipts drawer opens and shows the provenance timeline', async ({ page }) => {
+// Live: a streamed turn now persists an inference receipt (lq-ai 7c7ce14), so the drawer shows it.
+test('Receipts drawer opens and shows the provenance timeline', async ({ page }) => {
   test.setTimeout(90_000);
   await login(page);
   if (SEEDED_CHAT) await page.goto(`/chats/${SEEDED_CHAT}`);
