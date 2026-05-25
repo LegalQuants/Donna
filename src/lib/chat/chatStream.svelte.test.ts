@@ -58,8 +58,6 @@ describe('createChatStream', () => {
         'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
         'data: {"detail":{"code":"gateway_timeout","message":"timed out"}}\n\n'
       ]))
-      // loadAnonymization after first (error) send
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
       .mockResolvedValueOnce(streamResponse([
         'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
         'data: {"type":"delta","delta":"ok now","lq_ai_message_id":"a1","routed_inference_tier":3}\n\n',
@@ -112,7 +110,8 @@ describe('createChatStream', () => {
       ]))
       .mockResolvedValueOnce(new Response(JSON.stringify([
         { id: 'cit1', source_file_id: 'f1', source_text: 'thirty days', partial: false, verified: true, verification_method: 'exact_match' }
-      ]), { status: 200 }));
+      ]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const chat = createChatStream('c1');
     await chat.send('when can I terminate?');
@@ -146,7 +145,8 @@ describe('createChatStream', () => {
       .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify([
         { id: 'cit1', source_file_id: 'f1', source_text: 'x', partial: false, verified: true, verification_method: 'exact_match' }
-      ]), { status: 200 }));
+      ]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const chat = createChatStream('c1');
     await chat.send('q');

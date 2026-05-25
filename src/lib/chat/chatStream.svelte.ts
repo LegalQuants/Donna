@@ -77,10 +77,15 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
   // Anonymization is recorded on the inference receipt, correlated by message_id.
   async function loadAnonymization(idx: number) {
     const id = messages[idx].id;
-    if (!id || id === 'pending') return;
+    if (!id || id === 'pending' || messages[idx].status === 'error') return;
     try {
+      // M1: chats are bounded, so scanning the full inference list is fine. A
+      // message_id-scoped query would scale better for long chats (future).
       const res = await fetch(`/chats/${chatId}/receipts?event_kinds=inference`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        if (import.meta.env.DEV) console.warn(`loadAnonymization: ${res.status} for chat ${chatId}`);
+        return;
+      }
       const map = anonymizedByMessage((await res.json()) as ReceiptEvent[]);
       if (map.has(id)) messages[idx].anonymized = map.get(id);
     } catch {
