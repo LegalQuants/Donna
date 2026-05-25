@@ -1,33 +1,39 @@
-# Dependencies
-node_modules/
-.pnpm-store/
+node_modules
 
-# SvelteKit / Vite build output
-.svelte-kit/
-build/
-dist/
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+/coverage
+/playwright-report
+/test-results
+/dist
 /package
 
-# Environment
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
 .env
 .env.*
 !.env.example
+!.env.test
 
-# Test / coverage artifacts
-/coverage/
-/playwright-report/
-/test-results/
-/.playwright/
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
-# Editor / OS
-.DS_Store
-*.log
+# Editor
 .idea/
 .vscode/*
 !.vscode/extensions.json
 
-# Local backend volumes (if mounted outside named volumes)
-/.data/
-
 # Claude Code local settings
 .claude/settings.local.json
+
+# Local backend volumes
+/.data/
