@@ -33,6 +33,16 @@ docker compose exec api python -m app.cli reset-admin-password \
   --email admin@lq.ai --password '<pw>' --no-force-change
 ```
 
+## P2a streaming — gateway alias (resolved)
+
+No gateway config change was needed for P2a. The seeded `gateway.yaml` (from
+`gateway.yaml.example`) already maps the `smart` alias → `anthropic-prod` /
+`claude-opus-4-7`, and `anthropic-prod` reads `ANTHROPIC_API_KEY` (set in the
+gitignored `.env`; the compose `gateway` service passes it through). Recreate
+the `gateway` container after setting the key (`docker compose up -d
+--force-recreate gateway`) so it's in the container env. Streaming verified
+end-to-end against Claude Opus 4.7 at Tier 4.
+
 ## Known follow-ups
 
 - Upstream lq-ai `backend-openapi.yaml` uses backticks in plain YAML scalars, which
