@@ -65,14 +65,27 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
       const decoder = new TextDecoder();
       const parser = createSseParser();
       let ended = false;
-      while (!ended) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        for (const frame of parser.push(decoder.decode(value, { stream: true }))) {
-          if (frame.type === 'done') { ended = true; break; }
-          applyFrame(idx, frame);
-          if (frame.type === 'error') { ended = true; break; }
+      try {
+        while (!ended) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          for (const frame of parser.push(decoder.decode(value, { stream: true }))) {
+            if (frame.type === 'done') { ended = true; break; }
+            applyFrame(idx, frame);
+            if (frame.type === 'error') { ended = true; break; }
+          }
         }
+        // Flush any bytes the decoder buffered if the stream ended without [DONE].
+        if (!ended) {
+          for (const frame of parser.push(decoder.decode())) {
+            if (frame.type === 'done') break;
+            applyFrame(idx, frame);
+            if (frame.type === 'error') break;
+          }
+        }
+      } finally {
+        // Release the connection promptly on done/error/normal exit.
+        reader.cancel().catch(() => {});
       }
       if (messages[idx].status === 'streaming') messages[idx].status = 'done';
       if (status === 'streaming') status = 'idle';
