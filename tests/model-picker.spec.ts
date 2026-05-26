@@ -42,3 +42,21 @@ test('model picker offers grouped aliases, sends the chosen model, and persists'
   await page.waitForLoadState('networkidle');
   await expect(page.getByTestId('model-picker')).toContainText('fast');
 });
+
+test('a model chosen on the landing composer applies to the first message', async ({ page }) => {
+  await login(page);
+
+  // Pick a non-default model on the LANDING composer, before any chat exists.
+  await page.getByTestId('model-picker').click();
+  await page.getByTestId('model-option-fast').click();
+  await expect(page.getByTestId('model-picker')).toContainText('fast');
+
+  // Sending the first message creates the chat; the auto-sent draft must carry fast.
+  const reqPromise = page.waitForRequest(
+    (r: any) => r.url().includes('/messages') && r.method() === 'POST'
+  );
+  await page.fill('textarea', 'In one short sentence, what is an NDA?');
+  await page.keyboard.press('Enter');
+  const req = await reqPromise;
+  expect(JSON.parse(req.postData() || '{}').model).toBe('fast');
+});
