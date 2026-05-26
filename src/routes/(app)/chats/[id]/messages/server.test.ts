@@ -10,7 +10,8 @@ const event = (body: unknown) =>
 beforeEach(() => lqStream.mockReset());
 
 function sentBody() {
-  return JSON.parse((lqStream.mock.calls[0][2] as { body: string }).body);
+  const calls = lqStream.mock.calls;
+  return JSON.parse((calls[calls.length - 1][2] as { body: string }).body);
 }
 
 describe('POST messages', () => {
@@ -30,5 +31,19 @@ describe('POST messages', () => {
     lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
     await POST(event({ content: 'hi', model: '   ' }));
     expect(sentBody().model).toBe('smart');
+  });
+
+  it('forwards skills when present', async () => {
+    lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+    await POST(event({ content: 'hi', model: 'smart', skills: ['nda-review'] }));
+    expect(sentBody().skills).toEqual(['nda-review']);
+  });
+
+  it('omits skills when absent or empty', async () => {
+    lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+    await POST(event({ content: 'hi', model: 'smart' }));
+    expect('skills' in sentBody()).toBe(false);
+    await POST(event({ content: 'hi', model: 'smart', skills: [] }));
+    expect('skills' in sentBody()).toBe(false);
   });
 });

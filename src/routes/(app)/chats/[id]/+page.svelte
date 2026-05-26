@@ -5,6 +5,7 @@
   import { createChatStream } from '$lib/chat/chatStream.svelte';
   import ReceiptsDrawer from '$lib/components/ReceiptsDrawer.svelte';
   import { modelStore } from '$lib/models/store.svelte';
+  import { createSkillAttach } from '$lib/skills/attach.svelte';
   import { ReceiptText } from '@lucide/svelte';
 
   let { data } = $props();
@@ -14,13 +15,14 @@
   // later (e.g. sidebar recents), wrap this page's body in {#key data.chatId} via
   // a child component so the controller re-initializes per chat.
   const chat = untrack(() => createChatStream(data.chatId, data.messages));
+  const skillAttach = createSkillAttach();
   let draftValue = $state('');
   let showReceipts = $state(false);
   let scroller = $state<HTMLElement>();
 
-  function submit(text: string, model = 'smart') {
+  function submit(text: string, model = 'smart', skills: string[] = []) {
     draftValue = '';
-    chat.send(text, model);
+    chat.send(text, model, skills);
   }
   function retry() {
     chat.retry();
@@ -68,6 +70,7 @@
       onsubmit={submit}
       streaming={chat.status === 'streaming'}
       onstop={chat.stop}
+      {skillAttach}
     />
     <p class="mt-2 text-center text-xs text-mlq-muted">AI can make mistakes. Answers are not legal advice.</p>
   </div>
