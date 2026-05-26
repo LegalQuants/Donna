@@ -2,11 +2,20 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `7c7ce14` (bumped 2026-05-25 from `4df3b9b`)
+- Pinned SHA: `438198c` (bumped 2026-05-25 from `7c7ce14`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+- `7c7ce14` → `438198c` (2026-05-25): lq-ai #105 **documents** the `/v1/models` alias
+  fields to match the live gateway — adds `lq_ai_resolves_to` / `lq_ai_fallback_count`
+  to `ModelEntry` and corrects the `routed_inference_tier` description (it's present on
+  aliases too, as the primary-resolution tier). Docs-only on the backend (no behavior
+  change; the rich model-config capability is untouched). `npm run gen:api` now emits
+  both fields on the `/api/v1/models` 200 schema, so Donna's P2c-B1 picker drops its
+  hand-typed `RawModelEntry` extension and derives the type from the generated contract.
+  Verified: `npm run check` 0/0, model unit + live e2e green. See
+  `docs/upstream-requests/lq-ai-models-undocumented-alias-fields.md`.
 - `4df3b9b` → `7c7ce14` (2026-05-25): lq-ai #103 fixes the gateway so **streamed**
   completions persist their `inference_routing_log` row (the success-path write was after
   the SSE `[DONE]`, so connection teardown cancelled it). Without it, the P2c Receipts

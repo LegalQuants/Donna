@@ -2982,6 +2982,8 @@ export interface paths {
                                 routed_inference_tier?: 1 | 2 | 3 | 4 | 5;
                                 /** @enum {string} */
                                 provider_type?: "anthropic" | "openai" | "vertex" | "cohere" | "azure_openai" | "bedrock" | "ollama" | "vllm" | "openai_compatible";
+                                lq_ai_resolves_to?: string;
+                                lq_ai_fallback_count?: number;
                             }[];
                         };
                     };
