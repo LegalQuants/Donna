@@ -171,4 +171,32 @@ describe('createChatStream', () => {
     expect(urls).toContain('/chats/c1/receipts?event_kinds=inference');
     expect(chat.messages[1].anonymized).toBe(true);
   });
+
+  it('posts the chosen model in the request body and reuses it on retry', async () => {
+    const frames = () => streamResponse([
+      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+      'data: [DONE]\n\n'
+    ]);
+    // Fresh Response per call (a single reused Response would lock its body on the
+    // second read). Each stream is followed by a loadAnonymization receipts GET.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(frames()) // call 0: send POST
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadAnonymization GET
+      .mockResolvedValueOnce(frames()) // call 2: retry POST
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 3: loadAnonymization GET
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'fast');
+    const firstBody = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(firstBody).toMatchObject({ content: 'hi', model: 'fast' });
+
+    await chat.retry();
+    // calls[2] is the retry POST (calls[1]/[3] are the receipts GETs, which carry no init).
+    const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+    expect(retryBody.model).toBe('fast');
+    expect(chat.messages[1].status).toBe('done');
+    expect(chat.status).toBe('idle');
+  });
 });

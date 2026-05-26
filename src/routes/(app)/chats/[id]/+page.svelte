@@ -4,6 +4,7 @@
   import Message from '$lib/components/Message.svelte';
   import { createChatStream } from '$lib/chat/chatStream.svelte';
   import ReceiptsDrawer from '$lib/components/ReceiptsDrawer.svelte';
+  import { modelStore } from '$lib/models/store.svelte';
   import { ReceiptText } from '@lucide/svelte';
 
   let { data } = $props();
@@ -17,9 +18,9 @@
   let showReceipts = $state(false);
   let scroller = $state<HTMLElement>();
 
-  function submit(text: string) {
+  function submit(text: string, model = 'smart') {
     draftValue = '';
-    chat.send(text);
+    chat.send(text, model);
   }
   function retry() {
     chat.retry();
@@ -35,8 +36,10 @@
   });
 
   // Land → stream: if the landing handed us a draft and this is a fresh chat, send it.
+  // Use the picker selection (persisted to localStorage on the landing composer) so a
+  // model chosen before the first message is honored, not silently reset to smart.
   onMount(() => {
-    if (data.draft && data.messages.length === 0) submit(data.draft);
+    if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel);
   });
 </script>
 

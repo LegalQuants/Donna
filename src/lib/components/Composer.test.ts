@@ -37,4 +37,13 @@ describe('Composer', () => {
     btn.click();
     expect(onstop).toHaveBeenCalledTimes(1);
   });
+
+  it('renders the model picker and submits the selected model', async () => {
+    const onsubmit = vi.fn();
+    const { getByRole, getByTestId } = render(Composer, { props: { onsubmit } });
+    expect(getByTestId('model-picker')).toBeInTheDocument();
+    await userEvent.type(getByRole('textbox'), 'hello');
+    await userEvent.click(getByRole('button', { name: /send/i }));
+    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String));
+  });
 });
