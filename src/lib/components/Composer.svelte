@@ -1,21 +1,25 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ArrowRight, Square } from '@lucide/svelte';
+  import { ArrowRight, Square, X } from '@lucide/svelte';
   import ModelPicker from './ModelPicker.svelte';
+  import SkillAttach from './SkillAttach.svelte';
   import { modelStore } from '$lib/models/store.svelte';
+  import type { createSkillAttach } from '$lib/skills/attach.svelte';
 
   let {
     value = $bindable(''),
     placeholder = 'Ask a question about your documents…',
     onsubmit,
     streaming = false,
-    onstop
+    onstop,
+    skillAttach
   }: {
     value?: string;
     placeholder?: string;
-    onsubmit?: (text: string, model: string) => void;
+    onsubmit?: (text: string, model: string, skills: string[]) => void;
     streaming?: boolean;
     onstop?: () => void;
+    skillAttach?: ReturnType<typeof createSkillAttach>;
   } = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
@@ -32,7 +36,7 @@
   function submit() {
     const text = value.trim();
     if (!text) return;
-    onsubmit?.(text, modelStore.selectedModel);
+    onsubmit?.(text, modelStore.selectedModel, skillAttach?.names ?? []);
   }
   function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -43,6 +47,24 @@
 </script>
 
 <div class="rounded-t-mlq-composer border border-mlq-subtle bg-mlq-surface p-3 shadow-sm">
+  {#if skillAttach && skillAttach.attached.length}
+    <div class="mb-2 flex flex-wrap gap-1.5">
+      {#each skillAttach.attached as s (s.slug)}
+        <span class="inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text">
+          {s.title}
+          <button
+            type="button"
+            aria-label={`Remove ${s.title}`}
+            onclick={() => skillAttach?.remove(s.slug)}
+            class="text-mlq-muted hover:text-mlq-text"
+          >
+            <X size={12} />
+          </button>
+        </span>
+      {/each}
+    </div>
+  {/if}
+
   <textarea
     bind:this={textarea}
     bind:value
@@ -60,6 +82,16 @@
       error={modelStore.error}
       onselect={modelStore.setModel}
     />
+    {#if skillAttach}
+      <SkillAttach
+        results={skillAttach.results}
+        loading={skillAttach.loading}
+        error={skillAttach.error}
+        onopen={skillAttach.open}
+        onsearch={skillAttach.search}
+        onattach={skillAttach.attach}
+      />
+    {/if}
     <span class="flex-1"></span>
     {#if streaming}
       <button type="button" onclick={() => onstop?.()} aria-label="Stop" class="rounded-mlq-control bg-mlq-strong p-2 text-white">

@@ -44,6 +44,48 @@ describe('Composer', () => {
     expect(getByTestId('model-picker')).toBeInTheDocument();
     await userEvent.type(getByRole('textbox'), 'hello');
     await userEvent.click(getByRole('button', { name: /send/i }));
-    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String));
+    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String), []);
+  });
+
+  it('hides skill UI and submits empty skills when no skillAttach is passed (landing)', async () => {
+    const onsubmit = vi.fn();
+    const { getByRole, queryByTestId } = render(Composer, { props: { onsubmit } });
+    expect(queryByTestId('skill-attach')).toBeNull();
+    await userEvent.type(getByRole('textbox'), 'hello');
+    await userEvent.click(getByRole('button', { name: /send/i }));
+    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String), []);
+  });
+
+  it('renders chips + skill button and submits attached slugs when skillAttach is passed', async () => {
+    const onsubmit = vi.fn();
+    const skillAttach = {
+      attached: [{ slug: 'nda-review', title: 'NDA Review' }],
+      results: [],
+      loading: false,
+      error: false,
+      names: ['nda-review'],
+      open: vi.fn(),
+      search: vi.fn(),
+      attach: vi.fn(),
+      remove: vi.fn()
+    } as unknown as ReturnType<typeof import('$lib/skills/attach.svelte').createSkillAttach>;
+    const { getByRole, getByTestId, getByText } = render(Composer, { props: { onsubmit, skillAttach } });
+    expect(getByTestId('skill-attach')).toBeInTheDocument();
+    expect(getByText('NDA Review')).toBeInTheDocument();
+    await userEvent.type(getByRole('textbox'), 'review this');
+    await userEvent.click(getByRole('button', { name: /send/i }));
+    expect(onsubmit).toHaveBeenCalledWith('review this', expect.any(String), ['nda-review']);
+  });
+
+  it('removes a chip via its remove control', async () => {
+    const remove = vi.fn();
+    const skillAttach = {
+      attached: [{ slug: 'nda-review', title: 'NDA Review' }],
+      results: [], loading: false, error: false, names: ['nda-review'],
+      open: vi.fn(), search: vi.fn(), attach: vi.fn(), remove
+    } as unknown as ReturnType<typeof import('$lib/skills/attach.svelte').createSkillAttach>;
+    const { getByRole } = render(Composer, { props: { skillAttach } });
+    await userEvent.click(getByRole('button', { name: /remove nda review/i }));
+    expect(remove).toHaveBeenCalledWith('nda-review');
   });
 });
