@@ -88,4 +88,33 @@ describe('Composer', () => {
     await userEvent.click(getByRole('button', { name: /remove nda review/i }));
     expect(remove).toHaveBeenCalledWith('nda-review');
   });
+
+  it('hides the enhance button when no enhance controller is passed', () => {
+    const { queryByTestId } = render(Composer, { props: {} });
+    expect(queryByTestId('enhance-button')).toBeNull();
+  });
+
+  it('shows the enhance button and runs it with the current draft', async () => {
+    const run = vi.fn();
+    const enhance = {
+      status: 'idle', result: null, run, cancel: vi.fn(), accept: vi.fn(), discard: vi.fn()
+    } as unknown as ReturnType<typeof import('$lib/enhance/enhance.svelte').createEnhance>;
+    const { getByRole, getByTestId } = render(Composer, { props: { enhance } });
+    await userEvent.type(getByRole('textbox'), 'review this');
+    await userEvent.click(getByTestId('enhance-button'));
+    expect(run).toHaveBeenCalledWith('review this');
+  });
+
+  it('renders the preview and applies accepted text to the textarea', async () => {
+    const accept = vi.fn(() => 'EXPANDED TEXT');
+    const enhance = {
+      status: 'preview',
+      result: { interaction_id: 'i1', expansion_applied: true, expanded_prompt: 'EXPANDED TEXT', reasoning: [] },
+      run: vi.fn(), cancel: vi.fn(), accept, discard: vi.fn()
+    } as unknown as ReturnType<typeof import('$lib/enhance/enhance.svelte').createEnhance>;
+    const { getByRole, getByTestId } = render(Composer, { props: { enhance } });
+    await userEvent.click(getByTestId('enhance-accept'));
+    expect(accept).toHaveBeenCalled();
+    expect((getByRole('textbox') as HTMLTextAreaElement).value).toBe('EXPANDED TEXT');
+  });
 });
