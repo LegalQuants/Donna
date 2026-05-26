@@ -1,20 +1,13 @@
-/** A raw entry from GET /api/v1/models (gateway passthrough). `lq_ai_resolves_to`
- *  and `lq_ai_fallback_count` are present live but absent from the pinned OpenAPI,
- *  so we type them here rather than via `npm run gen:api`. */
-export interface RawModelEntry {
-  id: string;
-  object: 'model';
-  lq_ai_kind: 'alias' | 'provider_native';
-  routed_inference_tier?: number;
-  provider_type?: string;
-  lq_ai_resolves_to?: string;
-  lq_ai_fallback_count?: number;
-}
+import type { paths } from '$lib/api/backend';
 
-export interface ModelsListResponse {
-  object: 'list';
-  data: RawModelEntry[];
-}
+/** The `GET /api/v1/models` 200 body, sourced directly from the generated
+ *  backend contract (lq-ai #105 documents `lq_ai_resolves_to` /
+ *  `lq_ai_fallback_count`, so no hand-typed extension is needed). */
+export type ModelsListResponse =
+  paths['/api/v1/models']['get']['responses']['200']['content']['application/json'];
+
+/** One raw model entry (alias or provider-native) from that response. */
+export type RawModelEntry = ModelsListResponse['data'][number];
 
 /** A normalized, chat-usable alias for the picker. */
 export interface ChatModelOption {
