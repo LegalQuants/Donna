@@ -199,4 +199,44 @@ describe('createChatStream', () => {
     expect(chat.messages[1].status).toBe('done');
     expect(chat.status).toBe('idle');
   });
+
+  it('posts attached skills in the body and reuses them on retry', async () => {
+    const frames = () => streamResponse([
+      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+      'data: [DONE]\n\n'
+    ]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(frames()) // call 0: send POST
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadAnonymization GET
+      .mockResolvedValueOnce(frames()) // call 2: retry POST
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 3: loadAnonymization GET
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', ['nda-review']);
+    const firstBody = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(firstBody).toMatchObject({ content: 'hi', model: 'smart', skills: ['nda-review'] });
+
+    await chat.retry();
+    const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+    expect(retryBody.skills).toEqual(['nda-review']);
+    expect(chat.messages[1].status).toBe('done');
+  });
+
+  it('omits skills from the body when none are attached', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart');
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect('skills' in body).toBe(false);
+  });
 });
