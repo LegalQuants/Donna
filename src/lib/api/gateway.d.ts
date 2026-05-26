@@ -1243,9 +1243,11 @@ export interface components {
             lq_ai_kind: "alias" | "provider_native";
             /**
              * @description Tier the request would land at if dispatched at this id.
-             *     Present on ``provider_native`` rows; omitted on aliases
-             *     (the alias may resolve to different providers via fallback,
-             *     so the tier is settled per-request, not per-alias).
+             *     Present on ``provider_native`` rows and on ``alias`` rows
+             *     (where it is the tier of the alias's *primary* resolution).
+             *     For an alias the tier actually applied can still differ
+             *     per-request if a fallback step runs, so treat it as the
+             *     expected/primary tier rather than a guarantee.
              * @enum {integer}
              */
             routed_inference_tier?: 1 | 2 | 3 | 4 | 5;
@@ -1256,6 +1258,21 @@ export interface components {
              * @enum {string}
              */
             provider_type?: "anthropic" | "openai" | "vertex" | "cohere" | "azure_openai" | "bedrock" | "ollama" | "vllm" | "openai_compatible";
+            /**
+             * @description ``alias`` rows only: the ``<provider_name>/<native_model>``
+             *     the alias resolves to today (its primary target), e.g.
+             *     ``"anthropic-prod/claude-opus-4-7"``. Absent on
+             *     ``provider_native`` rows. Optional — surfaced so a client
+             *     can show what an alias currently points at.
+             */
+            lq_ai_resolves_to?: string;
+            /**
+             * @description ``alias`` rows: how many entries are in the alias's fallback
+             *     chain after the primary. Present only when the alias has at
+             *     least one fallback (value ``> 0``); absent when there are no
+             *     fallbacks and on ``provider_native`` rows. Optional.
+             */
+            lq_ai_fallback_count?: number;
         };
         AliasFallback: {
             provider: string;
