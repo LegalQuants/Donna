@@ -4,18 +4,23 @@ import { lqStream } from '$lib/server/lqClient';
 export const POST: RequestHandler = async (event) => {
   let content = '';
   let model = 'smart';
+  let skills: string[] = [];
   try {
-    const body = (await event.request.json()) as { content?: string; model?: string };
+    const body = (await event.request.json()) as { content?: string; model?: string; skills?: string[] };
     content = (body.content ?? '').trim();
     const m = (body.model ?? '').trim();
     if (m) model = m;
+    if (Array.isArray(body.skills)) skills = body.skills.filter((s): s is string => typeof s === 'string');
   } catch {
     content = '';
   }
 
+  const payload: { content: string; model: string; stream: true; skills?: string[] } = { content, model, stream: true };
+  if (skills.length) payload.skills = skills;
+
   const upstream = await lqStream(event, `/api/v1/chats/${event.params.id}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ content, model, stream: true })
+    body: JSON.stringify(payload)
   });
 
   // Pipe the upstream SSE body straight through (no buffering). On a non-2xx

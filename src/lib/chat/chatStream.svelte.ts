@@ -50,6 +50,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 
   let lastUserContent = '';
   let lastModel = 'smart';
+  let lastSkills: string[] = [];
 
   // Citations live in the M2-A2 relational table, not the SSE complete frame.
   // Fetch them by message id once the assistant turn is persisted (one retry to
@@ -96,14 +97,16 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 
   // Stream a response into the assistant message at `idx` (already present and
   // reset to a streaming state by the caller). Shared by send() and retry().
-  async function runStream(idx: number, content: string, model: string) {
+  async function runStream(idx: number, content: string, model: string, skills: string[]) {
     status = 'streaming';
     controller = new AbortController();
     try {
+      const body: { content: string; model: string; skills?: string[] } = { content, model };
+      if (skills.length) body.skills = skills;
       const res = await fetch(`/chats/${chatId}/messages`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ content, model }),
+        body: JSON.stringify(body),
         signal: controller.signal
       });
       if (!res.ok || !res.body) {
@@ -152,16 +155,17 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     }
   }
 
-  async function send(content: string, model = 'smart') {
+  async function send(content: string, model = 'smart', skills: string[] = []) {
     if (status === 'streaming') return;
     lastUserContent = content;
     lastModel = model;
+    lastSkills = skills;
     messages = [
       ...messages,
       { key: crypto.randomUUID(), id: crypto.randomUUID(), role: 'user', content },
       { key: crypto.randomUUID(), id: 'pending', role: 'assistant', content: '', status: 'streaming' }
     ];
-    await runStream(messages.length - 1, content, model);
+    await runStream(messages.length - 1, content, model, skills);
   }
 
   // Re-run the last exchange in place (no duplicate user/assistant turns): reset
@@ -176,7 +180,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     messages[idx].citations = undefined;
     messages[idx].anonymized = undefined;
     messages[idx].status = 'streaming';
-    await runStream(idx, lastUserContent, lastModel);
+    await runStream(idx, lastUserContent, lastModel, lastSkills);
   }
 
   function stop() {
