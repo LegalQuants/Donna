@@ -17,9 +17,9 @@
   let showReceipts = $state(false);
   let scroller = $state<HTMLElement>();
 
-  function submit(text: string) {
+  function submit(text: string, model = 'smart') {
     draftValue = '';
-    chat.send(text);
+    chat.send(text, model);
   }
   function retry() {
     chat.retry();
