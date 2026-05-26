@@ -6,6 +6,7 @@
   import ReceiptsDrawer from '$lib/components/ReceiptsDrawer.svelte';
   import { modelStore } from '$lib/models/store.svelte';
   import { createSkillAttach } from '$lib/skills/attach.svelte';
+  import { createEnhance } from '$lib/enhance/enhance.svelte';
   import { ReceiptText } from '@lucide/svelte';
 
   let { data } = $props();
@@ -16,6 +17,7 @@
   // a child component so the controller re-initializes per chat.
   const chat = untrack(() => createChatStream(data.chatId, data.messages));
   const skillAttach = createSkillAttach();
+  const enhance = untrack(() => createEnhance(data.chatId, () => skillAttach.names));
   let draftValue = $state('');
   let showReceipts = $state(false);
   let scroller = $state<HTMLElement>();
@@ -71,6 +73,7 @@
       streaming={chat.status === 'streaming'}
       onstop={chat.stop}
       {skillAttach}
+      {enhance}
     />
     <p class="mt-2 text-center text-xs text-mlq-muted">AI can make mistakes. Answers are not legal advice.</p>
   </div>
