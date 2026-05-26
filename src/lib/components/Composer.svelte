@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ArrowRight, Square, X } from '@lucide/svelte';
+  import { ArrowRight, Square, X, Sparkles } from '@lucide/svelte';
   import ModelPicker from './ModelPicker.svelte';
   import SkillAttach from './SkillAttach.svelte';
+  import EnhancePreview from './EnhancePreview.svelte';
   import { modelStore } from '$lib/models/store.svelte';
   import type { createSkillAttach } from '$lib/skills/attach.svelte';
+  import type { createEnhance } from '$lib/enhance/enhance.svelte';
 
   let {
     value = $bindable(''),
@@ -12,7 +14,8 @@
     onsubmit,
     streaming = false,
     onstop,
-    skillAttach
+    skillAttach,
+    enhance
   }: {
     value?: string;
     placeholder?: string;
@@ -20,6 +23,7 @@
     streaming?: boolean;
     onstop?: () => void;
     skillAttach?: ReturnType<typeof createSkillAttach>;
+    enhance?: ReturnType<typeof createEnhance>;
   } = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
@@ -47,6 +51,16 @@
 </script>
 
 <div class="rounded-t-mlq-composer border border-mlq-subtle bg-mlq-surface p-3 shadow-sm">
+  {#if enhance}
+    {#if enhance.status === 'preview' && enhance.result}
+      <EnhancePreview result={enhance.result} onaccept={() => (value = enhance.accept())} ondiscard={enhance.discard} />
+    {:else if enhance.status === 'skipped'}
+      <p class="mb-2 text-xs text-mlq-muted">No changes suggested.</p>
+    {:else if enhance.status === 'error'}
+      <p class="mb-2 text-xs text-mlq-muted">Couldn't enhance the prompt.</p>
+    {/if}
+  {/if}
+
   {#if skillAttach && skillAttach.attached.length}
     <div class="mb-2 flex flex-wrap gap-1.5">
       {#each skillAttach.attached as s (s.slug)}
@@ -91,6 +105,24 @@
         onsearch={skillAttach.search}
         onattach={skillAttach.attach}
       />
+    {/if}
+    {#if enhance}
+      {#if enhance.status === 'loading'}
+        <span class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-muted">
+          Enhancing…
+          <button type="button" aria-label="Cancel enhance" onclick={enhance.cancel} class="hover:text-mlq-text"><X size={12} /></button>
+        </span>
+      {:else}
+        <button
+          type="button"
+          data-testid="enhance-button"
+          onclick={() => enhance.run(value)}
+          disabled={!value.trim()}
+          class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text disabled:opacity-40"
+        >
+          <Sparkles size={13} /> Enhance
+        </button>
+      {/if}
     {/if}
     <span class="flex-1"></span>
     {#if streaming}
