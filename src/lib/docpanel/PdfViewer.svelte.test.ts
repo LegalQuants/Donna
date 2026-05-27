@@ -64,10 +64,30 @@ describe('PdfViewer', () => {
     const bytes = new Uint8Array([0x25]).buffer;
     const fetchFn = vi.fn().mockResolvedValue(new Response(bytes, { status: 200 }));
     const renderPdf = vi.fn().mockResolvedValue({ numPages: 1 }); // renders nothing
-    const highlightQuote = vi.fn().mockReturnValue('found');
+    const highlightQuote = vi.fn();
     const onhighlight = vi.fn();
     render(PdfViewer, { props: { fileId: 'f1', page: 9, quote: 'x', fetchFn, renderPdf, highlightQuote, onhighlight } });
     await vi.waitFor(() => expect(onhighlight).toHaveBeenCalledWith('miss'));
     expect(highlightQuote).not.toHaveBeenCalled(); // no page element → miss before calling
+  });
+
+  it('reports "miss" when the page is present but the quote is not located', async () => {
+    const bytes = new Uint8Array([0x25]).buffer;
+    const fetchFn = vi.fn().mockResolvedValue(new Response(bytes, { status: 200 }));
+    const renderPdf = vi.fn().mockImplementation(async (container: HTMLElement) => {
+      const pg = document.createElement('div');
+      pg.className = 'pdf-page';
+      pg.dataset.pageNumber = '1';
+      const tl = document.createElement('div');
+      tl.className = 'textLayer';
+      pg.appendChild(tl);
+      container.appendChild(pg);
+      return { numPages: 1 };
+    });
+    const highlightQuote = vi.fn().mockReturnValue('miss');
+    const onhighlight = vi.fn();
+    render(PdfViewer, { props: { fileId: 'f1', page: 1, quote: 'absent text', fetchFn, renderPdf, highlightQuote, onhighlight } });
+    await vi.waitFor(() => expect(highlightQuote).toHaveBeenCalled());
+    await vi.waitFor(() => expect(onhighlight).toHaveBeenCalledWith('miss'));
   });
 });
