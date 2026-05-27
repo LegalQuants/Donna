@@ -49,30 +49,35 @@ test('create a matter, start a chat in it, and rename + archive', async ({ page 
   await page.getByRole('button', { name: 'Archive' }).click(); // opens the confirm modal
   await page.locator('form[action="?/archive"] button[type="submit"]').click(); // confirm
   await page.waitForURL('**/matters');
+  await expect(page.getByRole('heading', { name: 'Matters' })).toBeVisible();
   await expect(page.getByText(renamed)).toHaveCount(0);
 });
 
 test('a matter with a KB lights up citations for a chat scoped via the landing picker', async ({ page }) => {
   test.setTimeout(240_000);
   const tok = await token();
-  const pid = (await api(tok, '/projects', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: `E2E Cited ${Date.now()}` }) }).then((r) => r.json())).id;
+  const matterName = `E2E Cited ${Date.now()}`;
+  const pid = (await api(tok, '/projects', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: matterName }) }).then((r) => r.json())).id;
   const kid = (await api(tok, '/knowledge-bases', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'E2E KB' }) }).then((r) => r.json())).id;
   await api(tok, `/projects/${pid}/knowledge-bases`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ knowledge_base_id: kid }) });
   const fd = new FormData();
   fd.append('file', new Blob([readFileSync(PDF)], { type: 'application/pdf' }), 'spike.pdf');
   const fid = (await api(tok, '/files', { method: 'POST', body: fd }).then((r) => r.json())).id;
-  for (let i = 0; i < 60; i++) { const st = (await api(tok, `/files/${fid}`).then((r) => r.json())).ingestion_status; if (st === 'ready') break; if (st === 'failed') throw new Error('ingestion failed'); await new Promise((r) => setTimeout(r, 2000)); }
+  for (let i = 0; i < 60; i++) { const st = (await api(tok, `/files/${fid}`).then((r) => r.json())).ingestion_status; if (st === 'ready') break; if (st === 'failed') throw new Error('ingestion failed'); if (i === 59) throw new Error('ingestion timed out'); await new Promise((r) => setTimeout(r, 2000)); }
   await api(tok, `/knowledge-bases/${kid}/files`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file_id: fid }) });
-  for (let i = 0; i < 60; i++) { const res = await api(tok, `/knowledge-bases/${kid}/query`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: 'termination convenience notice', top_k: 1 }) }).then((r) => r.json()); if ((res.results ?? []).length > 0) break; await new Promise((r) => setTimeout(r, 2000)); }
+  for (let i = 0; i < 60; i++) { const res = await api(tok, `/knowledge-bases/${kid}/query`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: 'termination convenience notice', top_k: 1 }) }).then((r) => r.json()); if ((res.results ?? []).length > 0) break; if (i === 59) throw new Error('retrieval timed out'); await new Promise((r) => setTimeout(r, 2000)); }
 
   await login(page);
   // Pick the seeded matter in the landing composer, then send a grounded question.
   await page.getByRole('button', { name: /choose matter/i }).click();
-  await page.getByRole('button', { name: new RegExp('E2E Cited', 'i') }).click();
+  await page.getByRole('button', { name: matterName, exact: true }).click();
   await page.locator('textarea').fill('What is the termination-for-convenience notice period? Quote the operative clause.');
   await page.locator('textarea').press('Enter');
 
   await page.waitForURL(/\/chats\//);
   // A citation pill appears → matter scoping lit up RAG for a normal UI chat.
   await expect(page.locator('.cite-tab').first()).toBeVisible({ timeout: 60000 });
+
+  // Cleanup: archive the seeded matter so the picker list doesn't grow unbounded.
+  await api(tok, `/projects/${pid}`, { method: 'DELETE' });
 });
