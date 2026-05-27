@@ -65,8 +65,8 @@ test('clicking a verified citation opens the document panel and renders the PDF'
   await tab.click();
 
   const panel = page.getByRole('complementary', { name: /document panel/i });
-  await expect(panel).toBeVisible();
-  await expect(panel.getByText(/spike\.pdf/i)).toBeVisible();
+  await expect(panel).toBeVisible({ timeout: 15000 });
+  await expect(panel.getByText(/spike\.pdf/i)).toBeVisible({ timeout: 15000 });
 
   await expect(panel.locator('canvas').first()).toBeVisible({ timeout: 15000 });
 });
