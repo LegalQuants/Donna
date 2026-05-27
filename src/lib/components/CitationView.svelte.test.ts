@@ -57,8 +57,8 @@ describe('CitationView onopen', () => {
     const citations: Citation[] = [
       { id: 'c1', source_file_id: 'f1', source_page: 1, source_text: 'cited clause', verified: true, partial: false }
     ];
-    render(CitationView, { props: { content: 'See the clause (Source: [1]).', citations, onopen } });
-    const pill = document.querySelector('[data-cite-index="1"]') as HTMLElement;
+    const { container } = render(CitationView, { props: { content: 'See the clause (Source: [1]).', citations, onopen } });
+    const pill = container.querySelector('[data-cite-index="1"]') as HTMLElement;
     expect(pill).toBeTruthy();
     await userEvent.click(pill);
     expect(onopen).toHaveBeenCalledWith(citations[0]);
