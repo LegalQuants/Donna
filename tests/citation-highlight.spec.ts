@@ -70,7 +70,7 @@ test('hovering a citation shows metadata; clicking highlights the cited span', a
   await pill.click();
   const panel = page.getByRole('complementary', { name: /document panel/i });
   await expect(panel).toBeVisible({ timeout: 15000 });
-  await expect(panel.getByText(/Jump to ¶|couldn't pinpoint|couldn't pinpoint/i)).toBeVisible({ timeout: 15000 });
+  await expect(panel.getByText(/Jump to ¶|cited passage on this page/i)).toBeVisible({ timeout: 15000 });
 
   // The CSS Custom Highlight 'cite' has at least one range (found state).
   await expect
