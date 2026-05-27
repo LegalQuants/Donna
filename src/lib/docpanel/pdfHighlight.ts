@@ -7,21 +7,24 @@
 
 const HIGHLIGHT_NAME = 'cite';
 
-/** Yield normalized characters with the raw index they came from. */
+/** Yield normalized characters with the raw (UTF-16) index they came from. Iterates by
+ *  code point so match boundaries never land inside a surrogate pair. */
 function* normalizedChars(s: string): Generator<{ ch: string; rawIndex: number }> {
   let prevSpace = false;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
+  let i = 0;
+  for (const c of s) {
+    const rawIndex = i;
+    i += c.length; // advance by UTF-16 code-unit width (1 or 2)
     if (c === '­') continue; // soft hyphen — drop
     const folded = c.normalize('NFKC'); // ﬁ → "fi", etc.
     for (const ch0 of folded) {
       if (/\s/.test(ch0)) {
         if (prevSpace) continue; // collapse whitespace runs
         prevSpace = true;
-        yield { ch: ' ', rawIndex: i };
+        yield { ch: ' ', rawIndex };
       } else {
         prevSpace = false;
-        yield { ch: ch0, rawIndex: i };
+        yield { ch: ch0, rawIndex };
       }
     }
   }
@@ -56,7 +59,7 @@ export function findQuoteRange(textLayerEl: HTMLElement, quote: string): Range |
     normToRaw.push(rawIndex);
   }
 
-  const idx = norm.indexOf(qnorm);
+  const idx = norm.indexOf(qnorm); // first occurrence wins
   if (idx === -1) return null;
 
   const start = nodeAt[normToRaw[idx]];
@@ -65,7 +68,8 @@ export function findQuoteRange(textLayerEl: HTMLElement, quote: string): Range |
 
   const range = document.createRange();
   range.setStart(start.node, start.offset);
-  range.setEnd(end.node, end.offset + 1);
+  const endCp = end.node.data.codePointAt(end.offset) ?? 0;
+  range.setEnd(end.node, end.offset + (endCp > 0xffff ? 2 : 1)); // include the full final code point
   return range;
 }
 
@@ -81,6 +85,8 @@ export function clearHighlight(): void {
  * Find `quote` on `pageEl`'s text layer; on success register the highlight and
  * scroll it into view; return 'found'/'miss'. Safe in jsdom / unsupported
  * browsers (highlight just isn't painted; the result still reflects the match).
+ * A previously-registered highlight is always cleared first, even when the new
+ * quote is not found (miss) — callers must not rely on a prior highlight persisting.
  */
 export function highlightQuote(pageEl: HTMLElement, quote: string): 'found' | 'miss' {
   const textLayer = pageEl.querySelector<HTMLElement>('.textLayer');
