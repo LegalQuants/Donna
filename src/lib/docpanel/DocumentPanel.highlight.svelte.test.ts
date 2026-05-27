@@ -37,4 +37,9 @@ describe('DocumentPanel highlight cleanup', () => {
     render(DocumentPanel, { props: { docPanel: stub(tab({ mime: 'application/pdf', status: 'ready' })) } });
     expect(clearHighlight).not.toHaveBeenCalled();
   });
+
+  it('does NOT clear while a PDF is still loading', () => {
+    render(DocumentPanel, { props: { docPanel: stub(tab({ mime: 'application/pdf', status: 'loading' })) } });
+    expect(clearHighlight).not.toHaveBeenCalled();
+  });
 });
