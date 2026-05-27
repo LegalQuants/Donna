@@ -34,11 +34,13 @@ export function createDocPanel() {
     if (existing) {
       existing.page = page;
       existing.quote = quote;
+      existing.cite = c;
+      existing.highlightStatus = 'pending';
       activeId = fileId;
       return;
     }
 
-    tabs = [...tabs, { fileId, filename: '', mime: '', status: 'loading', page, quote }];
+    tabs = [...tabs, { fileId, filename: '', mime: '', status: 'loading', page, quote, cite: c, highlightStatus: 'pending' }];
     activeId = fileId;
 
     try {
@@ -59,6 +61,11 @@ export function createDocPanel() {
 
   function setActive(id: string) {
     if (tabs.some((t) => t.fileId === id)) activeId = id;
+  }
+
+  function setHighlightStatus(fileId: string, status: 'found' | 'miss') {
+    const t = tabs.find((t) => t.fileId === fileId);
+    if (t) t.highlightStatus = status;
   }
 
   function close(id: string) {
@@ -90,7 +97,8 @@ export function createDocPanel() {
     setActive,
     close,
     closePanel,
-    setWidth
+    setWidth,
+    setHighlightStatus
   };
 }
 
