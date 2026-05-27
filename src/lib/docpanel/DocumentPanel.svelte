@@ -3,6 +3,8 @@
   import { X } from '@lucide/svelte';
   import PdfViewer from './PdfViewer.svelte';
   import type { DocPanel } from './docPanel.svelte';
+  import { citeState, tooltipFor } from '$lib/citations/types';
+  import { scrollCitedIntoView } from './pdfHighlight';
 
   let { docPanel }: { docPanel: DocPanel } = $props();
 
@@ -55,13 +57,48 @@
     </button>
   </div>
 
+  {#if docPanel.activeTab && docPanel.activeTab.mime === 'application/pdf' && docPanel.activeTab.status !== 'error'}
+    {@const tab = docPanel.activeTab}
+    {@const cs = citeState(tab.cite)}
+    <div
+      class="flex items-center gap-2 border-b px-3 py-1.5 text-[11px] {tab.highlightStatus === 'miss' ? 'border-mlq-caveats/40 bg-mlq-caveats/10' : 'border-mlq-subtle bg-mlq-surface-alt'}"
+    >
+      <span
+        class="shrink-0 rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold {cs === 'verified' ? 'bg-mlq-success/15 text-mlq-success' : cs === 'caveats' ? 'bg-mlq-caveats/15 text-mlq-caveats' : 'bg-mlq-error/15 text-mlq-error'}"
+        title={tooltipFor(tab.cite)}
+      >
+        {cs === 'verified' ? '✓ Verified' : cs === 'caveats' ? 'Caveats' : 'Unverified'}
+      </span>
+      {#if tab.highlightStatus === 'miss'}
+        <span class="line-clamp-2 min-w-0 text-mlq-text">Cited passage on this page — couldn't pinpoint the exact span. <span class="italic text-mlq-muted">"{tab.quote}"</span></span>
+      {:else}
+        <span class="truncate italic text-mlq-muted">"{tab.quote}"</span>
+        {#if tab.highlightStatus === 'found'}
+          <button
+            type="button"
+            onclick={() => scrollCitedIntoView()}
+            class="ml-auto shrink-0 rounded-mlq-control px-1.5 py-0.5 font-medium text-mlq-workflow hover:underline"
+          >
+            Jump to ¶
+          </button>
+        {/if}
+      {/if}
+    </div>
+  {/if}
+
   <div class="relative min-h-0 flex-1">
     {#if docPanel.activeTab}
       {#if docPanel.activeTab.status === 'error'}
         <p class="p-4 text-center text-xs text-mlq-error">Could not load this document.</p>
       {:else if docPanel.activeTab.mime === 'application/pdf'}
-        {#key docPanel.activeTab.fileId}
-          <PdfViewer fileId={docPanel.activeTab.fileId} />
+        {@const tab = docPanel.activeTab}
+        {#key tab.fileId}
+          <PdfViewer
+            fileId={tab.fileId}
+            page={tab.page}
+            quote={tab.quote}
+            onhighlight={(s) => docPanel.setHighlightStatus(tab.fileId, s)}
+          />
         {/key}
       {:else if docPanel.activeTab.status === 'ready'}
         <!-- Non-PDF fallback card lands in P3-3. -->

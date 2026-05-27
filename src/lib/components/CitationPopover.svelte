@@ -31,10 +31,6 @@
   {:else}
     <p class="empty">This citation could not be matched to a source.</p>
   {/if}
-  <div class="foot">
-    <button type="button" disabled>Open in document →</button>
-    <span class="hint">Document panel arrives in P3</span>
-  </div>
 </div>
 
 <style>
@@ -49,8 +45,4 @@
     border-left: 3px solid var(--color-mlq-subtle); margin: 0.7rem 0.8rem; padding-left: 0.7rem; line-height: 1.5; }
   .meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; padding: 0 0.8rem 0.7rem; font-size: 11.5px; color: var(--color-mlq-muted); }
   .empty { padding: 0.7rem 0.8rem; font-size: 13px; color: var(--color-mlq-muted); }
-  .foot { display: flex; gap: 0.5rem; align-items: center; padding: 0.5rem 0.8rem; border-top: 1px solid var(--color-mlq-subtle); }
-  .foot button { font-size: 12px; border: 1px solid var(--color-mlq-subtle); background: var(--color-mlq-surface-alt);
-    border-radius: 6px; padding: 0.25rem 0.6rem; color: var(--color-mlq-text); opacity: 0.5; cursor: not-allowed; }
-  .hint { font-size: 10.5px; color: var(--color-mlq-muted); }
 </style>

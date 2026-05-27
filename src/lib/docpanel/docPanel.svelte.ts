@@ -1,5 +1,6 @@
 import type { Citation } from '$lib/citations/types';
 import type { DocTab } from './types';
+import { clearHighlight } from './pdfHighlight';
 
 const WIDTH_KEY = 'donna.docpanel.width';
 const DEFAULT_WIDTH = 480;
@@ -34,11 +35,13 @@ export function createDocPanel() {
     if (existing) {
       existing.page = page;
       existing.quote = quote;
+      existing.cite = c;
+      existing.highlightStatus = 'pending';
       activeId = fileId;
       return;
     }
 
-    tabs = [...tabs, { fileId, filename: '', mime: '', status: 'loading', page, quote }];
+    tabs = [...tabs, { fileId, filename: '', mime: '', status: 'loading', page, quote, cite: c, highlightStatus: 'pending' }];
     activeId = fileId;
 
     try {
@@ -61,6 +64,11 @@ export function createDocPanel() {
     if (tabs.some((t) => t.fileId === id)) activeId = id;
   }
 
+  function setHighlightStatus(fileId: string, status: 'found' | 'miss') {
+    const t = tabs.find((t) => t.fileId === fileId);
+    if (t) t.highlightStatus = status;
+  }
+
   function close(id: string) {
     tabs = tabs.filter((t) => t.fileId !== id);
     if (activeId === id) activeId = tabs.at(-1)?.fileId ?? null;
@@ -69,6 +77,7 @@ export function createDocPanel() {
 
   function closePanel() {
     open_ = false;
+    clearHighlight();
   }
 
   function setWidth(px: number) {
@@ -90,7 +99,8 @@ export function createDocPanel() {
     setActive,
     close,
     closePanel,
-    setWidth
+    setWidth,
+    setHighlightStatus
   };
 }
 
