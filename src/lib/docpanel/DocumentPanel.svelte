@@ -43,6 +43,9 @@
       onpointerdown={startResize}
       aria-hidden="true"
     ></div>
+    <!-- Simple button switcher (aria-current marks the active tab). A full
+         role="tablist"/tab + roving-tabindex + arrow-key nav is deferred with
+         keyboard tab navigation (out of scope for P3-3). -->
     <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
       {#each docPanel.tabs as tab (tab.fileId)}
         <div
