@@ -72,7 +72,10 @@ export function createDocPanel() {
   function close(id: string) {
     tabs = tabs.filter((t) => t.fileId !== id);
     if (activeId === id) activeId = tabs.at(-1)?.fileId ?? null;
-    if (tabs.length === 0) open_ = false;
+    if (tabs.length === 0) {
+      open_ = false;
+      clearHighlight();
+    }
   }
 
   function closePanel() {
