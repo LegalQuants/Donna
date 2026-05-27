@@ -1,15 +1,24 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { renderPdf as defaultRenderPdf, type RenderedPdf } from './pdfRender';
+  import { highlightQuote as defaultHighlightQuote } from './pdfHighlight';
 
   let {
     fileId,
+    page = null,
+    quote = '',
     fetchFn = fetch,
-    renderPdf = defaultRenderPdf
+    renderPdf = defaultRenderPdf,
+    highlightQuote = defaultHighlightQuote,
+    onhighlight
   }: {
     fileId: string;
+    page?: number | null;
+    quote?: string;
     fetchFn?: typeof fetch;
     renderPdf?: (container: HTMLElement, bytes: ArrayBuffer) => Promise<RenderedPdf>;
+    highlightQuote?: (pageEl: HTMLElement, quote: string) => 'found' | 'miss';
+    onhighlight?: (status: 'found' | 'miss') => void;
   } = $props();
 
   let container = $state<HTMLElement | null>(null);
@@ -33,6 +42,18 @@
     return () => {
       cancelled = true;
     };
+  });
+
+  // After render, locate the cited page + highlight. Re-runs when page/quote change
+  // — so re-navigating within an already-open doc re-highlights without re-render.
+  $effect(() => {
+    if (status !== 'ready' || !container || page == null || !quote) return;
+    const pageEl = container.querySelector<HTMLElement>(`.pdf-page[data-page-number="${page}"]`);
+    if (!pageEl) {
+      onhighlight?.('miss');
+      return;
+    }
+    onhighlight?.(highlightQuote(pageEl, quote));
   });
 </script>
 
