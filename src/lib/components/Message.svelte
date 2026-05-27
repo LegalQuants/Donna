@@ -5,7 +5,7 @@
   import type { ChatMessage } from '$lib/chat/chatStream.svelte';
   import type { Citation } from '$lib/citations/types';
 
-  let { message, onretry, onopencitation }: { message: ChatMessage; onretry?: () => void; onopencitation?: (c: Citation) => void } = $props();
+  let { message, onretry, onactivatecitation }: { message: ChatMessage; onretry?: () => void; onactivatecitation?: (c: Citation) => void } = $props();
   let copied = $state(false);
 
   async function copy() {
@@ -45,7 +45,7 @@
       {#if message.content === '' && message.status === 'streaming'}
         <span class="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-mlq-workflow align-middle" aria-label="Generating"></span>
       {:else if message.status === 'done' && message.citations && message.citations.length > 0}
-        <CitationView content={message.content} citations={message.citations as Citation[]} onopen={onopencitation} />
+        <CitationView content={message.content} citations={message.citations as Citation[]} onactivate={onactivatecitation} />
       {:else}
         <Markdown content={message.content} />
       {/if}
