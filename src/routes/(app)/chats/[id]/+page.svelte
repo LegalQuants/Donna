@@ -65,7 +65,7 @@
     <div bind:this={scroller} class="flex-1 overflow-y-auto">
       <div class="mx-auto max-w-2xl px-6 py-8">
         {#each chat.messages as m (m.key)}
-          <Message message={m} onretry={retry} onopencitation={(c) => docPanel.open(c)} />
+          <Message message={m} onretry={retry} onactivatecitation={(c) => docPanel.open(c)} />
         {/each}
       </div>
     </div>
