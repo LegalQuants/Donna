@@ -88,4 +88,14 @@ describe('createDocPanel', () => {
     expect(dp.open_).toBe(false);
     expect(clearHighlight).toHaveBeenCalledTimes(1);
   });
+
+  it('closing a non-last tab does not clear the highlight', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(meta());
+    const dp = createDocPanel();
+    await dp.open(cite({ source_file_id: 'f1' }), fetchFn);
+    await dp.open(cite({ source_file_id: 'f2' }), fetchFn);
+    dp.close('f1');
+    expect(dp.tabs).toHaveLength(1);
+    expect(clearHighlight).not.toHaveBeenCalled();
+  });
 });
