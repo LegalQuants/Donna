@@ -53,6 +53,7 @@
 		"bits-ui": "^2.18.1",
 		"isomorphic-dompurify": "^3.14.0",
 		"katex": "^0.17.0",
-		"markdown-it": "^14.2.0"
+		"markdown-it": "^14.2.0",
+		"pdfjs-dist": "^5.7.284"
 	}
 }
