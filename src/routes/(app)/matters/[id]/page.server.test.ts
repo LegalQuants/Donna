@@ -24,6 +24,12 @@ describe('/matters/[id] load', () => {
 });
 
 describe('/matters/[id] actions', () => {
+  it('rename rejects an empty name without calling the backend', async () => {
+    const r = await actions.rename(ev({ name: '  ' }));
+    expect(r).toMatchObject({ status: 400 });
+    expect(lqFetch).not.toHaveBeenCalled();
+  });
+
   it('rename PATCHes name + description', async () => {
     lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
     const r = await actions.rename(ev({ name: 'Renamed', description: 'x' }));
