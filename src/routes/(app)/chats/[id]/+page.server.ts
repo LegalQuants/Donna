@@ -6,6 +6,7 @@ import { hasCitationMarkers } from '$lib/citations/transform';
 import type { Citation } from '$lib/citations/types';
 import { anonymizedByMessage } from '$lib/receipts/format';
 import type { ReceiptEvent } from '$lib/receipts/types';
+import { resolveMatter } from './matter';
 
 export const load: PageServerLoad = async (event) => {
   const draft = event.cookies.get('donna_draft') ?? null;
@@ -51,5 +52,7 @@ export const load: PageServerLoad = async (event) => {
     /* non-blocking — badges simply absent */
   }
 
-  return { chatId: event.params.id, messages, draft };
+  const matter = await resolveMatter((path) => lqFetch(event, path), event.params.id);
+
+  return { chatId: event.params.id, messages, draft, matter };
 };

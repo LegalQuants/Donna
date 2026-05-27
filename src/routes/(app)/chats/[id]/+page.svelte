@@ -10,6 +10,7 @@
   import { ReceiptText } from '@lucide/svelte';
   import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
   import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
+  import MatterBadge from '$lib/matters/MatterBadge.svelte';
 
   let { data } = $props();
 
@@ -52,7 +53,8 @@
 
 <div class="flex h-full min-h-0">
   <div class="flex min-w-0 flex-1 flex-col">
-    <div class="flex items-center justify-end border-b border-mlq-subtle px-6 py-2">
+    <div class="flex items-center justify-between border-b border-mlq-subtle px-6 py-2">
+      <MatterBadge matter={data.matter} />
       <button
         type="button"
         onclick={() => (showReceipts = true)}
