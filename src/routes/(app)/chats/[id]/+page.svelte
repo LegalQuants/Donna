@@ -8,6 +8,8 @@
   import { createSkillAttach } from '$lib/skills/attach.svelte';
   import { createEnhance } from '$lib/enhance/enhance.svelte';
   import { ReceiptText } from '@lucide/svelte';
+  import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
+  import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
 
   let { data } = $props();
 
@@ -18,6 +20,7 @@
   const chat = untrack(() => createChatStream(data.chatId, data.messages));
   const skillAttach = createSkillAttach();
   const enhance = untrack(() => createEnhance(data.chatId, () => skillAttach.names));
+  const docPanel = createDocPanel();
   let draftValue = $state('');
   let showReceipts = $state(false);
   let scroller = $state<HTMLElement>();
@@ -47,36 +50,41 @@
   });
 </script>
 
-<div class="flex h-full flex-col">
-  <div class="flex items-center justify-end border-b border-mlq-subtle px-6 py-2">
-    <button
-      type="button"
-      onclick={() => (showReceipts = true)}
-      class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
-    >
-      <ReceiptText size={14} /> Receipts
-    </button>
-  </div>
-
-  <div bind:this={scroller} class="flex-1 overflow-y-auto">
-    <div class="mx-auto max-w-2xl px-6 py-8">
-      {#each chat.messages as m (m.key)}
-        <Message message={m} onretry={retry} />
-      {/each}
+<div class="flex h-full min-h-0">
+  <div class="flex min-w-0 flex-1 flex-col">
+    <div class="flex items-center justify-end border-b border-mlq-subtle px-6 py-2">
+      <button
+        type="button"
+        onclick={() => (showReceipts = true)}
+        class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
+      >
+        <ReceiptText size={14} /> Receipts
+      </button>
     </div>
-  </div>
 
-  <div class="mx-auto w-full max-w-2xl px-6 pb-4">
-    <Composer
-      bind:value={draftValue}
-      onsubmit={submit}
-      streaming={chat.status === 'streaming'}
-      onstop={chat.stop}
-      {skillAttach}
-      {enhance}
-    />
-    <p class="mt-2 text-center text-xs text-mlq-muted">AI can make mistakes. Answers are not legal advice.</p>
-  </div>
+    <div bind:this={scroller} class="flex-1 overflow-y-auto">
+      <div class="mx-auto max-w-2xl px-6 py-8">
+        {#each chat.messages as m (m.key)}
+          <Message message={m} onretry={retry} onopencitation={(c) => docPanel.open(c)} />
+        {/each}
+      </div>
+    </div>
 
-  <ReceiptsDrawer chatId={data.chatId} open={showReceipts} onclose={() => (showReceipts = false)} />
+    <div class="mx-auto w-full max-w-2xl px-6 pb-4">
+      <Composer
+        bind:value={draftValue}
+        onsubmit={submit}
+        streaming={chat.status === 'streaming'}
+        onstop={chat.stop}
+        {skillAttach}
+        {enhance}
+      />
+      <p class="mt-2 text-center text-xs text-mlq-muted">AI can make mistakes. Answers are not legal advice.</p>
+    </div>
+
+    <ReceiptsDrawer chatId={data.chatId} open={showReceipts} onclose={() => (showReceipts = false)} />
+  </div>
+  {#if docPanel.open_}
+    <DocumentPanel {docPanel} />
+  {/if}
 </div>
