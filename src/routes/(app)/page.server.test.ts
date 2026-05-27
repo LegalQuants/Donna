@@ -17,6 +17,12 @@ describe('landing load', () => {
     expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects');
     expect(out.matters.map((m) => m.id)).toEqual(['a']);
   });
+
+  it('returns empty matters when the backend errors (landing stays usable)', async () => {
+    lqFetch.mockResolvedValue(new Response(null, { status: 503 }));
+    const out = (await load({ cookies: cookies() } as never)) as { matters: unknown[] };
+    expect(out.matters).toEqual([]);
+  });
 });
 
 describe('landing start action', () => {
