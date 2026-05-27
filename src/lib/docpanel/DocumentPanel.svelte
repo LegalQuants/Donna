@@ -2,9 +2,10 @@
   import { onDestroy } from 'svelte';
   import { X } from '@lucide/svelte';
   import PdfViewer from './PdfViewer.svelte';
+  import UnsupportedFileCard from './UnsupportedFileCard.svelte';
   import type { DocPanel } from './docPanel.svelte';
   import { citeState, tooltipFor } from '$lib/citations/types';
-  import { scrollCitedIntoView } from './pdfHighlight';
+  import { scrollCitedIntoView, clearHighlight } from './pdfHighlight';
 
   let { docPanel }: { docPanel: DocPanel } = $props();
 
@@ -30,6 +31,15 @@
   }
 
   onDestroy(stopResize);
+
+  // The 'cite' highlight is a single global registration owned by the active PDF's
+  // PdfViewer. When the active tab is not a rendered PDF (non-PDF mime or load
+  // error), no PdfViewer is mounted to clear it — do it here so a previous tab's
+  // highlight never lingers after switching.
+  $effect(() => {
+    const t = docPanel.activeTab;
+    if (!t || t.mime !== 'application/pdf' || t.status === 'error') clearHighlight();
+  });
 </script>
 
 <aside
@@ -37,21 +47,43 @@
   style="width:{docPanel.width}px"
   aria-label="Document panel"
 >
-  <div class="flex items-center gap-2 border-b border-mlq-subtle px-3 py-2">
+  <div class="relative flex items-center gap-1 border-b border-mlq-subtle py-1.5 pl-2 pr-1">
     <div
       class="absolute left-0 top-0 h-full w-1 cursor-col-resize"
       onpointerdown={startResize}
       aria-hidden="true"
     ></div>
-    <span class="truncate text-xs font-medium text-mlq-text">{docPanel.activeTab?.filename || 'Document'}</span>
-    {#if docPanel.activeTab?.page}
-      <span class="text-[10px] text-mlq-muted">p.{docPanel.activeTab.page}</span>
-    {/if}
+    <!-- Simple button switcher (aria-current marks the active tab). A full
+         role="tablist"/tab + roving-tabindex + arrow-key nav is deferred with
+         keyboard tab navigation (out of scope for P3-3). -->
+    <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+      {#each docPanel.tabs as tab (tab.fileId)}
+        <div
+          class="flex max-w-[140px] shrink-0 items-center gap-0.5 rounded-mlq-control pl-2 pr-0.5 py-1 text-xs {tab.fileId === docPanel.activeId ? 'bg-mlq-surface-alt font-medium text-mlq-text' : 'text-mlq-muted hover:text-mlq-text'}"
+        >
+          <button
+            type="button"
+            aria-current={tab.fileId === docPanel.activeId ? 'true' : undefined}
+            onclick={() => docPanel.setActive(tab.fileId)}
+            class="min-w-0 truncate"
+            title={tab.filename || 'Document'}
+          >{tab.filename || 'Document'}</button>
+          <button
+            type="button"
+            onclick={() => docPanel.close(tab.fileId)}
+            aria-label="Close {tab.filename || 'document'}"
+            class="shrink-0 rounded-mlq-control p-0.5 text-mlq-muted hover:text-mlq-text"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      {/each}
+    </div>
     <button
       type="button"
       onclick={() => docPanel.closePanel()}
       aria-label="Close document panel"
-      class="ml-auto rounded-mlq-control p-1 text-mlq-muted hover:text-mlq-text"
+      class="shrink-0 rounded-mlq-control p-1 text-mlq-muted hover:text-mlq-text"
     >
       <X size={14} />
     </button>
@@ -63,6 +95,9 @@
     <div
       class="flex items-center gap-2 border-b px-3 py-1.5 text-[11px] {tab.highlightStatus === 'miss' ? 'border-mlq-caveats/40 bg-mlq-caveats/10' : 'border-mlq-subtle bg-mlq-surface-alt'}"
     >
+      {#if tab.page}
+        <span class="shrink-0 text-[10px] text-mlq-muted">p.{tab.page}</span>
+      {/if}
       <span
         class="shrink-0 rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold {cs === 'verified' ? 'bg-mlq-success/15 text-mlq-success' : cs === 'caveats' ? 'bg-mlq-caveats/15 text-mlq-caveats' : 'bg-mlq-error/15 text-mlq-error'}"
         title={tooltipFor(tab.cite)}
@@ -101,8 +136,8 @@
           />
         {/key}
       {:else if docPanel.activeTab.status === 'ready'}
-        <!-- Non-PDF fallback card lands in P3-3. -->
-        <p class="p-4 text-center text-xs text-mlq-muted">Preview not available for this file type.</p>
+        {@const tab = docPanel.activeTab}
+        <UnsupportedFileCard fileId={tab.fileId} filename={tab.filename} mime={tab.mime} />
       {/if}
     {/if}
   </div>

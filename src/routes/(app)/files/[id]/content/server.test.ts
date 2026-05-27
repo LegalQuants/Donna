@@ -22,6 +22,13 @@ describe('GET /files/[id]/content', () => {
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(new Uint8Array([0x25, 0x50, 0x44, 0x46]));
   });
 
+  it('forces attachment disposition so non-PDF bytes never render inline in our origin', async () => {
+    lqFetch.mockResolvedValue(new Response(new Uint8Array([0x25]), { status: 200, headers: { 'content-type': 'text/html' } }));
+    const res = await GET(event('f1'));
+    expect(res.headers.get('content-disposition')).toBe('attachment');
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+  });
+
   it('passes through 404 and maps other errors to 502', async () => {
     lqFetch.mockResolvedValue(new Response('no', { status: 404 }));
     await expect(GET(event())).rejects.toMatchObject({ status: 404 });
