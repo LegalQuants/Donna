@@ -1,6 +1,7 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
+import userEvent from '@testing-library/user-event';
 import CitationView from './CitationView.svelte';
 import { _resetFileCache } from '$lib/citations/files';
 import type { Citation } from '$lib/citations/types';
@@ -47,5 +48,19 @@ describe('CitationView', () => {
     expect(tab).not.toBeNull();
     await fireEvent.click(tab);
     expect(getByText(/could not be matched/i)).toBeInTheDocument();
+  });
+});
+
+describe('CitationView onopen', () => {
+  it('calls onopen with the citation when a pill is activated', async () => {
+    const onopen = vi.fn();
+    const citations: Citation[] = [
+      { id: 'c1', source_file_id: 'f1', source_page: 1, source_text: 'cited clause', verified: true, partial: false }
+    ];
+    const { container } = render(CitationView, { props: { content: 'See the clause (Source: [1]).', citations, onopen } });
+    const pill = container.querySelector('[data-cite-index="1"]') as HTMLElement;
+    expect(pill).toBeTruthy();
+    await userEvent.click(pill);
+    expect(onopen).toHaveBeenCalledWith(citations[0]);
   });
 });

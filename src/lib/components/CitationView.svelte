@@ -5,7 +5,7 @@
   import CitationPopover from './CitationPopover.svelte';
   import type { Citation } from '$lib/citations/types';
 
-  let { content = '', citations = [] }: { content?: string; citations?: Citation[] } = $props();
+  let { content = '', citations = [], onopen }: { content?: string; citations?: Citation[]; onopen?: (c: Citation) => void } = $props();
 
   // renderMarkdown sanitizes (DOMPurify); transformCitations only adds static pill markup.
   const html = $derived(transformCitations(renderMarkdown(content), citations));
@@ -25,6 +25,8 @@
 
   function openFrom(el: HTMLElement) {
     const n = Number(el.dataset.citeIndex);
+    const c = citations[n - 1];
+    if (c) onopen?.(c);
     if (openIndex === n) { close(); return; }
     openIndex = n;
     anchor = el;

@@ -4,7 +4,11 @@ import { json, error } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async (event) => {
   const res = await lqFetch(event, `/api/v1/files/${event.params.id}`);
-  if (!res.ok) throw error(res.status === 404 ? 404 : 502, 'Could not load file.');
-  const file = (await res.json()) as { filename?: string; page_count?: number | null };
-  return json({ filename: file.filename ?? null, page_count: file.page_count ?? null });
+  if (!res.ok) {
+    // 404 (missing/soft-deleted/cross-user) and the gateway 503/504 signals pass
+    // through; anything else becomes 502.
+    const status = res.status === 404 || res.status === 503 || res.status === 504 ? res.status : 502;
+    throw error(status, 'Could not load file metadata.');
+  }
+  return json(await res.json());
 };
