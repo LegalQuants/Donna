@@ -33,4 +33,18 @@ describe('DocumentPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: /close document panel/i }));
     expect(dp.closePanel).toHaveBeenCalledOnce();
   });
+
+  it('renders the error message when the active tab failed to load', () => {
+    render(DocumentPanel, {
+      props: { docPanel: stub({ activeTab: { fileId: 'f1', filename: 'spike.pdf', mime: 'application/pdf', status: 'error', page: 1, quote: 'x' } }) }
+    });
+    expect(screen.getByText(/could not load this document/i)).toBeInTheDocument();
+  });
+
+  it('shows a preview-not-available message for a ready non-PDF file', () => {
+    render(DocumentPanel, {
+      props: { docPanel: stub({ activeTab: { fileId: 'f2', filename: 'memo.docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', status: 'ready', page: null, quote: '' } }) }
+    });
+    expect(screen.getByText(/preview not available/i)).toBeInTheDocument();
+  });
 });

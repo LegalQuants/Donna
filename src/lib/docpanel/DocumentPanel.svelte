@@ -1,21 +1,33 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { X } from '@lucide/svelte';
   import PdfViewer from './PdfViewer.svelte';
   import type { DocPanel } from './docPanel.svelte';
 
   let { docPanel }: { docPanel: DocPanel } = $props();
 
+  let onMove: ((e: PointerEvent) => void) | null = null;
+  let onUp: (() => void) | null = null;
+
+  function stopResize() {
+    if (onMove) window.removeEventListener('pointermove', onMove);
+    if (onUp) window.removeEventListener('pointerup', onUp);
+    onMove = null;
+    onUp = null;
+  }
+
   // Drag the left edge to resize. Panel is docked right, so a smaller clientX = wider panel.
   function startResize(e: PointerEvent) {
     e.preventDefault();
-    const onMove = (m: PointerEvent) => docPanel.setWidth(window.innerWidth - m.clientX);
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
+    stopResize(); // guard against a stuck/duplicate drag
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    onMove = (m: PointerEvent) => docPanel.setWidth(window.innerWidth - m.clientX);
+    onUp = () => stopResize();
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
   }
+
+  onDestroy(stopResize);
 </script>
 
 <aside
