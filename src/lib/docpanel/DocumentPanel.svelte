@@ -37,21 +37,40 @@
   style="width:{docPanel.width}px"
   aria-label="Document panel"
 >
-  <div class="flex items-center gap-2 border-b border-mlq-subtle px-3 py-2">
+  <div class="relative flex items-center gap-1 border-b border-mlq-subtle py-1.5 pl-2 pr-1">
     <div
       class="absolute left-0 top-0 h-full w-1 cursor-col-resize"
       onpointerdown={startResize}
       aria-hidden="true"
     ></div>
-    <span class="truncate text-xs font-medium text-mlq-text">{docPanel.activeTab?.filename || 'Document'}</span>
-    {#if docPanel.activeTab?.page}
-      <span class="text-[10px] text-mlq-muted">p.{docPanel.activeTab.page}</span>
-    {/if}
+    <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+      {#each docPanel.tabs as tab (tab.fileId)}
+        <div
+          class="flex max-w-[140px] shrink-0 items-center gap-0.5 rounded-mlq-control pl-2 pr-0.5 py-1 text-xs {tab.fileId === docPanel.activeId ? 'bg-mlq-surface-alt font-medium text-mlq-text' : 'text-mlq-muted hover:text-mlq-text'}"
+        >
+          <button
+            type="button"
+            aria-current={tab.fileId === docPanel.activeId ? 'true' : undefined}
+            onclick={() => docPanel.setActive(tab.fileId)}
+            class="min-w-0 truncate"
+            title={tab.filename || 'Document'}
+          >{tab.filename || 'Document'}</button>
+          <button
+            type="button"
+            onclick={() => docPanel.close(tab.fileId)}
+            aria-label="Close {tab.filename || 'document'}"
+            class="shrink-0 rounded-mlq-control p-0.5 text-mlq-muted hover:text-mlq-text"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      {/each}
+    </div>
     <button
       type="button"
       onclick={() => docPanel.closePanel()}
       aria-label="Close document panel"
-      class="ml-auto rounded-mlq-control p-1 text-mlq-muted hover:text-mlq-text"
+      class="shrink-0 rounded-mlq-control p-1 text-mlq-muted hover:text-mlq-text"
     >
       <X size={14} />
     </button>
@@ -63,6 +82,9 @@
     <div
       class="flex items-center gap-2 border-b px-3 py-1.5 text-[11px] {tab.highlightStatus === 'miss' ? 'border-mlq-caveats/40 bg-mlq-caveats/10' : 'border-mlq-subtle bg-mlq-surface-alt'}"
     >
+      {#if tab.page}
+        <span class="shrink-0 text-[10px] text-mlq-muted">p.{tab.page}</span>
+      {/if}
       <span
         class="shrink-0 rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold {cs === 'verified' ? 'bg-mlq-success/15 text-mlq-success' : cs === 'caveats' ? 'bg-mlq-caveats/15 text-mlq-caveats' : 'bg-mlq-error/15 text-mlq-error'}"
         title={tooltipFor(tab.cite)}
