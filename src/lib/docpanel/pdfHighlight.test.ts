@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { findQuoteRange, highlightQuote, scrollCitedIntoView } from './pdfHighlight';
+import { describe, it, expect, afterEach } from 'vitest';
+import { findQuoteRange, highlightQuote, scrollCitedIntoView, clearHighlight } from './pdfHighlight';
+
+afterEach(() => { document.body.innerHTML = ''; });
 
 // Build a synthetic PDF.js-style text layer: one <span> per text run.
 function layer(...runs: string[]): HTMLElement {
@@ -59,6 +61,13 @@ describe('findQuoteRange', () => {
     const tl = layer('anything');
     expect(findQuoteRange(tl, '   ')).toBeNull();
   });
+
+  it('handles an astral-plane character at the match boundary without throwing', () => {
+    const tl = layer('alpha 𝐀 omega'); // 𝐀 = U+1D400, a surrogate pair
+    const range = findQuoteRange(tl, 'alpha 𝐀');
+    expect(range).not.toBeNull();
+    expect(range!.toString()).toBe('alpha 𝐀');
+  });
 });
 
 describe('highlightQuote', () => {
@@ -82,5 +91,11 @@ describe('highlightQuote', () => {
 describe('scrollCitedIntoView', () => {
   it('does not throw when there is no highlight / unsupported environment (jsdom)', () => {
     expect(() => scrollCitedIntoView()).not.toThrow();
+  });
+});
+
+describe('clearHighlight', () => {
+  it('does not throw in jsdom (CSS.highlights absent)', () => {
+    expect(() => clearHighlight()).not.toThrow();
   });
 });
