@@ -6,6 +6,12 @@
   let showRename = $state(false);
   let confirmArchive = $state(false);
 
+  // A successful rename returns { success: true } (no redirect); close the modal.
+  // Keyed on form?.success only, so reopening the modal later doesn't auto-close it.
+  $effect(() => {
+    if (form?.success) showRename = false;
+  });
+
   // Escape closes whichever modal is open (mirrors ReceiptsDrawer).
   $effect(() => {
     if (!showRename && !confirmArchive) return;
