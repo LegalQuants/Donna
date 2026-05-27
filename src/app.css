@@ -71,3 +71,12 @@
 .cite-tab.cite-caveats { background: var(--color-mlq-caveats); }
 .cite-tab.cite-unverified { background: var(--color-mlq-unverified); }
 .cite-tab:focus-visible { outline: 2px solid var(--color-mlq-strong); outline-offset: 1px; }
+
+/* P3-2 — citation highlight (CSS Custom Highlight API). Must be a global rule;
+   ::highlight() cannot be targeted from component-scoped styles. The PDF.js text
+   layer renders transparent glyphs over the canvas, so this paints a yellow box
+   behind the cited words. */
+::highlight(cite) {
+  background-color: #fff2a8;
+  color: inherit;
+}
