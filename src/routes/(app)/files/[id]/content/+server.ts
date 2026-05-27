@@ -11,6 +11,7 @@ export const GET: RequestHandler = async (event) => {
     status: res.status,
     headers: {
       'content-type': res.headers.get('content-type') ?? 'application/octet-stream',
+      'content-disposition': 'attachment',
       'cache-control': 'no-store',
       'x-content-type-options': 'nosniff'
     }
