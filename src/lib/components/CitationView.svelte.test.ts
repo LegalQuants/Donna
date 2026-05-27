@@ -26,4 +26,23 @@ describe('CitationView pill interaction', () => {
     expect(onactivate).toHaveBeenCalledWith(citations[0]);
     expect(container.querySelector('[role="dialog"]')).toBeFalsy();
   });
+
+  it('hides the popover on focusout', async () => {
+    const onactivate = vi.fn();
+    const { container } = render(CitationView, { props: { content: 'See the clause (Source: [1]).', citations, onactivate } });
+    const pill = container.querySelector('[data-cite-index="1"]') as HTMLElement;
+    await fireEvent.focusIn(pill);
+    expect(container.querySelector('[role="dialog"]')).toBeTruthy();
+    await fireEvent.focusOut(pill);
+    expect(container.querySelector('[role="dialog"]')).toBeFalsy();
+  });
+
+  it('activates on Enter without opening the popover', async () => {
+    const onactivate = vi.fn();
+    const { container } = render(CitationView, { props: { content: 'See the clause (Source: [1]).', citations, onactivate } });
+    const pill = container.querySelector('[data-cite-index="1"]') as HTMLElement;
+    await fireEvent.keyDown(pill, { key: 'Enter' });
+    expect(onactivate).toHaveBeenCalledWith(citations[0]);
+    expect(container.querySelector('[role="dialog"]')).toBeFalsy();
+  });
 });
