@@ -1,5 +1,6 @@
 <!-- src/lib/components/CitationView.svelte -->
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { renderMarkdown } from '$lib/markdown';
   import { transformCitations } from '$lib/citations/transform';
   import CitationPopover from './CitationPopover.svelte';
@@ -50,6 +51,7 @@
     hoverTimer = setTimeout(() => show(t), 120);
   }
   function onPointerOut(e: PointerEvent) {
+    // Only react when the pointer is leaving a pill (ignore movement over plain prose).
     if (!pillOf(e)) return;
     clearTimeout(hoverTimer);
     hoverTimer = setTimeout(hide, 120);
@@ -76,6 +78,8 @@
     if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); activate(t); }
     else if (e.key === 'Escape' && openIndex !== null) hide();
   }
+
+  onDestroy(() => clearTimeout(hoverTimer));
 </script>
 
 <div bind:this={container} class="cite-view" style="position:relative">
