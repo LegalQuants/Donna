@@ -7,7 +7,7 @@ const cite = (over: Partial<Citation> = {}): Citation => ({
   source_text: 'hello', verified: true, partial: false, ...over
 });
 
-const meta = (over = {}) =>
+const meta = (over: Record<string, unknown> = {}) =>
   new Response(JSON.stringify({ id: 'f1', filename: 'a.pdf', mime_type: 'application/pdf', ...over }), { status: 200 });
 
 beforeEach(() => localStorage.clear());

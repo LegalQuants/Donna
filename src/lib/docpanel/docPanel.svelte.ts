@@ -9,7 +9,8 @@ const MAX_WIDTH = 900;
 function readWidth(): number {
   try {
     const v = Number(localStorage.getItem(WIDTH_KEY));
-    return Number.isFinite(v) && v > 0 ? v : DEFAULT_WIDTH;
+    if (!Number.isFinite(v) || v <= 0) return DEFAULT_WIDTH;
+    return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(v)));
   } catch {
     return DEFAULT_WIDTH;
   }
@@ -37,19 +38,22 @@ export function createDocPanel() {
       return;
     }
 
-    const tab: DocTab = { fileId, filename: '', mime: '', status: 'loading', page, quote };
-    tabs = [...tabs, tab];
+    tabs = [...tabs, { fileId, filename: '', mime: '', status: 'loading', page, quote }];
     activeId = fileId;
 
     try {
       const res = await fetchFn(`/files/${fileId}`);
       if (!res.ok) throw new Error(String(res.status));
       const meta = (await res.json()) as { filename?: string; mime_type?: string };
-      tab.filename = meta.filename ?? '';
-      tab.mime = meta.mime_type ?? '';
-      tab.status = 'ready';
+      const entry = tabs.find((t) => t.fileId === fileId);
+      if (entry) {
+        entry.filename = meta.filename ?? '';
+        entry.mime = meta.mime_type ?? '';
+        entry.status = 'ready';
+      }
     } catch {
-      tab.status = 'error';
+      const entry = tabs.find((t) => t.fileId === fileId);
+      if (entry) entry.status = 'error';
     }
   }
 
