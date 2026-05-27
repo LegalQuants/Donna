@@ -2,9 +2,10 @@
   import { onDestroy } from 'svelte';
   import { X } from '@lucide/svelte';
   import PdfViewer from './PdfViewer.svelte';
+  import UnsupportedFileCard from './UnsupportedFileCard.svelte';
   import type { DocPanel } from './docPanel.svelte';
   import { citeState, tooltipFor } from '$lib/citations/types';
-  import { scrollCitedIntoView } from './pdfHighlight';
+  import { scrollCitedIntoView, clearHighlight } from './pdfHighlight';
 
   let { docPanel }: { docPanel: DocPanel } = $props();
 
@@ -30,6 +31,15 @@
   }
 
   onDestroy(stopResize);
+
+  // The 'cite' highlight is a single global registration owned by the active PDF's
+  // PdfViewer. When the active tab is not a rendered PDF (non-PDF mime or load
+  // error), no PdfViewer is mounted to clear it — do it here so a previous tab's
+  // highlight never lingers after switching.
+  $effect(() => {
+    const t = docPanel.activeTab;
+    if (!t || t.mime !== 'application/pdf' || t.status === 'error') clearHighlight();
+  });
 </script>
 
 <aside
@@ -126,8 +136,8 @@
           />
         {/key}
       {:else if docPanel.activeTab.status === 'ready'}
-        <!-- Non-PDF fallback card lands in P3-3. -->
-        <p class="p-4 text-center text-xs text-mlq-muted">Preview not available for this file type.</p>
+        {@const tab = docPanel.activeTab}
+        <UnsupportedFileCard fileId={tab.fileId} filename={tab.filename} mime={tab.mime} />
       {/if}
     {/if}
   </div>
