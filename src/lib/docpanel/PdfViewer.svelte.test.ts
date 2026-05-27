@@ -15,6 +15,7 @@ describe('PdfViewer', () => {
     expect(fetchFn).toHaveBeenCalledWith('/files/f1/content');
     const passedBytes = new Uint8Array(renderPdf.mock.calls[0][1]);
     expect(passedBytes).toEqual(new Uint8Array([0x25, 0x50, 0x44, 0x46]));
+    await vi.waitFor(() => expect(screen.queryByTestId('pdf-loading')).not.toBeInTheDocument());
   });
 
   it('shows an error state when the content fetch fails', async () => {
@@ -23,5 +24,13 @@ describe('PdfViewer', () => {
     render(PdfViewer, { props: { fileId: 'f1', fetchFn, renderPdf } });
     await vi.waitFor(() => expect(screen.getByTestId('pdf-error')).toBeInTheDocument());
     expect(renderPdf).not.toHaveBeenCalled();
+  });
+
+  it('shows an error state when renderPdf rejects', async () => {
+    const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer;
+    const fetchFn = vi.fn().mockResolvedValue(new Response(bytes, { status: 200, headers: { 'content-type': 'application/pdf' } }));
+    const renderPdf = vi.fn().mockRejectedValue(new Error('invalid PDF structure'));
+    render(PdfViewer, { props: { fileId: 'f1', fetchFn, renderPdf } });
+    await vi.waitFor(() => expect(screen.getByTestId('pdf-error')).toBeInTheDocument());
   });
 });

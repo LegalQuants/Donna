@@ -22,7 +22,8 @@
         const res = await fetchFn(`/files/${fileId}/content`);
         if (!res.ok) throw new Error(String(res.status));
         const bytes = await res.arrayBuffer();
-        if (cancelled || !container) return;
+        if (cancelled) return;
+        if (!container) throw new Error('container unmounted before render');
         await renderPdf(container, bytes);
         if (!cancelled) status = 'ready';
       } catch {
