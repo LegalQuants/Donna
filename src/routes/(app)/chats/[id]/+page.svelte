@@ -10,7 +10,6 @@
   import { ReceiptText } from '@lucide/svelte';
   import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
   import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
-  import type { Citation } from '$lib/citations/types';
 
   let { data } = $props();
 
@@ -66,7 +65,7 @@
     <div bind:this={scroller} class="flex-1 overflow-y-auto">
       <div class="mx-auto max-w-2xl px-6 py-8">
         {#each chat.messages as m (m.key)}
-          <Message message={m} onretry={retry} onopencitation={(c: Citation) => docPanel.open(c)} />
+          <Message message={m} onretry={retry} onopencitation={(c) => docPanel.open(c)} />
         {/each}
       </div>
     </div>
