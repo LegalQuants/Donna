@@ -55,4 +55,23 @@ describe('createDocPanel', () => {
     expect(localStorage.getItem('donna.docpanel.width')).toBe('620');
     expect(createDocPanel().width).toBe(620);
   });
+
+  it('stores the citation and starts highlight status pending', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(meta());
+    const dp = createDocPanel();
+    const c = cite({ source_file_id: 'f1', source_text: 'clause text' });
+    await dp.open(c, fetchFn);
+    expect(dp.activeTab?.cite).toEqual(c);
+    expect(dp.activeTab?.highlightStatus).toBe('pending');
+  });
+
+  it('setHighlightStatus updates the tab; re-opening (dedupe) resets it to pending', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(meta());
+    const dp = createDocPanel();
+    await dp.open(cite({ source_file_id: 'f1' }), fetchFn);
+    dp.setHighlightStatus('f1', 'found');
+    expect(dp.activeTab?.highlightStatus).toBe('found');
+    await dp.open(cite({ source_file_id: 'f1', source_page: 5, source_text: 'other' }), fetchFn);
+    expect(dp.activeTab?.highlightStatus).toBe('pending');
+  });
 });
