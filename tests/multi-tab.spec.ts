@@ -20,6 +20,7 @@ async function uploadAndIngest(token: string, name: string, path: string): Promi
     const st = (await j(token, `/files/${fid}`)).ingestion_status;
     if (st === 'ready') break;
     if (st === 'failed') throw new Error(`ingestion failed for ${name}`);
+    if (i === 59) throw new Error(`ingestion timed out for ${name}`);
     await new Promise((r) => setTimeout(r, 2000));
   }
   return fid;
@@ -87,10 +88,15 @@ test('opening two distinct cited files yields two tabs; the highlight tracks the
   // Click subsequent pills until a second distinct-file tab opens.
   // (Both citations may come from the same file; walk pills until count reaches 2.)
   const pillCount = await pills.count();
+  // Walk pills until a SECOND distinct tab opens (some citations may reuse a file).
   for (let i = 1; i < pillCount; i++) {
     await pills.nth(i).click();
-    const count = await closeTabs.count();
-    if (count >= 2) break;
+    try {
+      await expect(closeTabs).toHaveCount(2, { timeout: 8000 });
+      break;
+    } catch {
+      // this pill cited an already-open file (dedupe) — try the next pill
+    }
   }
   await expect(closeTabs).toHaveCount(2, { timeout: 15000 });
   await expect.poll(() => highlightSize(page), { timeout: 15000 }).toBeGreaterThan(0);
