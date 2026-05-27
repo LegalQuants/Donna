@@ -45,11 +45,12 @@ describe('DocumentPanel', () => {
     expect(screen.getByText(/could not load this document/i)).toBeInTheDocument();
   });
 
-  it('shows a preview-not-available message for a ready non-PDF file', () => {
+  it('renders the fallback card with a download link for a ready non-PDF file', () => {
     render(DocumentPanel, {
       props: { docPanel: stub({ activeTab: { fileId: 'f2', filename: 'memo.docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', status: 'ready', page: null, quote: '', cite: { ...STUB_CITE, source_file_id: 'f2' }, highlightStatus: 'pending' } }) }
     });
-    expect(screen.getByText(/preview not available/i)).toBeInTheDocument();
+    expect(screen.getByText('memo.docx')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /download/i })).toHaveAttribute('href', '/files/f2/content');
   });
 
   it('shows the cited quote and a verified chip in the found state', () => {
