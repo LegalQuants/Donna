@@ -4,6 +4,13 @@
 
   let { data, form } = $props();
   let showCreate = $state(false);
+
+  $effect(() => {
+    if (!showCreate) return;
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') showCreate = false; };
+    document.addEventListener('keydown', h, true);
+    return () => document.removeEventListener('keydown', h, true);
+  });
 </script>
 
 <div class="mx-auto max-w-3xl px-6 py-8">
@@ -40,7 +47,7 @@
 
 {#if showCreate}
   <div class="fixed inset-0 z-30 flex items-center justify-center bg-black/30 p-4" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) showCreate = false; }}>
-    <div class="w-full max-w-md rounded-mlq-control border border-mlq-subtle bg-mlq-surface p-5 shadow-lg">
+    <div class="w-full max-w-md rounded-mlq-control border border-mlq-subtle bg-mlq-surface p-5 shadow-lg" role="dialog" aria-modal="true" aria-label="New matter">
       <h2 class="mb-4 font-serif text-lg text-mlq-strong">New matter</h2>
       <MatterForm action="?/create" submitLabel="Create matter" error={form?.error ?? ''} />
     </div>
