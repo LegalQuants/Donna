@@ -45,11 +45,12 @@ describe('DocumentPanel', () => {
     expect(screen.getByText(/could not load this document/i)).toBeInTheDocument();
   });
 
-  it('shows a preview-not-available message for a ready non-PDF file', () => {
+  it('renders the fallback card with a download link for a ready non-PDF file', () => {
     render(DocumentPanel, {
       props: { docPanel: stub({ activeTab: { fileId: 'f2', filename: 'memo.docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', status: 'ready', page: null, quote: '', cite: { ...STUB_CITE, source_file_id: 'f2' }, highlightStatus: 'pending' } }) }
     });
-    expect(screen.getByText(/preview not available/i)).toBeInTheDocument();
+    expect(screen.getByText('memo.docx')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /download/i })).toHaveAttribute('href', '/files/f2/content');
   });
 
   it('shows the cited quote and a verified chip in the found state', () => {
@@ -64,5 +65,38 @@ describe('DocumentPanel', () => {
     const missTab: DocTab = { fileId: 'f1', filename: 'spike.pdf', mime: 'application/pdf', status: 'ready', page: 1, quote: 'x', cite: STUB_CITE, highlightStatus: 'miss' };
     render(DocumentPanel, { props: { docPanel: stub({ tabs: [missTab], activeTab: missTab }) } });
     expect(screen.getByText(/couldn't pinpoint|cited passage on this page/i)).toBeInTheDocument();
+  });
+
+  it('renders a tab button per open document, marking the active one', () => {
+    const t1: DocTab = { fileId: 'f1', filename: 'msa.pdf', mime: 'application/pdf', status: 'ready', page: 1, quote: 'x', cite: STUB_CITE, highlightStatus: 'pending' };
+    const t2: DocTab = { fileId: 'f2', filename: 'nda.pdf', mime: 'application/pdf', status: 'ready', page: 2, quote: 'y', cite: { ...STUB_CITE, source_file_id: 'f2' }, highlightStatus: 'pending' };
+    render(DocumentPanel, { props: { docPanel: stub({ tabs: [t1, t2], activeId: 'f2', activeTab: t2 }) } });
+    expect(screen.getByRole('button', { name: 'msa.pdf' })).toBeInTheDocument();
+    const active = screen.getByRole('button', { name: 'nda.pdf' });
+    expect(active).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('clicking an inactive tab calls setActive with its fileId', async () => {
+    const t1: DocTab = { fileId: 'f1', filename: 'msa.pdf', mime: 'application/pdf', status: 'ready', page: 1, quote: 'x', cite: STUB_CITE, highlightStatus: 'pending' };
+    const t2: DocTab = { fileId: 'f2', filename: 'nda.pdf', mime: 'application/pdf', status: 'ready', page: 2, quote: 'y', cite: { ...STUB_CITE, source_file_id: 'f2' }, highlightStatus: 'pending' };
+    const dp = stub({ tabs: [t1, t2], activeId: 'f2', activeTab: t2 });
+    render(DocumentPanel, { props: { docPanel: dp } });
+    await userEvent.click(screen.getByRole('button', { name: 'msa.pdf' }));
+    expect(dp.setActive).toHaveBeenCalledWith('f1');
+  });
+
+  it('clicking a tab close button calls close (not setActive)', async () => {
+    const t1: DocTab = { fileId: 'f1', filename: 'msa.pdf', mime: 'application/pdf', status: 'ready', page: 1, quote: 'x', cite: STUB_CITE, highlightStatus: 'pending' };
+    const t2: DocTab = { fileId: 'f2', filename: 'nda.pdf', mime: 'application/pdf', status: 'ready', page: 2, quote: 'y', cite: { ...STUB_CITE, source_file_id: 'f2' }, highlightStatus: 'pending' };
+    const dp = stub({ tabs: [t1, t2], activeId: 'f2', activeTab: t2 });
+    render(DocumentPanel, { props: { docPanel: dp } });
+    await userEvent.click(screen.getByRole('button', { name: 'Close msa.pdf' }));
+    expect(dp.close).toHaveBeenCalledWith('f1');
+    expect(dp.setActive).not.toHaveBeenCalled();
+  });
+
+  it('shows the active page number in the cited-passage bar', () => {
+    render(DocumentPanel, { props: { docPanel: stub() } }); // default activeTab: spike.pdf, page 1, pdf, ready
+    expect(screen.getByText('p.1')).toBeInTheDocument();
   });
 });
