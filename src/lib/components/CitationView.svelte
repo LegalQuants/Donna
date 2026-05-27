@@ -84,7 +84,6 @@
 
 <div bind:this={container} class="cite-view" style="position:relative">
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <!-- eslint-disable-next-line svelte/no-at-html-tags -- input is DOMPurify-sanitized in renderMarkdown -->
   <div
     class="prose-mlq"
     onclick={onClick}
@@ -93,7 +92,10 @@
     onpointerout={onPointerOut}
     onfocusin={onFocusIn}
     onfocusout={onFocusOut}
-  >{@html html}</div>
+  >
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- input is DOMPurify-sanitized in renderMarkdown -->
+    {@html html}
+  </div>
   {#if openIndex !== null}
     <div style={popStyle}>
       <CitationPopover index={openIndex} citation={citations[openIndex - 1]} />

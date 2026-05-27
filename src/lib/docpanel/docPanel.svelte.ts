@@ -1,5 +1,6 @@
 import type { Citation } from '$lib/citations/types';
 import type { DocTab } from './types';
+import { clearHighlight } from './pdfHighlight';
 
 const WIDTH_KEY = 'donna.docpanel.width';
 const DEFAULT_WIDTH = 480;
@@ -76,6 +77,7 @@ export function createDocPanel() {
 
   function closePanel() {
     open_ = false;
+    clearHighlight();
   }
 
   function setWidth(px: number) {
