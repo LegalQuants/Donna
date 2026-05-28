@@ -118,4 +118,34 @@ export const actions: Actions = {
     }
     return { success: true };
   },
+
+  linkKb: async (event) => {
+    const data = await event.request.formData();
+    const kb_id = String(data.get('kb_id') ?? '');
+    if (!kb_id) return fail(400, { error: 'Missing kb_id.' });
+    const res = await lqFetch(event, `/api/v1/knowledge-bases/${kb_id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ project_id: event.params.id })
+    });
+    if (!res.ok) {
+      if (res.status === 404) return fail(404, { error: 'Knowledge base no longer exists.' });
+      return fail(502, { error: 'Could not link the knowledge base.' });
+    }
+    return { success: true };
+  },
+
+  unlinkKb: async (event) => {
+    const data = await event.request.formData();
+    const kb_id = String(data.get('kb_id') ?? '');
+    if (!kb_id) return fail(400, { error: 'Missing kb_id.' });
+    const res = await lqFetch(event, `/api/v1/knowledge-bases/${kb_id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ project_id: null })
+    });
+    // 200 + 404 → success (already gone is fine for the UI).
+    if (!res.ok && res.status !== 404) {
+      return fail(502, { error: 'Could not unlink the knowledge base.' });
+    }
+    return { success: true };
+  },
 };

@@ -218,3 +218,48 @@ describe('/matters/[id] detachFile action', () => {
     expect(r).toMatchObject({ status: 502, data: { error: 'Could not remove the file.' } });
   });
 });
+
+const kbEvent = (kb_id: string, id = 'p1') =>
+  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ kb_id }) }) }) as never;
+
+describe('/matters/[id] linkKb / unlinkKb actions', () => {
+  it('linkKb PATCHes the KB with the matter id', async () => {
+    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+    const r = await actions.linkKb(kbEvent('k1'));
+    expect(r).toEqual({ success: true });
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1');
+    expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ project_id: 'p1' });
+  });
+
+  it('linkKb maps 404 to a friendly error', async () => {
+    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+    const r = await actions.linkKb(kbEvent('k1'));
+    expect(r).toMatchObject({ status: 404, data: { error: 'Knowledge base no longer exists.' } });
+  });
+
+  it('linkKb maps other failures to a 502', async () => {
+    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+    const r = await actions.linkKb(kbEvent('k1'));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not link the knowledge base.' } });
+  });
+
+  it('unlinkKb PATCHes the KB with project_id: null', async () => {
+    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+    const r = await actions.unlinkKb(kbEvent('k1'));
+    expect(r).toEqual({ success: true });
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ project_id: null });
+  });
+
+  it('unlinkKb treats 404 as silent success', async () => {
+    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+    const r = await actions.unlinkKb(kbEvent('k1'));
+    expect(r).toEqual({ success: true });
+  });
+
+  it('unlinkKb maps other failures to a 502', async () => {
+    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+    const r = await actions.unlinkKb(kbEvent('k1'));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not unlink the knowledge base.' } });
+  });
+});
