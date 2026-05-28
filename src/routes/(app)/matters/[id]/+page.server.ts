@@ -148,4 +148,32 @@ export const actions: Actions = {
     }
     return { success: true };
   },
+
+  attachSkill: async (event) => {
+    const data = await event.request.formData();
+    const skill_name = String(data.get('skill_name') ?? '');
+    if (!skill_name) return fail(400, { error: 'Missing skill_name.' });
+    const res = await lqFetch(event, `/api/v1/projects/${event.params.id}/skills`, {
+      method: 'POST',
+      body: JSON.stringify({ skill_name })
+    });
+    // 204 = success; 409 = already attached (silent success — race).
+    if (!res.ok && res.status !== 409) {
+      if (res.status === 404) return fail(404, { error: 'Skill no longer exists.' });
+      return fail(502, { error: 'Could not attach the skill.' });
+    }
+    return { success: true };
+  },
+
+  detachSkill: async (event) => {
+    const data = await event.request.formData();
+    const skill_name = String(data.get('skill_name') ?? '');
+    if (!skill_name) return fail(400, { error: 'Missing skill_name.' });
+    const res = await lqFetch(event, `/api/v1/projects/${event.params.id}/skills/${skill_name}`, { method: 'DELETE' });
+    // 204 + 404 → silent success.
+    if (!res.ok && res.status !== 404) {
+      return fail(502, { error: 'Could not detach the skill.' });
+    }
+    return { success: true };
+  },
 };

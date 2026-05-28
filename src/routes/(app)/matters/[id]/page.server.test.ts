@@ -263,3 +263,55 @@ describe('/matters/[id] linkKb / unlinkKb actions', () => {
     expect(r).toMatchObject({ status: 502, data: { error: 'Could not unlink the knowledge base.' } });
   });
 });
+
+const skillEvent = (skill_name: string, id = 'p1') =>
+  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ skill_name }) }) }) as never;
+
+describe('/matters/[id] attachSkill / detachSkill actions', () => {
+  it('attachSkill POSTs { skill_name } to /projects/{id}/skills', async () => {
+    lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
+    const r = await actions.attachSkill(skillEvent('contract-redline'));
+    expect(r).toEqual({ success: true });
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/skills');
+    expect(lqFetch.mock.calls[0][2].method).toBe('POST');
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ skill_name: 'contract-redline' });
+  });
+
+  it('attachSkill maps 404 to a friendly error', async () => {
+    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+    const r = await actions.attachSkill(skillEvent('ghost'));
+    expect(r).toMatchObject({ status: 404, data: { error: 'Skill no longer exists.' } });
+  });
+
+  it('attachSkill treats 409 as silent success', async () => {
+    lqFetch.mockResolvedValue(new Response('already', { status: 409 }));
+    const r = await actions.attachSkill(skillEvent('contract-redline'));
+    expect(r).toEqual({ success: true });
+  });
+
+  it('attachSkill maps other failures to a 502', async () => {
+    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+    const r = await actions.attachSkill(skillEvent('x'));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not attach the skill.' } });
+  });
+
+  it('detachSkill DELETEs /projects/{id}/skills/{name}', async () => {
+    lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
+    const r = await actions.detachSkill(skillEvent('contract-redline'));
+    expect(r).toEqual({ success: true });
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/skills/contract-redline');
+    expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
+  });
+
+  it('detachSkill treats 404 as silent success', async () => {
+    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+    const r = await actions.detachSkill(skillEvent('contract-redline'));
+    expect(r).toEqual({ success: true });
+  });
+
+  it('detachSkill maps other failures to a 502', async () => {
+    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+    const r = await actions.detachSkill(skillEvent('x'));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not detach the skill.' } });
+  });
+});
