@@ -1,6 +1,7 @@
 <script lang="ts">
   import { MessageSquare } from '@lucide/svelte';
   import MatterForm from '$lib/matters/MatterForm.svelte';
+  import PrivilegedChip from '$lib/matters/PrivilegedChip.svelte';
 
   let { data, form } = $props();
   let showRename = $state(false);
@@ -28,7 +29,10 @@
   </nav>
 
   <div class="mb-6 border-b border-mlq-subtle pb-5">
-    <h1 class="font-serif text-2xl text-mlq-strong">{data.matter.name}</h1>
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="font-serif text-2xl text-mlq-strong">{data.matter.name}</h1>
+      {#if data.matter.privileged}<PrivilegedChip />{/if}
+    </div>
     {#if data.matter.description}<p class="mt-1 text-sm text-mlq-muted">{data.matter.description}</p>{/if}
     <div class="mt-4 flex items-center gap-2">
       <form method="POST" action="?/newChat">
@@ -62,7 +66,15 @@
   <div class="fixed inset-0 z-30 flex items-center justify-center bg-black/30 p-4" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) showRename = false; }}>
     <div role="dialog" aria-modal="true" aria-label="Rename matter" class="w-full max-w-md rounded-mlq-control border border-mlq-subtle bg-mlq-surface p-5 shadow-lg">
       <h2 class="mb-4 font-serif text-lg text-mlq-strong">Rename matter</h2>
-      <MatterForm action="?/rename" submitLabel="Save" name={data.matter.name} description={data.matter.description ?? ''} error={form?.error ?? ''} />
+      <MatterForm
+        action="?/rename"
+        submitLabel="Save"
+        name={data.matter.name}
+        description={data.matter.description ?? ''}
+        privileged={data.matter.privileged}
+        minimumTier={data.matter.minimum_inference_tier ?? null}
+        error={form?.error ?? ''}
+      />
     </div>
   </div>
 {/if}

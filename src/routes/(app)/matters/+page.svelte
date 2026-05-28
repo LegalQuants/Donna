@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Plus, FolderKanban } from '@lucide/svelte';
   import MatterForm from '$lib/matters/MatterForm.svelte';
+  import PrivilegedChip from '$lib/matters/PrivilegedChip.svelte';
 
   let { data, form } = $props();
   let showCreate = $state(false);
@@ -34,7 +35,10 @@
           <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app matter link -->
           <a href="/matters/{m.id}" class="flex items-center gap-3 px-4 py-3 hover:bg-mlq-surface-alt">
             <div class="min-w-0">
-              <div class="font-serif text-sm text-mlq-text">{m.name}</div>
+              <div class="flex items-center gap-2 font-serif text-sm text-mlq-text">
+                <span class="min-w-0 truncate">{m.name}</span>
+                {#if m.privileged}<PrivilegedChip />{/if}
+              </div>
               {#if m.description}<div class="truncate text-xs text-mlq-muted">{m.description}</div>{/if}
             </div>
             <span class="ml-auto shrink-0 text-xs text-mlq-muted">{new Date(m.updated_at).toLocaleDateString()}</span>
