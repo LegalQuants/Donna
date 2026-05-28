@@ -13,7 +13,7 @@ beforeEach(() => lqFetch.mockReset());
 describe('/matters/[id] load', () => {
   it('loads the matter and its chats', async () => {
     lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'p1', name: 'Acme', description: 'd' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'p1', name: 'Acme', description: 'd', privileged: false, minimum_inference_tier: null }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ id: 'c1', title: 'Chat 1', message_count: 3 }] }), { status: 200 }));
     const out = (await load(loadEv())) as { matter: { name: string }; chats: unknown[] };
     expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1');
@@ -30,14 +30,38 @@ describe('/matters/[id] actions', () => {
     expect(lqFetch).not.toHaveBeenCalled();
   });
 
-  it('rename PATCHes name + description', async () => {
+  it('rename PATCHes name + description + privileged=false + null tier when neither is set', async () => {
     lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
     const r = await actions.rename(ev({ name: 'Renamed', description: 'x' }));
-    expect(lqFetch.mock.calls[0][0]).toBeDefined();
     expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1');
     expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
-    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ name: 'Renamed', description: 'x' });
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ name: 'Renamed', description: 'x', privileged: false, minimum_inference_tier: null });
     expect(r).toMatchObject({ success: true });
+  });
+
+  it('rename PATCHes privileged=true + numeric tier when both are set', async () => {
+    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+    const r = await actions.rename(ev({ name: 'Renamed', description: 'x', privileged: 'on', minimum_inference_tier: '4' }));
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ name: 'Renamed', description: 'x', privileged: true, minimum_inference_tier: 4 });
+    expect(r).toMatchObject({ success: true });
+  });
+
+  it('rename pre-checks privileged-without-tier without calling the backend', async () => {
+    const r = await actions.rename(ev({ name: 'Renamed', privileged: 'on' }));
+    expect(r).toMatchObject({ status: 400, data: { error: 'Privileged matters require a minimum tier.' } });
+    expect(lqFetch).not.toHaveBeenCalled();
+  });
+
+  it('rename maps a backend 400 to the privilege error message', async () => {
+    lqFetch.mockResolvedValue(new Response('{}', { status: 400 }));
+    const r = await actions.rename(ev({ name: 'Renamed', privileged: 'on', minimum_inference_tier: '4' }));
+    expect(r).toMatchObject({ status: 400, data: { error: 'Privileged matters require a minimum tier.' } });
+  });
+
+  it('rename maps other backend failures to the generic rename error', async () => {
+    lqFetch.mockResolvedValue(new Response('{}', { status: 500 }));
+    const r = await actions.rename(ev({ name: 'Renamed' }));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not rename the matter.' } });
   });
 
   it('archive DELETEs and redirects to /matters', async () => {
