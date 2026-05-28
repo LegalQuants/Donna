@@ -6,6 +6,8 @@ import type { components } from '$lib/api/backend';
 import type { PageServerLoad } from './$types';
 
 type Chat = components['schemas']['Chat'];
+type KnowledgeBase = components['schemas']['KnowledgeBase'];
+type ProjectFile = components['schemas']['File'];
 
 export const load: PageServerLoad = async (event) => {
   const [mRes, cRes] = await Promise.all([
@@ -15,7 +17,24 @@ export const load: PageServerLoad = async (event) => {
   if (!mRes.ok) throw error(mRes.status === 404 ? 404 : 502, 'Could not load this matter.');
   const matter = (await mRes.json()) as Matter;
   const chats = cRes.ok ? (((await cRes.json()) as { items: Chat[] }).items ?? []) : [];
-  return { matter, chats };
+
+  const [filesArr, kbLinkedRes, kbAllRes] = await Promise.all([
+    Promise.all(
+      (matter.attached_file_ids ?? []).map(async (id) => {
+        const r = await lqFetch(event, `/api/v1/files/${id}`);
+        return r.ok ? ((await r.json()) as ProjectFile) : null;
+      })
+    ),
+    lqFetch(event, `/api/v1/knowledge-bases?project_id=${event.params.id}`),
+    lqFetch(event, '/api/v1/knowledge-bases')
+  ]);
+  const files = filesArr.filter((f): f is ProjectFile => f !== null);
+  const linked = kbLinkedRes.ok ? ((await kbLinkedRes.json()) as KnowledgeBase[]) : [];
+  const allKbs = kbAllRes.ok ? ((await kbAllRes.json()) as KnowledgeBase[]) : [];
+  const linkedIds = new Set(linked.map((k) => k.id));
+  const available = allKbs.filter((k) => !linkedIds.has(k.id));
+
+  return { matter, chats, files, kbs: { linked, available } };
 };
 
 export const actions: Actions = {
