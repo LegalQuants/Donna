@@ -5,7 +5,18 @@ import { AT_COOKIE, RT_COOKIE, setSessionCookies, clearSessionCookies } from './
 async function raw(path: string, init: RequestInit, token?: string): Promise<Response> {
   const headers = new Headers(init.headers);
   if (token) headers.set('authorization', `Bearer ${token}`);
-  if (init.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
+  // Default to JSON for non-empty bodies, but never override FormData — Node's
+  // fetch needs to set its own multipart/form-data boundary, and an explicit
+  // application/json header would clobber it (the backend then rejects the
+  // multipart body with 422 "Field required: body.file"). First seen when
+  // P4-3a's uploadFile action started forwarding multipart through lqFetch.
+  if (
+    init.body &&
+    !(init.body instanceof FormData) &&
+    !headers.has('content-type')
+  ) {
+    headers.set('content-type', 'application/json');
+  }
   return fetch(`${LQ_API()}${path}`, { ...init, headers });
 }
 
