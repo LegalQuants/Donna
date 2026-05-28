@@ -36,7 +36,7 @@
           <a href="/matters/{m.id}" class="flex items-center gap-3 px-4 py-3 hover:bg-mlq-surface-alt">
             <div class="min-w-0">
               <div class="flex items-center gap-2 font-serif text-sm text-mlq-text">
-                <span class="truncate">{m.name}</span>
+                <span class="min-w-0 truncate">{m.name}</span>
                 {#if m.privileged}<PrivilegedChip />{/if}
               </div>
               {#if m.description}<div class="truncate text-xs text-mlq-muted">{m.description}</div>{/if}
