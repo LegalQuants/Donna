@@ -43,7 +43,7 @@ test('create a matter, start a chat in it, and rename + archive', async ({ page 
   await page.getByRole('button', { name: 'Rename' }).click();
   const renamed = `${unique} (renamed)`;
   await page.getByLabel(/matter name/i).fill(renamed);
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('heading', { name: renamed })).toBeVisible({ timeout: 15000 });
 
   await page.getByRole('button', { name: 'Archive' }).click(); // opens the confirm modal
