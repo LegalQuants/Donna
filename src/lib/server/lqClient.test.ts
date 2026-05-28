@@ -49,4 +49,24 @@ describe('lqFetch', () => {
     expect(res.status).toBe(401);
     expect(e.store[AT_COOKIE]).toBeUndefined();
   });
+
+  it('defaults a JSON body to content-type: application/json when none is set', async () => {
+    (fetch as any).mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    const e = eventWith({ [AT_COOKIE]: 'AT1' });
+    await lqFetch(e, '/api/v1/projects', { method: 'POST', body: JSON.stringify({ name: 'x' }) });
+    const init = (fetch as any).mock.calls[0][1];
+    expect(new Headers(init.headers).get('content-type')).toBe('application/json');
+  });
+
+  it('does NOT override content-type for FormData bodies (lets fetch set the multipart boundary)', async () => {
+    (fetch as any).mockResolvedValueOnce(new Response('{}', { status: 201 }));
+    const e = eventWith({ [AT_COOKIE]: 'AT1' });
+    const fd = new FormData();
+    fd.append('file', new File([new Uint8Array(4)], 'a.pdf', { type: 'application/pdf' }));
+    await lqFetch(e, '/api/v1/files', { method: 'POST', body: fd });
+    const init = (fetch as any).mock.calls[0][1];
+    // The bug we're guarding against: lqFetch must NOT explicitly set
+    // application/json (which would clobber fetch's auto multipart boundary).
+    expect(new Headers(init.headers).get('content-type')).toBeNull();
+  });
 });
