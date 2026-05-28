@@ -315,3 +315,43 @@ describe('/matters/[id] attachSkill / detachSkill actions', () => {
     expect(r).toMatchObject({ status: 502, data: { error: 'Could not detach the skill.' } });
   });
 });
+
+const ctxEvent = (context_md: string, id = 'p1') =>
+  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ context_md }) }) }) as never;
+
+describe('/matters/[id] saveContext action', () => {
+  it('PATCHes the matter with the non-empty context_md', async () => {
+    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+    const r = await actions.saveContext(ctxEvent('## Notes\n- thing'));
+    expect(r).toEqual({ success: true });
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1');
+    expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ context_md: '## Notes\n- thing' });
+  });
+
+  it('sends context_md: null when the input is empty (clear case)', async () => {
+    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+    const r = await actions.saveContext(ctxEvent(''));
+    expect(r).toEqual({ success: true });
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ context_md: null });
+  });
+
+  it('pre-checks the 100 KiB byte cap without calling the backend', async () => {
+    const huge = 'A'.repeat(102_401); // 102_401 ASCII bytes > 102_400-byte cap
+    const r = await actions.saveContext(ctxEvent(huge));
+    expect(r).toMatchObject({ status: 422, data: { error: 'Context exceeds the 100 KiB limit.' } });
+    expect(lqFetch).not.toHaveBeenCalled();
+  });
+
+  it('maps a backend 422 to the same friendly oversize message', async () => {
+    lqFetch.mockResolvedValue(new Response('{}', { status: 422 }));
+    const r = await actions.saveContext(ctxEvent('within-cap'));
+    expect(r).toMatchObject({ status: 422, data: { error: 'Context exceeds the 100 KiB limit.' } });
+  });
+
+  it('maps other failures to a 502', async () => {
+    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+    const r = await actions.saveContext(ctxEvent('x'));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not save the context.' } });
+  });
+});

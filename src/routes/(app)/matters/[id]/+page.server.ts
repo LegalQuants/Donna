@@ -176,4 +176,19 @@ export const actions: Actions = {
     }
     return { success: true };
   },
+
+  saveContext: async (event) => {
+    const data = await event.request.formData();
+    const raw = String(data.get('context_md') ?? '');
+    if (new TextEncoder().encode(raw).length > 102_400) {
+      return fail(422, { error: 'Context exceeds the 100 KiB limit.' });
+    }
+    const body = { context_md: raw === '' ? null : raw };
+    const res = await lqFetch(event, `/api/v1/projects/${event.params.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    if (!res.ok) {
+      if (res.status === 422) return fail(422, { error: 'Context exceeds the 100 KiB limit.' });
+      return fail(502, { error: 'Could not save the context.' });
+    }
+    return { success: true };
+  },
 };
