@@ -6,11 +6,13 @@
     options,
     selected,
     error = false,
+    minimumTier = null as 1 | 2 | 3 | 4 | 5 | null,
     onselect
   }: {
     options: ChatModelOption[];
     selected: string;
     error?: boolean;
+    minimumTier?: 1 | 2 | 3 | 4 | 5 | null;
     onselect: (id: string) => void;
   } = $props();
 
@@ -21,8 +23,12 @@
   const cloud = $derived(options.filter((o) => o.group === 'cloud'));
   const local = $derived(options.filter((o) => o.group === 'local'));
 
-  function choose(id: string) {
-    onselect(id);
+  function isSubFloor(o: ChatModelOption): boolean {
+    return minimumTier != null && o.tier != null && o.tier < minimumTier;
+  }
+  function choose(o: ChatModelOption) {
+    if (isSubFloor(o)) return;
+    onselect(o.id);
     open = false;
   }
   function onkeydown(e: KeyboardEvent) {
@@ -58,22 +64,30 @@
   {#if open}
     <div
       role="listbox"
-      class="absolute bottom-full left-0 z-20 mb-1 w-56 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md"
+      class="absolute bottom-full left-0 z-20 mb-1 w-64 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md"
     >
       {#if error}
         <p class="px-3 py-2 text-xs text-mlq-muted">Model list unavailable — sending with smart.</p>
+      {/if}
+      {#if minimumTier != null}
+        <p class="border-b border-mlq-subtle bg-mlq-surface-alt px-3 py-2 text-xs text-mlq-muted">
+          This matter requires tier ≥ {minimumTier} — lower-tier models are unavailable.
+        </p>
       {/if}
       {#each [{ label: 'Cloud', items: cloud }, { label: 'Local', items: local }] as grp (grp.label)}
         {#if grp.items.length}
           <div class="bg-mlq-subtle/40 px-3 py-1 text-[10px] uppercase tracking-wide text-mlq-muted">{grp.label}</div>
           {#each grp.items as opt (opt.id)}
+            {@const blocked = isSubFloor(opt)}
             <button
               type="button"
               role="option"
               aria-selected={opt.id === selected}
+              aria-disabled={blocked}
+              disabled={blocked}
               data-testid={`model-option-${opt.id}`}
-              onclick={() => choose(opt.id)}
-              class="flex w-full items-center justify-between px-3 py-2 text-left text-xs text-mlq-text hover:bg-mlq-subtle/50 aria-selected:font-semibold"
+              onclick={() => choose(opt)}
+              class="flex w-full items-center justify-between px-3 py-2 text-left text-xs text-mlq-text hover:bg-mlq-subtle/50 aria-selected:font-semibold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
             >
               <span>{opt.id}</span>
               {#if opt.label}<span class="text-mlq-muted">{opt.label}</span>{/if}
