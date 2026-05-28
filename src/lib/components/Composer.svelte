@@ -4,9 +4,11 @@
   import ModelPicker from './ModelPicker.svelte';
   import SkillAttach from './SkillAttach.svelte';
   import EnhancePreview from './EnhancePreview.svelte';
+  import MatterPicker from '$lib/matters/MatterPicker.svelte';
   import { modelStore } from '$lib/models/store.svelte';
   import type { createSkillAttach } from '$lib/skills/attach.svelte';
   import type { createEnhance } from '$lib/enhance/enhance.svelte';
+  import type { MatterSummary } from '$lib/matters/types';
 
   let {
     value = $bindable(''),
@@ -15,7 +17,9 @@
     streaming = false,
     onstop,
     skillAttach,
-    enhance
+    enhance,
+    matters,
+    selectedMatterId = $bindable(null as string | null)
   }: {
     value?: string;
     placeholder?: string;
@@ -24,6 +28,8 @@
     onstop?: () => void;
     skillAttach?: ReturnType<typeof createSkillAttach>;
     enhance?: ReturnType<typeof createEnhance>;
+    matters?: MatterSummary[];
+    selectedMatterId?: string | null;
   } = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
@@ -96,6 +102,9 @@
       error={modelStore.error}
       onselect={modelStore.setModel}
     />
+    {#if matters}
+      <MatterPicker {matters} bind:selectedId={selectedMatterId} />
+    {/if}
     {#if skillAttach}
       <SkillAttach
         results={skillAttach.results}
