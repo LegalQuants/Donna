@@ -70,5 +70,52 @@ export const actions: Actions = {
     if (!res.ok) return fail(502, { error: 'Could not start a chat.' });
     const chat = (await res.json()) as Chat;
     throw redirect(303, `/chats/${chat.id}`);
-  }
+  },
+
+  uploadFile: async (event) => {
+    const data = await event.request.formData();
+    const blobs = data.getAll('file').filter((v): v is File => v instanceof File && v.size > 0);
+    let uploaded = 0;
+    for (const blob of blobs) {
+      const fd = new FormData();
+      fd.append('file', blob, blob.name);
+      const upRes = await lqFetch(event, '/api/v1/files', { method: 'POST', body: fd });
+      if (!upRes.ok) {
+        if (upRes.status === 413) {
+          let limitMb = 100;
+          try {
+            const body = (await upRes.json()) as { details?: { limit_bytes?: number } };
+            if (body.details?.limit_bytes) limitMb = Math.round(body.details.limit_bytes / 1024 / 1024);
+          } catch {
+            /* keep default 100 MB */
+          }
+          return fail(413, { error: `File "${blob.name}" is too large — max ${limitMb} MB.` });
+        }
+        return fail(502, { error: `Could not upload "${blob.name}".` });
+      }
+      const { id: file_id } = (await upRes.json()) as { id: string };
+      const attRes = await lqFetch(event, `/api/v1/projects/${event.params.id}/files`, {
+        method: 'POST',
+        body: JSON.stringify({ file_id })
+      });
+      // 204 = success; 409 = already attached (treat as success — race).
+      if (!attRes.ok && attRes.status !== 409) {
+        return fail(502, { error: `Could not upload "${blob.name}".` });
+      }
+      uploaded += 1;
+    }
+    return { uploaded };
+  },
+
+  detachFile: async (event) => {
+    const data = await event.request.formData();
+    const file_id = String(data.get('file_id') ?? '');
+    if (!file_id) return fail(400, { error: 'Missing file_id.' });
+    const res = await lqFetch(event, `/api/v1/projects/${event.params.id}/files/${file_id}`, { method: 'DELETE' });
+    // 204 or 404 → idempotent success.
+    if (!res.ok && res.status !== 404) {
+      return fail(502, { error: 'Could not remove the file.' });
+    }
+    return { success: true };
+  },
 };
