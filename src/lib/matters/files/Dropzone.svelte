@@ -55,10 +55,15 @@
   <UploadCloud size={24} aria-hidden="true" />
   <span class="text-sm">Drag PDFs or contracts here, or click to browse</span>
 </button>
+<!-- No `name` attribute: this input is a UI handle for the native picker only,
+     not a form field. When Dropzone is nested inside a parent <form>, naming
+     it 'file' would duplicate the file entry in the submitted form data —
+     Dropzone's input value is cleared in onchange but only AFTER the parent's
+     synchronous form.requestSubmit() reads it. The parent owns the canonical
+     'file' input; this one is for opening the native picker. -->
 <input
   bind:this={input}
   type="file"
-  name="file"
   multiple
   data-testid="dropzone-input"
   {onchange}
