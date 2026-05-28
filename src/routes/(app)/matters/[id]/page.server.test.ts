@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const lqFetch = vi.fn();
@@ -121,5 +122,99 @@ describe('/matters/[id] load — files + KBs', () => {
     const out = (await load(loadEv())) as { kbs: { linked: unknown[]; available: unknown[] } };
     expect(out.kbs.linked).toEqual([]);
     expect(out.kbs.available).toEqual([]);
+  });
+});
+
+const fileEvent = (files: { name: string; type: string; bytes?: number }[], id = 'p1') => {
+  const fd = new FormData();
+  for (const f of files) {
+    fd.append('file', new File([new Uint8Array(f.bytes ?? 8)], f.name, { type: f.type }));
+  }
+  return { params: { id }, request: new Request('http://x', { method: 'POST', body: fd }) } as never;
+};
+const detachEvent = (file_id: string, id = 'p1') =>
+  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ file_id }) }) }) as never;
+
+describe('/matters/[id] uploadFile action', () => {
+  it('uploads one file then attaches it; redirects via { uploaded: 1 }', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'newfile1' }), { status: 201 })) // POST /files
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));                              // POST /projects/p1/files
+    const r = await actions.uploadFile(fileEvent([{ name: 'a.pdf', type: 'application/pdf' }]));
+    expect(r).toEqual({ uploaded: 1 });
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/files');
+    expect(lqFetch.mock.calls[0][2].method).toBe('POST');
+    expect(lqFetch.mock.calls[0][2].body).toBeInstanceOf(FormData);
+    expect(lqFetch.mock.calls[1][1]).toBe('/api/v1/projects/p1/files');
+    expect(JSON.parse(lqFetch.mock.calls[1][2].body)).toEqual({ file_id: 'newfile1' });
+  });
+
+  it('uploads multiple files in order', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f2' }), { status: 201 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const r = await actions.uploadFile(fileEvent([
+      { name: 'a.pdf', type: 'application/pdf' },
+      { name: 'b.pdf', type: 'application/pdf' }
+    ]));
+    expect(r).toEqual({ uploaded: 2 });
+    expect(JSON.parse(lqFetch.mock.calls[1][2].body)).toEqual({ file_id: 'f1' });
+    expect(JSON.parse(lqFetch.mock.calls[3][2].body)).toEqual({ file_id: 'f2' });
+  });
+
+  it('returns 413 with the formatted MB limit when the backend returns 413 on upload', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ details: { limit_bytes: 100 * 1024 * 1024, received_bytes: 200 * 1024 * 1024 } }), { status: 413 }));
+    const r = await actions.uploadFile(fileEvent([{ name: 'huge.pdf', type: 'application/pdf' }]));
+    expect(r).toMatchObject({ status: 413, data: { error: 'File "huge.pdf" is too large — max 100 MB.' } });
+  });
+
+  it('falls back to "max 100 MB" when the 413 body is unparseable', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('garbage', { status: 413 }));
+    const r = await actions.uploadFile(fileEvent([{ name: 'huge.pdf', type: 'application/pdf' }]));
+    expect(r).toMatchObject({ status: 413, data: { error: 'File "huge.pdf" is too large — max 100 MB.' } });
+  });
+
+  it('returns 502 with the failing filename when the backend errors mid-batch (file 2 fails on upload)', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 })) // file 1 upload
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))                          // file 1 attach
+      .mockResolvedValueOnce(new Response('oops', { status: 500 }));                       // file 2 upload fails
+    const r = await actions.uploadFile(fileEvent([
+      { name: 'ok.pdf', type: 'application/pdf' },
+      { name: 'bad.pdf', type: 'application/pdf' }
+    ]));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not upload "bad.pdf".' } });
+  });
+
+  it('silently treats 409 on the attach step as success', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 }))
+      .mockResolvedValueOnce(new Response(null, { status: 409 }));
+    const r = await actions.uploadFile(fileEvent([{ name: 'a.pdf', type: 'application/pdf' }]));
+    expect(r).toEqual({ uploaded: 1 });
+  });
+});
+
+describe('/matters/[id] detachFile action', () => {
+  it('DELETEs the project-file join and returns success', async () => {
+    lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
+    const r = await actions.detachFile(detachEvent('f1'));
+    expect(r).toEqual({ success: true });
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/files/f1');
+    expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
+  });
+
+  it('treats 404 as silent success (idempotent from the UI POV)', async () => {
+    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+    const r = await actions.detachFile(detachEvent('f1'));
+    expect(r).toEqual({ success: true });
+  });
+
+  it('returns 502 on other backend failures', async () => {
+    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+    const r = await actions.detachFile(detachEvent('f1'));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not remove the file.' } });
   });
 });
