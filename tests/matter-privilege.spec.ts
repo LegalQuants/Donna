@@ -24,46 +24,49 @@ test('privileged matter shows the chip on list + detail + chat header and disabl
   await page.goto('/matters');
 
   const unique = `E2E Privileged ${Date.now()}`;
+  let projectId: string | null = null;
 
-  // Create a privileged matter with tier 4 via the UI form.
-  await page.getByRole('button', { name: /new matter/i }).click();
-  await page.getByLabel(/matter name/i).fill(unique);
-  await page.getByLabel(/privileged matter/i).check();
-  // Coupling: submit is disabled until a tier is selected.
-  await expect(page.getByRole('button', { name: 'Create matter' })).toBeDisabled();
-  await page.getByLabel(/minimum model tier/i).selectOption('4');
-  await page.getByRole('button', { name: 'Create matter' }).click();
+  try {
+    // Create a privileged matter with tier 4 via the UI form.
+    await page.getByRole('button', { name: /new matter/i }).click();
+    await page.getByLabel(/matter name/i).fill(unique);
+    await page.getByLabel(/privileged matter/i).check();
+    // Coupling: submit is disabled until a tier is selected.
+    await expect(page.getByRole('button', { name: 'Create matter' })).toBeDisabled();
+    await page.getByLabel(/minimum model tier/i).selectOption('4');
+    await page.getByRole('button', { name: 'Create matter' }).click();
 
-  // Detail page: heading + Privileged chip.
-  await expect(page.getByRole('heading', { name: unique })).toBeVisible({ timeout: 15000 });
-  await expect(page.getByLabel('Privileged matter')).toBeVisible();
+    // Detail page: heading + Privileged chip. Capture the id from the URL for cleanup.
+    await expect(page.getByRole('heading', { name: unique })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByLabel('Privileged matter')).toBeVisible();
+    projectId = new URL(page.url()).pathname.split('/').pop() ?? null;
 
-  // List page: privileged row carries the chip too.
-  await page.goto('/matters');
-  const row = page.getByRole('link', { name: new RegExp(unique) });
-  await expect(row).toBeVisible({ timeout: 15000 });
-  await expect(row.getByLabel('Privileged matter')).toBeVisible();
+    // List page: privileged row carries the chip too.
+    await page.goto('/matters');
+    const row = page.getByRole('link', { name: new RegExp(unique) });
+    await expect(row).toBeVisible({ timeout: 15000 });
+    await expect(row.getByLabel('Privileged matter')).toBeVisible();
 
-  // Open the matter, start a chat in it.
-  await row.click();
-  await page.getByRole('button', { name: /new chat in this matter/i }).click();
-  await page.waitForURL(/\/chats\//);
+    // Open the matter, start a chat in it.
+    await row.click();
+    await page.getByRole('button', { name: /new chat in this matter/i }).click();
+    await page.waitForURL(/\/chats\//);
 
-  // Chat header carries both the matter badge link AND the Privileged chip.
-  await expect(page.getByRole('link', { name: unique })).toBeVisible({ timeout: 15000 });
-  await expect(page.getByLabel('Privileged matter')).toBeVisible();
+    // Chat header carries both the matter badge link AND the Privileged chip.
+    await expect(page.getByRole('link', { name: unique })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByLabel('Privileged matter')).toBeVisible();
 
-  // ModelPicker shows the floor note and local models are disabled.
-  await page.getByTestId('model-picker').click();
-  await expect(page.getByText(/tier ≥ 4/)).toBeVisible();
-  await expect(page.getByTestId('model-option-local')).toBeDisabled();
-  // Cloud aliases (tier 4) remain enabled at floor 4.
-  await expect(page.getByTestId('model-option-smart')).not.toBeDisabled();
-
-  // Cleanup: archive the seeded matter.
-  const tok = await token();
-  // Detail URL is /matters/<id>; pull the id off the matter-badge link href.
-  const projectHref = await page.getByRole('link', { name: unique }).first().getAttribute('href');
-  const projectId = projectHref?.split('/').pop();
-  if (projectId) await api(tok, `/projects/${projectId}`, { method: 'DELETE' });
+    // ModelPicker shows the floor note and local models are disabled.
+    await page.getByTestId('model-picker').click();
+    await expect(page.getByText(/tier ≥ 4/)).toBeVisible();
+    await expect(page.getByTestId('model-option-local')).toBeDisabled();
+    // Cloud aliases (tier 4) remain enabled at floor 4.
+    await expect(page.getByTestId('model-option-smart')).not.toBeDisabled();
+  } finally {
+    // Unconditional cleanup: archive the seeded matter regardless of how the test exited.
+    if (projectId) {
+      const tok = await token();
+      await api(tok, `/projects/${projectId}`, { method: 'DELETE' });
+    }
+  }
 });
