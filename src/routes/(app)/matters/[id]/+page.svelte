@@ -2,6 +2,10 @@
   import { MessageSquare } from '@lucide/svelte';
   import MatterForm from '$lib/matters/MatterForm.svelte';
   import PrivilegedChip from '$lib/matters/PrivilegedChip.svelte';
+  import FilesSection from '$lib/matters/sections/FilesSection.svelte';
+  import KnowledgeSection from '$lib/matters/sections/KnowledgeSection.svelte';
+  import SkillsSection from '$lib/matters/sections/SkillsSection.svelte';
+  import ContextSection from '$lib/matters/sections/ContextSection.svelte';
 
   let { data, form } = $props();
   let showRename = $state(false);
@@ -43,7 +47,12 @@
     </div>
   </div>
 
-  <h2 class="mb-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Chats · {data.chats.length}</h2>
+  <FilesSection files={data.files} error={form?.error ?? ''} />
+  <KnowledgeSection kbs={data.kbs} />
+  <SkillsSection attached={data.matter.attached_skill_names ?? []} />
+  <ContextSection value={data.matter.context_md ?? ''} />
+
+  <h2 class="mt-8 mb-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Chats · {data.chats.length}</h2>
   {#if data.chats.length === 0}
     <p class="py-6 text-center text-sm text-mlq-muted">No chats in this matter yet.</p>
   {:else}
