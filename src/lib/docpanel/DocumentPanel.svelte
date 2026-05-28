@@ -40,6 +40,25 @@
     const t = docPanel.activeTab;
     if (!t || t.mime !== 'application/pdf' || t.status === 'error') clearHighlight();
   });
+
+  // Auto-scroll the cited passage into view once per fresh {fileId, page, quote}
+  // when the highlight successfully lands. The existing scrollIntoView inside
+  // highlightQuote fires as soon as the highlight is set, but pdf.js continues
+  // rendering text layers below and the scroll position drifts before the user
+  // sees it — leaving the cited span pinned to the bottom of the viewport (or
+  // off-screen on tall PDFs). Re-running it from here after two animation
+  // frames lets layout settle. Tracking the key prevents re-firing after the
+  // user manually scrolls away (the effect only re-runs when activeTab or
+  // page/quote change).
+  let lastAutoScrollKey: string | null = null;
+  $effect(() => {
+    const t = docPanel.activeTab;
+    if (!t || t.highlightStatus !== 'found') return;
+    const key = `${t.fileId}|${t.page ?? ''}|${t.quote ?? ''}`;
+    if (lastAutoScrollKey === key) return;
+    lastAutoScrollKey = key;
+    requestAnimationFrame(() => requestAnimationFrame(() => scrollCitedIntoView()));
+  });
 </script>
 
 <aside
