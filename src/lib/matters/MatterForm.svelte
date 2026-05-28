@@ -47,7 +47,9 @@
 
   <div class="space-y-1">
     <label class="flex items-center gap-2 text-xs text-mlq-text">
-      <input type="checkbox" name="privileged" bind:checked={privilegedValue} class="size-3.5 accent-mlq-privileged" />
+      <input type="checkbox" name="privileged" bind:checked={privilegedValue}
+             aria-describedby={needsTier ? 'tier-required-hint' : undefined}
+             class="size-3.5 accent-mlq-privileged" />
       <span class="font-medium">Privileged matter</span>
     </label>
     <p class="pl-5 text-xs text-mlq-muted">Flags every chat in this matter as privileged in the audit log and enforces a minimum model tier.</p>
@@ -56,6 +58,7 @@
   <div>
     <label for="matter-tier" class="mb-1 block text-xs font-medium text-mlq-text">Minimum model tier</label>
     <select id="matter-tier" name="minimum_inference_tier" bind:value={tierValue}
+            aria-describedby={needsTier ? 'tier-required-hint' : undefined}
             class="w-full rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text outline-none">
       <option value="">None</option>
       <option value="1">1</option>
@@ -66,7 +69,7 @@
     </select>
     <p class="mt-1 text-xs text-mlq-muted">Higher tiers require cloud models. Privileged matters require a tier.</p>
     {#if needsTier}
-      <p class="mt-1 text-xs text-mlq-error">Privileged matters require a minimum tier.</p>
+      <p id="tier-required-hint" class="mt-1 text-xs text-mlq-error">Privileged matters require a minimum tier.</p>
     {/if}
   </div>
 
