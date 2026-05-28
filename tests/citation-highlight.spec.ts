@@ -76,4 +76,17 @@ test('hovering a citation shows metadata; clicking highlights the cited span', a
   await expect
     .poll(async () => page.evaluate(() => (globalThis.CSS?.highlights?.get('cite') as { size?: number } | undefined)?.size ?? 0), { timeout: 15000 })
     .toBeGreaterThan(0);
+
+  // Auto-scroll: the PdfViewer's overflow-auto scroller advanced past the
+  // top once the highlight settled. Without the auto-scroll, scrollTop is
+  // 0 and the cited passage sits off-screen until the user clicks 'Jump to ¶'.
+  // The cited passage in spike.pdf lives near the bottom of page 1, so a
+  // successful auto-scroll yields scrollTop > 0 in the PDF scroller.
+  await expect
+    .poll(async () => page.evaluate(() => {
+      const pages = document.querySelector('[data-testid="pdf-pages"]');
+      const scroller = pages?.parentElement;
+      return scroller?.scrollTop ?? 0;
+    }), { timeout: 15000 })
+    .toBeGreaterThan(0);
 });
