@@ -25,7 +25,7 @@ describe('pickValidModel', () => {
   });
 
   it('falls back to the highest-tier valid option when smart itself is sub-floor', () => {
-    // Only the "smart" option satisfies tier 4; if smart were missing, fast (tier 4) wins.
+    // Both "smart" and "fast" are tier 4; with "smart" removed, "fast" is the next-highest valid option.
     const noSmart = opts.filter((o) => o.id !== 'smart');
     expect(pickValidModel(noSmart, 'local', 3)).toBe('fast');
   });
@@ -43,5 +43,9 @@ describe('pickValidModel', () => {
   it('treats options with tier=null as always valid', () => {
     const withNull: ChatModelOption[] = [{ id: 'mystery', label: '', resolvedModel: null, group: 'cloud', tier: null }];
     expect(pickValidModel(withNull, 'mystery', 5)).toBe('mystery');
+  });
+
+  it('falls back to "smart" when currentId is not in options and smart is valid', () => {
+    expect(pickValidModel(opts, 'unknown-model', 4)).toBe('smart');
   });
 });
