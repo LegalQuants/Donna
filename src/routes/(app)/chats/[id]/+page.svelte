@@ -11,6 +11,8 @@
   import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
   import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
   import MatterBadge from '$lib/matters/MatterBadge.svelte';
+  import PrivilegedChip from '$lib/matters/PrivilegedChip.svelte';
+  import { pickValidModel } from '$lib/models/pickValidModel';
 
   let { data } = $props();
 
@@ -43,6 +45,16 @@
     tick().then(() => scroller?.scrollTo({ top: scroller.scrollHeight }));
   });
 
+  // When the chat is scoped to a tier-floored matter, ensure the selected
+  // model satisfies the floor. Only swaps when the chosen id differs, so
+  // it doesn't loop on setModel updates.
+  $effect(() => {
+    const tier = data.matter?.minimumTier ?? null;
+    if (tier == null || modelStore.options.length === 0) return;
+    const chosen = pickValidModel(modelStore.options, modelStore.selectedModel, tier);
+    if (chosen !== modelStore.selectedModel) modelStore.setModel(chosen);
+  });
+
   // Land → stream: if the landing handed us a draft and this is a fresh chat, send it.
   // Use the picker selection (persisted to localStorage on the landing composer) so a
   // model chosen before the first message is honored, not silently reset to smart.
@@ -54,7 +66,10 @@
 <div class="flex h-full min-h-0">
   <div class="flex min-w-0 flex-1 flex-col">
     <div class="flex items-center justify-between border-b border-mlq-subtle px-6 py-2">
-      <MatterBadge matter={data.matter} />
+      <div class="flex items-center gap-2">
+        <MatterBadge matter={data.matter} />
+        {#if data.matter?.privileged}<PrivilegedChip />{/if}
+      </div>
       <button
         type="button"
         onclick={() => (showReceipts = true)}
@@ -80,6 +95,7 @@
         onstop={chat.stop}
         {skillAttach}
         {enhance}
+        minimumTier={data.matter?.minimumTier ?? null}
       />
       <p class="mt-2 text-center text-xs text-mlq-muted">AI can make mistakes. Answers are not legal advice.</p>
     </div>

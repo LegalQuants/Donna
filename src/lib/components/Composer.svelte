@@ -19,7 +19,8 @@
     skillAttach,
     enhance,
     matters,
-    selectedMatterId = $bindable(null as string | null)
+    selectedMatterId = $bindable(null as string | null),
+    minimumTier = null as 1 | 2 | 3 | 4 | 5 | null
   }: {
     value?: string;
     placeholder?: string;
@@ -30,6 +31,7 @@
     enhance?: ReturnType<typeof createEnhance>;
     matters?: MatterSummary[];
     selectedMatterId?: string | null;
+    minimumTier?: 1 | 2 | 3 | 4 | 5 | null;
   } = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
@@ -100,6 +102,7 @@
       options={modelStore.options}
       selected={modelStore.selectedModel}
       error={modelStore.error}
+      {minimumTier}
       onselect={modelStore.setModel}
     />
     {#if matters}

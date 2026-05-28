@@ -1,6 +1,7 @@
 import { error, fail, redirect, type Actions } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
 import type { Matter } from '$lib/matters/types';
+import { parsePrivilegeFields } from '$lib/matters/parseFormFields';
 import type { components } from '$lib/api/backend';
 import type { PageServerLoad } from './$types';
 
@@ -23,11 +24,16 @@ export const actions: Actions = {
     const name = String(data.get('name') ?? '').trim();
     const description = String(data.get('description') ?? '').trim();
     if (!name) return fail(400, { error: 'Matter name is required.' });
-    const res = await lqFetch(event, `/api/v1/projects/${event.params.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ name, description })
-    });
-    if (!res.ok) return fail(502, { error: 'Could not rename the matter.' });
+    const { privileged, minimum_inference_tier } = parsePrivilegeFields(data);
+    if (privileged && minimum_inference_tier === null) {
+      return fail(400, { error: 'Privileged matters require a minimum tier.' });
+    }
+    const body = { name, description, privileged, minimum_inference_tier };
+    const res = await lqFetch(event, `/api/v1/projects/${event.params.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    if (!res.ok) {
+      if (res.status === 400) return fail(400, { error: 'Privileged matters require a minimum tier.' });
+      return fail(502, { error: 'Could not rename the matter.' });
+    }
     return { success: true };
   },
 
