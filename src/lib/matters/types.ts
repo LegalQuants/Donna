@@ -9,6 +9,3 @@ export function activeMatters(projects: Matter[]): Matter[] {
   return projects.filter((p) => !p.is_sandbox);
 }
 
-export function toSummary(m: Matter): MatterSummary {
-  return { id: m.id, name: m.name };
-}
