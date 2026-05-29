@@ -15,7 +15,7 @@
   let body = $state(untrack(() => data.skill.body));
 
   const bytes = $derived(new TextEncoder().encode(body).length);
-  const canSave = $derived(displayName.trim() !== '' && body.trim() !== '');
+  const canSave = $derived(displayName.trim() !== '' && description.trim() !== '' && body.trim() !== '');
 
   let confirmingArchive = $state(false);
 
@@ -51,7 +51,7 @@
 
     <label class="block text-xs text-mlq-muted">
       Description
-      <input name="description" type="text" bind:value={description}
+      <input name="description" type="text" required bind:value={description}
         class="mt-1 block w-full rounded-mlq-control border border-mlq-subtle bg-transparent px-2 py-1 text-sm text-mlq-text outline-none focus:border-mlq-workflow" />
     </label>
 

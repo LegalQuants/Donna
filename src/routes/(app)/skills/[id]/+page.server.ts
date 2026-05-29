@@ -21,7 +21,7 @@ export const actions: Actions = {
     const tags = data.getAll('tags').map(String).filter(Boolean);
     const slashRaw = String(data.get('slash_alias') ?? '').trim();
 
-    if (!display_name || !body.trim()) return fail(400, { error: 'Name and body are required.' });
+    if (!display_name || !description || !body.trim()) return fail(400, { error: 'Name, description, and body are required.' });
 
     const payload: UserSkillUpdate = {
       display_name,
@@ -37,7 +37,11 @@ export const actions: Actions = {
       body: JSON.stringify(payload)
     });
     if (res.ok) return { success: true };
-    if (res.status === 422) return fail(422, { field: 'slash_alias', error: 'That slash command is already in use.' });
+    if (res.status === 422) {
+      const detail = await res.text();
+      if (/slash_alias/i.test(detail)) return fail(422, { field: 'slash_alias', error: 'That slash command is already in use.' });
+      return fail(422, { error: 'The backend rejected your changes. Check the fields and try again.' });
+    }
     if (res.status === 404) return fail(404, { error: 'This skill no longer exists.' });
     return fail(502, { error: 'Could not save the skill.' });
   },

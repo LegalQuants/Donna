@@ -23,8 +23,8 @@ export const actions: Actions = {
     const tags = data.getAll('tags').map(String).filter(Boolean);
     const slash_alias = String(data.get('slash_alias') ?? '').trim();
 
-    if (!display_name || !slug || !body.trim()) {
-      return fail(400, { error: 'Name, slug, and body are required.' });
+    if (!display_name || !slug || !description || !body.trim()) {
+      return fail(400, { error: 'Name, slug, description, and body are required.' });
     }
 
     const payload: UserSkillCreate = {
@@ -44,7 +44,11 @@ export const actions: Actions = {
       throw redirect(303, `/skills/${created.id}`);
     }
     if (res.status === 409) return fail(409, { field: 'slug', error: 'A skill with that name already exists.' });
-    if (res.status === 422) return fail(422, { field: 'slash_alias', error: 'That slash command is already in use.' });
+    if (res.status === 422) {
+      const detail = await res.text();
+      if (/slash_alias/i.test(detail)) return fail(422, { field: 'slash_alias', error: 'That slash command is already in use.' });
+      return fail(422, { error: 'The backend rejected this skill. Check the fields and try again.' });
+    }
     return fail(502, { error: 'Could not create the skill.' });
   },
 

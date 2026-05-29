@@ -39,13 +39,15 @@ describe('CreateSkillModal', () => {
     expect(slug.value).toBe('my-custom');
   });
 
-  it('seeds a non-empty body and disables Create until name + body present', async () => {
+  it('seeds a non-empty body and disables Create until name + description + body present', async () => {
     render(CreateSkillModal, { props: { open: true, onclose: () => {} } });
     const create = screen.getByRole('button', { name: 'Create' });
     const body = screen.getByLabelText('Body') as HTMLTextAreaElement;
     expect(body.value.length).toBeGreaterThan(0);
-    expect(create).toBeDisabled();
+    expect(create).toBeDisabled(); // no name/description yet
     await fireEvent.input(screen.getByLabelText('Name'), { target: { value: 'NDA' } });
+    expect(create).toBeDisabled(); // still no description
+    await fireEvent.input(screen.getByLabelText('Description'), { target: { value: 'Reviews NDAs' } });
     expect(create).not.toBeDisabled();
   });
 

@@ -24,7 +24,7 @@
     if (!slugTouched) slug = deriveSlug(displayName);
   });
 
-  const canCreate = $derived(displayName.trim() !== '' && body.trim() !== '' && slug.trim() !== '');
+  const canCreate = $derived(displayName.trim() !== '' && description.trim() !== '' && body.trim() !== '' && slug.trim() !== '');
 
   // Reset to a clean slate every time the modal opens, so a prior failed submit
   // never leaves ghost field values or a stale server error behind on reopen.
@@ -88,7 +88,7 @@
 
       <label class="block text-xs text-mlq-muted">
         Description
-        <input name="description" type="text" bind:value={description}
+        <input name="description" type="text" required bind:value={description}
           class="mt-1 block w-full rounded-mlq-control border border-mlq-subtle bg-transparent px-2 py-1 text-sm text-mlq-text outline-none focus:border-mlq-workflow" />
       </label>
 
