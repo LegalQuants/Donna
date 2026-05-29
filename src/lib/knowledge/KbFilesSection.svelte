@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { enhance } from '$app/forms';
   import Dropzone from '$lib/matters/files/Dropzone.svelte';
   import KbFileRow from './KbFileRow.svelte';
   import type { KBFile, PendingUpload } from './types';
@@ -32,6 +33,7 @@
     method="POST"
     action="?/uploadFile"
     enctype="multipart/form-data"
+    use:enhance
     aria-label="Upload files"
   >
     <input
