@@ -30,11 +30,19 @@ describe('KnowledgeSection', () => {
 
   it('linked state shows rows with file_count and an Unlink form per row', () => {
     render(KnowledgeSection, { props: { kbs: { linked: [kb({ id: 'k1', name: 'Linked KB', file_count: 5 })], available: [] } } });
-    expect(screen.getByText('Linked KB')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Linked KB' })).toBeInTheDocument();
     expect(screen.getByText(/5 files/i)).toBeInTheDocument();
     const form = screen.getByRole('form', { name: /unlink linked kb/i });
     expect(form).toHaveAttribute('action', '?/unlinkKb');
     expect((form.querySelector('input[name="kb_id"]') as HTMLInputElement).value).toBe('k1');
+  });
+
+  it('renders a Manage link to /knowledge/[id] for each linked KB', () => {
+    render(KnowledgeSection, {
+      props: { kbs: { linked: [{ id: 'k1', name: 'Acme', owner_id: 'u', hybrid_alpha: 0.5, file_count: 1, chunk_count: 1, created_at: '', updated_at: '' }], available: [] } }
+    });
+    const manage = screen.getByRole('link', { name: 'Manage' }) as HTMLAnchorElement;
+    expect(manage.getAttribute('href')).toBe('/knowledge/k1');
   });
 
   it('opens the picker and submits ?/linkKb with the chosen kb_id', async () => {
