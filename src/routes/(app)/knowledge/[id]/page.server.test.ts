@@ -174,3 +174,18 @@ describe('/knowledge/[id] actions — rename', () => {
     expect(r).toMatchObject({ status: 502, data: { error: 'Could not rename the knowledge base.' } });
   });
 });
+
+describe('/knowledge/[id] actions — archive', () => {
+  it('DELETEs the KB and redirects to /knowledge on 204', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await expect(actions.archive(urlEv({}))).rejects.toMatchObject({ status: 303, location: '/knowledge' });
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1');
+    expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
+  });
+
+  it('returns fail(502) when the backend fails', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    const r = await actions.archive(urlEv({}));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not archive the knowledge base.' } });
+  });
+});
