@@ -2,6 +2,7 @@
   import { Plus, GitFork } from '@lucide/svelte';
   import SkillRow from '$lib/skills/authoring/SkillRow.svelte';
   import CreateSkillModal from '$lib/skills/authoring/CreateSkillModal.svelte';
+  import ForkBrowser from '$lib/skills/authoring/ForkBrowser.svelte';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -41,5 +42,5 @@
   {/if}
 
   <CreateSkillModal open={creating} onclose={() => (creating = false)} />
-  {#if forking}<!-- ForkBrowser mounts here (Task 8) -->{/if}
+  <ForkBrowser open={forking} onclose={() => (forking = false)} />
 </div>
