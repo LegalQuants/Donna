@@ -1,4 +1,4 @@
-import { fail, type Actions } from '@sveltejs/kit';
+import { fail, redirect, type Actions } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
 import type { PendingUpload } from '$lib/knowledge/types';
 
@@ -73,5 +73,11 @@ export const actions: Actions = {
     if (res.ok) return { success: true };
     if (res.status === 404) return fail(404, { error: 'Knowledge base no longer exists.' });
     return fail(502, { error: 'Could not rename the knowledge base.' });
+  },
+
+  archive: async (event) => {
+    const res = await lqFetch(event, `/api/v1/knowledge-bases/${event.params.id}`, { method: 'DELETE' });
+    if (!res.ok) return fail(502, { error: 'Could not archive the knowledge base.' });
+    throw redirect(303, '/knowledge');
   },
 };
