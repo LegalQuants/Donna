@@ -355,3 +355,32 @@ describe('/matters/[id] saveContext action', () => {
     expect(r).toMatchObject({ status: 502, data: { error: 'Could not save the context.' } });
   });
 });
+
+describe('/matters/[id] actions — createKb (P4-3b)', () => {
+  it('POSTs name + project_id + default hybrid_alpha and returns success on 201', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'kNew' }), { status: 201 }));
+    const r = await actions.createKb(ev({ name: 'Acme' }));
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases');
+    expect(lqFetch.mock.calls[0][2].method).toBe('POST');
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ name: 'Acme', project_id: 'p1', hybrid_alpha: 0.5 });
+    expect(r).toMatchObject({ success: true });
+  });
+
+  it('rejects empty name without calling the backend', async () => {
+    const r = await actions.createKb(ev({ name: '  ' }));
+    expect(r).toMatchObject({ status: 400, data: { error: 'Name is required.' } });
+    expect(lqFetch).not.toHaveBeenCalled();
+  });
+
+  it('maps 404 to matter-gone fail', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 404 }));
+    const r = await actions.createKb(ev({ name: 'Acme' }));
+    expect(r).toMatchObject({ status: 404, data: { error: 'Matter no longer exists.' } });
+  });
+
+  it('maps other backend failures to 502', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    const r = await actions.createKb(ev({ name: 'Acme' }));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not create the knowledge base.' } });
+  });
+});
