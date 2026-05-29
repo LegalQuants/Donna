@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import KbHeader from '$lib/knowledge/KbHeader.svelte';
   import KbFilesSection from '$lib/knowledge/KbFilesSection.svelte';
   import HybridAlphaControl from '$lib/knowledge/HybridAlphaControl.svelte';
@@ -15,13 +16,17 @@
 
   $effect(() => {
     if (form && 'uploaded' in form && Array.isArray(form.uploaded)) {
-      pendingUploads = [...pendingUploads, ...(form.uploaded as PendingUpload[])];
+      // untrack: read current pendingUploads without creating a reactive
+      // dependency — avoids the self-referential cycle that prevents this
+      // effect from running in Svelte 5's reactivity system.
+      pendingUploads = [...untrack(() => pendingUploads), ...(form.uploaded as PendingUpload[])];
     }
   });
 
   $effect(() => {
     const attachedIds = new Set(data.files.map((f) => f.id));
-    pendingUploads = pendingUploads.filter((p) => !attachedIds.has(p.file_id));
+    // untrack: same reason — read without a reactive dependency.
+    pendingUploads = untrack(() => pendingUploads.filter((p) => !attachedIds.has(p.file_id)));
   });
 
   const uploadError = $derived(

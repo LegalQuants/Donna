@@ -9,9 +9,11 @@
 <form
   method="POST"
   action="?/createKb"
-  use:enhance
+  use:enhance={() => async ({ result, update }) => {
+    await update();
+    if (result.type === 'success') onsubmit();
+  }}
   aria-label="Create knowledge base"
-  {onsubmit}
   class="p-3"
 >
   <label class="block text-xs text-mlq-muted">
