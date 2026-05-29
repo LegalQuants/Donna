@@ -18,13 +18,12 @@
     untrack(() => (isAttached(row) ? row.ingestion_status : row.status))
   );
   let ingestionError = $state<string | null>(
-    untrack(() => (isAttached(row) ? (row.ingestion_error ?? null) : (row.ingestion_error ?? null)))
+    untrack(() => row.ingestion_error ?? null)
   );
   let stuck = $state(false);
-  let dropped = $state(false);
+  let notFound = $state(false);
   let attaching = $state(false);
   let attachForm = $state<HTMLFormElement>();
-  let attachInput = $state<HTMLInputElement>();
 
   const POLL_INTERVAL_MS = 2000;
   const STUCK_TIMEOUT_MS = 5 * 60 * 1000;
@@ -34,9 +33,13 @@
     badge.tone === 'success' ? 'text-mlq-success' : badge.tone === 'error' ? 'text-mlq-error' : 'text-mlq-muted'
   );
   const shouldPoll = $derived(
-    !isAttached(row) && !dropped && !stuck && (status === 'pending' || status === 'processing')
+    !isAttached(row) && !notFound && !stuck && (status === 'pending' || status === 'processing')
   );
 
+  // Belt-and-suspenders: shouldPoll's transition to false on `ready` already
+  // clears the polling interval before another `ready` can be observed, but
+  // the `attaching` flag protects against any future code path that calls
+  // fireAttach without going through the $effect cleanup.
   function fireAttach() {
     if (attaching) return;
     attaching = true;
@@ -51,7 +54,7 @@
       try {
         const res = await fetch(`/files/${fileId}`);
         if (res.status === 404) {
-          dropped = true;
+          notFound = true;
           return;
         }
         if (!res.ok) return; // transient hiccup; keep polling
@@ -81,7 +84,7 @@
   }
 </script>
 
-{#if !dropped}
+{#if !notFound}
   <div class="flex items-center gap-3 border-b border-mlq-subtle px-3 py-2 last:border-b-0">
     <div class="min-w-0 flex-1">
       <div class="truncate text-sm text-mlq-text">{row.filename}</div>
@@ -104,6 +107,7 @@
     </div>
 
     {#if isAttached(row) && status === 'ready'}
+      <!-- KB files download via the BFF proxy (/files/{id}/content), same pattern as matter files. -->
       <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- BFF download proxy -->
       <a href="/files/{fileId}/content" target="_blank" rel="noopener" class="shrink-0 text-xs text-mlq-workflow hover:underline">Download</a>
     {/if}
@@ -131,7 +135,7 @@
       use:enhance
       class="hidden"
     >
-      <input bind:this={attachInput} type="hidden" name="file_id" value={fileId} />
+      <input type="hidden" name="file_id" value={fileId} />
     </form>
   </div>
 {/if}
