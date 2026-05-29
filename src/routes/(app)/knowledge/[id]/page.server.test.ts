@@ -139,3 +139,38 @@ describe('/knowledge/[id] actions — detachFile', () => {
     expect(lqFetch).not.toHaveBeenCalled();
   });
 });
+
+describe('/knowledge/[id] actions — rename', () => {
+  it('PATCHes name + description', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    const r = await actions.rename(urlEv({ name: 'New name', description: 'desc' }));
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1');
+    expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ name: 'New name', description: 'desc' });
+    expect(r).toMatchObject({ success: true });
+  });
+
+  it('sends description as null when empty', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    await actions.rename(urlEv({ name: 'N', description: '' }));
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ name: 'N', description: null });
+  });
+
+  it('rejects empty name without calling the backend', async () => {
+    const r = await actions.rename(urlEv({ name: '  ' }));
+    expect(r).toMatchObject({ status: 400, data: { error: 'Name is required.' } });
+    expect(lqFetch).not.toHaveBeenCalled();
+  });
+
+  it('maps 404 to KB-gone fail', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 404 }));
+    const r = await actions.rename(urlEv({ name: 'N' }));
+    expect(r).toMatchObject({ status: 404, data: { error: 'Knowledge base no longer exists.' } });
+  });
+
+  it('maps other backend failures to 502', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    const r = await actions.rename(urlEv({ name: 'N' }));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not rename the knowledge base.' } });
+  });
+});
