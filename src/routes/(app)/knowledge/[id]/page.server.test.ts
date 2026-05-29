@@ -67,3 +67,47 @@ describe('/knowledge/[id] actions — uploadFile', () => {
     expect(r).toMatchObject({ status: 502 });
   });
 });
+
+const urlEv = (fields: Record<string, string>, id = 'k1') =>
+  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams(fields) }) }) as never;
+
+describe('/knowledge/[id] actions — attachFile', () => {
+  it('POSTs { file_id } to /knowledge-bases/{kb_id}/files and returns success on 204', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const r = await actions.attachFile(urlEv({ file_id: 'f1' }));
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1/files');
+    expect(lqFetch.mock.calls[0][2].method).toBe('POST');
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ file_id: 'f1' });
+    expect(r).toMatchObject({ success: true });
+  });
+
+  it('treats 409 (already attached) as success — race protection', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 409 }));
+    const r = await actions.attachFile(urlEv({ file_id: 'f1' }));
+    expect(r).toMatchObject({ success: true });
+  });
+
+  it('returns fail(422, { retry: true }) when the file is not ready (race)', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 422 }));
+    const r = await actions.attachFile(urlEv({ file_id: 'f1' }));
+    expect(r).toMatchObject({ status: 422, data: { retry: true } });
+  });
+
+  it('returns fail(404) when the KB or file is missing', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 404 }));
+    const r = await actions.attachFile(urlEv({ file_id: 'f1' }));
+    expect(r).toMatchObject({ status: 404, data: { error: 'Knowledge base or file no longer exists.' } });
+  });
+
+  it('returns fail(502) for other backend failures', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    const r = await actions.attachFile(urlEv({ file_id: 'f1' }));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not attach the file.' } });
+  });
+
+  it('returns fail(400) when file_id is missing without calling the backend', async () => {
+    const r = await actions.attachFile(urlEv({}));
+    expect(r).toMatchObject({ status: 400, data: { error: 'Missing file_id.' } });
+    expect(lqFetch).not.toHaveBeenCalled();
+  });
+});
