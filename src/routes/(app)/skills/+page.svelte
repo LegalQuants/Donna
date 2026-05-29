@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Plus, GitFork } from '@lucide/svelte';
   import SkillRow from '$lib/skills/authoring/SkillRow.svelte';
+  import CreateSkillModal from '$lib/skills/authoring/CreateSkillModal.svelte';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -39,6 +40,6 @@
     </ul>
   {/if}
 
-  {#if creating}<!-- CreateSkillModal mounts here (Task 7) -->{/if}
+  <CreateSkillModal open={creating} onclose={() => (creating = false)} />
   {#if forking}<!-- ForkBrowser mounts here (Task 8) -->{/if}
 </div>
