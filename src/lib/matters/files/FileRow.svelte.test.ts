@@ -38,7 +38,7 @@ describe('FileRow', () => {
   it('exposes a Download link to the BFF content route', () => {
     render(FileRow, { props: { file: file() } });
     const link = screen.getByRole('link', { name: /download/i }) as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe('/api/v1/files/f1/content');
+    expect(link.getAttribute('href')).toBe('/files/f1/content');
   });
 
   it('renders a Remove form that posts to ?/detachFile with the file_id', () => {

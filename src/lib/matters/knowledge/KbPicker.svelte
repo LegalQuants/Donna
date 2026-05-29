@@ -1,12 +1,12 @@
 <script lang="ts">
   import { Plus } from '@lucide/svelte';
-  import type { components } from '$lib/api/backend';
-
-  type KnowledgeBase = components['schemas']['KnowledgeBase'];
+  import type { KnowledgeBase } from '$lib/knowledge/types';
+  import CreateKbForm from '$lib/knowledge/CreateKbForm.svelte';
 
   let { kbs, onpick }: { kbs: KnowledgeBase[]; onpick: (kbId: string) => void } = $props();
 
   let open = $state(false);
+  let mode = $state<'list' | 'create'>('list');
   let q = $state('');
   let root = $state<HTMLElement>();
 
@@ -17,15 +17,30 @@
   function choose(id: string) {
     onpick(id);
     open = false;
+    mode = 'list';
     q = '';
   }
   function onkeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') open = false;
+    if (e.key === 'Escape') {
+      open = false;
+      mode = 'list';
+    }
+  }
+  function startCreate() {
+    mode = 'create';
+  }
+  function onCreateSubmit() {
+    open = false;
+    mode = 'list';
+    q = '';
   }
   $effect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (root && !root.contains(e.target as Node)) open = false;
+      if (root && !root.contains(e.target as Node)) {
+        open = false;
+        mode = 'list';
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -47,34 +62,40 @@
 
   {#if open}
     <div class="absolute right-0 z-20 mt-1 w-72 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md">
-      <input
-        type="text"
-        placeholder="Search knowledge bases…"
-        bind:value={q}
-        class="w-full border-b border-mlq-subtle bg-transparent px-3 py-2 text-xs text-mlq-text outline-none placeholder:text-mlq-muted"
-      />
-      {#if kbs.length === 0}
-        <p class="px-3 py-3 text-xs text-mlq-muted">
-          No other knowledge bases to link.
-          <span class="block text-[10px]">(Creating a KB lands in a follow-up slice.)</span>
-        </p>
-      {:else if filtered.length === 0}
-        <p class="px-3 py-2 text-xs text-mlq-muted">No matches.</p>
+      {#if mode === 'create'}
+        <CreateKbForm onsubmit={onCreateSubmit} />
       {:else}
-        <ul class="max-h-64 overflow-y-auto">
-          {#each filtered as k (k.id)}
-            <li>
-              <button
-                type="button"
-                onclick={() => choose(k.id)}
-                class="block w-full px-3 py-2 text-left text-xs hover:bg-mlq-subtle/50"
-              >
-                <span class="font-medium text-mlq-text">{k.name}</span>
-                <span class="ml-2 text-mlq-muted">{k.file_count} files</span>
-              </button>
-            </li>
-          {/each}
-        </ul>
+        <button
+          type="button"
+          onclick={startCreate}
+          class="flex w-full items-center gap-1 border-b border-mlq-subtle px-3 py-2 text-left text-xs text-mlq-text hover:bg-mlq-subtle/50"
+        ><Plus size={12} /> Create new KB</button>
+        <input
+          type="text"
+          placeholder="Search knowledge bases…"
+          bind:value={q}
+          class="w-full border-b border-mlq-subtle bg-transparent px-3 py-2 text-xs text-mlq-text outline-none placeholder:text-mlq-muted"
+        />
+        {#if kbs.length === 0}
+          <p class="px-3 py-3 text-xs text-mlq-muted">No other knowledge bases to link.</p>
+        {:else if filtered.length === 0}
+          <p class="px-3 py-2 text-xs text-mlq-muted">No matches.</p>
+        {:else}
+          <ul class="max-h-64 overflow-y-auto">
+            {#each filtered as k (k.id)}
+              <li>
+                <button
+                  type="button"
+                  onclick={() => choose(k.id)}
+                  class="block w-full px-3 py-2 text-left text-xs hover:bg-mlq-subtle/50"
+                >
+                  <span class="font-medium text-mlq-text">{k.name}</span>
+                  <span class="ml-2 text-mlq-muted">{k.file_count} files</span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
       {/if}
     </div>
   {/if}
