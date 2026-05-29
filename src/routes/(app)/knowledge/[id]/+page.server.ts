@@ -1,6 +1,18 @@
-import { fail, redirect, type Actions } from '@sveltejs/kit';
+import { error, fail, redirect, type Actions } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
-import type { PendingUpload } from '$lib/knowledge/types';
+import type { KnowledgeBase, KBFile, PendingUpload } from '$lib/knowledge/types';
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async (event) => {
+  const [kbRes, filesRes] = await Promise.all([
+    lqFetch(event, `/api/v1/knowledge-bases/${event.params.id}`),
+    lqFetch(event, `/api/v1/knowledge-bases/${event.params.id}/files`)
+  ]);
+  if (!kbRes.ok) throw error(kbRes.status === 404 ? 404 : 502, 'Could not load this knowledge base.');
+  const kb = (await kbRes.json()) as KnowledgeBase;
+  const files = filesRes.ok ? ((await filesRes.json()) as KBFile[]) : [];
+  return { kb, files };
+};
 
 export const actions: Actions = {
   uploadFile: async (event) => {
