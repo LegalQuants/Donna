@@ -3,9 +3,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import KbPicker from './KbPicker.svelte';
-import type { components } from '$lib/api/backend';
+import type { KnowledgeBase } from '$lib/knowledge/types';
 
-type KnowledgeBase = components['schemas']['KnowledgeBase'];
+vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
 
 const kb = (over: Partial<KnowledgeBase>): KnowledgeBase => ({
   id: 'k1', name: 'Standards', owner_id: 'u', hybrid_alpha: 0.5,
@@ -46,11 +46,11 @@ describe('KbPicker', () => {
     expect(screen.queryByPlaceholderText(/search knowledge bases/i)).not.toBeInTheDocument();
   });
 
-  it('shows the deferred-create message when there are no KBs available', async () => {
+  it('shows a no-KBs message (without deferred-create disclaimer) when there are no KBs available', async () => {
     render(KbPicker, { props: { kbs: [], onpick: vi.fn() } });
     await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
     expect(screen.getByText(/no other knowledge bases to link/i)).toBeInTheDocument();
-    expect(screen.getByText(/creating a kb lands in a follow-up slice/i)).toBeInTheDocument();
+    expect(screen.queryByText(/creating a kb lands in a follow-up slice/i)).not.toBeInTheDocument();
   });
 
   it('closes on Escape', async () => {
@@ -59,5 +59,29 @@ describe('KbPicker', () => {
     expect(screen.getByPlaceholderText(/search knowledge bases/i)).toBeInTheDocument();
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByPlaceholderText(/search knowledge bases/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('KbPicker — create affordance (P4-3b)', () => {
+  it('renders a "+ Create new KB" affordance when opened', async () => {
+    render(KbPicker, { props: { kbs: [kb({ id: 'k1', name: 'Existing' })], onpick: () => {} } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Link a knowledge base' }));
+    expect(screen.getByRole('button', { name: 'Create new KB' })).toBeInTheDocument();
+  });
+
+  it('renders the affordance in the empty-KB state too', async () => {
+    render(KbPicker, { props: { kbs: [], onpick: () => {} } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Link a knowledge base' }));
+    expect(screen.getByRole('button', { name: 'Create new KB' })).toBeInTheDocument();
+    // The deferred-create copy is gone.
+    expect(screen.queryByText(/lands in a follow-up slice/i)).not.toBeInTheDocument();
+  });
+
+  it('clicking "+ Create new KB" swaps the search list for the create form', async () => {
+    render(KbPicker, { props: { kbs: [kb({ id: 'k1' })], onpick: () => {} } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Link a knowledge base' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Create new KB' }));
+    expect(screen.getByRole('form', { name: 'Create knowledge base' })).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Search knowledge bases…')).not.toBeInTheDocument();
   });
 });
