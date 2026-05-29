@@ -51,7 +51,7 @@ describe('/skills ?/create', () => {
 
   it('omits slash_alias when blank', async () => {
     lqFetch.mockResolvedValueOnce(new Response(JSON.stringify(skill({ id: 'new1' })), { status: 201 }));
-    await expect(actions.create(formEv({ display_name: 'NDA', slug: 'nda', body: 'B' }))).rejects.toMatchObject({ status: 303 });
+    await expect(actions.create(formEv({ display_name: 'NDA', slug: 'nda', description: 'x', body: 'B' }))).rejects.toMatchObject({ status: 303 });
     expect(JSON.parse(lqFetch.mock.calls[0][2].body).slash_alias).toBeUndefined();
   });
 
@@ -63,19 +63,26 @@ describe('/skills ?/create', () => {
 
   it('maps 409 to an inline slug error', async () => {
     lqFetch.mockResolvedValueOnce(new Response('{}', { status: 409 }));
-    const r = await actions.create(formEv({ display_name: 'NDA', slug: 'nda', body: 'B' }));
+    const r = await actions.create(formEv({ display_name: 'NDA', slug: 'nda', description: 'x', body: 'B' }));
     expect(r).toMatchObject({ status: 409, data: { field: 'slug', error: 'A skill with that name already exists.' } });
   });
 
-  it('maps 422 to an inline slash_alias error', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 422 }));
-    const r = await actions.create(formEv({ display_name: 'NDA', slug: 'nda', body: 'B', slash_alias: '/nda' }));
+  it('maps a slash_alias 422 to an inline slash_alias error', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: "slash_alias '/nda' is already used by another of your skills." }), { status: 422 }));
+    const r = await actions.create(formEv({ display_name: 'NDA', slug: 'nda', description: 'x', body: 'B', slash_alias: '/nda' }));
     expect(r).toMatchObject({ status: 422, data: { field: 'slash_alias' } });
+  });
+
+  it('maps a non-slash_alias 422 to a general error', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: [{ loc: ['body', 'description'] }] }), { status: 422 }));
+    const r = await actions.create(formEv({ display_name: 'NDA', slug: 'nda', description: 'x', body: 'B' }));
+    expect(r).toMatchObject({ status: 422 });
+    expect((r as { data?: { field?: string } }).data?.field).toBeUndefined();
   });
 
   it('maps other failures to 502', async () => {
     lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
-    const r = await actions.create(formEv({ display_name: 'NDA', slug: 'nda', body: 'B' }));
+    const r = await actions.create(formEv({ display_name: 'NDA', slug: 'nda', description: 'x', body: 'B' }));
     expect(r).toMatchObject({ status: 502 });
   });
 });

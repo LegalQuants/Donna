@@ -54,19 +54,26 @@ describe('/skills/[id] ?/save', () => {
 
   it('sends slash_alias as null when cleared', async () => {
     lqFetch.mockResolvedValueOnce(new Response('{}', { status: 200 }));
-    await actions.save(formEv({ display_name: 'NDA', description: '', version: '1.0.0', body: 'B', slash_alias: '' }));
+    await actions.save(formEv({ display_name: 'NDA', description: 'd', version: '1.0.0', body: 'B', slash_alias: '' }));
     expect(JSON.parse(lqFetch.mock.calls[0][2].body).slash_alias).toBeNull();
   });
 
-  it('maps 422 to an inline slash_alias error', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 422 }));
-    const r = await actions.save(formEv({ display_name: 'NDA', body: 'B', version: '1.0.0', slash_alias: '/taken' }));
+  it('maps a slash_alias 422 to an inline slash_alias error', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: "slash_alias '/taken' is already used by another of your skills." }), { status: 422 }));
+    const r = await actions.save(formEv({ display_name: 'NDA', description: 'd', body: 'B', version: '1.0.0', slash_alias: '/taken' }));
     expect(r).toMatchObject({ status: 422, data: { field: 'slash_alias' } });
+  });
+
+  it('maps a non-slash_alias 422 to a general error', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: [{ loc: ['body', 'description'] }] }), { status: 422 }));
+    const r = await actions.save(formEv({ display_name: 'NDA', description: 'd', body: 'B', version: '1.0.0' }));
+    expect(r).toMatchObject({ status: 422 });
+    expect((r as { data?: { field?: string } }).data?.field).toBeUndefined();
   });
 
   it('maps 404 to a gone error', async () => {
     lqFetch.mockResolvedValueOnce(new Response('{}', { status: 404 }));
-    const r = await actions.save(formEv({ display_name: 'NDA', body: 'B', version: '1.0.0' }));
+    const r = await actions.save(formEv({ display_name: 'NDA', description: 'd', body: 'B', version: '1.0.0' }));
     expect(r).toMatchObject({ status: 404, data: { error: 'This skill no longer exists.' } });
   });
 
