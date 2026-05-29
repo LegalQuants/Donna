@@ -3,7 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const lqFetch = vi.fn();
 vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(...a) }));
-import { actions } from './+page.server';
+import { actions, load } from './+page.server';
+const loadEv = (id = 'k1') => ({ params: { id } }) as never;
 
 const fileEvent = (files: { name: string; bytes: Uint8Array }[], id = 'k1') => {
   const fd = new FormData();
@@ -219,5 +220,35 @@ describe('/knowledge/[id] actions — setHybridAlpha', () => {
     lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
     const r = await actions.setHybridAlpha(urlEv({ hybrid_alpha: '0.5' }));
     expect(r).toMatchObject({ status: 502, data: { error: 'Could not save the hybrid alpha.' } });
+  });
+});
+
+describe('/knowledge/[id] load', () => {
+  it('parallel-fetches KB + files and returns { kb, files }', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'k1', name: 'KB', owner_id: 'u', hybrid_alpha: 0.5, file_count: 2, chunk_count: 9, created_at: '', updated_at: '' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([
+        { id: 'f1', owner_id: 'u', filename: 'a.pdf', mime_type: 'application/pdf', size_bytes: 1, hash_sha256: 'h', ingestion_status: 'ready', created_at: '', attached_at: '' }
+      ]), { status: 200 }));
+    const out = (await load(loadEv())) as { kb: { name: string }; files: { id: string }[] };
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1');
+    expect(lqFetch.mock.calls[1][1]).toBe('/api/v1/knowledge-bases/k1/files');
+    expect(out.kb.name).toBe('KB');
+    expect(out.files.map((f) => f.id)).toEqual(['f1']);
+  });
+
+  it('throws 404 when the KB is missing', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response('not found', { status: 404 }))
+      .mockResolvedValueOnce(new Response('[]', { status: 200 }));
+    await expect(load(loadEv())).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('returns empty files when the file list endpoint fails non-fatally', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'k1', name: 'KB', owner_id: 'u', hybrid_alpha: 0.5, file_count: 0, chunk_count: 0, created_at: '', updated_at: '' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('boom', { status: 502 }));
+    const out = (await load(loadEv())) as { files: unknown[] };
+    expect(out.files).toEqual([]);
   });
 });
