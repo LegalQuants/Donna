@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut } from '@lucide/svelte';
+  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut, ScrollText } from '@lucide/svelte';
   import { loadSidebar, persistSidebar } from './sidebar';
 
   let { displayName = 'Account' }: { displayName?: string } = $props();
@@ -10,6 +10,7 @@
     { href: '/', label: 'Assistant', icon: MessageSquare },
     { href: '/matters', label: 'Projects', icon: FolderKanban },
     { href: '/workflows', label: 'Workflows', icon: Workflow },
+    { href: '/skills', label: 'Skills', icon: ScrollText },
     { href: '/tabular', label: 'Tabular', icon: Table }
   ];
 
@@ -27,7 +28,8 @@
   </div>
 
   <nav class="flex-1 space-y-1 px-2">
-    {#each nav as item}
+    {#each nav as item (item.href)}
+      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sidebar nav link -->
       <a href={item.href}
          aria-current={isActive(item.href) ? 'page' : undefined}
          class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
