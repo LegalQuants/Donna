@@ -111,3 +111,31 @@ describe('/knowledge/[id] actions — attachFile', () => {
     expect(lqFetch).not.toHaveBeenCalled();
   });
 });
+
+describe('/knowledge/[id] actions — detachFile', () => {
+  it('DELETEs /knowledge-bases/{kb_id}/files/{file_id} and returns success on 204', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const r = await actions.detachFile(urlEv({ file_id: 'f1' }));
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1/files/f1');
+    expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
+    expect(r).toMatchObject({ success: true });
+  });
+
+  it('treats 404 (not attached) as success — idempotent', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 404 }));
+    const r = await actions.detachFile(urlEv({ file_id: 'f1' }));
+    expect(r).toMatchObject({ success: true });
+  });
+
+  it('returns fail(502) for other backend failures', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    const r = await actions.detachFile(urlEv({ file_id: 'f1' }));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not remove the file.' } });
+  });
+
+  it('returns fail(400) when file_id is missing without calling the backend', async () => {
+    const r = await actions.detachFile(urlEv({}));
+    expect(r).toMatchObject({ status: 400, data: { error: 'Missing file_id.' } });
+    expect(lqFetch).not.toHaveBeenCalled();
+  });
+});

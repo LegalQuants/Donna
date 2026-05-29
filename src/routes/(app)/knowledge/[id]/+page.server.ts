@@ -49,4 +49,14 @@ export const actions: Actions = {
     if (res.status === 404) return fail(404, { error: 'Knowledge base or file no longer exists.' });
     return fail(502, { error: 'Could not attach the file.' });
   },
+
+  detachFile: async (event) => {
+    const data = await event.request.formData();
+    const file_id = String(data.get('file_id') ?? '');
+    if (!file_id) return fail(400, { error: 'Missing file_id.' });
+    const res = await lqFetch(event, `/api/v1/knowledge-bases/${event.params.id}/files/${file_id}`, { method: 'DELETE' });
+    // 204 or 404 → idempotent success.
+    if (res.ok || res.status === 404) return { success: true };
+    return fail(502, { error: 'Could not remove the file.' });
+  },
 };
