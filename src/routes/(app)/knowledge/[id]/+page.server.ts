@@ -59,4 +59,19 @@ export const actions: Actions = {
     if (res.ok || res.status === 404) return { success: true };
     return fail(502, { error: 'Could not remove the file.' });
   },
+
+  rename: async (event) => {
+    const data = await event.request.formData();
+    const name = String(data.get('name') ?? '').trim();
+    const descriptionRaw = String(data.get('description') ?? '').trim();
+    if (!name) return fail(400, { error: 'Name is required.' });
+    const body = { name, description: descriptionRaw === '' ? null : descriptionRaw };
+    const res = await lqFetch(event, `/api/v1/knowledge-bases/${event.params.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body)
+    });
+    if (res.ok) return { success: true };
+    if (res.status === 404) return fail(404, { error: 'Knowledge base no longer exists.' });
+    return fail(502, { error: 'Could not rename the knowledge base.' });
+  },
 };
