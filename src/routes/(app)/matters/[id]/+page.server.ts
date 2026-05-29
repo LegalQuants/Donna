@@ -191,4 +191,17 @@ export const actions: Actions = {
     }
     return { success: true };
   },
+
+  createKb: async (event) => {
+    const data = await event.request.formData();
+    const name = String(data.get('name') ?? '').trim();
+    if (!name) return fail(400, { error: 'Name is required.' });
+    const res = await lqFetch(event, '/api/v1/knowledge-bases', {
+      method: 'POST',
+      body: JSON.stringify({ name, project_id: event.params.id, hybrid_alpha: 0.5 })
+    });
+    if (res.ok) return { success: true };
+    if (res.status === 404) return fail(404, { error: 'Matter no longer exists.' });
+    return fail(502, { error: 'Could not create the knowledge base.' });
+  },
 };
