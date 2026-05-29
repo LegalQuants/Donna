@@ -189,3 +189,35 @@ describe('/knowledge/[id] actions — archive', () => {
     expect(r).toMatchObject({ status: 502, data: { error: 'Could not archive the knowledge base.' } });
   });
 });
+
+describe('/knowledge/[id] actions — setHybridAlpha', () => {
+  it('PATCHes hybrid_alpha as a number', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    const r = await actions.setHybridAlpha(urlEv({ hybrid_alpha: '0.7' }));
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1');
+    expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ hybrid_alpha: 0.7 });
+    expect(r).toMatchObject({ success: true });
+  });
+
+  it('rejects out-of-range values without calling the backend', async () => {
+    for (const v of ['-0.1', '1.1', 'NaN', '']) {
+      lqFetch.mockReset();
+      const r = await actions.setHybridAlpha(urlEv({ hybrid_alpha: v }));
+      expect(r).toMatchObject({ status: 422, data: { error: 'hybrid_alpha must be a number between 0 and 1.' } });
+      expect(lqFetch).not.toHaveBeenCalled();
+    }
+  });
+
+  it('maps 404 to KB-gone fail', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 404 }));
+    const r = await actions.setHybridAlpha(urlEv({ hybrid_alpha: '0.5' }));
+    expect(r).toMatchObject({ status: 404, data: { error: 'Knowledge base no longer exists.' } });
+  });
+
+  it('maps other backend failures to 502', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    const r = await actions.setHybridAlpha(urlEv({ hybrid_alpha: '0.5' }));
+    expect(r).toMatchObject({ status: 502, data: { error: 'Could not save the hybrid alpha.' } });
+  });
+});

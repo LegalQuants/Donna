@@ -80,4 +80,21 @@ export const actions: Actions = {
     if (!res.ok) return fail(502, { error: 'Could not archive the knowledge base.' });
     throw redirect(303, '/knowledge');
   },
+
+  setHybridAlpha: async (event) => {
+    const data = await event.request.formData();
+    const raw = String(data.get('hybrid_alpha') ?? '');
+    const value = Number(raw);
+    // Defensive: slider client-constrains to [0,1] per ADR 0008; reject anything else.
+    if (raw === '' || !Number.isFinite(value) || value < 0 || value > 1) {
+      return fail(422, { error: 'hybrid_alpha must be a number between 0 and 1.' });
+    }
+    const res = await lqFetch(event, `/api/v1/knowledge-bases/${event.params.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ hybrid_alpha: value })
+    });
+    if (res.ok) return { success: true };
+    if (res.status === 404) return fail(404, { error: 'Knowledge base no longer exists.' });
+    return fail(502, { error: 'Could not save the hybrid alpha.' });
+  },
 };
