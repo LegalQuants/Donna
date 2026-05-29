@@ -20,7 +20,7 @@ describe('KbRenameModal', () => {
     render(KbRenameModal, { props: { open: true, kb: kb({ name: 'Acme' }), onclose: () => {} } });
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
-    const nameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
+    const nameInput = screen.getByLabelText('Name') as HTMLInputElement;
     expect(nameInput.value).toBe('Acme');
   });
 
@@ -41,7 +41,7 @@ describe('KbRenameModal', () => {
 
   it('renders a form posting to ?/rename with name + description', () => {
     render(KbRenameModal, { props: { open: true, kb: kb({ name: 'Acme', description: 'd' }), onclose: () => {} } });
-    const form = screen.getByRole('form', { name: /rename knowledge base/i });
+    const form = screen.getByRole('form', { name: 'Rename knowledge base' });
     expect(form).toHaveAttribute('action', '?/rename');
     expect((form.querySelector('input[name="name"]') as HTMLInputElement).value).toBe('Acme');
     expect((form.querySelector('textarea[name="description"]') as HTMLTextAreaElement).value).toBe('d');
