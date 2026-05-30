@@ -50,4 +50,21 @@ describe('Message', () => {
     });
     expect(queryByText(/Anonymized/i)).toBeNull();
   });
+
+  it('shows the applied-skills footer with prettified, linked names', () => {
+    const { getByText, getByRole } = render(Message, {
+      props: { message: { key: 'a7', id: 'a7', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4, applied_skills: ['comms-improver', 'nda-review'] } }
+    });
+    expect(getByText(/Applied:/)).toBeInTheDocument();
+    const link = getByRole('link', { name: 'Comms Improver' });
+    expect(link).toHaveAttribute('href', '/skills');
+    expect(getByRole('link', { name: 'NDA Review' })).toHaveAttribute('href', '/skills');
+  });
+
+  it('renders no applied-skills footer when none were applied', () => {
+    const { queryByText } = render(Message, {
+      props: { message: { key: 'a8', id: 'a8', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4 } }
+    });
+    expect(queryByText(/Applied:/)).toBeNull();
+  });
 });

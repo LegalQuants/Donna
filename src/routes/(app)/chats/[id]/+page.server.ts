@@ -26,6 +26,7 @@ export const load: PageServerLoad = async (event) => {
     role: m.role,
     content: m.content,
     routed_inference_tier: m.routed_inference_tier,
+    applied_skills: m.applied_skills,
     status: 'done'
   }));
 
