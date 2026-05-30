@@ -61,7 +61,9 @@
             <span class="inline-flex items-center gap-1">
               <ScrollText size={11} aria-hidden="true" />
               <span>Applied:</span>
-              {#each skills as slug, i (slug)}<a href="/skills" class="hover:underline">{prettifySkillSlug(slug)}</a>{#if i < skills.length - 1}<span aria-hidden="true">,&nbsp;</span>{/if}{/each}
+              {#each skills as slug, i (slug)}
+                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app skills list link -->
+                <a href="/skills" class="hover:underline">{prettifySkillSlug(slug)}</a>{#if i < skills.length - 1}<span aria-hidden="true">,&nbsp;</span>{/if}{/each}
             </span>
           {/if}
         </div>
