@@ -14,7 +14,7 @@ async function login(page: any) {
 test('attach a skill in a chat: chip appears, body carries skills, persists across sends', async ({ page }) => {
   await login(page);
 
-  // Start a chat (the landing composer has no skill UI — in-chat only).
+  // Start a chat from the landing composer.
   await page.fill('textarea', 'In one short sentence, what is an NDA?');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
@@ -45,8 +45,8 @@ test('attach a skill in a chat: chip appears, body carries skills, persists acro
   await expect(chipRemove).toBeVisible();
 });
 
-test('the landing composer has no skill-attach affordance', async ({ page }) => {
+test('the landing composer offers skill-attach (apply a skill to the first message)', async ({ page }) => {
   await login(page);
   await expect(page.getByRole('textbox')).toBeVisible();
-  await expect(page.getByTestId('skill-attach')).toHaveCount(0);
+  await expect(page.getByTestId('skill-attach')).toBeVisible();
 });
