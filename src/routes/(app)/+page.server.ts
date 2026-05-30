@@ -14,6 +14,7 @@ export const actions: Actions = {
     const data = await event.request.formData();
     const message = String(data.get('message') ?? '').trim();
     const projectId = String(data.get('project_id') ?? '').trim();
+    const skills = data.getAll('skills').map(String).filter(Boolean);
 
     const res = await lqFetch(event, '/api/v1/chats', {
       method: 'POST',
@@ -24,6 +25,9 @@ export const actions: Actions = {
     const chat = (await res.json()) as { id: string };
     if (message) {
       event.cookies.set('donna_draft', message, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
+    }
+    if (skills.length) {
+      event.cookies.set('donna_draft_skills', JSON.stringify(skills), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
     }
     throw redirect(303, `/chats/${chat.id}`);
   }
