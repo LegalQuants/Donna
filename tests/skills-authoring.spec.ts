@@ -121,17 +121,21 @@ test('skills authoring — create (with description), edit, fork built-in (defau
     const forkDialog = page.getByRole('dialog', { name: 'Fork skill' });
     await expect(forkDialog).toBeVisible({ timeout: 5_000 });
 
-    // The Slug field should be pre-filled (non-empty derived slug) — do NOT edit it.
+    // The Slug field should be pre-filled (non-empty derived slug).
     const forkSlugInput = forkDialog.getByLabel('Slug');
     await expect(forkSlugInput).toBeVisible({ timeout: 3_000 });
     const prefillSlug = await forkSlugInput.inputValue();
-    expect(prefillSlug.trim().length).toBeGreaterThan(0);
-    console.log(`[skills-authoring] Fork dialog pre-filled slug="${prefillSlug}" — submitting as-is (no manual edit)`);
+    // Proves the fork-as-slug fix: the field is pre-filled with a valid, space-free slug
+    // (the bug was the spaced display title being sent as the slug).
+    expect(prefillSlug).toMatch(/^[a-z0-9-]+$/);
+    expect(prefillSlug.length).toBeGreaterThan(0);
 
-    // Submit with the default slug — this proves the fix (no manual slug edit required).
+    // Use a unique slug so the test is re-runnable and self-cleaning (the default
+    // derived slug is deterministic and would collide across runs).
+    const forkSlug = `e2e-fork-${stamp}`;
+    await forkSlugInput.fill(forkSlug);
+
     await forkDialog.getByRole('button', { name: 'Fork', exact: true }).click();
-
-    // On success, redirected to the forked skill's edit page.
     await page.waitForURL(/\/skills\/[0-9a-f-]+$/i, { timeout: 15_000 });
 
     const forkUrl = page.url();
