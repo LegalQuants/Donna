@@ -1,16 +1,20 @@
 import { error, fail, redirect, type Actions } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
-import type { UserSkill, UserSkillCreate } from '$lib/skills/authoring/types';
+import type { UserSkill, UserSkillCreate, SkillSummary } from '$lib/skills/authoring/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-  const res = await lqFetch(event, '/api/v1/user-skills?scope=user');
-  if (!res.ok) throw error(502, 'Could not load your skills.');
-  const all = (await res.json()) as UserSkill[];
+  const [userRes, builtinRes] = await Promise.all([
+    lqFetch(event, '/api/v1/user-skills?scope=user'),
+    lqFetch(event, '/api/v1/skills?scope=builtin')
+  ]);
+  if (!userRes.ok) throw error(502, 'Could not load your skills.');
+  const all = (await userRes.json()) as UserSkill[];
   const skills = all
     .filter((s) => !s.archived_at)
     .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
-  return { skills };
+  const builtins = builtinRes.ok ? ((await builtinRes.json()) as SkillSummary[]) : [];
+  return { skills, builtins };
 };
 
 export const actions: Actions = {
@@ -69,7 +73,8 @@ export const actions: Actions = {
       const forked = (await res.json()) as { id?: string | null };
       throw redirect(303, forked.id ? `/skills/${forked.id}` : '/skills');
     }
-    if (res.status === 409) return fail(409, { error: 'You already have a skill forked from this one.' });
+    if (res.status === 409) return fail(409, { error: 'You already have a skill with that id — pick a different slug.' });
+    if (res.status === 422) return fail(422, { error: 'That id isn’t valid — use lowercase letters, numbers, and dashes.' });
     return fail(502, { error: 'Could not fork the skill.' });
   }
 };

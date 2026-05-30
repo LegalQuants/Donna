@@ -22,18 +22,31 @@ const skill = (over: Record<string, unknown> = {}) => ({
 });
 
 describe('/skills load', () => {
-  it('GETs user-skills?scope=user and returns active skills', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify([
-      skill({ id: 's1' }), skill({ id: 's2', archived_at: '2026-01-01T00:00:00Z' })
-    ]), { status: 200 }));
-    const out = (await load(loadEv())) as { skills: { id: string }[] };
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/user-skills?scope=user');
-    expect(out.skills.map((s) => s.id)).toEqual(['s1']); // archived filtered out
+  it('loads active user skills + built-ins', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify([skill({ id: 's1' }), skill({ id: 's2', archived_at: '2026-01-01T00:00:00Z' })]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ name: 'cr', title: 'Contract Review', version: '1', scope: 'builtin' }]), { status: 200 }));
+    const out = (await load(loadEv())) as { skills: { id: string }[]; builtins: { name: string }[] };
+    const paths = lqFetch.mock.calls.map((c: unknown[]) => c[1]);
+    expect(paths).toContain('/api/v1/user-skills?scope=user');
+    expect(paths).toContain('/api/v1/skills?scope=builtin');
+    expect(out.skills.map((s) => s.id)).toEqual(['s1']);
+    expect(out.builtins.map((b) => b.name)).toEqual(['cr']);
   });
 
-  it('throws 502 when the backend fails', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+  it('throws 502 when the user-skills fetch fails', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response('boom', { status: 500 }))
+      .mockResolvedValueOnce(new Response('[]', { status: 200 }));
     await expect(load(loadEv())).rejects.toMatchObject({ status: 502 });
+  });
+
+  it('returns empty builtins when that fetch fails (non-fatal)', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify([skill({ id: 's1' })]), { status: 200 }))
+      .mockResolvedValueOnce(new Response('boom', { status: 502 }));
+    const out = (await load(loadEv())) as { builtins: unknown[] };
+    expect(out.builtins).toEqual([]);
   });
 });
 
@@ -111,7 +124,13 @@ describe('/skills ?/fork', () => {
   it('maps 409 to a friendly already-forked error', async () => {
     lqFetch.mockResolvedValueOnce(new Response('{}', { status: 409 }));
     const r = await actions.fork(formEv({ skill_name: 'contract-review' }));
-    expect(r).toMatchObject({ status: 409, data: { error: 'You already have a skill forked from this one.' } });
+    expect(r).toMatchObject({ status: 409, data: { error: 'You already have a skill with that id — pick a different slug.' } });
+  });
+
+  it('maps a 422 (invalid slug) to a friendly error', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 422 }));
+    const r = await actions.fork(formEv({ skill_name: 'contract-review', new_name: 'Bad Slug' }));
+    expect(r).toMatchObject({ status: 422, data: { error: 'That id isn’t valid — use lowercase letters, numbers, and dashes.' } });
   });
 
   it('redirects to /skills when the fork response has no id', async () => {
