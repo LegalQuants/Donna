@@ -8,7 +8,7 @@ export function parseDraftSkills(raw: string | null | undefined): string[] {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is string => typeof x === 'string');
+    return parsed.filter((x): x is string => typeof x === 'string' && x.length > 0);
   } catch {
     return [];
   }
