@@ -1,9 +1,10 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte';
   import CitationView from './CitationView.svelte';
-  import { ShieldCheck } from '@lucide/svelte';
+  import { ShieldCheck, ScrollText } from '@lucide/svelte';
   import type { ChatMessage } from '$lib/chat/chatStream.svelte';
   import type { Citation } from '$lib/citations/types';
+  import { prettifySkillSlug } from '$lib/skills/skillLabel';
 
   let { message, onretry, onactivatecitation }: { message: ChatMessage; onretry?: () => void; onactivatecitation?: (c: Citation) => void } = $props();
   let copied = $state(false);
@@ -53,8 +54,18 @@
         <span class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-mlq-text align-text-bottom"></span>
       {/if}
       {#if message.status === 'done'}
-        <div class="mt-2 text-xs text-mlq-muted">
+        <div class="mt-2 flex items-center gap-2 text-xs text-mlq-muted">
           <button type="button" onclick={copy} class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5">{copied ? '✓ copied' : '⧉ Copy'}</button>
+          {#if message.applied_skills && message.applied_skills.length > 0}
+            {@const skills = message.applied_skills}
+            <span class="inline-flex items-center gap-1">
+              <ScrollText size={11} aria-hidden="true" />
+              <span>Applied:</span>
+              {#each skills as slug, i (slug)}
+                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app skills list link -->
+                <a href="/skills" class="hover:underline">{prettifySkillSlug(slug)}</a>{#if i < skills.length - 1}<span aria-hidden="true">,&nbsp;</span>{/if}{/each}
+            </span>
+          {/if}
         </div>
       {/if}
     {/if}

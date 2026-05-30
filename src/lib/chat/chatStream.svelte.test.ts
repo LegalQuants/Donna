@@ -239,4 +239,55 @@ describe('createChatStream', () => {
     const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
     expect('skills' in body).toBe(false);
   });
+
+  it('captures applied_skills from delta frames', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"delta","delta":"hi","lq_ai_message_id":"a1","applied_skills":["comms-improver"]}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi"}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))); // loadAnonymization GET
+    const chat = createChatStream('c1');
+    await chat.send('hello', 'smart', ['comms-improver']);
+    expect(chat.messages[1].applied_skills).toEqual(['comms-improver']);
+  });
+
+  it('captures applied_skills from the complete frame message', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi","applied_skills":["nda-review"]}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })));
+    const chat = createChatStream('c1');
+    await chat.send('hello', 'smart', ['nda-review']);
+    expect(chat.messages[1].applied_skills).toEqual(['nda-review']);
+  });
+
+  it('clears applied_skills on retry before re-streaming', async () => {
+    const withSkill = () => streamResponse([
+      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+      'data: {"type":"delta","delta":"x","lq_ai_message_id":"a1","applied_skills":["comms-improver"]}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"x"}}\n\n',
+      'data: [DONE]\n\n'
+    ]);
+    const noSkill = () => streamResponse([
+      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"y"}}\n\n',
+      'data: [DONE]\n\n'
+    ]);
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(withSkill())
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      .mockResolvedValueOnce(noSkill())
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })));
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', ['comms-improver']);
+    expect(chat.messages[1].applied_skills).toEqual(['comms-improver']);
+    await chat.retry();
+    expect(chat.messages[1].applied_skills).toBeUndefined();
+  });
 });
