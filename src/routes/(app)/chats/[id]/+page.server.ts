@@ -7,10 +7,14 @@ import type { Citation } from '$lib/citations/types';
 import { anonymizedByMessage } from '$lib/receipts/format';
 import type { ReceiptEvent } from '$lib/receipts/types';
 import { resolveMatter } from './matter';
+import { parseDraftSkills } from './draftSkills';
 
 export const load: PageServerLoad = async (event) => {
   const draft = event.cookies.get('donna_draft') ?? null;
   if (draft) event.cookies.delete('donna_draft', { path: '/' });
+  const rawDraftSkills = event.cookies.get('donna_draft_skills');
+  if (rawDraftSkills) event.cookies.delete('donna_draft_skills', { path: '/' });
+  const draftSkills = parseDraftSkills(rawDraftSkills);
 
   const res = await lqFetch(event, `/api/v1/chats/${event.params.id}/messages?limit=100`);
   if (!res.ok) throw error(res.status === 404 ? 404 : 502, 'Could not load this chat.');
@@ -54,5 +58,5 @@ export const load: PageServerLoad = async (event) => {
 
   const matter = await resolveMatter((path) => lqFetch(event, path), event.params.id);
 
-  return { chatId: event.params.id, messages, draft, matter };
+  return { chatId: event.params.id, messages, draft, draftSkills, matter };
 };

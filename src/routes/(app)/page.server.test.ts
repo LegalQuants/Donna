@@ -37,4 +37,27 @@ describe('landing start action', () => {
     await expect(actions.start(startEvent({ message: 'hi', project_id: '' }))).rejects.toMatchObject({ status: 303 });
     expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({});
   });
+
+  it('stashes attached skills in the donna_draft_skills cookie', async () => {
+    lqFetch.mockResolvedValue(new Response(JSON.stringify({ id: 'chat3' }), { status: 201 }));
+    const c = cookies();
+    const body = new URLSearchParams();
+    body.append('message', 'hi');
+    body.append('project_id', '');
+    body.append('skills', 'contract-qa');
+    body.append('skills', 'nda-review');
+    const ev = { request: new Request('http://x', { method: 'POST', body }), cookies: c } as never;
+    await expect(actions.start(ev)).rejects.toMatchObject({ status: 303, location: '/chats/chat3' });
+    const call = c.set.mock.calls.find((x: unknown[]) => x[0] === 'donna_draft_skills');
+    expect(call).toBeTruthy();
+    expect(JSON.parse(call![1] as string)).toEqual(['contract-qa', 'nda-review']);
+  });
+
+  it('sets no donna_draft_skills cookie when no skills are attached', async () => {
+    lqFetch.mockResolvedValue(new Response(JSON.stringify({ id: 'chat4' }), { status: 201 }));
+    const c = cookies();
+    const ev = { request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ message: 'hi', project_id: '' }) }), cookies: c } as never;
+    await expect(actions.start(ev)).rejects.toMatchObject({ status: 303 });
+    expect(c.set.mock.calls.find((x: unknown[]) => x[0] === 'donna_draft_skills')).toBeFalsy();
+  });
 });

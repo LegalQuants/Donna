@@ -59,7 +59,7 @@
   // Use the picker selection (persisted to localStorage on the landing composer) so a
   // model chosen before the first message is honored, not silently reset to smart.
   onMount(() => {
-    if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel);
+    if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel, data.draftSkills ?? []);
   });
 </script>
 
