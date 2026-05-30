@@ -17,6 +17,8 @@ export interface ChatMessage {
   error?: string;
   citations?: Citation[];
   anonymized?: boolean;
+  /** Slugs of the skills the backend reported as applied to this assistant turn. */
+  applied_skills?: string[];
 }
 
 export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
@@ -37,11 +39,13 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     } else if (frame.type === 'delta') {
       m.content += frame.delta;
       if (frame.routed_inference_tier != null) m.routed_inference_tier = frame.routed_inference_tier;
+      if (frame.applied_skills) m.applied_skills = frame.applied_skills;
     } else if (frame.type === 'complete') {
       m.id = frame.message.id ?? m.id;
       m.content = frame.message.content ?? m.content;
       const tier = frame.message.routed_inference_tier ?? frame.routed_inference_tier;
       if (tier != null) m.routed_inference_tier = tier;
+      if (frame.message.applied_skills) m.applied_skills = frame.message.applied_skills;
       m.status = 'done';
     } else if (frame.type === 'error') {
       setError(idx, frame.message);
@@ -179,6 +183,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     messages[idx].routed_inference_tier = undefined;
     messages[idx].citations = undefined;
     messages[idx].anonymized = undefined;
+    messages[idx].applied_skills = undefined;
     messages[idx].status = 'streaming';
     await runStream(idx, lastUserContent, lastModel, lastSkills);
   }
