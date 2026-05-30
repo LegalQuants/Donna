@@ -15,6 +15,9 @@ describe('parseDraftSkills', () => {
   it('drops non-string entries', () => {
     expect(parseDraftSkills('["a",1,null,"b"]')).toEqual(['a', 'b']);
   });
+  it('drops empty-string entries', () => {
+    expect(parseDraftSkills('["","a"]')).toEqual(['a']);
+  });
   it('returns [] when the JSON is not an array', () => {
     expect(parseDraftSkills('{"a":1}')).toEqual([]);
   });
