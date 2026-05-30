@@ -48,8 +48,8 @@ export const actions: Actions = {
 
   archive: async (event) => {
     const res = await lqFetch(event, `/api/v1/user-skills/${event.params.id}`, { method: 'DELETE' });
-    // 204 deleted; 409 already-archived → both mean "it's gone", redirect to the list.
-    if (res.ok || res.status === 409) throw redirect(303, '/skills');
+    // 204 deleted; 410 Gone = already archived → both mean "it's gone", redirect to the list.
+    if (res.ok || res.status === 410) throw redirect(303, '/skills');
     return fail(502, { error: 'Could not archive the skill.' });
   }
 };
