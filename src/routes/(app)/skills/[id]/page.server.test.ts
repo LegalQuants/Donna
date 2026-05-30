@@ -92,8 +92,8 @@ describe('/skills/[id] ?/archive', () => {
     expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
   });
 
-  it('treats 409 (already archived) as success and still redirects', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 409 }));
+  it('treats 410 (already archived) as success and still redirects', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('{}', { status: 410 }));
     await expect(actions.archive(formEv({}))).rejects.toMatchObject({ status: 303, location: '/skills' });
   });
 
