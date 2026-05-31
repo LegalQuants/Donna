@@ -49,18 +49,19 @@ From a playbook's detail page, an admin runs the playbook against a contract —
   - `GET /api/v1/playbooks/${params.id}` → playbook (404→`error(404)`, other non-OK→502) — header + position count.
   - `GET /api/v1/projects` → the user's matters (for the matter picker).
   - If `url.searchParams.get('matter')`: `GET /api/v1/projects/{matter}` → `attached_file_ids` → `GET /files/{id}` each → keep only ingested (`ingestion_status==='ready'` && `document_id`) → the picker's file list.
-  - If `url.searchParams.get('execution')`: `GET /api/v1/playbook-executions/{execution}` → the execution (resume polling if pending/running; render if completed).
+  - If `url.searchParams.get('execution')`: `GET /api/v1/playbook-executions/{execution}` → the execution (resume polling if pending/running; render if completed). Reload-safe.
   - Returns `{ playbook, matters, matterFiles, execution }`.
-- **Form actions:**
-  - `?/upload` — multipart passthrough → `POST /api/v1/files` (reuse `lqClient`'s FormData handling from P4-3a) → `{ fileId }` on success; map 413 to a size message.
-  - `?/execute` — `{ target_document_id, project_id? }` → `POST /api/v1/playbooks/${params.id}/execute` → `redirect(303, '?execution=' + execution.id)` so the run URL is shareable and `load` picks the execution up.
-- **New BFF proxy `src/routes/(app)/playbook-executions/[id]/+server.ts`** — `GET` → `lqFetch('/api/v1/playbook-executions/{id}')`; 503/504 passthrough, else 502 (mirror `skills/autocomplete/+server.ts`). Used for client-side execution polling.
-- **`GET /files/[id]`** BFF proxy already exists (P3) — reused for ingestion polling.
+- **BFF JSON proxies** (the client run-controller talks to these — JSON in/out composes more cleanly for a state machine than SvelteKit form-action result serialization):
+  - **New** `src/routes/(app)/files/+server.ts` `POST` — multipart passthrough → `POST /api/v1/files` (reuse `lqClient`'s FormData handling from P4-3a; do NOT set content-type) → `{ id }`; map 413 to a size message.
+  - **New** `src/routes/(app)/playbooks/[id]/execute/+server.ts` `POST` — JSON `{ target_document_id, project_id? }` → `POST /api/v1/playbooks/{id}/execute` → the `PlaybookExecution`.
+  - **New** `src/routes/(app)/playbook-executions/[id]/+server.ts` `GET` → `lqFetch('/api/v1/playbook-executions/{id}')`; 503/504 passthrough else 502 (mirror `skills/autocomplete/+server.ts`).
+  - **Existing** `GET /files/[id]` (P3) — reused for ingestion polling.
 
-**Client orchestration — `src/lib/playbooks/runFlow.svelte.ts`** (a rune controller; mirrors the P4-3b client-polling pattern):
-- *Upload path:* submit `?/upload` → `fileId` → poll `/files/{fileId}` every 2 s (visibility-aware) until `ready` (→ `document_id`) or `failed` → submit `?/execute` with `document_id`.
-- *Pick path:* user selects an ingested matter file → submit `?/execute` with its `document_id` (skips upload/ingest steps).
-- After `?/execute` redirects to `?execution=<id>`, poll `/playbook-executions/{id}` every 2 s until `completed`/`error`. A 5-min stuck threshold surfaces a "still running — refresh" affordance (P4-3b precedent). Render results on completion; render the backend `error` on failure.
+**Client orchestration — `src/lib/playbooks/runFlow.svelte.ts`** (a rune controller; mirrors the P4-3b client-polling pattern; plain `fetch` to the JSON proxies — fully mockable in tests):
+- *Upload path:* `POST /files` (FormData) → `id` → poll `GET /files/{id}` every 2 s (visibility-aware) until `ready` (→ `document_id`) or `failed` → `POST /playbooks/{id}/execute` with `document_id`.
+- *Pick path:* user selects an ingested matter file → `POST /playbooks/{id}/execute` with its `document_id` (skips upload/ingest steps).
+- On execute → `execution.id`; push `?execution=<id>` to the URL (`replaceState`) for reload-safety, then poll `GET /playbook-executions/{id}` every 2 s until `completed`/`error`. A 5-min stuck threshold surfaces a "still running — refresh" affordance (P4-3b precedent). Render results on completion; render the backend `error` on failure. On load with `data.execution` present, resume from its current status.
+- State machine: `idle → uploading → ingesting → executing → analysing → done | error`.
 
 **Detail page `/playbooks/[id]/+page.svelte`** — add an **Apply to a document** action. Read admin status from layout data (`page.data.user?.is_admin` via `$app/state`). Admin → a link to `/playbooks/[id]/run`; non-admin → a muted note: "Running built-in playbooks requires an admin account in this version."
 
@@ -99,8 +100,8 @@ Donna serif/gray. Run page: playbook header, then the chooser (Step 1), then the
 - `VerdictBadge`, `ResultSummary`, `RedlineBlocks` (old/new/justification; absent when null), `ResultCard` (verdict + matched_text + justification + redline-when-present + severity), `ExecutionResults` (worst-first order; summary).
 - `DocumentChooser` — tab switch; only ingested matter files selectable; emits the right `document_id`; upload hands a file to the flow.
 - `runFlow.svelte.ts` — state machine: upload→ingest-poll→execute→exec-poll→results; pick path skips upload/ingest; ingestion-failed and execution-error branches; poll uses mocked fetch.
-- `run/+page.server.ts` — `load`: admin-gate 403; playbook 404/502; `?matter` file filtering (ingested only); `?execution` fetch. Actions: `?/upload` (FormData → file_id; 413 message), `?/execute` (redirects to `?execution=`). (Mock `lqFetch`, the matters/skills server-test pattern.)
-- `playbook-executions/[id]/+server.ts` — 200 passthrough, 502/503/504.
+- `run/+page.server.ts` `load` — admin-gate 403; playbook 404/502; `?matter` file filtering (ingested only); `?execution` fetch. (Mock `lqFetch`, the matters/skills server-test pattern.)
+- BFF proxies — `files/+server.ts` POST (FormData → `{id}`; 413 message; no JSON content-type forced); `playbooks/[id]/execute/+server.ts` POST (body passthrough → execution); `playbook-executions/[id]/+server.ts` GET (200 passthrough, 502/503/504).
 - Detail page — Apply link shown for admin, note shown for non-admin.
 
 **Live e2e (`tests/playbooks-apply.spec.ts`)** — admin logs in → `/playbooks/[id]` for NDA — Mutual → Apply → run page → **upload** `vendor/lq-ai/docs/quickstart/sample-ndas/nda-1-acme-beta.pdf` → progress → results render: the scorecard and at least one `ResultCard` with a verdict badge; assert the `deviates` position shows a redline (old + new). Real LLM run (~20–40 s; precedent: `citation-live.spec.ts` does live ingest+chat). Read-only-ish: leaves an uploaded file + execution (harmless; no list endpoint) — matches the `citation-live`/`skill-attach` precedent.
