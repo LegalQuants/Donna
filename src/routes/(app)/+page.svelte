@@ -2,12 +2,14 @@
   import { enhance } from '$app/forms';
   import Composer from '$lib/components/Composer.svelte';
   import { createSkillAttach } from '$lib/skills/attach.svelte';
+  import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
 
   let { data, form } = $props();
   let message = $state('');
   let selectedMatterId = $state<string | null>(null);
   let formEl = $state<HTMLFormElement>();
   const skillAttach = createSkillAttach();
+  const promptLibrary = createPromptLibrary();
 
   const name = $derived(data.user?.display_name || data.user?.email?.split('@')[0] || 'there');
 </script>
@@ -21,7 +23,7 @@
     {#each skillAttach.names as s (s)}
       <input type="hidden" name="skills" value={s} />
     {/each}
-    <Composer bind:value={message} matters={data.matters} bind:selectedMatterId {skillAttach} onsubmit={() => formEl?.requestSubmit()} />
+    <Composer bind:value={message} matters={data.matters} bind:selectedMatterId {skillAttach} {promptLibrary} onsubmit={() => formEl?.requestSubmit()} />
   </form>
 
   {#if form?.error}<p class="mt-3 text-center text-sm text-mlq-error">{form.error}</p>{/if}
