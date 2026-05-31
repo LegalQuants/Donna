@@ -33,9 +33,8 @@ test('generate a playbook from a document, prune, and save', async ({ page }) =>
 
   // Review step: the draft name field + at least one position card.
   await expect(page.getByLabel(/playbook name/i)).toBeVisible({ timeout: 220_000 });
-  // Prune one position (uncheck the first keep checkbox), then save.
-  const firstKeep = page.getByRole('checkbox', { name: /^keep / }).first();
-  await firstKeep.uncheck();
+  // Prune one position (remove the first), then save.
+  await page.getByRole('button', { name: /^remove position/i }).first().click();
   await page.getByRole('button', { name: /save playbook/i }).click();
 
   // Lands on the saved playbook's detail page.
