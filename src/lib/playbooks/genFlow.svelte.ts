@@ -49,7 +49,7 @@ export function createGenFlow(opts: GenFlowOptions = {}) {
     while (true) {
       const res = await fetch(`/playbooks/easy/${generationId}`);
       if (!res.ok) return fail('Lost contact with the generation. Please retry.');
-      const gen = (await res.clone().json()) as EasyPlaybookGeneration & { draft_playbook?: DraftPlaybook; error_message?: string | null };
+      const gen = (await res.json()) as EasyPlaybookGeneration & { draft_playbook?: DraftPlaybook; error_message?: string | null };
       if (gen.status === 'completed') { draft = (gen.draft_playbook as DraftPlaybook) ?? null; phase = 'review'; return; }
       if (gen.status === 'error') return fail(gen.error_message ?? 'Playbook generation failed.');
       await sleep(pollMs);
