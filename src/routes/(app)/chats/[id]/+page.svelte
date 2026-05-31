@@ -7,6 +7,7 @@
   import { modelStore } from '$lib/models/store.svelte';
   import { createSkillAttach } from '$lib/skills/attach.svelte';
   import { createEnhance } from '$lib/enhance/enhance.svelte';
+  import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
   import { ReceiptText } from '@lucide/svelte';
   import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
   import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
@@ -23,6 +24,7 @@
   const chat = untrack(() => createChatStream(data.chatId, data.messages));
   const skillAttach = createSkillAttach();
   const enhance = untrack(() => createEnhance(data.chatId, () => skillAttach.names));
+  const promptLibrary = createPromptLibrary();
   const docPanel = createDocPanel();
   let draftValue = $state('');
   let showReceipts = $state(false);
@@ -95,6 +97,7 @@
         onstop={chat.stop}
         {skillAttach}
         {enhance}
+        {promptLibrary}
         minimumTier={data.matter?.minimumTier ?? null}
       />
       <p class="mt-2 text-center text-xs text-mlq-muted">AI can make mistakes. Answers are not legal advice.</p>
