@@ -15,4 +15,10 @@ describe('Sidebar', () => {
     render(Sidebar, { props: { displayName: 'Admin' } });
     expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute('href', '/matters');
   });
+
+  it('has a Prompts nav entry', () => {
+    render(Sidebar, { props: { displayName: 'Admin' } });
+    const link = screen.getByRole('link', { name: /^prompts$/i });
+    expect(link).toHaveAttribute('href', '/prompts');
+  });
 });
