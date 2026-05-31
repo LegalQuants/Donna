@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { Position } from './types';
+  import type { Position, PositionCreate } from './types';
   import SeverityBadge from './SeverityBadge.svelte';
 
-  let { position }: { position: Position } = $props();
+  let { position }: { position: Position | PositionCreate } = $props();
   let expanded = $state(false);
 
   const hasInternals = $derived(

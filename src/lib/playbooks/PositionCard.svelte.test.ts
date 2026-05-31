@@ -42,4 +42,20 @@ describe('PositionCard', () => {
     });
     expect(screen.queryByRole('button', { name: /matching details/i })).toBeNull();
   });
+  it('renders a draft PositionCreate (no id)', () => {
+    const draftPos = {
+      issue: 'Compelled Disclosure',
+      description: 'Notice + cooperation on legal compulsion.',
+      standard_language: 'The Receiving Party may disclose when legally compelled…',
+      fallback_tiers: [],
+      redline_strategy: undefined,
+      severity_if_missing: 'high',
+      detection_keywords: [],
+      detection_examples: [],
+      position_order: 0
+    } as unknown as import('./types').PositionCreate;
+    render(PositionCard, { props: { position: draftPos } });
+    expect(screen.getByText('Compelled Disclosure')).toBeInTheDocument();
+    expect(screen.getByText(/legally compelled/)).toBeInTheDocument();
+  });
 });
