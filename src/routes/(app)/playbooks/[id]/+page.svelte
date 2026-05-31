@@ -23,7 +23,7 @@
   <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app back link -->
   <a href="/playbooks" class="text-xs text-mlq-muted hover:underline">← Playbooks</a>
   <div class="mt-2 flex items-start justify-between gap-3">
-    <h1 class="font-serif text-2xl text-mlq-strong">{data.playbook.name}</h1>
+    <h1 class="min-w-0 break-words font-serif text-2xl text-mlq-strong">{data.playbook.name}</h1>
     <div class="flex shrink-0 items-center gap-2">
       {#if data.isOwner}
         <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app edit link -->
