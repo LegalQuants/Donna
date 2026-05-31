@@ -33,4 +33,8 @@ describe('POST /prompts/items', () => {
     lqFetch.mockResolvedValueOnce(new Response('x', { status: 422 }));
     await expect(POST(postEv({ name: '', prompt_text: '' }))).rejects.toMatchObject({ status: 422 });
   });
+  it('maps a non-422 backend failure to 502', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    await expect(POST(postEv({ name: 'X', prompt_text: 'y' }))).rejects.toMatchObject({ status: 502 });
+  });
 });
