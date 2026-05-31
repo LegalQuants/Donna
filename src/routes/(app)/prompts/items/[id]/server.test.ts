@@ -22,6 +22,14 @@ describe('PATCH /prompts/items/[id]', () => {
     lqFetch.mockResolvedValueOnce(new Response('x', { status: 422 }));
     await expect(PATCH(ev('PATCH', { name: '' }))).rejects.toMatchObject({ status: 422 });
   });
+  it('maps a 404 through', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('x', { status: 404 }));
+    await expect(PATCH(ev('PATCH', { name: 'X' }))).rejects.toMatchObject({ status: 404 });
+  });
+  it('maps a non-422/404 failure to 502', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('x', { status: 500 }));
+    await expect(PATCH(ev('PATCH', { name: 'X' }))).rejects.toMatchObject({ status: 502 });
+  });
 });
 
 describe('DELETE /prompts/items/[id]', () => {
@@ -36,5 +44,9 @@ describe('DELETE /prompts/items/[id]', () => {
     lqFetch.mockResolvedValueOnce(new Response('gone', { status: 404 }));
     const res = await DELETE(ev('DELETE'));
     expect(res.status).toBe(204);
+  });
+  it('maps a non-404 failure to 502', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('x', { status: 500 }));
+    await expect(DELETE(ev('DELETE'))).rejects.toMatchObject({ status: 502 });
   });
 });
