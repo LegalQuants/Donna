@@ -4,6 +4,10 @@
   import FallbackTierEditor from './FallbackTierEditor.svelte';
   import { arrayToLines, linesToArray } from '../editorDraft';
 
+  // NOTE: keywordsText/examplesText below are seeded from `position` ONCE (untrack).
+  // This component must be mounted fresh per position (parent keys its {#each});
+  // swapping `position` to a different object without remounting would let stale
+  // text overwrite the new object's detection arrays.
   let { position = $bindable() }: { position: PositionCreate } = $props();
 
   // Free-text line lists need local text state so typing a trailing newline
