@@ -3,6 +3,13 @@ import type { components } from '$lib/api/backend';
 export type Playbook = components['schemas']['Playbook'];
 export type Position = components['schemas']['Position'];
 export type FallbackTier = components['schemas']['FallbackTier'];
+export type PlaybookCreate = components['schemas']['PlaybookCreate'];
+export type PositionCreate = components['schemas']['PositionCreate'];
+export type EasyPlaybookGeneration = components['schemas']['EasyPlaybookGeneration'];
+
+/** The `EasyPlaybookGeneration.draft_playbook` payload — a `PlaybookCreate`.
+ *  Hand-aliased: the generated contract types it loosely as `{ [k]: unknown }`. */
+export type DraftPlaybook = PlaybookCreate;
 
 export type PlaybookExecution = components['schemas']['PlaybookExecution'];
 
