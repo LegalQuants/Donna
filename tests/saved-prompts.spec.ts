@@ -51,15 +51,24 @@ test('save a prompt from the composer, insert it, then manage it', async ({ page
   await expect(composer).toHaveValue(/indemnity risk/);
 
   // 3. Manage it: it shows on /prompts; rename via Edit, then delete.
+  // Scope to the row (an <li> in the management list) containing the prompt,
+  // so we never act on the wrong row when other saved prompts are present.
   await page.goto('/prompts');
-  await expect(page.getByText(name)).toBeVisible();
-  await page.getByRole('button', { name: /^edit$/i }).first().click();
+  const row = page.locator('li', { hasText: name });
+  await expect(row).toBeVisible();
+  await row.getByRole('button', { name: /^edit$/i }).click();
+
+  // rename in the modal
   const renamed = `${name} v2`;
   await page.getByLabel(/name/i).fill(renamed);
   await page.getByRole('button', { name: /^save$/i }).click();
-  await expect(page.getByText(renamed)).toBeVisible();
 
-  await page.getByRole('button', { name: /^delete$/i }).first().click();
+  // the row now shows the renamed prompt
+  const renamedRow = page.locator('li', { hasText: renamed });
+  await expect(renamedRow).toBeVisible();
+
+  // delete that specific row, confirm in the dialog
+  await renamedRow.getByRole('button', { name: /^delete$/i }).click();
   await page.getByRole('dialog').getByRole('button', { name: /^delete$/i }).click();
   await expect(page.getByText(renamed)).toHaveCount(0);
 });
