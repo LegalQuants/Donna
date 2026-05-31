@@ -3,19 +3,20 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import Page from './+page.svelte';
 
-const data = (isAdmin: boolean) => ({
-  data: { playbook: { id: 'pb1', name: 'NDA — Mutual', contract_type: 'NDA', version: '1.0.0', positions: [] }, isAdmin }
-});
+const playbook = { id: 'pb1', name: 'NDA-Mutual', contract_type: 'NDA', version: '1.0.0', positions: [{ id: 'p1', issue: 'Confidentiality', standard_language: 'L', severity_if_missing: 'high', position_order: 0 }] };
 
-describe('/playbooks/[id] Apply affordance', () => {
-  it('shows the Apply link for admins', () => {
-    render(Page, { props: data(true) as never });
-    const link = screen.getByRole('link', { name: /apply to a document/i });
-    expect(link).toHaveAttribute('href', '/playbooks/pb1/run');
+describe('/playbooks/[id] detail', () => {
+  it('always shows a Duplicate link to the prefilled create route', () => {
+    render(Page, { props: { data: { playbook, isAdmin: false, isOwner: false } } as never });
+    expect(screen.getByRole('link', { name: /duplicate/i })).toHaveAttribute('href', '/playbooks/new/manual?from=pb1');
   });
-  it('shows a note instead for non-admins', () => {
-    render(Page, { props: data(false) as never });
-    expect(screen.queryByRole('link', { name: /apply to a document/i })).toBeNull();
-    expect(screen.getByText(/requires an admin account/i)).toBeInTheDocument();
+  it('shows Edit + Delete only for the owner', () => {
+    const { unmount } = render(Page, { props: { data: { playbook, isAdmin: false, isOwner: true } } as never });
+    expect(screen.getByRole('link', { name: /^edit/i })).toHaveAttribute('href', '/playbooks/pb1/edit');
+    expect(screen.getByRole('button', { name: /^delete/i })).toBeInTheDocument();
+    unmount();
+    render(Page, { props: { data: { playbook, isAdmin: false, isOwner: false } } as never });
+    expect(screen.queryByRole('link', { name: /^edit/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^delete/i })).not.toBeInTheDocument();
   });
 });
