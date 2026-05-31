@@ -30,4 +30,11 @@ describe('PositionEditor', () => {
     await fireEvent.change(screen.getByLabelText(/severity/i), { target: { value: 'critical' } });
     expect(seen.at(-1)!.severity_if_missing).toBe('critical');
   });
+
+  it('preserves pre-seeded keywords on mount', () => {
+    const seen: PositionCreate[] = [];
+    const initial = { ...blankPosition(0), detection_keywords: ['alpha', 'beta'] };
+    render(Wrapper, { props: { initial, onseen: (p: PositionCreate) => seen.push(p) } });
+    expect(seen.at(-1)!.detection_keywords).toEqual(['alpha', 'beta']);
+  });
 });
