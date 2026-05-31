@@ -5,9 +5,12 @@
   import SkillAttach from './SkillAttach.svelte';
   import EnhancePreview from './EnhancePreview.svelte';
   import MatterPicker from '$lib/matters/MatterPicker.svelte';
+  import PromptPicker from '$lib/prompts/PromptPicker.svelte';
+  import { spliceText } from '$lib/prompts/spliceText';
   import { modelStore } from '$lib/models/store.svelte';
   import type { createSkillAttach } from '$lib/skills/attach.svelte';
   import type { createEnhance } from '$lib/enhance/enhance.svelte';
+  import type { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
   import type { MatterSummary } from '$lib/matters/types';
 
   let {
@@ -18,6 +21,7 @@
     onstop,
     skillAttach,
     enhance,
+    promptLibrary,
     matters,
     selectedMatterId = $bindable(null as string | null),
     minimumTier = null as 1 | 2 | 3 | 4 | 5 | null
@@ -29,6 +33,7 @@
     onstop?: () => void;
     skillAttach?: ReturnType<typeof createSkillAttach>;
     enhance?: ReturnType<typeof createEnhance>;
+    promptLibrary?: ReturnType<typeof createPromptLibrary>;
     matters?: MatterSummary[];
     selectedMatterId?: string | null;
     minimumTier?: 1 | 2 | 3 | 4 | 5 | null;
@@ -44,6 +49,19 @@
     if (!textarea) return;
     textarea.style.height = 'auto';
     textarea.style.height = Math.min(textarea.scrollHeight, 192) + 'px';
+  }
+  function insertAtCursor(text: string) {
+    if (!textarea) { value = value ? `${value}\n${text}` : text; return; }
+    const start = textarea.selectionStart ?? value.length;
+    const end = textarea.selectionEnd ?? value.length;
+    const result = spliceText(value, start, end, text);
+    value = result.value;
+    const el = textarea;
+    queueMicrotask(() => {
+      el.focus();
+      el.setSelectionRange(result.caret, result.caret);
+      autogrow();
+    });
   }
   function submit() {
     const text = value.trim();
@@ -116,6 +134,17 @@
         onopen={skillAttach.open}
         onsearch={skillAttach.search}
         onattach={skillAttach.attach}
+      />
+    {/if}
+    {#if promptLibrary}
+      <PromptPicker
+        prompts={promptLibrary.prompts}
+        loading={promptLibrary.loading}
+        error={promptLibrary.error}
+        draft={value}
+        onopen={promptLibrary.ensureLoaded}
+        oninsert={insertAtCursor}
+        onsave={promptLibrary.create}
       />
     {/if}
     {#if enhance}
