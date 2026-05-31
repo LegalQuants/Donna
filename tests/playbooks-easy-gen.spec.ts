@@ -18,7 +18,8 @@ test('generate a playbook from a document, prune, and save', async ({ page }) =>
 
   await login(page);
   await page.goto('/playbooks');
-  await page.getByRole('link', { name: /new playbook/i }).click();
+  await page.getByRole('button', { name: /new playbook/i }).click();
+  await page.getByRole('link', { name: /generate from documents/i }).click();
   await expect(page).toHaveURL(/\/playbooks\/new/);
 
   await page.getByLabel(/contract type/i).fill('NDA');
