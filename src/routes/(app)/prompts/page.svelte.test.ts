@@ -17,4 +17,13 @@ describe('/prompts index', () => {
     render(Page, { props: { data: { prompts: [] } } as never });
     expect(screen.getByText(/no saved prompts/i)).toBeInTheDocument();
   });
+  it('opening edit on a row seeds the modal with that prompt', async () => {
+    render(Page, { props: { data: { prompts: [
+      { id: 'p1', name: 'Alpha', prompt_text: 'a', tags: [] },
+      { id: 'p2', name: 'Beta', prompt_text: 'b', tags: [] }
+    ] } } as never });
+    await fireEvent.click(screen.getAllByRole('button', { name: /edit/i })[1]);
+    expect((screen.getByLabelText(/name/i) as HTMLInputElement).value).toBe('Beta');
+    expect((screen.getByLabelText(/prompt text/i) as HTMLTextAreaElement).value).toBe('b');
+  });
 });
