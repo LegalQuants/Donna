@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Plus } from '@lucide/svelte';
   import PlaybookRow from '$lib/playbooks/PlaybookRow.svelte';
   import { groupByContractFamily } from '$lib/playbooks/contractFamily';
   import type { PageProps } from './$types';
@@ -13,7 +14,7 @@
   <div class="mb-4 flex items-center justify-between">
     <h1 class="text-xl font-medium text-mlq-text">Playbooks</h1>
     <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app new-playbook link -->
-    <a href="/playbooks/new" class="inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface">+ New playbook</a>
+    <a href="/playbooks/new" class="inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"><Plus size={13} /> New playbook</a>
   </div>
   {#if families.length === 0}
     <div class="rounded-mlq-control border border-mlq-subtle px-3 py-6 text-center text-sm text-mlq-muted">No playbooks available.</div>
