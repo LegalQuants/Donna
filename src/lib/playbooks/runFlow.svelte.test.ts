@@ -72,4 +72,16 @@ describe('createRunFlow', () => {
     expect(flow.phase).toBe('error');
     expect(flow.error).toMatch(/unsupported_type/);
   });
+
+  it('flags stuck after the stuck threshold while still polling', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResp({ id: 'e1', status: 'pending' }, 202)) // execute
+      .mockImplementation(() => Promise.resolve(jsonResp({ id: 'e1', status: 'running' }))); // polls forever
+    vi.stubGlobal('fetch', fetchMock);
+    const flow = createRunFlow('pb1', { pollMs: 10, stuckMs: 30 });
+    flow.runWithDocument('d1');
+    await vi.advanceTimersByTimeAsync(60);
+    expect(flow.stuck).toBe(true);
+    expect(flow.phase).toBe('analysing'); // still polling, not errored
+  });
 });

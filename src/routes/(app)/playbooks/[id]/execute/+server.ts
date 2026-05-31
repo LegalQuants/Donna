@@ -8,6 +8,6 @@ export const POST: RequestHandler = async (event) => {
     method: 'POST',
     body
   });
-  if (!res.ok) throw error(res.status === 404 ? 404 : 502, 'Could not start the playbook run.');
+  if (!res.ok) throw error([403, 404, 503, 504].includes(res.status) ? res.status : 502, 'Could not start the playbook run.');
   return json(await res.json());
 };

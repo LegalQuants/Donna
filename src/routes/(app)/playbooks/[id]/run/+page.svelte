@@ -21,6 +21,8 @@
     }
   });
 
+  let usedUpload = $state(false);
+
   // Resume a server-loaded execution (reload-safe ?execution=).
   let resumed = false;
   $effect(() => {
@@ -45,12 +47,17 @@
       <DocumentChooser
         matters={data.matters}
         matterFiles={data.matterFiles}
-        onupload={(file) => flow.runWithUpload(file)}
+        onupload={(file) => { usedUpload = true; flow.runWithUpload(file); }}
         onpick={(documentId) => flow.runWithDocument(documentId)}
       />
     </div>
   {:else if flow.phase !== 'done'}
-    <div class="mt-6"><RunProgress phase={flow.phase} error={flow.error} /></div>
+    <div class="mt-6">
+      <RunProgress phase={flow.phase} error={flow.error} skipUpload={!usedUpload} />
+      {#if flow.stuck}
+        <p class="mt-2 text-xs text-mlq-muted">Still running — you can reload this page to resume.</p>
+      {/if}
+    </div>
   {/if}
 
   {#if flow.phase === 'done' && flow.results}

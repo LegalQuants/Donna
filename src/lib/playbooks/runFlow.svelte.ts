@@ -4,6 +4,7 @@ export type RunPhase = 'idle' | 'uploading' | 'ingesting' | 'executing' | 'analy
 
 interface RunFlowOptions {
   pollMs?: number;
+  stuckMs?: number;
   /** Called with the execution id once execute returns, so the page can push `?execution=`. */
   onExecutionStarted?: (executionId: string) => void;
 }
@@ -12,9 +13,11 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export function createRunFlow(playbookId: string, opts: RunFlowOptions = {}) {
   const pollMs = opts.pollMs ?? 2000;
+  const stuckMs = opts.stuckMs ?? 300_000;
   let phase = $state<RunPhase>('idle');
   let error = $state<string | null>(null);
   let results = $state<ExecutionResults | null>(null);
+  let stuck = $state(false);
 
   function fail(msg: string) {
     error = msg;
@@ -23,6 +26,7 @@ export function createRunFlow(playbookId: string, opts: RunFlowOptions = {}) {
 
   async function pollExecution(executionId: string): Promise<void> {
     phase = 'analysing';
+    let elapsed = 0;
     while (true) {
       const res = await fetch(`/playbook-executions/${executionId}`);
       if (!res.ok) return fail('Lost contact with the run. Please retry.');
@@ -34,6 +38,8 @@ export function createRunFlow(playbookId: string, opts: RunFlowOptions = {}) {
       }
       if (exec.status === 'error') return fail(exec.error ?? 'The playbook run failed.');
       await sleep(pollMs);
+      elapsed += pollMs;
+      if (elapsed >= stuckMs) stuck = true;
     }
   }
 
@@ -53,12 +59,14 @@ export function createRunFlow(playbookId: string, opts: RunFlowOptions = {}) {
   async function runWithDocument(documentId: string, projectId?: string | null): Promise<void> {
     error = null;
     results = null;
+    stuck = false;
     await execute(documentId, projectId);
   }
 
   async function runWithUpload(file: File): Promise<void> {
     error = null;
     results = null;
+    stuck = false;
     phase = 'uploading';
     const fd = new FormData();
     fd.append('file', file, file.name);
@@ -95,6 +103,7 @@ export function createRunFlow(playbookId: string, opts: RunFlowOptions = {}) {
     get phase() { return phase; },
     get error() { return error; },
     get results() { return results; },
+    get stuck() { return stuck; },
     runWithDocument,
     runWithUpload,
     resume
