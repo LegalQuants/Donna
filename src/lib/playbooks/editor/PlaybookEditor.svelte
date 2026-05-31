@@ -1,9 +1,9 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import type { Playbook, PlaybookCreate, PositionCreate } from '../types';
+  import type { Playbook, PlaybookCreate } from '../types';
   import PositionEditor from './PositionEditor.svelte';
   import SeverityBadge from '../SeverityBadge.svelte';
-  import { normalizeDraft, blankPosition } from '../editorDraft';
+  import { normalizeDraft, blankPosition, isPositionValid } from '../editorDraft';
 
   let { initial, onchange }: { initial: PlaybookCreate | Playbook; onchange: (value: PlaybookCreate) => void } = $props();
 
@@ -16,7 +16,7 @@
   function addPosition() {
     const arr = draft.positions ?? [];
     draft.positions = [...arr, blankPosition(arr.length)];
-    expanded = (draft.positions.length ?? 1) - 1;
+    expanded = draft.positions.length - 1;
   }
   function removePosition(i: number) {
     draft.positions = (draft.positions ?? []).filter((_, idx) => idx !== i);
@@ -32,10 +32,6 @@
     reseat();
     expanded = expanded === i ? j : expanded === j ? i : expanded;
   }
-  function positionValid(p: PositionCreate) {
-    return !!p.issue?.trim() && !!p.standard_language?.trim();
-  }
-
   const fieldCls = 'mt-1 block w-full rounded-mlq-control border border-mlq-subtle bg-transparent px-3 py-2 text-sm text-mlq-text';
   const labelCls = 'block text-xs font-medium uppercase tracking-wide text-mlq-muted';
 
@@ -71,7 +67,7 @@
             class="flex min-w-0 flex-1 items-center gap-2 text-left">
             <span class="truncate font-serif text-mlq-strong">{position.issue || 'Untitled position'}</span>
             <SeverityBadge severity={position.severity_if_missing} />
-            {#if !positionValid(position)}<span class="text-xs text-mlq-error">• incomplete</span>{/if}
+            {#if !isPositionValid(position)}<span class="text-xs text-mlq-error">• incomplete</span>{/if}
           </button>
           <button type="button" onclick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${position.issue || 'position'} up`} class="px-1 text-mlq-muted disabled:opacity-30 hover:text-mlq-text">↑</button>
           <button type="button" onclick={() => move(i, 1)} disabled={i === (draft.positions?.length ?? 0) - 1} aria-label={`Move ${position.issue || 'position'} down`} class="px-1 text-mlq-muted disabled:opacity-30 hover:text-mlq-text">↓</button>

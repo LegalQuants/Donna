@@ -57,9 +57,13 @@ export function arrayToLines(arr: string[] | undefined): string {
   return (arr ?? []).join('\n');
 }
 
+export function isPositionValid(p: PositionCreate): boolean {
+  return !!p.issue?.trim() && !!p.standard_language?.trim() && !!p.severity_if_missing;
+}
+
 export function isValidDraft(d: PlaybookCreate): boolean {
   if (!d.name?.trim() || !d.contract_type?.trim()) return false;
   const positions = d.positions ?? [];
   if (positions.length === 0) return false;
-  return positions.every((p) => !!p.issue?.trim() && !!p.standard_language?.trim() && !!p.severity_if_missing);
+  return positions.every(isPositionValid);
 }

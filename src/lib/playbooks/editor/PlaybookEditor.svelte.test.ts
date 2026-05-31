@@ -41,6 +41,7 @@ describe('PlaybookEditor', () => {
     await fireEvent.click(screen.getAllByRole('button', { name: /remove position/i })[0]);
     const last = onchange.mock.calls.at(-1)![0];
     expect(last.positions.map((p: { issue: string }) => p.issue)).toEqual(['Term']);
+    expect(last.positions.map((p: { position_order: number }) => p.position_order)).toEqual([0]);
   });
 
   it('Move down swaps order and reseats position_order', async () => {

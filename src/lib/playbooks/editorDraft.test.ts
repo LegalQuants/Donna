@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { blankPosition, blankDraft, normalizeDraft, duplicateDraft, linesToArray, arrayToLines, isValidDraft } from './editorDraft';
+import { blankPosition, blankDraft, normalizeDraft, duplicateDraft, linesToArray, arrayToLines, isValidDraft, isPositionValid } from './editorDraft';
 import type { Playbook, PlaybookCreate } from './types';
 
 describe('editorDraft', () => {
@@ -38,6 +38,12 @@ describe('editorDraft', () => {
   it('duplicateDraft prefixes the name with "Copy of"', () => {
     const pb = { id: 'pb1', name: 'NDA-Mutual', contract_type: 'NDA', version: '1.0.0', created_by: null, created_at: '', updated_at: '', positions: [] } as unknown as Playbook;
     expect(duplicateDraft(pb).name).toBe('Copy of NDA-Mutual');
+  });
+
+  it('isPositionValid requires issue + standard_language + severity', () => {
+    expect(isPositionValid({ issue: 'I', standard_language: 'L', severity_if_missing: 'high' })).toBe(true);
+    expect(isPositionValid({ issue: ' ', standard_language: 'L', severity_if_missing: 'high' })).toBe(false);
+    expect(isPositionValid({ issue: 'I', standard_language: '', severity_if_missing: 'high' })).toBe(false);
   });
 
   it('isValidDraft requires name, contract_type, >=1 position with issue + standard_language', () => {
