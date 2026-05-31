@@ -14,4 +14,10 @@ describe('RunProgress', () => {
     render(RunProgress, { props: { phase: 'error', error: 'unsupported_type' } });
     expect(screen.getByText(/unsupported_type/)).toBeInTheDocument();
   });
+  it('omits the upload/ingest steps when skipUpload', () => {
+    render(RunProgress, { props: { phase: 'analysing', skipUpload: true } });
+    expect(screen.queryByText(/Uploaded/)).toBeNull();
+    expect(screen.queryByText(/Ingested/)).toBeNull();
+    expect(screen.getByText(/Analysing/)).toBeInTheDocument();
+  });
 });

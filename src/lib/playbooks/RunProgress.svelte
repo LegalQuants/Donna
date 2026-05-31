@@ -1,14 +1,15 @@
 <script lang="ts">
   import type { RunPhase } from './runFlow.svelte';
 
-  let { phase, error = null }: { phase: RunPhase; error?: string | null } = $props();
+  let { phase, error = null, skipUpload = false }: { phase: RunPhase; error?: string | null; skipUpload?: boolean } = $props();
 
-  const STEPS: { key: RunPhase; label: string }[] = [
+  const ALL_STEPS: { key: RunPhase; label: string }[] = [
     { key: 'uploading', label: 'Uploaded' },
     { key: 'ingesting', label: 'Ingested' },
     { key: 'analysing', label: 'Analysing' },
     { key: 'done', label: 'Results' }
   ];
+  const STEPS = $derived(skipUpload ? ALL_STEPS.filter((s) => s.key !== 'uploading' && s.key !== 'ingesting') : ALL_STEPS);
   const ORDER: RunPhase[] = ['idle', 'uploading', 'ingesting', 'executing', 'analysing', 'done'];
   const rank = $derived(ORDER.indexOf(phase === 'error' ? 'idle' : phase));
 
