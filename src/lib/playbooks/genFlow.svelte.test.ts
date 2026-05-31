@@ -60,7 +60,7 @@ describe('createGenFlow', () => {
   it('flags stuck after the threshold while still polling', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResp({ id: 'g1', status: 'pending' }, 202))
-      .mockResolvedValue(jsonResp({ id: 'g1', status: 'running' }));
+      .mockImplementation(() => Promise.resolve(jsonResp({ id: 'g1', status: 'running' })));
     vi.stubGlobal('fetch', fetchMock);
     const flow = createGenFlow({ pollMs: 10, stuckMs: 30 });
     flow.generate([{ kind: 'matter', documentId: 'd1' }], 'NDA');
