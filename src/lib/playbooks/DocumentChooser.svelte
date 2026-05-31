@@ -32,6 +32,8 @@
     goto(`${url.pathname}${url.search}`, { keepFocus: true, noScroll: true });
   }
   $effect(() => {
+    const current = page.url.searchParams.get('matter');
+    if (selectedMatter === current) return; // no-op on mount / unchanged selection
     syncMatterToUrl(selectedMatter);
   });
 
