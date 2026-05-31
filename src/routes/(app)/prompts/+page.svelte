@@ -13,10 +13,11 @@
 
   let editing = $state<SavedPrompt | null>(null);
   let modalOpen = $state(false);
+  let modalKey = $state(0);
   let confirmingDelete = $state<SavedPrompt | null>(null);
 
-  function openCreate() { editing = null; modalOpen = true; }
-  function openEdit(p: SavedPrompt) { editing = p; modalOpen = true; }
+  function openCreate() { editing = null; modalKey++; modalOpen = true; }
+  function openEdit(p: SavedPrompt) { editing = p; modalKey++; modalOpen = true; }
   function save(input: SavedPromptInput) {
     return editing ? lib.update(editing.id, input) : lib.create(input);
   }
@@ -54,7 +55,9 @@
   {#if lib.error}<p class="mt-3 text-sm text-mlq-error">{lib.error}</p>{/if}
 </div>
 
-<PromptModal open={modalOpen} prompt={editing} onsave={save} onclose={() => (modalOpen = false)} />
+{#key modalKey}
+  <PromptModal open={modalOpen} prompt={editing} onsave={save} onclose={() => (modalOpen = false)} />
+{/key}
 
 {#if confirmingDelete}
   <div role="presentation" class="fixed inset-0 z-30 bg-black/40" onclick={() => (confirmingDelete = null)}></div>
