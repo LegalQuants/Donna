@@ -58,7 +58,7 @@ From a playbook's detail page, an admin runs the playbook against a contract —
   - **Existing** `GET /files/[id]` (P3) — reused for ingestion polling.
 
 **Client orchestration — `src/lib/playbooks/runFlow.svelte.ts`** (a rune controller; mirrors the P4-3b client-polling pattern; plain `fetch` to the JSON proxies — fully mockable in tests):
-- *Upload path:* `POST /files` (FormData) → `id` → poll `GET /files/{id}` every 2 s (visibility-aware) until `ready` (→ `document_id`) or `failed` → `POST /playbooks/{id}/execute` with `document_id`.
+- *Upload path:* `POST /files` (FormData) → `id` → poll `GET /files/{id}` every 2 s until `ready` (→ `document_id`) or `failed` → `POST /playbooks/{id}/execute` with `document_id`. (Visibility-aware pausing was descoped — a single short-lived in-flight poll over a ~20–40 s run doesn't warrant it; revisit if runs get long.)
 - *Pick path:* user selects an ingested matter file → `POST /playbooks/{id}/execute` with its `document_id` (skips upload/ingest steps).
 - On execute → `execution.id`; push `?execution=<id>` to the URL (`replaceState`) for reload-safety, then poll `GET /playbook-executions/{id}` every 2 s until `completed`/`error`. A 5-min stuck threshold surfaces a "still running — refresh" affordance (P4-3b precedent). Render results on completion; render the backend `error` on failure. On load with `data.execution` present, resume from its current status.
 - State machine: `idle → uploading → ingesting → executing → analysing → done | error`.
