@@ -73,9 +73,9 @@
             <SeverityBadge severity={position.severity_if_missing} />
             {#if !positionValid(position)}<span class="text-xs text-mlq-error">• incomplete</span>{/if}
           </button>
-          <button type="button" onclick={() => move(i, -1)} disabled={i === 0} aria-label="Move position up" class="px-1 text-mlq-muted disabled:opacity-30 hover:text-mlq-text">↑</button>
-          <button type="button" onclick={() => move(i, 1)} disabled={i === (draft.positions?.length ?? 0) - 1} aria-label="Move position down" class="px-1 text-mlq-muted disabled:opacity-30 hover:text-mlq-text">↓</button>
-          <button type="button" onclick={() => removePosition(i)} aria-label="Remove position" class="px-1 text-xs text-mlq-muted hover:text-mlq-error">Remove</button>
+          <button type="button" onclick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${position.issue || 'position'} up`} class="px-1 text-mlq-muted disabled:opacity-30 hover:text-mlq-text">↑</button>
+          <button type="button" onclick={() => move(i, 1)} disabled={i === (draft.positions?.length ?? 0) - 1} aria-label={`Move ${position.issue || 'position'} down`} class="px-1 text-mlq-muted disabled:opacity-30 hover:text-mlq-text">↓</button>
+          <button type="button" onclick={() => removePosition(i)} aria-label={`Remove position ${position.issue || ''}`.trim()} class="px-1 text-xs text-mlq-muted hover:text-mlq-error">Remove</button>
         </div>
         {#if expanded === i}
           <div class="border-t border-mlq-subtle p-3"><PositionEditor bind:position={draft.positions![i]} /></div>
