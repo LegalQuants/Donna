@@ -3,30 +3,22 @@
   import { page } from '$app/state';
   import Dropzone from '$lib/matters/files/Dropzone.svelte';
   import MatterPicker from '$lib/matters/MatterPicker.svelte';
+  import type { DocSelection } from './genFlow.svelte';
   type MatterSummary = { id: string; name: string };
   type IngestedFile = { id: string; filename: string; document_id: string };
-  export type Selected =
-    | { kind: 'matter'; documentId: string; filename: string }
-    | { kind: 'upload'; file: File; filename: string };
-  // Loose prop type so callers may pass a plain { kind: string }[] accumulator
-  type SelectedInit = { kind: string; [key: string]: unknown }[];
+  export type Selected = DocSelection & { filename: string };
 
   let {
     matters,
     matterFiles,
-    selected = $bindable<SelectedInit>([]),
+    selected = $bindable<Selected[]>([]),
     onchange
   }: {
     matters: MatterSummary[];
     matterFiles: IngestedFile[];
-    selected?: SelectedInit;
+    selected?: Selected[];
     onchange?: (s: Selected[]) => void;
   } = $props();
-
-  // Internal typed view — callers always receive properly-typed Selected[]
-  function asSelected(arr: SelectedInit): Selected[] {
-    return arr as unknown as Selected[];
-  }
 
   let tab = $state<'upload' | 'matter'>('upload');
   let selectedMatter = $state<string | null>(page.url.searchParams.get('matter'));
@@ -36,21 +28,20 @@
     onchange?.(next);
   }
   function isPicked(documentId: string) {
-    return asSelected(selected).some((s) => s.kind === 'matter' && s.documentId === documentId);
+    return selected.some((s) => s.kind === 'matter' && s.documentId === documentId);
   }
   function toggleMatterFile(f: IngestedFile) {
-    const cur = asSelected(selected);
     if (isPicked(f.document_id)) {
-      emit(cur.filter((s) => !(s.kind === 'matter' && s.documentId === f.document_id)));
+      emit(selected.filter((s) => !(s.kind === 'matter' && s.documentId === f.document_id)));
     } else {
-      emit([...cur, { kind: 'matter', documentId: f.document_id, filename: f.filename }]);
+      emit([...selected, { kind: 'matter', documentId: f.document_id, filename: f.filename }]);
     }
   }
   function addUploads(files: File[]) {
-    emit([...asSelected(selected), ...files.map((file) => ({ kind: 'upload' as const, file, filename: file.name }))]);
+    emit([...selected, ...files.map((file) => ({ kind: 'upload' as const, file, filename: file.name }))]);
   }
   function remove(i: number) {
-    emit(asSelected(selected).filter((_, idx) => idx !== i));
+    emit(selected.filter((_, idx) => idx !== i));
   }
 
   function syncMatterToUrl(id: string | null) {
@@ -101,7 +92,7 @@
 <div class="mt-3 text-xs text-mlq-muted">{selected.length} selected</div>
 {#if selected.length > 0}
   <ul class="mt-1 space-y-1">
-    {#each asSelected(selected) as s, i (s.filename + i)}
+    {#each selected as s, i (s.filename + i)}
       <li class="flex items-center justify-between gap-2 text-sm text-mlq-text">
         <span class="truncate">{s.filename}</span>
         <button type="button" class="text-xs text-mlq-muted hover:underline" onclick={() => remove(i)} aria-label={`Remove ${s.filename}`}>Remove</button>
