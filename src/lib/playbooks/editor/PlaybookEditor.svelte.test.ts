@@ -17,8 +17,8 @@ describe('PlaybookEditor', () => {
   it('renders the name field and a summary per position', () => {
     render(PlaybookEditor, { props: { initial, onchange: vi.fn() } });
     expect((screen.getByLabelText(/playbook name/i) as HTMLInputElement).value).toBe('NDA');
-    expect(screen.getByRole('button', { name: /Confidentiality/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Term/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Confidentiality/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Term/ })).toBeInTheDocument();
   });
 
   it('editing the name emits the updated PlaybookCreate', async () => {
