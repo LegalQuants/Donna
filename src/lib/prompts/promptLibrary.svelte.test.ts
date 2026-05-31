@@ -55,6 +55,7 @@ describe('createPromptLibrary', () => {
     await lib.update('p1', { name: 'Renamed' });
     expect(lib.prompts[0].name).toBe('Renamed');
     expect(fetchMock.mock.calls[0][0]).toBe('/prompts/items/p1');
+    expect(fetchMock.mock.calls[0][1].method).toBe('PATCH');
   });
 
   it('remove drops the prompt', async () => {
@@ -63,6 +64,8 @@ describe('createPromptLibrary', () => {
     const lib = createPromptLibrary();
     lib.seed([{ id: 'p1', name: 'A', prompt_text: 'x' }, { id: 'p2', name: 'B', prompt_text: 'y' }] as never);
     await lib.remove('p1');
+    expect(fetchMock.mock.calls[0][0]).toBe('/prompts/items/p1');
+    expect(fetchMock.mock.calls[0][1].method).toBe('DELETE');
     expect(lib.prompts.map((p) => p.id)).toEqual(['p2']);
   });
 });
