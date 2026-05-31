@@ -52,4 +52,8 @@ describe('/playbooks/[id] ownership + delete', () => {
     lqFetch.mockResolvedValueOnce(new Response('x', { status: 403 }));
     expect(await actions.delete({ params: { id: 'pb1' } } as never)).toMatchObject({ status: 403 });
   });
+  it('?/delete treats a 404 as already-gone and still redirects', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('gone', { status: 404 }));
+    await expect(actions.delete({ params: { id: 'pb1' } } as never)).rejects.toMatchObject({ status: 303, location: '/playbooks' });
+  });
 });
