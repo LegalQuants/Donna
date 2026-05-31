@@ -24,4 +24,9 @@ describe('/playbooks/[id] load', () => {
     lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
     await expect(load(ev())).rejects.toMatchObject({ status: 502 });
   });
+  it('returns isAdmin from locals', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'pb1', name: 'p', contract_type: 'NDA', positions: [] }), { status: 200 }));
+    const out = (await load({ params: { id: 'pb1' }, locals: { user: { is_admin: true } } } as never)) as { isAdmin: boolean };
+    expect(out.isAdmin).toBe(true);
+  });
 });

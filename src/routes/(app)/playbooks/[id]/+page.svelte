@@ -17,6 +17,13 @@
   <div class="mt-1 text-sm text-mlq-muted">
     {data.playbook.contract_type}{#if data.playbook.version} · v{data.playbook.version}{/if} · {positions.length} position{positions.length === 1 ? '' : 's'}
   </div>
+  {#if data.isAdmin}
+    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app run link -->
+    <a href="/playbooks/{data.playbook.id}/run"
+      class="mt-3 inline-block rounded-mlq-control bg-mlq-text px-3 py-1.5 text-sm text-mlq-surface hover:opacity-90">Apply to a document</a>
+  {:else}
+    <p class="mt-3 text-xs text-mlq-muted">Running built-in playbooks requires an admin account in this version.</p>
+  {/if}
   {#if data.playbook.description}
     <p class="mt-2 text-sm text-mlq-text">{data.playbook.description}</p>
   {/if}
