@@ -5,6 +5,7 @@
   import GenDocumentPicker from '$lib/playbooks/GenDocumentPicker.svelte';
   import GenProgress from '$lib/playbooks/GenProgress.svelte';
   import PlaybookEditor from '$lib/playbooks/editor/PlaybookEditor.svelte';
+  import { isValidDraft } from '$lib/playbooks/editorDraft';
   import { createGenFlow, type DocSelection } from '$lib/playbooks/genFlow.svelte';
   import type { PlaybookCreate } from '$lib/playbooks/types';
   import type { PageProps } from './$types';
@@ -25,7 +26,7 @@
   let edited = $state<PlaybookCreate | null>(null);
 
   const canGenerate = $derived(selected.length > 0 && contractType.trim().length > 0);
-  const canSave = $derived(!!edited && !!edited.name?.trim() && !!edited.contract_type?.trim() && (edited.positions?.length ?? 0) > 0);
+  const canSave = $derived(!!edited && isValidDraft(edited));
 
   let resumed = false;
   $effect(() => {

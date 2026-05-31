@@ -1,12 +1,13 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import PlaybookEditor from '$lib/playbooks/editor/PlaybookEditor.svelte';
+  import { isValidDraft } from '$lib/playbooks/editorDraft';
   import type { PlaybookCreate } from '$lib/playbooks/types';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
   let edited = $state<PlaybookCreate | null>(null);
-  const canSave = $derived(!!edited && !!edited.name?.trim() && !!edited.contract_type?.trim() && (edited.positions?.length ?? 0) > 0);
+  const canSave = $derived(!!edited && isValidDraft(edited));
 </script>
 
 <svelte:head><title>New playbook — Donna</title></svelte:head>
