@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut, ScrollText, Library } from '@lucide/svelte';
+  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut, ScrollText, Library, BookMarked } from '@lucide/svelte';
   import { loadSidebar, persistSidebar } from './sidebar';
 
   let { displayName = 'Account' }: { displayName?: string } = $props();
@@ -12,6 +12,7 @@
     { href: '/workflows', label: 'Workflows', icon: Workflow },
     { href: '/skills', label: 'Skills', icon: ScrollText },
     { href: '/playbooks', label: 'Playbooks', icon: Library },
+    { href: '/prompts', label: 'Prompts', icon: BookMarked },
     { href: '/tabular', label: 'Tabular', icon: Table }
   ];
 
