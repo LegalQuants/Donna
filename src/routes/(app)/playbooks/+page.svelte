@@ -22,7 +22,7 @@
   <div class="mb-4 flex items-center justify-between">
     <h1 class="text-xl font-medium text-mlq-text">Playbooks</h1>
     <div class="relative">
-      <button type="button" onclick={() => (menuOpen = !menuOpen)} aria-expanded={menuOpen}
+      <button type="button" onclick={() => (menuOpen = !menuOpen)} aria-expanded={menuOpen} aria-haspopup="menu"
         class="inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"><Plus size={13} /> New playbook</button>
       {#if menuOpen}
         <div role="presentation" class="fixed inset-0 z-30" onclick={() => (menuOpen = false)}></div>
