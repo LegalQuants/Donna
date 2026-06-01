@@ -15,7 +15,7 @@ test('browse playbooks: grouped index → detail with positions and expandable i
   await login(page);
 
   // Sidebar entry exists, and the index lists the built-ins.
-  await expect(page.locator('aside a[href="/playbooks"]')).toBeVisible();
+  await expect(page.locator('aside a[href="/workflows"]')).toBeVisible();
   await page.goto('/playbooks');
   await expect(page.getByRole('heading', { name: 'Playbooks', level: 1 })).toBeVisible();
 

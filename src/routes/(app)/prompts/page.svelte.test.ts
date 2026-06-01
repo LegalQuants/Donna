@@ -1,12 +1,18 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, within } from '@testing-library/svelte';
 import { fireEvent } from '@testing-library/dom';
 import Page from './+page.svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 describe('/prompts index', () => {
+  it('renders the Workflows sub-nav with Prompts active', () => {
+    render(Page, { props: { data: { prompts: [] } } as never });
+    const nav = screen.getByRole('navigation', { name: 'Workflows sections' });
+    expect(within(nav).getByRole('link', { name: 'Prompts' })).toHaveAttribute('aria-current', 'page');
+  });
+
   it('renders rows from data and opens the create modal', async () => {
     render(Page, { props: { data: { prompts: [{ id: 'p1', name: 'Risk review', prompt_text: 'x', tags: [] }] } } as never });
     expect(screen.getByText('Risk review')).toBeInTheDocument();

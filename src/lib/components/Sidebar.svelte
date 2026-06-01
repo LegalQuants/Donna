@@ -1,24 +1,25 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut, ScrollText, Library, BookMarked } from '@lucide/svelte';
+  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut } from '@lucide/svelte';
   import { loadSidebar, persistSidebar } from './sidebar';
 
   let { displayName = 'Account' }: { displayName?: string } = $props();
   let open = $state(loadSidebar());
 
-  const nav = [
+  type NavItem = { href: string; label: string; icon: typeof MessageSquare; match?: string[] };
+  const nav: NavItem[] = [
     { href: '/', label: 'Assistant', icon: MessageSquare },
     { href: '/matters', label: 'Projects', icon: FolderKanban },
-    { href: '/workflows', label: 'Workflows', icon: Workflow },
-    { href: '/skills', label: 'Skills', icon: ScrollText },
-    { href: '/playbooks', label: 'Playbooks', icon: Library },
-    { href: '/prompts', label: 'Prompts', icon: BookMarked },
+    { href: '/workflows', label: 'Workflows', icon: Workflow, match: ['/workflows', '/skills', '/playbooks', '/prompts'] },
     { href: '/tabular', label: 'Tabular', icon: Table }
   ];
 
   function toggle() { open = !open; persistSidebar(open); }
-  const isActive = (href: string) =>
-    href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
+  // `match` entries are matched by path prefix — keep them unambiguous (e.g. don't add `/work`).
+  const isActive = (item: NavItem) =>
+    item.href === '/'
+      ? page.url.pathname === '/'
+      : (item.match ?? [item.href]).some((p) => page.url.pathname.startsWith(p));
 </script>
 
 <aside class="flex h-full flex-col border-r border-mlq-subtle bg-mlq-surface-alt transition-all {open ? 'w-64' : 'w-16'}">
@@ -33,9 +34,9 @@
     {#each nav as item (item.href)}
       <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sidebar nav link -->
       <a href={item.href}
-         aria-current={isActive(item.href) ? 'page' : undefined}
+         aria-current={isActive(item) ? 'page' : undefined}
          class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
-                {isActive(item.href) ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text'}">
+                {isActive(item) ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text'}">
         <item.icon size={18} />
         {#if open}<span>{item.label}</span>{/if}
       </a>
