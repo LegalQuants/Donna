@@ -34,4 +34,14 @@ test('apply a playbook to an uploaded document and see results with a redline', 
   // Results render: the scorecard + at least one verdict card with a redline.
   await expect(page.getByText(/\d+ Standard/)).toBeVisible({ timeout: 100_000 });
   await expect(page.getByText('Suggested redline').first()).toBeVisible();
+
+  // Toggle to the consolidated Redlines view: the verdict cards' "Suggested redline"
+  // label is gone, and the redline document shows at least one struck change.
+  await page.getByRole('button', { name: 'Redlines' }).click();
+  await expect(page.getByText('Suggested redline')).toHaveCount(0);
+  await expect(page.locator('.line-through').first()).toBeVisible();
+
+  // Toggle back restores the verdict cards.
+  await page.getByRole('button', { name: 'Verdict cards' }).click();
+  await expect(page.getByText('Suggested redline').first()).toBeVisible();
 });
