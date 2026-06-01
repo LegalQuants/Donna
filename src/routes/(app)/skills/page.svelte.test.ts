@@ -1,6 +1,6 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, within, fireEvent } from '@testing-library/svelte';
 import Page from './+page.svelte';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
@@ -29,6 +29,12 @@ describe('/skills index', () => {
     await fireEvent.input(screen.getByLabelText('Search built-in skills'), { target: { value: 'nda' } });
     expect(screen.queryByText('Contract Review')).not.toBeInTheDocument();
     expect(screen.getByText('NDA Check')).toBeInTheDocument();
+  });
+
+  it('renders the Workflows sub-nav with Skills active', () => {
+    render(Page, props());
+    const nav = screen.getByRole('navigation', { name: 'Workflows sections' });
+    expect(within(nav).getByRole('link', { name: 'Skills' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('opens the fork confirm modal with a derived slug when a built-in Fork is clicked', async () => {

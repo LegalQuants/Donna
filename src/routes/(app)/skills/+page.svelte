@@ -4,6 +4,7 @@
   import CreateSkillModal from '$lib/skills/authoring/CreateSkillModal.svelte';
   import ForkConfirmModal from '$lib/skills/authoring/ForkConfirmModal.svelte';
   import type { SkillSummary } from '$lib/skills/authoring/types';
+  import WorkflowsNav from '$lib/workflows/WorkflowsNav.svelte';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -21,6 +22,7 @@
 <svelte:head><title>Skills — Donna</title></svelte:head>
 
 <div class="mx-auto max-w-3xl px-4 py-6">
+  <WorkflowsNav active="skills" />
   <div class="mb-4 flex items-center justify-between">
     <h1 class="text-xl font-medium text-mlq-text">Skills</h1>
     <button type="button" onclick={() => (creating = true)}
