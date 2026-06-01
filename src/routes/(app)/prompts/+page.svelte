@@ -5,6 +5,7 @@
   import PromptModal from '$lib/prompts/PromptModal.svelte';
   import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
   import type { SavedPrompt, SavedPromptInput } from '$lib/prompts/types';
+  import WorkflowsNav from '$lib/workflows/WorkflowsNav.svelte';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -38,6 +39,7 @@
 <svelte:head><title>Prompts — Donna</title></svelte:head>
 
 <div class="mx-auto max-w-3xl px-4 py-6">
+  <WorkflowsNav active="prompts" />
   <div class="mb-4 flex items-center justify-between">
     <h1 class="text-xl font-medium text-mlq-text">Prompts</h1>
     <button type="button" onclick={openCreate} class="inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"><Plus size={13} /> New prompt</button>
