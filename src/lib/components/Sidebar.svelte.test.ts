@@ -61,4 +61,12 @@ describe('Sidebar', () => {
     render(Sidebar, { props: { displayName: 'Admin' } });
     expect(screen.getByRole('link', { name: 'Assistant' })).not.toHaveAttribute('aria-current');
   });
+
+  it('has a Settings entry pointing at /settings, active on /settings/*', () => {
+    h.pathname = '/settings/account';
+    render(Sidebar, { props: { displayName: 'Admin' } });
+    const link = screen.getByRole('link', { name: 'Settings' });
+    expect(link).toHaveAttribute('href', '/settings');
+    expect(link).toHaveAttribute('aria-current', 'page');
+  });
 });
