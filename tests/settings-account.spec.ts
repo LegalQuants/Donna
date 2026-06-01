@@ -29,4 +29,11 @@ test('settings → account: profile, password link, MFA status (dev fixture is M
   // Two-factor is Off for the dev admin fixture → no Disable button.
   await expect(page.getByText('Off')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Disable' })).toHaveCount(0);
+
+  // The Change link actually reaches the change-password form (authed users are
+  // allowed onto /change-password; only /login bounces them home). Do NOT submit —
+  // that would rotate the admin fixture's password.
+  await page.getByRole('link', { name: 'Change' }).click();
+  await page.waitForURL('**/change-password');
+  await expect(page.getByRole('heading', { name: 'Set a new password' })).toBeVisible();
 });
