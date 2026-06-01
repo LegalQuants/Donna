@@ -2,6 +2,7 @@
   import { Plus } from '@lucide/svelte';
   import PlaybookRow from '$lib/playbooks/PlaybookRow.svelte';
   import { groupByContractFamily } from '$lib/playbooks/contractFamily';
+  import WorkflowsNav from '$lib/workflows/WorkflowsNav.svelte';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -19,6 +20,7 @@
 <svelte:head><title>Playbooks — Donna</title></svelte:head>
 
 <div class="mx-auto max-w-3xl px-4 py-6">
+  <WorkflowsNav active="playbooks" />
   <div class="mb-4 flex items-center justify-between">
     <h1 class="text-xl font-medium text-mlq-text">Playbooks</h1>
     <div class="relative">
