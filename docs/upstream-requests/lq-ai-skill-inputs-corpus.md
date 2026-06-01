@@ -2,6 +2,14 @@
 
 **To:** lq-ai backend session · **From:** Donna · **Date:** 2026-05-29 · **Pin observed:** `438198c`
 
+> **File locations (absolute):**
+> - This request doc lives in the **Donna** repo: `/Users/kevinkeller/Code/Donna/docs/upstream-requests/lq-ai-skill-inputs-corpus.md`
+> - The work happens in the **lq-ai** repo rooted at `/Users/kevinkeller/Code/lq-ai`. Files to change:
+>   - `/Users/kevinkeller/Code/lq-ai/gateway/app/skills/assembler.py` (the `interpolate` / `_render_skill` / `assemble_skill_prompt` functions)
+>   - Test: `/Users/kevinkeller/Code/lq-ai/gateway/tests/test_inference_skill_assembly.py`
+>   - Built-in skill bodies (if Option B): `/Users/kevinkeller/Code/lq-ai/skills/*/SKILL.md`
+>   - Regenerated contract Donna re-pulls after merge: `/Users/kevinkeller/Code/lq-ai/docs/api/backend-openapi.yaml`
+
 ## Summary
 
 `MessageCreate.skill_inputs` is accepted, anonymized, and forwarded to the gateway as `lq_ai_skill_inputs`, but the collected values **never reach the model for any current built-in skill**. The gateway assembler only substitutes `{{placeholder}}` tokens in a skill body and silently drops any bound input the body doesn't reference. None of the 14 built-in skills use `{{}}` placeholders, so a UI that collects a skill's declared inputs (jurisdiction, perspective, audience, …) produces values that vanish. This blocks Donna from shipping a skill-input form with real payoff.
