@@ -54,19 +54,21 @@ test('renders three citation states and an out-of-range pill, with a working pop
   await expect(page.locator('.cite-tab.cite-caveats')).toHaveCount(1);
   await expect(page.locator('.cite-tab.cite-unverified')).toHaveCount(2); // [3] + [9]
 
-  // Click the green tab → popover with the source quote + filename.
-  await page.locator('.cite-tab.cite-verified').click();
+  // Focus the green tab → hover/focus popover with the source quote + filename.
+  // (Since P3-2 the popover is hover/focus-triggered; click opens the doc panel,
+  // which is covered by document-panel.spec.ts / citation-highlight.spec.ts.)
+  await page.locator('.cite-tab.cite-verified').focus();
   const pop = page.getByRole('dialog');
   await expect(pop).toBeVisible();
   await expect(pop).toContainText('thirty days notice');
   await expect(pop).toContainText('MSA.pdf');
   await expect(pop).toContainText(/exact match/i);
 
-  // Esc closes.
+  // Esc closes (the focused pill's keydown bubbles to the cite-view handler).
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
-  // The out-of-range [9] opens the "could not be matched" empty state.
-  await page.locator('.cite-tab.cite-unverified').last().click();
+  // The out-of-range [9] shows the "could not be matched" empty state on focus.
+  await page.locator('.cite-tab.cite-unverified').last().focus();
   await expect(page.getByRole('dialog')).toContainText(/could not be matched/i);
 });
