@@ -35,7 +35,6 @@
 </script>
 
 {#if open}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div role="presentation" class="fixed inset-0 z-30 bg-black/40" onclick={() => onclose?.()}></div>
   <div role="dialog" aria-modal="true" aria-label="Delete your account"
     class="fixed left-1/2 top-1/2 z-40 w-[26rem] max-w-[92vw] -translate-x-1/2 -translate-y-1/2 rounded-mlq-control border border-mlq-subtle bg-mlq-surface p-4 shadow-xl">

@@ -23,7 +23,7 @@ export const actions: Actions = {
 
   cancelDeletion: async (event) => {
     const res = await lqFetch(event, '/api/v1/users/me/delete/cancel', { method: 'POST' });
-    if (res.status === 204 || res.ok) return { cancelled: true };
+    if (res.ok) return { cancelled: true };
     if (res.status === 400) return fail(400, { cancelMessage: 'No scheduled deletion to cancel.' });
     return fail(502, { cancelError: 'Could not cancel. Please try again.' });
   }
