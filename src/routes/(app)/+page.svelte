@@ -3,6 +3,7 @@
   import Composer from '$lib/components/Composer.svelte';
   import { createSkillAttach } from '$lib/skills/attach.svelte';
   import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
+  import { rebrandName } from '$lib/brand';
 
   let { data, form } = $props();
   let message = $state('');
@@ -11,7 +12,7 @@
   const skillAttach = createSkillAttach();
   const promptLibrary = createPromptLibrary();
 
-  const name = $derived(data.user?.display_name || data.user?.email?.split('@')[0] || 'there');
+  const name = $derived(rebrandName(data.user?.display_name) || data.user?.email?.split('@')[0] || 'there');
 </script>
 
 <div class="mx-auto flex min-h-full max-w-2xl flex-col justify-center px-6">
