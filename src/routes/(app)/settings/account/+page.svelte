@@ -1,5 +1,6 @@
 <script lang="ts">
   import MfaDisableModal from '$lib/settings/MfaDisableModal.svelte';
+  import { rebrandName } from '$lib/brand';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -19,7 +20,7 @@
 <section class="rounded-mlq-control border border-mlq-subtle">
   <h2 class="border-b border-mlq-subtle px-4 py-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Profile</h2>
   <dl class="divide-y divide-mlq-subtle text-sm">
-    <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Name</dt><dd class="text-mlq-text">{user?.display_name || '—'}</dd></div>
+    <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Name</dt><dd class="text-mlq-text">{rebrandName(user?.display_name) || '—'}</dd></div>
     <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Email</dt><dd class="text-mlq-text">{user?.email ?? '—'}</dd></div>
     <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Role</dt><dd class="capitalize text-mlq-text">{user?.role}</dd></div>
     <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Member since</dt><dd class="text-mlq-text">{fmtMonthYear(user?.created_at)}</dd></div>
