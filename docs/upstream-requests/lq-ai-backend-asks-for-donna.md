@@ -9,7 +9,7 @@
 > runs `npm run gen:api`, rebuilds, verifies live, and logs the bump in
 > `/Users/kevinkeller/Code/Donna/docs/decisions/lq-ai-pin.md`.
 
-These are the only backend changes Donna currently needs. All three are small and independent — good
+These are the backend changes Donna currently needs. All four are small and independent — good
 candidates to fold into the **Milestone 4** wrap-up. (The bigger "autonomous workflows" item is **not**
 here — Donna has moved it to its own future roadmap: `/Users/kevinkeller/Code/Donna/docs/roadmap/donna-future-roadmap.md`.
 You're building that backend; the consumer-side requirements Donna will need are captured there for later.)
@@ -52,6 +52,19 @@ You're building that backend; the consumer-side requirements Donna will need are
   unblock; email self-service is your call. This is the *only* thing blocking the editable-profile part of Donna's
   upcoming **Settings** page — everything else that page needs already exists.
 - **Unblocks (Donna):** the profile-edit form in P7 Settings (the rest of P7 ships without it).
+
+## P1.4 — Expose `deletion_scheduled_at` on `GET /users/me`
+
+- **Detailed request:** `/Users/kevinkeller/Code/Donna/docs/upstream-requests/lq-ai-expose-deletion-status-on-users-me.md`
+- **lq-ai files:**
+  - `/Users/kevinkeller/Code/lq-ai/api/app/api/users.py` (`GET /users/me`)
+  - `/Users/kevinkeller/Code/lq-ai/api/app/schemas/` (the `User` response model)
+- **Gist:** `deletion_scheduled_at` lives only on `AdminUserRow`, not on the `User` schema from
+  `GET /users/me`, so a normal session can't detect a pending deletion on load. Donna ships an
+  always-visible "Cancel scheduled deletion" link as a workaround. Add `deletion_scheduled_at`
+  (or a small status field/endpoint) to `/users/me` so Donna can show a proper conditional
+  "Pending deletion — cancel by <date>" banner instead.
+- **Unblocks (Donna):** the conditional pending-deletion banner in P7-2 (the always-on cancel link ships without it).
 
 ---
 
