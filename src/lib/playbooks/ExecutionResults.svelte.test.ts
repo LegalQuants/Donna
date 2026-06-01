@@ -1,6 +1,6 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import ExecutionResults from './ExecutionResults.svelte';
 import type { ExecutionResults as Results, PositionResult } from './types';
 
@@ -19,5 +19,19 @@ describe('ExecutionResults', () => {
     expect(screen.getByText('1 Missing')).toBeInTheDocument();
     const headings = [...container.querySelectorAll('h3')].map((h) => h.textContent);
     expect(headings).toEqual(['Miss One', 'Dev One', 'Std One']);
+  });
+
+  it('toggles between verdict cards and the redline document', async () => {
+    render(ExecutionResults, { props: { results } });
+    // Defaults to the verdict-card view.
+    expect(screen.getByText('Dev One')).toBeInTheDocument();
+    // Switch to Redlines: cards hidden, redline view shown, scorecard still present.
+    await fireEvent.click(screen.getByRole('button', { name: 'Redlines' }));
+    expect(screen.queryByText('Dev One')).not.toBeInTheDocument();
+    expect(screen.getByText(/No redlines/i)).toBeInTheDocument();
+    expect(screen.getByText('1 Missing')).toBeInTheDocument();
+    // Switch back.
+    await fireEvent.click(screen.getByRole('button', { name: 'Verdict cards' }));
+    expect(screen.getByText('Dev One')).toBeInTheDocument();
   });
 });
