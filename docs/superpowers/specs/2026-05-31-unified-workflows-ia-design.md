@@ -66,7 +66,8 @@ Shared, purely presentational segmented control — no `load`, no I/O.
 ### `src/routes/(app)/workflows/+page.svelte` (replaces the stub)
 
 - `max-w-3xl px-4 py-6` container (matches the three index pages for visual continuity).
-- `<h1>` "Workflows" (serif `font-serif`/`text-mlq-strong` per the existing stub's heading style).
+- `<h1>` "Workflows" styled to match the three sibling index pages (`text-xl font-medium
+  text-mlq-text`), not the old stub's serif — so the hub and its tools read as one cohesive area.
 - `<WorkflowsNav active={null} />`.
 - Three cards (a simple responsive grid; `flex`/`grid` of equal cards), each: a Lucide icon
   (Skills = `ScrollText`, Playbooks = `Library`, Prompts = `BookMarked` — the icons already used in
