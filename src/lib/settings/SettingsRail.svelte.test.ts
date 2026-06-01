@@ -19,4 +19,16 @@ describe('SettingsRail', () => {
     render(SettingsRail);
     expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
   });
+
+  it('renders the Data & privacy section link', () => {
+    h.pathname = '/settings/account';
+    render(SettingsRail);
+    expect(screen.getByRole('link', { name: 'Data & privacy' })).toHaveAttribute('href', '/settings/data');
+  });
+
+  it('marks Data & privacy active on /settings/data', () => {
+    h.pathname = '/settings/data';
+    render(SettingsRail);
+    expect(screen.getByRole('link', { name: 'Data & privacy' })).toHaveAttribute('aria-current', 'page');
+  });
 });
