@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut } from '@lucide/svelte';
+  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut, Settings } from '@lucide/svelte';
   import { loadSidebar, persistSidebar } from './sidebar';
 
   let { displayName = 'Account' }: { displayName?: string } = $props();
@@ -43,11 +43,21 @@
     {/each}
   </nav>
 
-  <form method="POST" action="/logout" class="border-t border-mlq-subtle p-2">
-    <button type="submit"
-            class="flex w-full items-center gap-3 rounded-mlq-control px-3 py-2 text-sm text-mlq-text hover:bg-mlq-subtle">
-      <LogOut size={18} />
-      {#if open}<span>{displayName} · Sign out</span>{/if}
-    </button>
-  </form>
+  <div class="space-y-1 border-t border-mlq-subtle p-2">
+    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- settings link -->
+    <a href="/settings"
+       aria-current={page.url.pathname.startsWith('/settings') ? 'page' : undefined}
+       class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
+              {page.url.pathname.startsWith('/settings') ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text'}">
+      <Settings size={18} />
+      {#if open}<span>Settings</span>{/if}
+    </a>
+    <form method="POST" action="/logout">
+      <button type="submit"
+              class="flex w-full items-center gap-3 rounded-mlq-control px-3 py-2 text-sm text-mlq-text hover:bg-mlq-subtle">
+        <LogOut size={18} />
+        {#if open}<span>{displayName} · Sign out</span>{/if}
+      </button>
+    </form>
+  </div>
 </aside>
