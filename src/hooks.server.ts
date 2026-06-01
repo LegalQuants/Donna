@@ -32,8 +32,9 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (isApp && !event.locals.user) {
     throw redirect(303, `/login?next=${encodeURIComponent(path)}`);
   }
-  // Authed users skip the auth screens.
-  if (isAuth && event.locals.user && !event.locals.mustChangePassword) {
+  // Authed users skip the auth screens — except /change-password, which they may
+  // visit voluntarily (e.g. from Settings) to rotate their password.
+  if (isAuth && event.locals.user && !event.locals.mustChangePassword && path !== '/change-password') {
     throw redirect(303, '/');
   }
 
