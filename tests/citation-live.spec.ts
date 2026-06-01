@@ -69,7 +69,9 @@ test('history load renders real verified citation pills from the live backend', 
   const tab = page.locator('.cite-tab').first();
   await expect(tab).toBeVisible({ timeout: 15000 });
 
-  await tab.click();
+  // Since P3-2 the popover is hover/focus-triggered (click opens the doc panel);
+  // focus the pill to surface the metadata popover.
+  await tab.focus();
   const pop = page.getByRole('dialog');
   await expect(pop).toBeVisible();
   await expect(pop).toContainText(/\w/); // non-empty source_text
