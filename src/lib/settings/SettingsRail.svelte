@@ -3,7 +3,8 @@
 
   // Built sections only (no dead UI); later P7 slices add their entry.
   const sections: { href: string; label: string }[] = [
-    { href: '/settings/account', label: 'Account' }
+    { href: '/settings/account', label: 'Account' },
+    { href: '/settings/data', label: 'Data & privacy' }
   ];
   const isActive = (href: string) => page.url.pathname === href || page.url.pathname.startsWith(href + '/');
 </script>
