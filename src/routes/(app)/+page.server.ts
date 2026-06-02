@@ -2,6 +2,7 @@ import { fail, redirect, type Actions } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
 import { activeMatters, type Matter } from '$lib/matters/types';
 import type { PageServerLoad } from './$types';
+import { parseDraftSkillInputs } from './chats/[id]/draftSkillInputs';
 
 export const load: PageServerLoad = async (event) => {
   const res = await lqFetch(event, '/api/v1/projects');
@@ -15,6 +16,7 @@ export const actions: Actions = {
     const message = String(data.get('message') ?? '').trim();
     const projectId = String(data.get('project_id') ?? '').trim();
     const skills = data.getAll('skills').map(String).filter(Boolean);
+    const skillInputs = parseDraftSkillInputs(String(data.get('skill_inputs') ?? ''));
 
     const res = await lqFetch(event, '/api/v1/chats', {
       method: 'POST',
@@ -28,6 +30,9 @@ export const actions: Actions = {
     }
     if (skills.length) {
       event.cookies.set('donna_draft_skills', JSON.stringify(skills), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
+    }
+    if (Object.keys(skillInputs).length) {
+      event.cookies.set('donna_draft_skill_inputs', JSON.stringify(skillInputs), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
     }
     throw redirect(303, `/chats/${chat.id}`);
   }
