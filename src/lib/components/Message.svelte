@@ -5,9 +5,13 @@
   import type { ChatMessage } from '$lib/chat/chatStream.svelte';
   import type { Citation } from '$lib/citations/types';
   import { prettifySkillSlug } from '$lib/skills/skillLabel';
+  import { page } from '$app/state';
 
   let { message, onretry, onactivatecitation }: { message: ChatMessage; onretry?: () => void; onactivatecitation?: (c: Citation) => void } = $props();
   let copied = $state(false);
+  const collapsed = $derived((page.data.user?.provenance_pills ?? 'always') === 'collapsed');
+  let showDetails = $state(false);
+  const showPills = $derived(!collapsed || showDetails);
 
   async function copy() {
     try {
@@ -26,13 +30,13 @@
   </div>
 {:else}
   <div class="my-4 text-sm">
-    {#if message.routed_inference_tier != null}
+    {#if showPills && message.routed_inference_tier != null}
       <span class="float-right ml-2 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-muted">Tier {message.routed_inference_tier}</span>
-    {:else if message.status === 'streaming'}
+    {:else if showPills && message.status === 'streaming'}
       <span class="float-right ml-2 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-muted">Tier…</span>
     {/if}
 
-    {#if message.anonymized === true}
+    {#if showPills && message.anonymized === true}
       <span class="float-right ml-2 inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-success" title="This request was processed by the anonymization layer before leaving your environment">
         <ShieldCheck size={11} /> Anonymized
       </span>
@@ -56,7 +60,12 @@
       {#if message.status === 'done'}
         <div class="mt-2 flex items-center gap-2 text-xs text-mlq-muted">
           <button type="button" onclick={copy} class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5">{copied ? '✓ copied' : '⧉ Copy'}</button>
-          {#if message.applied_skills && message.applied_skills.length > 0}
+          {#if collapsed}
+            <button type="button" onclick={() => (showDetails = !showDetails)} class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5">
+              {showDetails ? 'Hide details' : 'Details'}
+            </button>
+          {/if}
+          {#if showPills && message.applied_skills && message.applied_skills.length > 0}
             {@const skills = message.applied_skills}
             <span class="inline-flex items-center gap-1">
               <ScrollText size={11} aria-hidden="true" />

@@ -1,7 +1,11 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/svelte';
+import { fireEvent } from '@testing-library/dom';
 import Message from './Message.svelte';
+
+const h = vi.hoisted(() => ({ provenance: 'always' as 'always' | 'collapsed' }));
+vi.mock('$app/state', () => ({ page: { get data() { return { user: { provenance_pills: h.provenance } }; } } }));
 
 describe('Message', () => {
   it('renders a user turn as a plain chip (no markdown block)', () => {
@@ -66,5 +70,32 @@ describe('Message', () => {
       props: { message: { key: 'a8', id: 'a8', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4 } }
     });
     expect(queryByText(/Applied:/)).toBeNull();
+  });
+});
+
+const doneMsg = {
+  key: 'a9', id: 'a9', role: 'assistant', content: 'Answer.', status: 'done',
+  routed_inference_tier: 4, anonymized: true, applied_skills: ['summarize'], citations: []
+} as unknown as import('$lib/chat/chatStream.svelte').ChatMessage;
+
+describe('Message provenance pills (provenance_pills preference)', () => {
+  it('shows Tier + Anonymized + Applied and no Details toggle when always', () => {
+    h.provenance = 'always';
+    render(Message, { props: { message: doneMsg } });
+    expect(screen.getByText(/Tier 4/)).toBeInTheDocument();
+    expect(screen.getByText(/Anonymized/)).toBeInTheDocument();
+    expect(screen.getByText(/Applied:/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /details/i })).toBeNull();
+  });
+
+  it('hides the pills behind a Details toggle when collapsed, revealing them on click', async () => {
+    h.provenance = 'collapsed';
+    render(Message, { props: { message: doneMsg } });
+    expect(screen.queryByText(/Tier 4/)).toBeNull();
+    expect(screen.queryByText(/Anonymized/)).toBeNull();
+    await fireEvent.click(screen.getByRole('button', { name: /details/i }));
+    expect(screen.getByText(/Tier 4/)).toBeInTheDocument();
+    expect(screen.getByText(/Anonymized/)).toBeInTheDocument();
+    expect(screen.getByText(/Applied:/)).toBeInTheDocument();
   });
 });
