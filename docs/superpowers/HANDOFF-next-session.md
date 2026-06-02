@@ -1,62 +1,61 @@
 # Donna — Handoff for the next session
 
-**Date:** 2026-05-31 · **Branch state:** everything below is **merged to `main`** (this handoff PR merges too). Start from a clean `main`.
+**Date:** 2026-06-01 · **Pin:** `vendor/lq-ai` @ `badf83d` (v0.4.0) — **bump to `945ad31` first thing (see §1).**
 
-## What shipped this session (all merged)
+## Open PRs (merge in order; all green, all reviewed)
 
-- **#31 — P5 Unified Workflows IA.** `/workflows` hub + shared `WorkflowsNav` segmented sub-nav mounted on the hub + Skills/Playbooks/Prompts index pages; sidebar consolidated 4→1 "Workflows" entry (prefix-`match` active-state). **P5 Workflows now structurally complete.**
-- **#32 — Test debt cleared.** `tests/citation-pills.spec.ts` + `tests/citation-live.spec.ts` updated to the P3-2 model (popover is hover/**focus**-triggered + still `role="dialog"`; click opens the doc panel). Drive via `.focus()`.
-- **#33 — LQ_AI backend asks (full paths) + autonomous-workflows roadmap.** Relay index for the LQ_AI session: **`/Users/kevinkeller/Code/Donna/docs/upstream-requests/lq-ai-backend-asks-for-donna.md`** (3 asks: skill_inputs reach model, `MessageCreate.file_ids`, **`PATCH /users/me`**). Autonomous workflows deferred to `docs/roadmap/donna-future-roadmap.md`. The LQ_AI session works in `/Users/kevinkeller/Code/lq-ai`.
-- **#34 — P8 Redline pane.** Read-only consolidated **Redlines** document view toggled on the playbook run-results page (custom renderer, NOT TipTap). New `RedlineChange`/`RedlineDocument`/`compareBySeverity`; toggle in `ExecutionResults`.
-- **#35 — P7-1 Settings shell + Account & Security.** `/settings` area (left sub-rail + sub-routes; ⚙ sidebar entry); Account page (read-only profile, Change-password link, MFA status + disable). Also fixed a real bug (caught by opus review): `hooks.server.ts` bounced authed users off `/change-password` — exempted it.
+- **#40 — P7-3 Preferences + ambient trust pills** — likely already merged by the time you read this; if not, merge it.
+- **#41 — P7-4 Trust page** — **completes P7 Settings.** Read-only `/settings/trust` (model trust matrix + tier policy + anonymization callout). Merge it.
 
-Full per-slice detail is in the `donna-phase-status` project memory.
+After both merge: `git checkout main && git pull`. **P7 is then fully done** (Account · Data & privacy · Preferences · Trust).
 
-## What's next: **P7-2 — Data & privacy** (Settings slice 2 of 4)
+## §1 — FIRST: lq-ai pin bump `badf83d` → `945ad31` (P1.4 landed)
 
-P7 was decomposed (agreed) into **4 thin slices, order: Account → Data & privacy → Preferences → Trust.** P7-1 (Account) merged. **P7-2 = Data & privacy** is next — the "danger zone": **data export** + **account deletion**.
+The LQ-AI session merged **P1.4** (DE-330-ish): `GET /users/me` (and login/refresh) now return a **nullable `deletion_scheduled_at`** on the user object — non-null while a deletion is pending, null otherwise. Read-only echo of the existing column; no migration; `test_openapi` stays 114; caller-scoped (no cross-user leak); round-trip verified (delete sets it → /users/me shows it → cancel clears it).
 
-**This is a fresh feature → start with the brainstorming skill.** The brainstorm was *paused at the visual-companion offer* to hand off — so begin there (offer the companion; the danger-zone layout + export-progress + deletion-confirm flows are visual).
+**Merged SHA = `945ad3155edb1e06cecba9abf35d79ddd1b9ecac`** (current main tip on both lq-ai remotes).
 
-### Backend contract (confirmed against `src/lib/api/backend.d.ts` @ pin `438198c`)
-- **Export:** `POST /api/v1/users/me/export` → 202 `{ job_id, status: 'queued'|'processing'|'completed'|'failed', download_url?: string|null }`; poll `GET /api/v1/users/me/export/{job_id}` (same shape; 404 if not yours). `download_url` is a **presigned URL valid 24h** once `status==='completed'`. **Needs the `ingest-worker`** running locally (it builds the export ZIP).
-- **Deletion:** `POST /api/v1/users/me/delete` → 202 `{ scheduled_deletion_at, grace_period_days }`. Soft-schedules + **revokes all sessions** (the user is effectively signed out after the POST; can still log in again during the grace window). `POST /api/v1/users/me/delete/cancel` → 204, or **400 if no pending deletion**.
+Do the established pin-bump workflow (see `docs/decisions/lq-ai-pin.md` bump log for the exact steps; we did it twice this session):
+1. `cd vendor/lq-ai && git fetch && git checkout 945ad31 && cd -`
+2. `npm run gen:api` — expect a **small additive diff**: `deletion_scheduled_at?: string | null` added to the `User` schema (and wherever `UserPublic` is echoed). `npm run check` should stay 0/0.
+3. Rebuild the stack so the running api serves it: `set -a; . ./.env; set +a; docker compose up -d --build api gateway donna-web ingest-worker arq-worker` (badf83d→945ad31 is tiny; migrations are a no-op, but rebuilding api is correct). All 8 containers healthy.
+4. Update `docs/decisions/lq-ai-pin.md` bump log; commit on a branch; this can ride in the same PR as the §2 banner work (they're directly related) or its own `chore/lq-ai-pin-945ad31` PR.
 
-### ⚠️ The key design constraint (drives the deletion UX)
-`deletion_scheduled_at` exists **only on `AdminUserRow`** (the admin user-list schema) — **NOT** on the user-facing `UserPublic` returned by `GET /api/v1/users/me`. So a normal user's session **cannot detect a pending deletion** on a fresh load, which means the **Cancel affordance can't be conditionally shown**. Open fork to settle in brainstorming:
-- (a) an **always-available "Cancel scheduled deletion"** control (POST cancel; 204→"cancelled", 400→"nothing pending") — functional now, slightly awkward;
-- (b) **file an upstream request** to expose `deletion_scheduled_at` (or a status endpoint) on `/users/me`, so a proper "Pending deletion — Cancel" banner can be shown — better, but blocks the clean version;
-- (c) **both** — ship (a) now + file the request for (b) later. (Likely recommendation.)
+## §2 — NEXT FEATURE: P7-2 follow-up — conditional "Pending deletion" banner
 
-### Other open brainstorming decisions
-- **Deletion confirm gravity:** type-to-confirm (type email or "DELETE") vs a strong confirm modal. (Grace period exists, so it's reversible-ish during grace.)
-- **Post-delete behavior:** since sessions are revoked, show the `scheduled_deletion_at` + grace once, then sign the user out / redirect to `/login` with a message.
-- **Export progress UX:** client-side polling (rune controller, like `KbFileRow`'s ingest poll in P4-3b) → queued/processing → a **Download** link when ready; visibility-pause optional.
-- **Layout:** a `/settings/data` sub-route; **add a second entry to `SettingsRail`'s `sections` array** ("Data & privacy" → `/settings/data`) — the rail is built-as-you-go.
+Now that `deletion_scheduled_at` is on `/users/me` (→ `locals.user` → `data.user`), **replace P7-2's always-visible "Cancel scheduled deletion" link with a conditional banner.** This is the clean version P7-2 deferred (decision "c"). Scope:
+- On `/settings/data` (`src/routes/(app)/settings/data/+page.svelte`), when `data.user?.deletion_scheduled_at` is non-null, show a **"Pending deletion — scheduled for `<date>`; cancel to keep your account"** banner with the cancel control; when null, **hide the cancel control entirely** (today it's always shown). The delete button + modal stay as-is.
+- The cancel action already exists (`?/cancelDeletion` → 204/400). After a successful cancel, `invalidateAll()` so `data.user.deletion_scheduled_at` refreshes to null and the banner disappears.
+- Retire/repoint the upstream ask: mark **P1.4 landed** in `docs/upstream-requests/lq-ai-backend-asks-for-donna.md` (move to *Already landed*) and note `lq-ai-expose-deletion-status-on-users-me.md` is resolved.
+- This is small — likely a brainstorm-lite → spec → ~3-task plan (banner UI + the conditional logic + an e2e that schedules-then-cancels a deletion **on a throwaway path, NOT the admin fixture** — careful: actually scheduling deletion revokes the admin's sessions; consider testing the banner render via the new field without a real POST, or use a dedicated test user if one can be created). **Settle the e2e safety approach in the spec.**
 
-### Scope / guardrails
-- Reuse the P7-1 shell — `/settings/+layout.svelte` + `SettingsRail.svelte` already exist; just append the rail entry + add the `/settings/data` page.
-- **e2e safety:** do **NOT** actually POST the deletion in e2e (it would schedule-delete the admin fixture + revoke its sessions). Cover **export end-to-end** (real `ingest-worker` job) + the **deletion-confirm modal UI** (open, warning, confirm-gating, cancel) **without submitting** the real delete. Mirror the export-poll test approach to `kb-management.spec.ts`.
-- BFF: SSR load + form actions via `lqFetch` (no new proxy routes unless the client-poll needs a `/settings/data/export/[job_id]` GET proxy — decide in design; a small BFF proxy for the poll is reasonable, mirroring other client-poll paths).
+## §3 — Then: remaining roadmap
+
+Order (user-confirmed): finish the now-unblocked items + P6.
+- **Now unblocked by the v0.4.0 + P1.4 bumps (build when ready):**
+  - **Profile editing** (P1.3, `PATCH /users/me` + `UserProfileUpdate`) — flip the P7-1 Account page's read-only `display_name` into an editable field. Small. (Note the brand rebrand: `rebrandName` in `src/lib/brand.ts` rewrites "LQ.AI"→"Donna" for *display*; once the user can set a real display_name, that transform becomes a harmless no-op.)
+  - **Composer skill-input form** (P1.1) — collect skill inputs in the composer; they now reach the model (DE-328). The reference widget-by-type is the vendor `SkillInputForm.svelte`.
+  - **Chat file-attach** (P1.2) — `MessageCreate.file_ids` channel + `applied_file_ids` echo; composer file picker / per-turn attach.
+- **P6 Tabular** — the largest FE build; full backend support at `/api/v1/tabular/*` (see `donna-phase-status` memory for the contract). User wants P6 after P7.
+- **Autonomous workflows** — v0.4.0 shipped `/api/v1/autonomous/*`; deferred to `docs/roadmap/donna-future-roadmap.md`; the `/workflows` area is built to extend to it as a 4th segment.
 
 ## Cold start (every session)
 
-1. `git checkout main && git pull` (this handoff is merged).
-2. Bring the stack up (shifted ports; coexists with the user's own lq-ai). **`ingest-worker` is required for P7-2 export**; `arq-worker` for playbooks easy-gen:
+1. `git checkout main && git pull`.
+2. Bring the stack up (shifted ports; coexists with the user's own lq-ai):
    ```bash
    set -a; . ./.env; set +a
    docker compose up -d --build postgres redis minio gateway api donna-web ingest-worker arq-worker
    ```
-   App at http://localhost:13002. Login fixture `admin@lq.ai` / `$DONNA_E2E_PASSWORD`. Details in `donna-dev-stack` memory + `README.md`.
-3. Verify gate: `npm run check` (expect "0 errors and 0 warnings"; vendor `ERR_MODULE_NOT_FOUND` stderr is harmless) · `npx vitest run` (expect ~697 green) · live e2es via `set -a; . ./.env; set +a; npx playwright test`.
-4. **e2e gotcha:** the running `donna-web` container serves *built* code — after changing `src/`, rebuild it (`docker compose up -d --build donna-web`) before live e2e, or it serves stale code.
+   App at http://localhost:13002. Login `admin@lq.ai` / `$DONNA_E2E_PASSWORD`. Details in `donna-dev-stack` memory + `README.md`.
+3. Verify gate: `npm run check` (expect "0 errors and 0 warnings"; vendor `ERR_MODULE_NOT_FOUND` stderr is harmless) · `npx vitest run` (expect ~760 green) · live e2es via `set -a; . ./.env; set +a; npx playwright test`.
+4. **e2e gotchas banked this session:**
+   - The running `donna-web` serves *built* code — `docker compose up -d --build donna-web` after `src/` changes before live e2e.
+   - **Live RAG e2es need `/tmp/spike.pdf` + `/tmp/spike2.pdf`** (ephemeral; cleaned from /tmp). Regenerate with `cupsfilter spike.txt > spike.pdf` (reportlab/fpdf NOT installed). A missing fixture surfaces as an `ENOENT`/ingestion-timeout masquerading as broken ingestion — it isn't.
+   - **Preference/settings e2es mutate the shared admin fixture** — reset to defaults at start AND in `finally` (an interrupted run leaves dirty state that fails the *next* run's start assertions).
 
-## The build loop (established, working well)
+## The build loop (working well)
 
-brainstorm (`superpowers:brainstorming`, one question at a time / visual companion for UI) → spec (`docs/superpowers/specs/`) → plan (`superpowers:writing-plans`, TDD, full code per task) → execute (`superpowers:subagent-driven-development`: fresh implementer per task + **two-stage review — spec compliance, then code quality** — fix loops, commit per task) → final whole-branch review (opus) → `superpowers:finishing-a-development-branch` → **PR into `main`** → update memory. Quality bar: `npm run check` 0/0, eslint clean (no `any`/`!`), modal a11y mirrors `ReceiptsDrawer`, in-app `<a>`/`goto` carry the `svelte/no-navigation-without-resolve` disable comment, server tests `// @vitest-environment node` + `vi.mock('$lib/server/lqClient', …)`, live e2es self-clean. **Lesson banked (P7-1): verify `(auth)`-group reachability against the global `hooks.server.ts` handle, not just a route's local guard.**
+brainstorm (`superpowers:brainstorming`, one question at a time / visual companion for UI) → spec (`docs/superpowers/specs/`) → plan (`superpowers:writing-plans`, TDD, full code per task) → execute (`superpowers:subagent-driven-development`: fresh sonnet implementer per task + verify inline for trivial tasks / dispatch reviewers for substantive ones + **whole-branch opus review**) → `superpowers:finishing-a-development-branch` → **PR into `main`** → update memory. Quality bar: `npm run check` 0/0, eslint clean (no `any`/`!`), live e2e self-cleaning. **Lesson banked (P7-3/P7-4): components reading prefs/user do `import { page } from '$app/state'` → `page.data.user?.x` and tests must `vi.mock('$app/state', …)`; testing a `+page.server.ts` `load()` directly needs a cast (its `PageServerLoad` return includes `void`).**
 
-## After P7: remaining work
-
-- **P7-3 Preferences** then **P7-4 Trust** (the last two P7 slices), then **P6 Tabular** (full backend support at `/api/v1/tabular/*`; the largest frontend build). Order requested by the user: finish P7, then P6.
-- **Upstream-blocked (waiting on the LQ_AI session, relay doc = `docs/upstream-requests/lq-ai-backend-asks-for-donna.md`):** skill-inputs composer form; chat-level file attach; **P7 profile editing** (`PATCH /users/me`); possibly **P7-2 pending-deletion visibility** if we file fork (b) above. When any merges: bump `vendor/lq-ai` pin → `npm run gen:api` → build the unblocked slice → log in `docs/decisions/lq-ai-pin.md`.
-- **Autonomous workflows:** deferred to `docs/roadmap/donna-future-roadmap.md` (waiting on LQ_AI Milestone 4; consumer-contract checklist captured there).
+See memories: [[donna-phase-status]], [[donna-lq-ai-v040-bump-parked]], [[donna-dev-stack]], [[donna-workflow]], [[donna-citation-contract]].
