@@ -2,11 +2,20 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `badf83d` (bumped 2026-06-01 from `438198c`; tag `v0.4.0-5-gbadf83d`)
+- Pinned SHA: `945ad31` (bumped 2026-06-01 from `badf83d`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+- `badf83d` → `945ad31` (2026-06-01): lq-ai #120 (Donna ask **P1.4**) — exposes nullable
+  `deletion_scheduled_at` on the `User` object returned by `GET /users/me` (+login/refresh).
+  Read-only echo of the existing column (non-null while a grace-period deletion is pending,
+  null otherwise); no migration; caller-scoped (no cross-user leak); `test_openapi` stays 114.
+  `npm run gen:api` produced a **+5-line additive diff** (the field on the `User` schema only);
+  `npm run check` 0/0. **Unblocks** the P7-2 follow-up: replace the always-visible "Cancel
+  scheduled deletion" link on `/settings/data` with a conditional "Pending deletion — cancel by
+  `<date>`" banner gated on `data.user.deletion_scheduled_at` (this bump ships with that banner).
+  Closes the last of the four Donna backend asks (P1.1–P1.4 all landed).
 - `438198c` → `badf83d` (2026-06-01): consolidated bump landing all **three** Donna
   backend asks (relay `docs/upstream-requests/lq-ai-backend-asks-for-donna.md`), plus the
   whole `v0.3.1`→`v0.4.0` upstream range:
