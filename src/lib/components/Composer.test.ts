@@ -2,6 +2,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+
+vi.mock('$app/state', () => ({ page: { data: { user: null } } }));
+
 import Composer from './Composer.svelte';
 
 describe('Composer', () => {
