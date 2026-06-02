@@ -17,6 +17,10 @@ const CFG = { allowed_tiers_global: [1, 2, 3, 4], default_minimum_tier: 1, privi
 const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 const event = {} as never;
 
+// `load`'s SvelteKit return type includes `void`; narrow to the concrete shape for assertions.
+type LoadResult = { rows: Array<{ id: string; where: string }>; modelsError: boolean; tierConfig: unknown };
+const callLoad = async (): Promise<LoadResult> => (await load(event)) as LoadResult;
+
 beforeEach(() => lqFetch.mockReset());
 
 function route(map: Record<string, Response>) {
@@ -26,7 +30,7 @@ function route(map: Record<string, Response>) {
 describe('trust page load', () => {
   it('returns matrix rows + tierConfig when both fetches succeed', async () => {
     route({ '/api/v1/models': ok(MODELS), '/api/v1/inference/tier-config': ok(CFG) });
-    const r = await load(event);
+    const r = await callLoad();
     expect(r.rows.map((x) => [x.id, x.where])).toEqual([['smart', 'Cloud'], ['local', 'Local']]);
     expect(r.modelsError).toBe(false);
     expect(r.tierConfig).toEqual(CFG);
@@ -34,7 +38,7 @@ describe('trust page load', () => {
 
   it('sets modelsError + empty rows when /models fails, still returns tierConfig', async () => {
     route({ '/api/v1/models': new Response(null, { status: 500 }), '/api/v1/inference/tier-config': ok(CFG) });
-    const r = await load(event);
+    const r = await callLoad();
     expect(r.rows).toEqual([]);
     expect(r.modelsError).toBe(true);
     expect(r.tierConfig).toEqual(CFG);
@@ -42,7 +46,7 @@ describe('trust page load', () => {
 
   it('returns tierConfig null when tier-config fails, still returns rows', async () => {
     route({ '/api/v1/models': ok(MODELS), '/api/v1/inference/tier-config': new Response(null, { status: 500 }) });
-    const r = await load(event);
+    const r = await callLoad();
     expect(r.rows.length).toBe(2);
     expect(r.tierConfig).toBeNull();
   });
