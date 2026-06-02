@@ -1,4 +1,8 @@
 import type { paths } from '$lib/api/backend';
+import type { components } from '$lib/api/backend';
+
+export type SkillInputDef = components['schemas']['SkillInputDef'];
+export type SkillInputs = components['schemas']['SkillInputs'];
 
 /** One autocomplete result, sourced from the generated backend contract. */
 export type SkillSuggestion =
