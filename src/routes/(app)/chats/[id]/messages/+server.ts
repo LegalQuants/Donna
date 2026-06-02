@@ -5,18 +5,27 @@ export const POST: RequestHandler = async (event) => {
   let content = '';
   let model = 'smart';
   let skills: string[] = [];
+  let skillInputs: Record<string, Record<string, unknown>> = {};
   try {
-    const body = (await event.request.json()) as { content?: string; model?: string; skills?: string[] };
+    const body = (await event.request.json()) as { content?: string; model?: string; skills?: string[]; skill_inputs?: unknown };
     content = (body.content ?? '').trim();
     const m = (body.model ?? '').trim();
     if (m) model = m;
     if (Array.isArray(body.skills)) skills = body.skills.filter((s): s is string => typeof s === 'string');
+    if (body.skill_inputs && typeof body.skill_inputs === 'object' && !Array.isArray(body.skill_inputs)) {
+      const si: Record<string, Record<string, unknown>> = {};
+      for (const [k, v] of Object.entries(body.skill_inputs as Record<string, unknown>)) {
+        if (v && typeof v === 'object' && !Array.isArray(v)) si[k] = v as Record<string, unknown>;
+      }
+      skillInputs = si;
+    }
   } catch {
     content = '';
   }
 
-  const payload: { content: string; model: string; stream: true; skills?: string[] } = { content, model, stream: true };
+  const payload: { content: string; model: string; stream: true; skills?: string[]; skill_inputs?: Record<string, Record<string, unknown>> } = { content, model, stream: true };
   if (skills.length) payload.skills = skills;
+  if (Object.keys(skillInputs).length) payload.skill_inputs = skillInputs;
 
   const upstream = await lqStream(event, `/api/v1/chats/${event.params.id}/messages`, {
     method: 'POST',

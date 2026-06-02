@@ -291,3 +291,69 @@ describe('createChatStream', () => {
     expect(chat.messages[1].applied_skills).toBeUndefined();
   });
 });
+
+describe('createChatStream skill_inputs', () => {
+  it('includes skill_inputs in the POST body when provided', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // loadAnonymization GET
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', ['nda-review'], { 'nda-review': { party: 'Acme' } });
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.skill_inputs).toEqual({ 'nda-review': { party: 'Acme' } });
+  });
+
+  it('omits skill_inputs when empty', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', [], {});
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect('skill_inputs' in body).toBe(false);
+  });
+
+  it('surfaces a 400 skill-input error message from the backend', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: 'Missing required skill input: party' }), { status: 400, headers: { 'content-type': 'application/json' } })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', ['nda-review'], { 'nda-review': {} });
+    const last = chat.messages[chat.messages.length - 1];
+    expect(last.status).toBe('error');
+    expect(last.error).toMatch(/party/i);
+  });
+
+  it('reuses skill_inputs on retry', async () => {
+    const frames = () => streamResponse([
+      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+      'data: [DONE]\n\n'
+    ]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(frames()) // call 0: send POST
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadAnonymization GET
+      .mockResolvedValueOnce(frames()) // call 2: retry POST
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 3: loadAnonymization GET
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', ['nda-review'], { 'nda-review': { party: 'Acme' } });
+    await chat.retry();
+    const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+    expect(retryBody.skill_inputs).toEqual({ 'nda-review': { party: 'Acme' } });
+  });
+});

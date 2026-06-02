@@ -55,6 +55,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
   let lastUserContent = '';
   let lastModel = 'smart';
   let lastSkills: string[] = [];
+  let lastSkillInputs: Record<string, Record<string, unknown>> = {};
 
   // Citations live in the M2-A2 relational table, not the SSE complete frame.
   // Fetch them by message id once the assistant turn is persisted (one retry to
@@ -101,12 +102,13 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 
   // Stream a response into the assistant message at `idx` (already present and
   // reset to a streaming state by the caller). Shared by send() and retry().
-  async function runStream(idx: number, content: string, model: string, skills: string[]) {
+  async function runStream(idx: number, content: string, model: string, skills: string[], skillInputs: Record<string, Record<string, unknown>>) {
     status = 'streaming';
     controller = new AbortController();
     try {
-      const body: { content: string; model: string; skills?: string[] } = { content, model };
+      const body: { content: string; model: string; skills?: string[]; skill_inputs?: Record<string, Record<string, unknown>> } = { content, model };
       if (skills.length) body.skills = skills;
+      if (Object.keys(skillInputs).length) body.skill_inputs = skillInputs;
       const res = await fetch(`/chats/${chatId}/messages`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -114,7 +116,14 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
         signal: controller.signal
       });
       if (!res.ok || !res.body) {
-        setError(idx, 'Could not reach the model. Please try again.');
+        let msg = 'Could not reach the model. Please try again.';
+        if (res.status === 400) {
+          try {
+            const env = (await res.json()) as { detail?: unknown };
+            if (typeof env.detail === 'string' && env.detail) msg = env.detail;
+          } catch { /* keep the generic message */ }
+        }
+        setError(idx, msg);
         return;
       }
       const reader = res.body.getReader();
@@ -159,17 +168,18 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     }
   }
 
-  async function send(content: string, model = 'smart', skills: string[] = []) {
+  async function send(content: string, model = 'smart', skills: string[] = [], skillInputs: Record<string, Record<string, unknown>> = {}) {
     if (status === 'streaming') return;
     lastUserContent = content;
     lastModel = model;
     lastSkills = skills;
+    lastSkillInputs = skillInputs;
     messages = [
       ...messages,
       { key: crypto.randomUUID(), id: crypto.randomUUID(), role: 'user', content },
       { key: crypto.randomUUID(), id: 'pending', role: 'assistant', content: '', status: 'streaming' }
     ];
-    await runStream(messages.length - 1, content, model, skills);
+    await runStream(messages.length - 1, content, model, skills, skillInputs);
   }
 
   // Re-run the last exchange in place (no duplicate user/assistant turns): reset
@@ -185,7 +195,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     messages[idx].anonymized = undefined;
     messages[idx].applied_skills = undefined;
     messages[idx].status = 'streaming';
-    await runStream(idx, lastUserContent, lastModel, lastSkills);
+    await runStream(idx, lastUserContent, lastModel, lastSkills, lastSkillInputs);
   }
 
   function stop() {
