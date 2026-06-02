@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ArrowRight, Square, X, Sparkles } from '@lucide/svelte';
+  import { ArrowRight, Square, X, Sparkles, Paperclip } from '@lucide/svelte';
   import ModelPicker from './ModelPicker.svelte';
   import SkillAttach from './SkillAttach.svelte';
   import EnhancePreview from './EnhancePreview.svelte';
@@ -12,6 +12,8 @@
   import TrustPill from '$lib/preferences/TrustPill.svelte';
   import SkillInputForm from '$lib/skills/SkillInputForm.svelte';
   import type { createSkillAttach } from '$lib/skills/attach.svelte';
+  import { statusBadge } from '$lib/matters/files/uploadFile';
+  import type { createFileAttach } from '$lib/files/fileAttach.svelte';
   import type { createEnhance } from '$lib/enhance/enhance.svelte';
   import type { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
   import type { MatterSummary } from '$lib/matters/types';
@@ -23,6 +25,7 @@
     streaming = false,
     onstop,
     skillAttach,
+    fileAttach,
     enhance,
     promptLibrary,
     matters,
@@ -31,10 +34,11 @@
   }: {
     value?: string;
     placeholder?: string;
-    onsubmit?: (text: string, model: string, skills: string[], skillInputs: Record<string, Record<string, unknown>>) => void;
+    onsubmit?: (text: string, model: string, skills: string[], skillInputs: Record<string, Record<string, unknown>>, fileIds: string[]) => void;
     streaming?: boolean;
     onstop?: () => void;
     skillAttach?: ReturnType<typeof createSkillAttach>;
+    fileAttach?: ReturnType<typeof createFileAttach>;
     enhance?: ReturnType<typeof createEnhance>;
     promptLibrary?: ReturnType<typeof createPromptLibrary>;
     matters?: MatterSummary[];
@@ -43,6 +47,8 @@
   } = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
+  let fileInput = $state<HTMLInputElement>();
+  let dragging = $state(false);
 
   onMount(() => {
     modelStore.load();
@@ -70,7 +76,8 @@
     const text = value.trim();
     if (!text) return;
     if (skillAttach && !skillAttach.allRequiredFilled) return;
-    onsubmit?.(text, modelStore.selectedModel, skillAttach?.names ?? [], skillAttach?.skillInputs ?? {});
+    if (fileAttach && !fileAttach.allReady) return;
+    onsubmit?.(text, modelStore.selectedModel, skillAttach?.names ?? [], skillAttach?.skillInputs ?? {}, fileAttach?.fileIds ?? []);
   }
   function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -80,7 +87,13 @@
   }
 </script>
 
-<div class="rounded-t-mlq-composer border border-mlq-subtle bg-mlq-surface p-3 shadow-sm">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+  class="rounded-t-mlq-composer border bg-mlq-surface p-3 shadow-sm {dragging ? 'border-mlq-workflow' : 'border-mlq-subtle'}"
+  ondragover={(e) => { if (fileAttach) { e.preventDefault(); dragging = true; } }}
+  ondragleave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) dragging = false; }}
+  ondrop={(e) => { if (fileAttach) { e.preventDefault(); dragging = false; const fs = e.dataTransfer?.files; if (fs?.length) fileAttach.attach(Array.from(fs)); } }}
+>
   {#if enhance}
     {#if enhance.status === 'preview' && enhance.result}
       <EnhancePreview result={enhance.result} onaccept={() => (value = enhance.accept())} ondiscard={enhance.discard} />
@@ -108,6 +121,20 @@
       {/each}
     </div>
   {/if}
+
+  {#if fileAttach && fileAttach.attached.length}
+    <div class="mb-2 flex flex-wrap gap-1.5">
+      {#each fileAttach.attached as f (f.localId)}
+        <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs {f.status === 'failed' ? 'border-mlq-error/40 text-mlq-error' : 'border-mlq-subtle text-mlq-text'}">
+          <Paperclip size={11} aria-hidden="true" />
+          {f.name}
+          <span class="text-mlq-muted">· {f.status === 'uploading' ? 'uploading' : statusBadge(f.status).label.toLowerCase()}</span>
+          <button type="button" aria-label={`Remove ${f.name}`} onclick={() => fileAttach?.remove(f.localId)} class="text-mlq-muted hover:text-mlq-text"><X size={12} /></button>
+        </span>
+      {/each}
+    </div>
+  {/if}
+  {#if fileAttach?.capNote}<p class="mb-2 text-xs text-mlq-muted">Up to 16 files per message.</p>{/if}
 
   {#if skillAttach}
     {#each skillAttach.attached as s (s.slug)}
@@ -159,6 +186,19 @@
         onattach={skillAttach.attach}
       />
     {/if}
+    {#if fileAttach}
+      <input
+        type="file"
+        multiple
+        bind:this={fileInput}
+        data-testid="file-attach-input"
+        onchange={(e) => { const fs = e.currentTarget.files; if (fs?.length) fileAttach?.attach(Array.from(fs)); e.currentTarget.value = ''; }}
+        class="hidden"
+      />
+      <button type="button" data-testid="file-attach" aria-label="Attach files" onclick={() => fileInput?.click()} class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text">
+        <Paperclip size={13} />
+      </button>
+    {/if}
     {#if promptLibrary}
       <PromptPicker
         prompts={promptLibrary.prompts}
@@ -194,7 +234,7 @@
         <Square size={18} />
       </button>
     {:else}
-      <button type="button" onclick={submit} disabled={!value.trim() || !(skillAttach?.allRequiredFilled ?? true)} aria-label="Send" class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40">
+      <button type="button" onclick={submit} disabled={!value.trim() || !(skillAttach?.allRequiredFilled ?? true) || !(fileAttach?.allReady ?? true)} aria-label="Send" class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40">
         <ArrowRight size={18} />
       </button>
     {/if}

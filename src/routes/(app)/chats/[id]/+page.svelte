@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { onMount, tick, untrack } from 'svelte';
+  import { onMount, onDestroy, tick, untrack } from 'svelte';
   import Composer from '$lib/components/Composer.svelte';
   import Message from '$lib/components/Message.svelte';
   import { createChatStream } from '$lib/chat/chatStream.svelte';
   import ReceiptsDrawer from '$lib/components/ReceiptsDrawer.svelte';
   import { modelStore } from '$lib/models/store.svelte';
   import { createSkillAttach } from '$lib/skills/attach.svelte';
+  import { createFileAttach } from '$lib/files/fileAttach.svelte';
   import { createEnhance } from '$lib/enhance/enhance.svelte';
   import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
   import { ReceiptText } from '@lucide/svelte';
@@ -23,6 +24,7 @@
   // a child component so the controller re-initializes per chat.
   const chat = untrack(() => createChatStream(data.chatId, data.messages));
   const skillAttach = createSkillAttach();
+  const fileAttach = createFileAttach();
   const enhance = untrack(() => createEnhance(data.chatId, () => skillAttach.names));
   const promptLibrary = createPromptLibrary();
   const docPanel = createDocPanel();
@@ -30,9 +32,9 @@
   let showReceipts = $state(false);
   let scroller = $state<HTMLElement>();
 
-  function submit(text: string, model = 'smart', skills: string[] = [], skillInputs: Record<string, Record<string, unknown>> = {}) {
+  function submit(text: string, model = 'smart', skills: string[] = [], skillInputs: Record<string, Record<string, unknown>> = {}, fileIds: string[] = []) {
     draftValue = '';
-    chat.send(text, model, skills, skillInputs);
+    chat.send(text, model, skills, skillInputs, fileIds);
   }
   function retry() {
     chat.retry();
@@ -61,8 +63,9 @@
   // Use the picker selection (persisted to localStorage on the landing composer) so a
   // model chosen before the first message is honored, not silently reset to smart.
   onMount(() => {
-    if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel, data.draftSkills ?? [], data.draftSkillInputs ?? {});
+    if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel, data.draftSkills ?? [], data.draftSkillInputs ?? {}, data.draftFileIds ?? []);
   });
+  onDestroy(() => fileAttach.dispose());
 </script>
 
 <div class="flex h-full min-h-0">
@@ -96,6 +99,7 @@
         streaming={chat.status === 'streaming'}
         onstop={chat.stop}
         {skillAttach}
+        {fileAttach}
         {enhance}
         {promptLibrary}
         minimumTier={data.matter?.minimumTier ?? null}
