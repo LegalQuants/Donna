@@ -20,7 +20,7 @@ describe('/settings/account', () => {
     render(Page, props());
     expect(screen.getByText('ada@firm.com')).toBeInTheDocument();
     expect(screen.getByText('admin')).toBeInTheDocument();
-    expect(screen.getByText(/aren't editable here yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/email isn't editable/i)).toBeInTheDocument();
   });
 
   it('links Change password to /change-password', () => {

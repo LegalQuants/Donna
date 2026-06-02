@@ -1,6 +1,6 @@
 <script lang="ts">
   import MfaDisableModal from '$lib/settings/MfaDisableModal.svelte';
-  import { rebrandName } from '$lib/brand';
+  import EditableDisplayName from '$lib/settings/EditableDisplayName.svelte';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
@@ -20,13 +20,13 @@
 <section class="rounded-mlq-control border border-mlq-subtle">
   <h2 class="border-b border-mlq-subtle px-4 py-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Profile</h2>
   <dl class="divide-y divide-mlq-subtle text-sm">
-    <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Name</dt><dd class="text-mlq-text">{rebrandName(user?.display_name) || '—'}</dd></div>
+    <EditableDisplayName name={user?.display_name} />
     <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Email</dt><dd class="text-mlq-text">{user?.email ?? '—'}</dd></div>
     <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Role</dt><dd class="capitalize text-mlq-text">{user?.role}</dd></div>
     <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Member since</dt><dd class="text-mlq-text">{fmtMonthYear(user?.created_at)}</dd></div>
     <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Last sign-in</dt><dd class="text-mlq-text">{fmtDate(user?.last_login_at)}</dd></div>
   </dl>
-  <p class="px-4 py-2 text-xs text-mlq-muted">Name and email aren't editable here yet.</p>
+  <p class="px-4 py-2 text-xs text-mlq-muted">Your email isn't editable here yet.</p>
 </section>
 
 <section class="mt-6 rounded-mlq-control border border-mlq-subtle">

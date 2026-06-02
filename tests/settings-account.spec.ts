@@ -21,7 +21,7 @@ test('settings → account: profile, password link, MFA status (dev fixture is M
 
   // Profile shows the account email + the read-only note.
   await expect(page.getByText(EMAIL)).toBeVisible();
-  await expect(page.getByText(/aren't editable here yet/i)).toBeVisible();
+  await expect(page.getByText(/email isn't editable/i)).toBeVisible();
 
   // Change-password links to the existing flow.
   await expect(page.getByRole('link', { name: 'Change' })).toHaveAttribute('href', '/change-password');
@@ -36,4 +36,35 @@ test('settings → account: profile, password link, MFA status (dev fixture is M
   await page.getByRole('link', { name: 'Change' }).click();
   await page.waitForURL('**/change-password');
   await expect(page.getByRole('heading', { name: 'Set a new password' })).toBeVisible();
+});
+
+test('settings → account: edit display name round-trip (restores fixture)', async ({ page }) => {
+  await login(page);
+  await page.goto('/settings/account');
+  await expect(page.getByRole('heading', { name: 'Account', level: 1 })).toBeVisible();
+
+  // Capture the current name from the Edit input (this is the rebranded value we restore to).
+  await page.getByRole('button', { name: 'Edit' }).click();
+  const original = await page.getByRole('textbox', { name: /display name/i }).inputValue();
+
+  try {
+    const sentinel = 'Donna Admin E2E';
+    await page.getByRole('textbox', { name: /display name/i }).fill(sentinel);
+    await page.getByRole('button', { name: 'Save' }).click();
+    // Read mode returns with the new name + the announced confirmation.
+    // Scope to <dd> to avoid matching the nav header span that also shows the name.
+    await expect(page.locator('dd').filter({ hasText: sentinel })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/name updated/i)).toBeVisible();
+  } finally {
+    // Restore the displayed name. NOTE: `original` is the rebranded input value, so a first run
+    // collapses a seeded "LQ.AI …" name to "Donna …" in storage — render-identical and idempotent
+    // thereafter (rebrandName is a no-op on the result), so no test or UI observes a difference.
+    await page.goto('/settings/account');
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('textbox', { name: /display name/i }).fill(original);
+    const saveBtn = page.getByRole('button', { name: 'Save' });
+    if (await saveBtn.isEnabled()) await saveBtn.click();
+    // Scope to the <dd> so we don't hit the nav header span that also contains the name.
+    await expect(page.locator('dd').filter({ hasText: original })).toBeVisible({ timeout: 10_000 });
+  }
 });
