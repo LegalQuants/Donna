@@ -6,11 +6,12 @@ export type StreamFrame =
       lq_ai_message_id: string;
       routed_inference_tier?: number | null;
       applied_skills?: string[];
+      applied_file_ids?: string[];
     }
   | {
       type: 'complete';
       lq_ai_message_id: string;
-      message: { id: string; content: string; routed_inference_tier?: number | null; routed_provider?: string | null; applied_skills?: string[] };
+      message: { id: string; content: string; routed_inference_tier?: number | null; routed_provider?: string | null; applied_skills?: string[]; applied_file_ids?: string[] };
       /** Deprecated: empty under M2-A2; citations come from the per-message endpoint. */
       citations?: unknown[];
       routed_inference_tier?: number | null;
