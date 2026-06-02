@@ -47,3 +47,19 @@ describe('POST messages', () => {
     expect('skills' in sentBody()).toBe(false);
   });
 });
+
+describe('POST messages skill_inputs', () => {
+  it('forwards skill_inputs when present', async () => {
+    lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+    await POST(event({ content: 'hi', model: 'smart', skill_inputs: { 'nda-review': { party: 'Acme' } } }));
+    expect(sentBody().skill_inputs).toEqual({ 'nda-review': { party: 'Acme' } });
+  });
+
+  it('omits skill_inputs when absent or malformed', async () => {
+    lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+    await POST(event({ content: 'hi', model: 'smart' }));
+    expect('skill_inputs' in sentBody()).toBe(false);
+    await POST(event({ content: 'hi', model: 'smart', skill_inputs: [1, 2] }));
+    expect('skill_inputs' in sentBody()).toBe(false);
+  });
+});
