@@ -1,21 +1,30 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import { enhance } from '$app/forms';
   import type { SubmitFunction } from '@sveltejs/kit';
+  import type { PageProps } from './$types';
   import DataExportCard from '$lib/settings/DataExportCard.svelte';
   import DeleteAccountModal from '$lib/settings/DeleteAccountModal.svelte';
   import type { DeletionSchedule } from '$lib/settings/dataPrivacy';
+
+  let { data }: PageProps = $props();
 
   let deleteOpen = $state(false);
   let scheduled = $state<DeletionSchedule | null>(null);
   let cancelMsg = $state<string | null>(null);
 
+  // Server truth (P1.4, GET /users/me): non-null while a deletion is pending, else null.
+  const pendingDeletionAt = $derived(data.user?.deletion_scheduled_at ?? null);
+
   const fmtDate = (s: string) =>
     new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   const cancelSubmit: SubmitFunction = () => async ({ result }) => {
-    if (result.type === 'success') cancelMsg = 'Scheduled deletion cancelled.';
-    else if (result.type === 'failure')
+    if (result.type === 'success') {
+      cancelMsg = 'Scheduled deletion cancelled.';
+      // Refresh data.user so the banner clears and the page falls back to the normal state.
+      await invalidateAll();
+    } else if (result.type === 'failure')
       cancelMsg = (result.data?.cancelMessage as string | undefined)
         ?? (result.data?.cancelError as string | undefined)
         ?? 'Could not cancel.';
@@ -45,6 +54,19 @@
     </p>
     <button type="button" onclick={returnToLogin} class="mt-4 rounded-mlq-control bg-mlq-strong px-2.5 py-1 text-xs text-white">Return to sign in</button>
   </section>
+{:else if pendingDeletionAt}
+  <DataExportCard />
+
+  <section class="mt-6 rounded-mlq-control border border-mlq-error/40 bg-mlq-error/5 p-4 text-sm">
+    <h2 class="font-medium text-mlq-error">Pending deletion</h2>
+    <p class="mt-1 text-mlq-muted">
+      Scheduled for <strong>{fmtDate(pendingDeletionAt)}</strong>; cancel to keep your account.
+    </p>
+    <form method="POST" action="?/cancelDeletion" use:enhance={cancelSubmit} class="mt-3">
+      <button type="submit" class="rounded-mlq-control bg-mlq-strong px-2.5 py-1 text-xs text-white">Cancel scheduled deletion</button>
+    </form>
+    {#if cancelMsg}<p role="status" aria-live="polite" class="mt-2 text-mlq-text">{cancelMsg}</p>{/if}
+  </section>
 {:else}
   <DataExportCard />
 
@@ -54,14 +76,6 @@
       <div class="text-mlq-text">Delete account</div>
       <p class="mb-3 mt-0.5 text-xs text-mlq-muted">Schedules your account for permanent deletion after a grace period. You'll be signed out on all devices.</p>
       <button type="button" onclick={() => (deleteOpen = true)} class="rounded-mlq-control bg-mlq-error px-2.5 py-1 text-xs text-white">Delete my account</button>
-
-      <div class="mt-4 border-t border-mlq-error/20 pt-3 text-xs text-mlq-muted">
-        Already scheduled a deletion?
-        <form method="POST" action="?/cancelDeletion" use:enhance={cancelSubmit} class="mt-1">
-          <button type="submit" class="text-mlq-workflow hover:underline">Cancel scheduled deletion</button>
-        </form>
-        {#if cancelMsg}<p class="mt-1 text-mlq-text">{cancelMsg}</p>{/if}
-      </div>
     </div>
   </section>
 
