@@ -66,6 +66,9 @@ export function createModelStore() {
     get options() {
       return options;
     },
+    get selectedOption() {
+      return options.find((o) => o.id === selectedModel) ?? null;
+    },
     get loading() {
       return loading;
     },
