@@ -8,6 +8,8 @@
   import PromptPicker from '$lib/prompts/PromptPicker.svelte';
   import { spliceText } from '$lib/prompts/spliceText';
   import { modelStore } from '$lib/models/store.svelte';
+  import { page } from '$app/state';
+  import TrustPill from '$lib/preferences/TrustPill.svelte';
   import type { createSkillAttach } from '$lib/skills/attach.svelte';
   import type { createEnhance } from '$lib/enhance/enhance.svelte';
   import type { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
@@ -123,6 +125,7 @@
       {minimumTier}
       onselect={modelStore.setModel}
     />
+    <TrustPill option={modelStore.selectedOption} format={page.data.user?.trust_pills ?? 'labels'} />
     {#if matters}
       <MatterPicker {matters} bind:selectedId={selectedMatterId} />
     {/if}
