@@ -31,4 +31,16 @@ describe('SettingsRail', () => {
     render(SettingsRail);
     expect(screen.getByRole('link', { name: 'Data & privacy' })).toHaveAttribute('aria-current', 'page');
   });
+
+  it('renders the Preferences section link', () => {
+    h.pathname = '/settings/account';
+    render(SettingsRail);
+    expect(screen.getByRole('link', { name: 'Preferences' })).toHaveAttribute('href', '/settings/preferences');
+  });
+
+  it('marks Preferences active on /settings/preferences', () => {
+    h.pathname = '/settings/preferences';
+    render(SettingsRail);
+    expect(screen.getByRole('link', { name: 'Preferences' })).toHaveAttribute('aria-current', 'page');
+  });
 });
