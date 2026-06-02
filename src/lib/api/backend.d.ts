@@ -9236,6 +9236,11 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             last_login_at?: string | null;
+            /**
+             * Format: date-time
+             * @description Non-null while a GDPR Article 17 grace-period deletion is pending (set by POST /users/me/delete, cleared by .../delete/cancel).
+             */
+            deletion_scheduled_at?: string | null;
         };
         /**
          * @description All 6 personalization preference fields. Wave A (``reasoning_visibility``)
