@@ -11,7 +11,7 @@ async function login(page: Page) {
   await page.waitForURL('/');
 }
 
-test('Data & privacy — export end-to-end, delete-confirm UI (no submit), cancel-nothing-pending', async ({ page }) => {
+test('Data & privacy — export end-to-end, delete-confirm UI (no submit), not-pending state', async ({ page }) => {
   test.setTimeout(300_000);
   await login(page);
 
@@ -39,7 +39,9 @@ test('Data & privacy — export end-to-end, delete-confirm UI (no submit), cance
   await dialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(dialog).toBeHidden();
 
-  // --- Cancel-with-nothing-pending (safe; admin fixture has no pending deletion) ---
-  await page.getByRole('button', { name: /cancel scheduled deletion/i }).click();
-  await expect(page.getByText(/no scheduled deletion to cancel/i)).toBeVisible({ timeout: 15_000 });
+  // --- Not-pending state (admin fixture has no pending deletion; never POST a real deletion) ---
+  // The banner and its cancel control only exist when data.user.deletion_scheduled_at is non-null.
+  await expect(page.getByText(/pending deletion/i)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /cancel scheduled deletion/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /delete my account/i })).toBeVisible();
 });
