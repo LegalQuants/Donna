@@ -9,7 +9,15 @@
 
 After both merge: `git checkout main && git pull`. **P7 is then fully done** (Account · Data & privacy · Preferences · Trust).
 
-## §1 — FIRST: lq-ai pin bump `badf83d` → `945ad31` (P1.4 landed)
+## ⏩ Status for the NEW session (read this first)
+
+- **P7 is complete** (Account · Data & privacy · Preferences · Trust — PRs #35/#37/#40/#41, all merged to `main`).
+- **§1 below (the pin bump) is already DONE** — shipped as **PR #42** (`chore/lq-ai-pin-945ad31`): `vendor/lq-ai` bumped `badf83d`→`945ad31`, `npm run gen:api` ran (added nullable `deletion_scheduled_at` to the `User` schema), check 0/0, stack rebuilt. **Merge #42 if it isn't already**, then `git checkout main && git pull`.
+- **Your job: §2 — build the conditional "Pending deletion" banner.** Start a fresh feature branch off `main` and run the normal loop (brainstorm-lite → spec → plan → subagent-execute → PR). The design is essentially settled below; the only real open question is the e2e-safety approach (see §2).
+
+## §1 — DONE (PR #42): lq-ai pin bump `badf83d` → `945ad31` (P1.4 landed)
+
+*(Kept for reference — this was completed in the prior session.)*
 
 The LQ-AI session merged **P1.4** (DE-330-ish): `GET /users/me` (and login/refresh) now return a **nullable `deletion_scheduled_at`** on the user object — non-null while a deletion is pending, null otherwise. Read-only echo of the existing column; no migration; `test_openapi` stays 114; caller-scoped (no cross-user leak); round-trip verified (delete sets it → /users/me shows it → cancel clears it).
 
