@@ -24,6 +24,7 @@
     {#each skillAttach.names as s (s)}
       <input type="hidden" name="skills" value={s} />
     {/each}
+    <input type="hidden" name="skill_inputs" value={JSON.stringify(skillAttach.skillInputs)} />
     <Composer bind:value={message} matters={data.matters} bind:selectedMatterId {skillAttach} {promptLibrary} onsubmit={() => formEl?.requestSubmit()} />
   </form>
 
