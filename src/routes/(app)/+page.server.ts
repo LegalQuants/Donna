@@ -3,6 +3,7 @@ import { lqFetch } from '$lib/server/lqClient';
 import { activeMatters, type Matter } from '$lib/matters/types';
 import type { PageServerLoad } from './$types';
 import { parseDraftSkillInputs } from './chats/[id]/draftSkillInputs';
+import { parseDraftFileIds } from './chats/[id]/draftFileIds';
 
 export const load: PageServerLoad = async (event) => {
   const res = await lqFetch(event, '/api/v1/projects');
@@ -17,6 +18,7 @@ export const actions: Actions = {
     const projectId = String(data.get('project_id') ?? '').trim();
     const skills = data.getAll('skills').map(String).filter(Boolean);
     const skillInputs = parseDraftSkillInputs(String(data.get('skill_inputs') ?? ''));
+    const fileIds = parseDraftFileIds(String(data.get('file_ids') ?? ''));
 
     const res = await lqFetch(event, '/api/v1/chats', {
       method: 'POST',
@@ -33,6 +35,9 @@ export const actions: Actions = {
     }
     if (Object.keys(skillInputs).length) {
       event.cookies.set('donna_draft_skill_inputs', JSON.stringify(skillInputs), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
+    }
+    if (fileIds.length) {
+      event.cookies.set('donna_draft_file_ids', JSON.stringify(fileIds), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
     }
     throw redirect(303, `/chats/${chat.id}`);
   }
