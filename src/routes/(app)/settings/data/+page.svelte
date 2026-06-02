@@ -21,8 +21,8 @@
 
   const cancelSubmit: SubmitFunction = () => async ({ result }) => {
     if (result.type === 'success') {
-      cancelMsg = 'Scheduled deletion cancelled.';
-      // Refresh data.user so the banner clears and the page falls back to the normal state.
+      // Refresh data.user → deletion_scheduled_at clears → the whole banner unmounts,
+      // so success needs no message (its disappearance is the confirmation).
       await invalidateAll();
     } else if (result.type === 'failure')
       cancelMsg = (result.data?.cancelMessage as string | undefined)
