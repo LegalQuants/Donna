@@ -2,11 +2,36 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `438198c` (bumped 2026-05-25 from `7c7ce14`)
+- Pinned SHA: `badf83d` (bumped 2026-06-01 from `438198c`; tag `v0.4.0-5-gbadf83d`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+- `438198c` → `badf83d` (2026-06-01): consolidated bump landing all **three** Donna
+  backend asks (relay `docs/upstream-requests/lq-ai-backend-asks-for-donna.md`), plus the
+  whole `v0.3.1`→`v0.4.0` upstream range:
+  - **#115 (DE-328, ask P1.1)** — gateway **skill assembler** now appends *unreferenced*
+    bound `skill_inputs` as a labelled context block, so inputs reach the model for
+    **non-templated** skills (every built-in), not just `{{placeholder}}`-templated bodies.
+    Unblocks Donna's deferred composer skill-input form.
+  - **#116/#117 (ask P1.2)** — `MessageCreate.file_ids?: string[]` (Part A) forwarded to
+    the gateway as `lq_ai_file_ids` and echoed as `applied_file_ids`, plus file content
+    reaching the model verbatim (Part B). Unblocks per-message chat file attachment.
+  - **#118 (ask P1.3)** — `PATCH /api/v1/users/me` with a new `UserProfileUpdate` schema
+    (display_name edit; email edit deferred → DE-329, #119). Unblocks Settings profile edit.
+  - **#119** — files DE-329 (email-edit follow-up) + marks DE-328 resolved (docs).
+  Contract delta is **almost entirely additive**: the asks above + the v0.4.0 **autonomous
+  workflows** surface (`/api/v1/autonomous/*` — sessions, memory, precedents, schedules,
+  watches, notifications, run-now). The only removal across the whole range was a reworded
+  preferences-schema comment (no schema removal). Donna consumes none of the *new* surface
+  yet, so `npm run check` is **0/0** against the regenerated contract. **Full local stack
+  rebuilt to v0.4.0** (api + gateway + ingest-worker + arq-worker), applying the new
+  autonomous-table DB migrations. Verified: check 0/0; full unit suite green; live verified.
+  Newly buildable Donna slices: composer skill-input form (P1.1), chat file-attach (P1.2),
+  Settings profile-edit (P1.3). The autonomous-workflows API is now available to consume
+  (see `docs/roadmap/donna-future-roadmap.md`).
+  (Note: this supersedes an intermediate staged bump to `396e19f` for #115 alone that was
+  never shipped standalone.)
 - `7c7ce14` → `438198c` (2026-05-25): lq-ai #105 **documents** the `/v1/models` alias
   fields to match the live gateway — adds `lq_ai_resolves_to` / `lq_ai_fallback_count`
   to `ModelEntry` and corrects the `routed_inference_tier` description (it's present on

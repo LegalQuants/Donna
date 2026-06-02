@@ -1,6 +1,6 @@
 # LQ_AI backend — asks for Donna (relay index)
 
-**From:** Donna frontend session · **To:** the LQ_AI backend session · **Date:** 2026-05-31 · **Pin Donna is on:** `438198c`
+**From:** Donna frontend session · **To:** the LQ_AI backend session · **Date:** 2026-05-31 (status updated 2026-06-01) · **Pin Donna is on:** `badf83d` (v0.4.0)
 
 > **How to use this file.** You (the LQ_AI session) work in the repo at **`/Users/kevinkeller/Code/lq-ai`**.
 > These request docs live in the **Donna** repo at **`/Users/kevinkeller/Code/Donna/docs/upstream-requests/`** —
@@ -9,10 +9,11 @@
 > runs `npm run gen:api`, rebuilds, verifies live, and logs the bump in
 > `/Users/kevinkeller/Code/Donna/docs/decisions/lq-ai-pin.md`.
 
-These are the backend changes Donna currently needs. All four are small and independent — good
-candidates to fold into the **Milestone 4** wrap-up. (The bigger "autonomous workflows" item is **not**
-here — Donna has moved it to its own future roadmap: `/Users/kevinkeller/Code/Donna/docs/roadmap/donna-future-roadmap.md`.
-You're building that backend; the consumer-side requirements Donna will need are captured there for later.)
+**Status (2026-06-01): P1.1, P1.2, and P1.3 all landed** and Donna is pinned at `badf83d` (v0.4.0) —
+see *Already landed* below. **Only P1.4 remains open.** The P1.1–P1.3 sections are kept below for
+reference. (The bigger "autonomous workflows" item is **not** here — Donna tracks it in its own future
+roadmap: `/Users/kevinkeller/Code/Donna/docs/roadmap/donna-future-roadmap.md`. You're building that
+backend; the consumer-side requirements Donna will need are captured there for later.)
 
 ---
 
@@ -76,5 +77,13 @@ You're building that backend; the consumer-side requirements Donna will need are
 
 ## Already landed (no action — for your reference)
 
-Anonymization-in-receipts (#102), streaming inference-routing-log (#103), `/v1/models` alias-field docs (#105) —
-all merged and pinned at `438198c`.
+- **P1.1** skill_inputs → non-templated skills (DE-328) — lq-ai **#115** `396e19f`
+- **P1.2** `MessageCreate.file_ids` channel (Part A) — lq-ai **#116** `1592063`
+- **P1.2** file content → model, verbatim (Part B) — lq-ai **#117** `6dae35d`
+- **P1.3** `PATCH /users/me` display_name (`UserProfileUpdate`; email edit deferred → DE-329) — lq-ai **#118** `e9659da`
+- DE-329 filed + DE-328 marked resolved — lq-ai **#119** `badf83d`
+
+All five merged to lq-ai main; **Donna pinned at `badf83d` (v0.4.0)** as of 2026-06-01 (see `docs/decisions/lq-ai-pin.md`).
+
+Earlier: anonymization-in-receipts (#102), streaming inference-routing-log (#103), `/v1/models` alias-field docs (#105) —
+all merged and previously pinned at `438198c`.

@@ -470,7 +470,53 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update the caller's own profile (display_name)
+         * @description Bearer-authenticated. Caller-scoped — updates only the
+         *     authenticated user's own row; no user id is accepted from the
+         *     path or body. Currently edits `display_name` only: the value is
+         *     trimmed, must be non-empty after trimming, and is length-capped
+         *     (200 chars). Omitting `display_name` (or sending an empty body)
+         *     is a 422 — there is nothing to update. Writes a
+         *     `user.profile_updated` audit row listing the changed fields and
+         *     returns the updated `User` (same shape as `GET /users/me`).
+         *
+         *     Email self-service editing is intentionally out of scope on this
+         *     surface — changing the login email pulls in re-verification, MFA,
+         *     and uniqueness concerns and warrants its own dedicated flow (a
+         *     future enhancement).
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UserProfileUpdate"];
+                };
+            };
+            responses: {
+                /** @description Updated user */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["User"];
+                    };
+                };
+                /** @description Validation error (empty/whitespace/over-length display_name */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/users/me/export": {
@@ -6793,6 +6839,1380 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/autonomous/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the calling user's autonomous sessions (newest first, paginated)
+         * @description Returns the caller's sessions ordered by ``created_at DESC``.
+         *     ``limit`` is clamped to [1, 200]; ``offset`` to [0, ∞).
+         *     Only the caller's own sessions are returned — cross-user isolation
+         *     is enforced at the query level.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of sessions to return (clamped to [1, 200]). */
+                    limit?: number;
+                    /** @description Zero-based index of the first result to return. */
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of autonomous sessions */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousSessionListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fetch a single autonomous session with its full receipt
+         * @description Returns the session plus a live-reconstructed receipt built from
+         *     audit rows (works for running and completed sessions).  A completed
+         *     session also has the receipt persisted in ``result``.
+         *
+         *     Another user's ``session_id`` returns 404 (not 403) to avoid
+         *     existence disclosure.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    session_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Session detail with receipt */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousSessionDetailResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Session not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/sessions/{session_id}/halt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request an immediate halt for an autonomous session (idempotent)
+         * @description Sets ``halt_state = 'halt_requested'`` so the executor's R5 temporal
+         *     brake trips on the next tool call and transitions the session to
+         *     ``halted``.
+         *
+         *     **Idempotent:** if ``halt_state`` is already ``halt_requested`` or
+         *     ``halted``, the endpoint returns the current session state with 200
+         *     and writes no duplicate audit row.
+         *
+         *     Another user's ``session_id`` returns 404 (not 403).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    session_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "*/*"?: never;
+                };
+            };
+            responses: {
+                /** @description Updated session (halt requested or already halted) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousSessionRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Session not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the calling user's autonomous memory entries (non-deleted, newest first)
+         * @description Returns the caller's non-deleted memory entries ordered by
+         *     ``created_at DESC``.  Pass ``?state=proposed|kept|dismissed`` to
+         *     filter by review state; omitting ``state`` returns all non-deleted
+         *     entries.  ``limit`` is clamped to [1, 200]; ``offset`` to [0, ∞).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filter by review state; omit to return all non-deleted entries. */
+                    state?: "proposed" | "kept" | "dismissed";
+                    /** @description Maximum number of entries to return (clamped to [1, 200]). */
+                    limit?: number;
+                    /** @description Zero-based index of the first result to return. */
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of autonomous memory entries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousMemoryListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/memory/{memory_id}/keep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep (approve) an autonomous memory entry; optional edit-on-keep
+         * @description Transitions ``proposed`` or ``dismissed`` → ``kept``.  If the
+         *     optional body supplies ``content``, the entry's text is overwritten
+         *     (edit-on-keep).
+         *
+         *     **Re-keep semantics:** if the entry is already ``kept``, the action
+         *     is allowed — content is updated if provided; ``kept_at`` is
+         *     preserved.
+         *
+         *     Another user's ``memory_id`` returns 404.  Audited.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memory_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MemoryKeepRequest"];
+                };
+            };
+            responses: {
+                /** @description Updated memory entry (now kept) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousMemoryRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Memory entry not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/memory/{memory_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss an autonomous memory entry
+         * @description Transitions ``proposed`` or ``kept`` → ``dismissed``.
+         *
+         *     Another user's ``memory_id`` returns 404.  Audited.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memory_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated memory entry (now dismissed) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousMemoryRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Memory entry not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/memory/{memory_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Soft-delete an autonomous memory entry (returns 200 with updated entry)
+         * @description Soft-deletes the entry by setting ``deleted_at=now(UTC)``.
+         *     Returns **200** with the updated (deleted) entry — not 204 — to
+         *     avoid the FastAPI JSONResponse/204 assertion pitfall.
+         *
+         *     A subsequent GET excludes the entry; keep/dismiss/delete on a
+         *     deleted entry return 404.
+         *
+         *     Another user's ``memory_id`` returns 404.  Audited.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memory_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Soft-deleted memory entry */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousMemoryRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Memory entry not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/precedents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the calling user's precedent entries (non-dismissed, newest first)
+         * @description Returns the caller's non-dismissed precedent entries
+         *     (``dismissed_at IS NULL``) ordered by ``created_at DESC``.  Pass
+         *     ``?pattern_kind=`` to filter to one classifier; omitting it returns
+         *     all non-dismissed entries.  ``limit`` is clamped to [1, 200];
+         *     ``offset`` to [0, ∞).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filter by precedent classifier; omit to return all non-dismissed entries. */
+                    pattern_kind?: string;
+                    /** @description Maximum number of entries to return (clamped to [1, 200]). */
+                    limit?: number;
+                    /** @description Zero-based index of the first result to return. */
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of precedent entries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PrecedentEntryListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/precedents/{precedent_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss a precedent entry (idempotent)
+         * @description Sets ``dismissed_at=now(UTC)`` so the entry drops out of the board.
+         *     Re-dismissing leaves the original ``dismissed_at`` untouched.
+         *
+         *     Another user's ``precedent_id`` returns 404.  Audited.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    precedent_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated precedent entry (now dismissed) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PrecedentEntryRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Precedent entry not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/precedents/{precedent_id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose promoting a precedent into a Project's context (proposal only)
+         * @description Creates a ``proposed`` project-context proposal linking the
+         *     precedent to ``project_id``.  The ``suggested_md`` snippet is
+         *     derived server-side from the precedent's ``summary``.
+         *
+         *     This endpoint does **NOT** mutate ``projects.context_md`` —
+         *     promotion is a proposal only; the user accepting it performs the
+         *     authorized write (ADR 0013 D5).
+         *
+         *     Another user's ``precedent_id`` — or a ``project_id`` the caller
+         *     does not own — returns 404.  Audited.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    precedent_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PromotePrecedentRequest"];
+                };
+            };
+            responses: {
+                /** @description Proposal created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProjectContextProposalRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Precedent or target project not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/project-context-proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the calling user's project-context proposals (newest first)
+         * @description Returns the caller's project-context proposals ordered by
+         *     ``created_at DESC``.  Pass ``?state=proposed|accepted|rejected``
+         *     and/or ``?project_id=`` to filter.  ``limit`` is clamped to
+         *     [1, 200]; ``offset`` to [0, ∞).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filter by proposal state. */
+                    state?: "proposed" | "accepted" | "rejected";
+                    /** @description Filter to proposals targeting one Project. */
+                    project_id?: string;
+                    /** @description Maximum number of proposals to return (clamped to [1, 200]). */
+                    limit?: number;
+                    /** @description Zero-based index of the first result to return. */
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of project-context proposals */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProjectContextProposalListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/project-context-proposals/{proposal_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a proposal — append the suggested context to the Project (user-authorized write)
+         * @description The user-authorized write (ADR 0013 D5): appends the proposal's
+         *     ``suggested_md`` to the target Project's ``context_md``
+         *     (initializing it if NULL), sets ``state='accepted'`` and
+         *     ``accepted_at``.
+         *
+         *     Idempotent on re-accept: if already ``accepted``, returns the
+         *     current state without re-appending.  A ``rejected`` proposal may be
+         *     accepted (rejected→accepted) and the append occurs.
+         *
+         *     Another user's ``proposal_id`` returns 404.  Audited.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    proposal_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated proposal (now accepted) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProjectContextProposalRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Proposal not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/project-context-proposals/{proposal_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject a proposal (does not touch Project context)
+         * @description Sets ``state='rejected'`` and ``rejected_at``.  Does NOT touch
+         *     ``projects.context_md``.
+         *
+         *     Another user's ``proposal_id`` returns 404.  Audited.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    proposal_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated proposal (now rejected) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProjectContextProposalRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Proposal not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the calling user's autonomous schedules (non-deleted, newest first)
+         * @description Returns the caller's non-deleted schedules ordered by
+         *     ``created_at DESC``.  Optional ``?enabled=`` filter.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    enabled?: boolean;
+                    limit?: number;
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of schedules */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousScheduleListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Create an autonomous schedule (cron-triggered run definition)
+         * @description Validates ``cron_expr`` (a five-field cron string); invalid
+         *     expressions return 422.  Seeds ``next_run_at`` from the cron
+         *     expression so the dispatcher can pick it up.  Per-user isolated.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AutonomousScheduleCreate"];
+                };
+            };
+            responses: {
+                /** @description Schedule created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousScheduleRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Invalid cron expression */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/schedules/{schedule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Soft-delete an autonomous schedule (returns 200 with updated entity)
+         * @description Soft-deletes by setting ``deleted_at``.  Returns 200 with the
+         *     updated entity (NOT 204 — FastAPI JSONResponse/204 pitfall).
+         *     A deleted schedule is excluded from list and the dispatcher;
+         *     re-delete returns 404.  Another user's ``schedule_id`` returns 404.
+         *     Audited.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    schedule_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated schedule (now soft-deleted) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousScheduleRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Schedule not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Partially update an autonomous schedule (edit / enable / disable)
+         * @description Partial update.  If ``cron_expr`` changes it is re-validated (422
+         *     on invalid) and ``next_run_at`` is recomputed.  Another user's
+         *     ``schedule_id`` returns 404.  Audited.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    schedule_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AutonomousScheduleUpdate"];
+                };
+            };
+            responses: {
+                /** @description Updated schedule */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousScheduleRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Schedule not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Invalid cron expression */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/autonomous/watches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the calling user's autonomous watches (non-deleted, newest first)
+         * @description Returns the caller's non-deleted watches ordered by
+         *     ``created_at DESC``.  Optional ``?enabled=`` and
+         *     ``?knowledge_base_id=`` filters.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    enabled?: boolean;
+                    knowledge_base_id?: string;
+                    limit?: number;
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of watches */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousWatchListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Create an autonomous watch (KB-arrival-triggered run definition)
+         * @description Creates a watch on a knowledge base the caller owns; document
+         *     arrivals (KB attach) then spawn an autonomous session. The caller
+         *     must own the target ``knowledge_base_id`` — a KB they cannot see
+         *     returns 404 (KB-sharing is out of scope). Per-user isolated.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AutonomousWatchCreate"];
+                };
+            };
+            responses: {
+                /** @description Watch created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousWatchRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Target knowledge base not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/watches/{watch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Soft-delete an autonomous watch (returns 200 with updated entity)
+         * @description Soft-deletes by setting ``deleted_at``.  Returns 200 with the
+         *     updated entity (NOT 204 — FastAPI JSONResponse/204 pitfall).
+         *     A deleted watch is excluded from list and the KB-arrival trigger;
+         *     re-delete returns 404.  Another user's ``watch_id`` returns 404.
+         *     Audited.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    watch_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated watch (now soft-deleted) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousWatchRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Watch not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Partially update an autonomous watch (enable / disable / retarget)
+         * @description Partial update of ``enabled`` / ``playbook_id`` / ``skill_ref``.
+         *     The watch's ``knowledge_base_id`` is immutable. Another user's
+         *     ``watch_id`` returns 404.  Audited.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    watch_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AutonomousWatchUpdate"];
+                };
+            };
+            responses: {
+                /** @description Updated watch */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousWatchRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Watch not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/autonomous/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the calling user's autonomous notifications (newest first)
+         * @description Returns the caller's notifications ordered by ``created_at DESC``.
+         *     Pass ``?unread=true`` to narrow to unread rows (``read_at IS
+         *     NULL``). Per-user isolated.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    unread?: boolean;
+                    limit?: number;
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of notifications */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousNotificationListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark an autonomous notification read (the dismiss action; idempotent)
+         * @description Sets ``read_at`` if currently NULL; idempotent (re-read preserves
+         *     the original timestamp). "Read" IS the dismiss action — a read
+         *     notification drops out of ``?unread=true``. Another user's
+         *     ``notification_id`` returns 404.  Audited.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    notification_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated notification (now read) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousNotificationRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Notification not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/run-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a skill or playbook once now (one-off manual autonomous session)
+         * @description Spawns a single ``trigger_kind='manual'`` autonomous session so a
+         *     user can test what a skill/playbook does — and inspect the
+         *     resulting receipt — before arming it as a schedule or watch.
+         *     Exactly one of ``playbook_id`` / ``skill_ref`` must be set (zero
+         *     or both → 422). ``target_kb_id`` / ``project_id`` are optional
+         *     scope; ``max_cost_usd`` is the per-run cap (NULL falls back to the
+         *     config default so R4 always arms). Gated by opt-in
+         *     (``autonomous_enabled``); the spawned session runs under the same
+         *     R4/R5/R6 brakes as every other session. Per-user isolated. Audited.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AutonomousManualRunRequest"];
+                };
+            };
+            responses: {
+                /** @description Session spawned */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousSessionRead"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Autonomous layer not enabled for this user */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Invalid target (need exactly one of playbook_id/skill_ref) */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7323,6 +8743,367 @@ export interface components {
             /** Format: date-time */
             deletion_scheduled_at?: string | null;
         };
+        /**
+         * @description Read-only view of an ``autonomous_memory`` row.  Returned by the
+         *     list, keep, dismiss, and delete endpoints.
+         */
+        AutonomousMemoryRead: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** @enum {string} */
+            state: "proposed" | "kept" | "dismissed";
+            category: string;
+            content: string;
+            /** Format: uuid */
+            source_session_id?: string | null;
+            /** Format: date-time */
+            kept_at?: string | null;
+            /** Format: date-time */
+            deleted_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Paginated list of autonomous memory entries (non-deleted, newest first). */
+        AutonomousMemoryListResponse: {
+            entries: components["schemas"]["AutonomousMemoryRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
+        };
+        /**
+         * @description Optional request body for ``POST /autonomous/memory/{id}/keep``.
+         *     If ``content`` is provided, the memory entry's text is overwritten
+         *     on keep (edit-on-keep).
+         */
+        MemoryKeepRequest: {
+            content?: string | null;
+        };
+        /**
+         * @description Read-only view of a ``precedent_entries`` row.  Returned by the
+         *     list, dismiss endpoints.
+         */
+        PrecedentEntryRead: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            pattern_kind: string;
+            summary: string;
+            observed_count: number;
+            /** Format: uuid */
+            source_session_id?: string | null;
+            /** Format: date-time */
+            dismissed_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Paginated list of precedent entries (non-dismissed, newest first). */
+        PrecedentEntryListResponse: {
+            entries: components["schemas"]["PrecedentEntryRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
+        };
+        /**
+         * @description Request body for ``POST /autonomous/precedents/{id}/promote``.
+         *     ``project_id`` is the target Project; the caller must own it.
+         */
+        PromotePrecedentRequest: {
+            /** Format: uuid */
+            project_id: string;
+        };
+        /**
+         * @description Read-only view of a ``project_context_proposals`` row — a proposal
+         *     to promote a precedent into a Project's context document.  Only the
+         *     user accepting a proposal writes ``projects.context_md`` (ADR 0013 D5).
+         */
+        ProjectContextProposalRead: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            precedent_id: string;
+            /** Format: uuid */
+            project_id: string;
+            suggested_md: string;
+            /** @enum {string} */
+            state: "proposed" | "accepted" | "rejected";
+            /** Format: date-time */
+            accepted_at?: string | null;
+            /** Format: date-time */
+            rejected_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Paginated list of project-context proposals (newest first). */
+        ProjectContextProposalListResponse: {
+            proposals: components["schemas"]["ProjectContextProposalRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
+        };
+        /**
+         * @description Read-only view of an ``autonomous_schedules`` row — a cron-triggered
+         *     run definition.
+         */
+        AutonomousScheduleRead: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            project_id?: string | null;
+            name?: string | null;
+            cron_expr: string;
+            /** Format: uuid */
+            playbook_id?: string | null;
+            skill_ref?: string | null;
+            /** Format: uuid */
+            target_kb_id?: string | null;
+            enabled: boolean;
+            /** Format: date-time */
+            last_run_at?: string | null;
+            /** Format: date-time */
+            next_run_at?: string | null;
+            /** Format: date-time */
+            deleted_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * @description Request body for ``POST /autonomous/schedules``.  ``cron_expr`` is a
+         *     five-field cron string (minute hour day-of-month month day-of-week)
+         *     supporting ``*``, lists, ranges, and steps; invalid expressions
+         *     return 422.
+         */
+        AutonomousScheduleCreate: {
+            cron_expr: string;
+            name?: string | null;
+            /** Format: uuid */
+            playbook_id?: string | null;
+            skill_ref?: string | null;
+            /** Format: uuid */
+            target_kb_id?: string | null;
+            /** Format: uuid */
+            project_id?: string | null;
+            /** @default true */
+            enabled: boolean;
+        };
+        /**
+         * @description Request body for ``PATCH /autonomous/schedules/{id}``.  All fields
+         *     optional.  Changing ``cron_expr`` re-validates (422) and recomputes
+         *     ``next_run_at``.
+         */
+        AutonomousScheduleUpdate: {
+            name?: string | null;
+            cron_expr?: string | null;
+            enabled?: boolean | null;
+            /** Format: uuid */
+            playbook_id?: string | null;
+            skill_ref?: string | null;
+            /** Format: uuid */
+            target_kb_id?: string | null;
+        };
+        /**
+         * @description Request body for ``POST /autonomous/run-now``.  Spawns one
+         *     ``trigger_kind='manual'`` session.  Exactly one of ``playbook_id``
+         *     / ``skill_ref`` must be set (zero or both → 422).  ``target_kb_id``
+         *     / ``project_id`` are optional scope.  ``max_cost_usd`` is the
+         *     per-run cap (NULL → fall back to the config default).
+         */
+        AutonomousManualRunRequest: {
+            /** Format: uuid */
+            playbook_id?: string | null;
+            skill_ref?: string | null;
+            /** Format: uuid */
+            target_kb_id?: string | null;
+            /** Format: uuid */
+            project_id?: string | null;
+            max_cost_usd?: string | null;
+        };
+        /** @description Paginated list of autonomous schedules (newest first). */
+        AutonomousScheduleListResponse: {
+            schedules: components["schemas"]["AutonomousScheduleRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
+        };
+        /**
+         * @description Read-only view of an ``autonomous_watches`` row — a KB-arrival-
+         *     triggered run definition. When a file is attached to
+         *     ``knowledge_base_id``, an autonomous session spawns.
+         */
+        AutonomousWatchRead: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            project_id?: string | null;
+            /** Format: uuid */
+            knowledge_base_id: string;
+            /** Format: uuid */
+            playbook_id?: string | null;
+            skill_ref?: string | null;
+            enabled: boolean;
+            /** Format: date-time */
+            deleted_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * @description Request body for ``POST /autonomous/watches``.  ``knowledge_base_id``
+         *     is required and must be owned by the caller (404 otherwise; KB-sharing
+         *     is out of scope).  The target (``playbook_id`` / ``skill_ref``) and
+         *     ``project_id`` are optional; ``enabled`` defaults to true.
+         */
+        AutonomousWatchCreate: {
+            /** Format: uuid */
+            knowledge_base_id: string;
+            /** Format: uuid */
+            playbook_id?: string | null;
+            skill_ref?: string | null;
+            /** Format: uuid */
+            project_id?: string | null;
+            /** @default true */
+            enabled: boolean;
+        };
+        /**
+         * @description Request body for ``PATCH /autonomous/watches/{id}``.  All fields
+         *     optional.  The watch's ``knowledge_base_id`` is immutable (not
+         *     present here) — a watch is bound to its KB.
+         */
+        AutonomousWatchUpdate: {
+            enabled?: boolean | null;
+            /** Format: uuid */
+            playbook_id?: string | null;
+            skill_ref?: string | null;
+        };
+        /** @description Paginated list of autonomous watches (newest first). */
+        AutonomousWatchListResponse: {
+            watches: components["schemas"]["AutonomousWatchRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
+        };
+        /**
+         * @description Read-only view of an ``autonomous_notifications`` row. Written by
+         *     the ``notify`` chokepoint handler. ``read_at`` IS NULL = unread;
+         *     marking read is the dismiss action. ``channel`` is one of
+         *     ``in_app`` / ``email`` / ``webhook`` (``webhook`` reserved).
+         *     ``body``/``payload`` carry counts/IDs + a receipt link — never raw
+         *     entity values.
+         */
+        AutonomousNotificationRead: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            session_id: string;
+            /** @enum {string} */
+            channel: "in_app" | "email" | "webhook";
+            title: string;
+            body: string;
+            payload?: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: date-time */
+            read_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Paginated list of autonomous notifications (newest first). */
+        AutonomousNotificationListResponse: {
+            notifications: components["schemas"]["AutonomousNotificationRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
+        };
+        /**
+         * @description Read-only view of an ``autonomous_sessions`` row.  Returned by the
+         *     halt, list, and detail endpoints.
+         */
+        AutonomousSessionRead: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            project_id?: string | null;
+            /** @enum {string} */
+            trigger_kind: "watch" | "schedule" | "suggestion" | "manual";
+            /** Format: uuid */
+            trigger_ref?: string | null;
+            /** @enum {string} */
+            current_phase: "intake" | "analysis" | "drafting" | "ethics_review" | "delivery";
+            /** @enum {string} */
+            halt_state: "running" | "halt_requested" | "halted" | "paused";
+            /** Format: decimal */
+            max_cost_usd?: number | null;
+            /** Format: decimal */
+            cost_total_usd: number;
+            cost_cap_reached: boolean;
+            idle_halt_minutes: number;
+            /** Format: date-time */
+            last_activity_at: string;
+            /** @enum {string} */
+            status: "running" | "completed" | "halted" | "failed";
+            params?: {
+                [key: string]: unknown;
+            };
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            error?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            completed_at?: string | null;
+        };
+        /** @description Paginated list of autonomous sessions (newest first). */
+        AutonomousSessionListResponse: {
+            sessions: components["schemas"]["AutonomousSessionRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
+        };
+        /**
+         * @description Session detail view with live-reconstructed receipt.
+         *     The receipt is built from audit rows on every request and contains
+         *     phase transitions, tool calls, terminal reason, and session metadata.
+         *     No raw document text or entity values are included.
+         */
+        AutonomousSessionDetailResponse: {
+            session: components["schemas"]["AutonomousSessionRead"];
+            /**
+             * @description Audit-derived receipt: session_id, trigger_kind, status,
+             *     halt_state, current_phase, cost_total_usd, max_cost_usd,
+             *     cost_cap_reached, created_at, completed_at,
+             *     phase_transitions (list), tool_calls (list),
+             *     terminal_reason (string | null).
+             */
+            receipt: {
+                [key: string]: unknown;
+            };
+        };
         AdminUserListResponse: {
             users: components["schemas"]["AdminUserRow"][];
             total_count: number;
@@ -7457,8 +9238,9 @@ export interface components {
             last_login_at?: string | null;
         };
         /**
-         * @description All 5 personalization preference fields. Wave A (``reasoning_visibility``)
-         *     per PRD §3.2; Wave B v2 fields per PRD §3.2.1 and frontend spec §4.3.
+         * @description All 6 personalization preference fields. Wave A (``reasoning_visibility``)
+         *     per PRD §3.2; Wave B v2 fields per PRD §3.2.1 and frontend spec §4.3;
+         *     ``autonomous_enabled`` per PRD §5 / M4-C2.
          */
         UserPreferences: {
             /**
@@ -7486,10 +9268,12 @@ export interface components {
              * @enum {string}
              */
             provenance_pills: "always" | "collapsed";
+            autonomous_enabled: boolean;
         };
         /**
          * @description All fields optional; only supplied keys are updated. Wave B v2 adds
-         *     four personalization fields per PRD §3.2.1 and frontend spec §4.3.
+         *     four personalization fields per PRD §3.2.1 and frontend spec §4.3;
+         *     ``autonomous_enabled`` per PRD §5 / M4-C2.
          */
         UserPreferencesUpdate: {
             /** @enum {string} */
@@ -7502,6 +9286,25 @@ export interface components {
             trust_pills?: "labels" | "dots";
             /** @enum {string} */
             provenance_pills?: "always" | "collapsed";
+            autonomous_enabled?: boolean;
+        };
+        /**
+         * @description PATCH body for `/api/v1/users/me`. Caller-scoped self-edit of the
+         *     user's own profile. Currently `display_name` only: when supplied
+         *     it is trimmed and must be non-empty after trimming. At least one
+         *     updatable field must be present (an all-omitted body is a 422).
+         *
+         *     Email self-service editing is intentionally out of scope here —
+         *     changing the login email pulls in re-verification, MFA, and
+         *     uniqueness concerns and is deferred to a dedicated flow.
+         */
+        UserProfileUpdate: {
+            /**
+             * @description New display name. Trimmed server-side; must be non-empty after
+             *     trimming. Omit to leave unchanged (but at least one field must
+             *     be present, so an empty body is rejected).
+             */
+            display_name?: string;
         };
         Project: {
             /** Format: uuid */
@@ -7693,12 +9496,35 @@ export interface components {
              *     dict maps input variable names to values. Required inputs
              *     that the skill's frontmatter declares but the bindings
              *     don't provide cause a 400 with `code=skill_input_missing`.
+             *
+             *     Values are plain scalars interpolated into the skill body via
+             *     `{{name}}` substitution (ADR 0006). There is NO `type:"file"`
+             *     binding: passing a file UUID here interpolates the literal
+             *     UUID string, not the file's document text. For per-turn
+             *     document context use the separate `file_ids` channel below —
+             *     `skill_inputs` and `file_ids` are distinct; a `file_id` is
+             *     NOT bindable to a skill file-input via `skill_inputs`.
              */
             skill_inputs?: {
                 [key: string]: {
                     [key: string]: unknown;
                 };
             };
+            /**
+             * @description Donna: caller-owned file UUIDs supplying ephemeral,
+             *     per-message document context for this one chat turn.
+             *     Distinct from KB attach (project-scoped, persistent) and
+             *     from `skill_inputs` (scalar skill params — see the note
+             *     above; no `type:"file"` binding is wired). Each id is
+             *     validated server-side to exist and be owned by the caller;
+             *     a foreign, unknown, or soft-deleted id returns 404
+             *     (id-probing-safe — indistinguishable from "not found").
+             *     Validated ids are forwarded to the gateway as `lq_ai_file_ids`
+             *     alongside `lq_ai_skills` and echoed back as `applied_file_ids`
+             *     on the response / SSE `complete` frame. Capped at 16 entries.
+             *     Omitted / empty is back-compatible.
+             */
+            file_ids?: string[];
         };
         /**
          * @description Non-streaming response for `POST /api/v1/chats/{chat_id}/messages`.
@@ -7727,6 +9553,16 @@ export interface components {
              *     for this request. Empty when no skills were attached.
              */
             applied_skills?: string[];
+            /**
+             * @description Donna: caller-owned file ids that were validated and
+             *     forwarded to the gateway as `lq_ai_file_ids` for this turn —
+             *     the echo of `MessageCreate.file_ids` (mirrors
+             *     `applied_skills`). Turn-scoped: there is no
+             *     `messages.file_ids` column, so this surfaces only on the send
+             *     response (and the SSE `complete` frame), not on rows read
+             *     back via `GET /chats/{id}/messages`. Empty when none attached.
+             */
+            applied_file_ids?: string[];
         };
         /**
          * @description Frames emitted on the SSE stream. The first frame is a `start`
@@ -7783,6 +9619,13 @@ export interface components {
              *     for this request. Empty when no skills were attached.
              */
             applied_skills?: string[];
+            /**
+             * @description Donna: caller-owned file ids forwarded to the gateway as
+             *     `lq_ai_file_ids` for this turn — the echo of
+             *     `MessageCreate.file_ids` (mirrors `applied_skills`).
+             *     Turn-scoped; not persisted. Empty when none attached.
+             */
+            applied_file_ids?: string[];
             /** @enum {integer|null} */
             routed_inference_tier?: 1 | 2 | 3 | 4 | 5 | null;
             routed_provider?: string | null;
