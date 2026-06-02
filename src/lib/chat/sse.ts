@@ -11,7 +11,11 @@ export type StreamFrame =
   | {
       type: 'complete';
       lq_ai_message_id: string;
-      message: { id: string; content: string; routed_inference_tier?: number | null; routed_provider?: string | null; applied_skills?: string[]; applied_file_ids?: string[] };
+      message: { id: string; content: string; routed_inference_tier?: number | null; routed_provider?: string | null };
+      /** Slugs of skills applied to this turn — echoed at the top-level of the complete frame by the backend. */
+      applied_skills?: string[];
+      /** File ids applied to this turn — echoed at the top-level of the complete frame by the backend (not persisted, turn-scoped only). */
+      applied_file_ids?: string[];
       /** Deprecated: empty under M2-A2; citations come from the per-message endpoint. */
       citations?: unknown[];
       routed_inference_tier?: number | null;

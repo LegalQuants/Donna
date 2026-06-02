@@ -258,7 +258,7 @@ describe('createChatStream', () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(streamResponse([
         'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi","applied_skills":["nda-review"]}}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","applied_skills":["nda-review"],"message":{"id":"a1","content":"hi"}}\n\n',
         'data: [DONE]\n\n'
       ]))
       .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })));
@@ -399,7 +399,7 @@ describe('createChatStream file_ids', () => {
       .fn()
       .mockResolvedValueOnce(streamResponse([
         'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok","applied_file_ids":["file-1"]}}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","applied_file_ids":["file-1"],"message":{"id":"a1","content":"ok"}}\n\n',
         'data: [DONE]\n\n'
       ]))
       .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
@@ -412,7 +412,7 @@ describe('createChatStream file_ids', () => {
   it('clears applied_file_ids on retry before re-streaming', async () => {
     const withIds = () => streamResponse([
       'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok","applied_file_ids":["file-1"]}}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","applied_file_ids":["file-1"],"message":{"id":"a1","content":"ok"}}\n\n',
       'data: [DONE]\n\n'
     ]);
     const noIds = () => streamResponse([
