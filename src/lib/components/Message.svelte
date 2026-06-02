@@ -1,7 +1,7 @@
 <script lang="ts">
   import Markdown from './Markdown.svelte';
   import CitationView from './CitationView.svelte';
-  import { ShieldCheck, ScrollText } from '@lucide/svelte';
+  import { ShieldCheck, ScrollText, Paperclip } from '@lucide/svelte';
   import type { ChatMessage } from '$lib/chat/chatStream.svelte';
   import type { Citation } from '$lib/citations/types';
   import { prettifySkillSlug } from '$lib/skills/skillLabel';
@@ -73,6 +73,13 @@
               {#each skills as slug, i (slug)}
                 <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app skills list link -->
                 <a href="/skills" class="hover:underline">{prettifySkillSlug(slug)}</a>{#if i < skills.length - 1}<span aria-hidden="true">,&nbsp;</span>{/if}{/each}
+            </span>
+          {/if}
+          {#if showPills && message.applied_file_ids && message.applied_file_ids.length > 0}
+            {@const n = message.applied_file_ids.length}
+            <span class="inline-flex items-center gap-1" data-testid="applied-files">
+              <Paperclip size={11} aria-hidden="true" />
+              <span>{n} file{n === 1 ? '' : 's'}</span>
             </span>
           {/if}
         </div>

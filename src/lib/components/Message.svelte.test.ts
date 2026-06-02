@@ -71,6 +71,27 @@ describe('Message', () => {
     });
     expect(queryByText(/Applied:/)).toBeNull();
   });
+
+  it('shows a file-count indicator (plural) when applied_file_ids are present', () => {
+    const { getByText } = render(Message, {
+      props: { message: { key: 'af1', id: 'af1', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4, applied_file_ids: ['x', 'y'] } }
+    });
+    expect(getByText('2 files')).toBeInTheDocument();
+  });
+
+  it('uses the singular for one attached file', () => {
+    const { getByText } = render(Message, {
+      props: { message: { key: 'af2', id: 'af2', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4, applied_file_ids: ['x'] } }
+    });
+    expect(getByText('1 file')).toBeInTheDocument();
+  });
+
+  it('renders no file indicator when none were applied', () => {
+    const { queryByText } = render(Message, {
+      props: { message: { key: 'af3', id: 'af3', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4 } }
+    });
+    expect(queryByText(/\bfiles?\b/)).toBeNull();
+  });
 });
 
 const doneMsg = {
