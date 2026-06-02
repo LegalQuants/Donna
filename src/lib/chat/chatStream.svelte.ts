@@ -48,8 +48,10 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
       m.content = frame.message.content ?? m.content;
       const tier = frame.message.routed_inference_tier ?? frame.routed_inference_tier;
       if (tier != null) m.routed_inference_tier = tier;
-      if (frame.message.applied_skills) m.applied_skills = frame.message.applied_skills;
-      if (frame.message.applied_file_ids) m.applied_file_ids = frame.message.applied_file_ids;
+      // applied_skills and applied_file_ids are emitted at the top level of the
+      // complete frame by the backend (not inside message), mirroring applied_skills.
+      if (frame.applied_skills) m.applied_skills = frame.applied_skills;
+      if (frame.applied_file_ids) m.applied_file_ids = frame.applied_file_ids;
       m.status = 'done';
     } else if (frame.type === 'error') {
       setError(idx, frame.message);
