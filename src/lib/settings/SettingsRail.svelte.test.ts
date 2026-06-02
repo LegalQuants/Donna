@@ -43,4 +43,16 @@ describe('SettingsRail', () => {
     render(SettingsRail);
     expect(screen.getByRole('link', { name: 'Preferences' })).toHaveAttribute('aria-current', 'page');
   });
+
+  it('renders the Trust section link', () => {
+    h.pathname = '/settings/account';
+    render(SettingsRail);
+    expect(screen.getByRole('link', { name: 'Trust' })).toHaveAttribute('href', '/settings/trust');
+  });
+
+  it('marks Trust active on /settings/trust', () => {
+    h.pathname = '/settings/trust';
+    render(SettingsRail);
+    expect(screen.getByRole('link', { name: 'Trust' })).toHaveAttribute('aria-current', 'page');
+  });
 });
