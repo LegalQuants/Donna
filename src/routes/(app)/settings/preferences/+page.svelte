@@ -40,7 +40,7 @@
 
 <h1 class="mb-4 text-xl font-medium text-mlq-text">Preferences</h1>
 
-{#if error}<p class="mb-3 text-sm text-mlq-error">{error}</p>{/if}
+{#if error}<p role="status" aria-live="polite" class="mb-3 text-sm text-mlq-error">{error}</p>{/if}
 
 <section class="rounded-mlq-control border border-mlq-subtle p-4">
   <div class="flex items-start justify-between gap-4">
