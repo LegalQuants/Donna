@@ -47,4 +47,16 @@ describe('createModelStore', () => {
     await s.load(vi.fn().mockResolvedValue(ok(ALIASES)));
     expect(s.selectedModel).toBe('smart');
   });
+
+  it('selectedOption is null before options load', () => {
+    expect(createModelStore().selectedOption).toBe(null);
+  });
+
+  it('selectedOption resolves to the option matching selectedModel after load', async () => {
+    const s = createModelStore();
+    await s.load(vi.fn().mockResolvedValue(ok(ALIASES)));
+    expect(s.selectedModel).toBe('smart');
+    expect(s.selectedOption?.id).toBe('smart');
+    expect(s.selectedOption).toEqual(s.options.find((o) => o.id === 'smart'));
+  });
 });
