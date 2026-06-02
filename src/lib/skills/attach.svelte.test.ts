@@ -143,4 +143,23 @@ describe('createSkillAttach', () => {
     s.setInputValue('nda-review', 'notes', undefined);
     expect(s.skillInputs).toEqual({});
   });
+
+  it('does not let a required file-type input block sending (file inputs are not rendered)', async () => {
+    const s = createSkillAttach();
+    const f = vi.fn().mockImplementation(() => inputsRes([{ name: 'doc', type: 'file', required: true }]));
+    await s.attach(NDA, f);
+    expect(s.allRequiredFilled).toBe(true);
+  });
+
+  it('blocks sending while a skill is still loading its inputs', () => {
+    const s = createSkillAttach();
+    let resolveFetch: (r: Response) => void = () => {};
+    const f = vi.fn(() => new Promise<Response>((res) => { resolveFetch = res; }));
+    const pending = s.attach(NDA, f); // do NOT await yet
+    expect(s.allRequiredFilled).toBe(false); // inputsLoading === true → blocked
+    resolveFetch(inputsRes([]));
+    return pending.then(() => {
+      expect(s.allRequiredFilled).toBe(true); // loaded, no required → unblocked
+    });
+  });
 });
