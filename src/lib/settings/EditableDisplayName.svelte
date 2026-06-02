@@ -40,6 +40,10 @@
     } else if (result.type === 'failure') {
       msg = (result.data?.profileError as string | undefined) ?? 'Could not update your name.';
       msgIsError = true;
+    } else {
+      // redirect/error: the action returns neither today, but surface something rather than fail silently.
+      msg = 'Could not update your name.';
+      msgIsError = true;
     }
   };
 </script>
