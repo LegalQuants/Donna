@@ -10,6 +10,7 @@
   import { modelStore } from '$lib/models/store.svelte';
   import { page } from '$app/state';
   import TrustPill from '$lib/preferences/TrustPill.svelte';
+  import SkillInputForm from '$lib/skills/SkillInputForm.svelte';
   import type { createSkillAttach } from '$lib/skills/attach.svelte';
   import type { createEnhance } from '$lib/enhance/enhance.svelte';
   import type { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
@@ -30,7 +31,7 @@
   }: {
     value?: string;
     placeholder?: string;
-    onsubmit?: (text: string, model: string, skills: string[]) => void;
+    onsubmit?: (text: string, model: string, skills: string[], skillInputs: Record<string, Record<string, unknown>>) => void;
     streaming?: boolean;
     onstop?: () => void;
     skillAttach?: ReturnType<typeof createSkillAttach>;
@@ -68,7 +69,8 @@
   function submit() {
     const text = value.trim();
     if (!text) return;
-    onsubmit?.(text, modelStore.selectedModel, skillAttach?.names ?? []);
+    if (skillAttach && !skillAttach.allRequiredFilled) return;
+    onsubmit?.(text, modelStore.selectedModel, skillAttach?.names ?? [], skillAttach?.skillInputs ?? {});
   }
   function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -105,6 +107,24 @@
         </span>
       {/each}
     </div>
+  {/if}
+
+  {#if skillAttach}
+    {#each skillAttach.attached as s (s.slug)}
+      {#if s.inputsError}
+        <p class="mb-2 text-xs text-mlq-muted">Couldn't load inputs for {s.title}.</p>
+      {:else if s.required.length + s.optional.length > 0}
+        <div class="mb-2">
+          <SkillInputForm
+            skillTitle={s.title}
+            required={s.required}
+            optional={s.optional}
+            values={s.values}
+            onchange={(name, value) => skillAttach?.setInputValue(s.slug, name, value)}
+          />
+        </div>
+      {/if}
+    {/each}
   {/if}
 
   <textarea
@@ -174,7 +194,7 @@
         <Square size={18} />
       </button>
     {:else}
-      <button type="button" onclick={submit} disabled={!value.trim()} aria-label="Send" class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40">
+      <button type="button" onclick={submit} disabled={!value.trim() || !(skillAttach?.allRequiredFilled ?? true)} aria-label="Send" class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40">
         <ArrowRight size={18} />
       </button>
     {/if}
