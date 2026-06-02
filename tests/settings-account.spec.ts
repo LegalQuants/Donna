@@ -56,7 +56,9 @@ test('settings → account: edit display name round-trip (restores fixture)', as
     await expect(page.locator('dd').filter({ hasText: sentinel })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/name updated/i)).toBeVisible();
   } finally {
-    // Restore the fixture name so the shared admin is left as found.
+    // Restore the displayed name. NOTE: `original` is the rebranded input value, so a first run
+    // collapses a seeded "LQ.AI …" name to "Donna …" in storage — render-identical and idempotent
+    // thereafter (rebrandName is a no-op on the result), so no test or UI observes a difference.
     await page.goto('/settings/account');
     await page.getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('textbox', { name: /display name/i }).fill(original);
