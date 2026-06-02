@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 
+vi.mock('$app/state', () => ({ page: { data: { user: null } } }));
+
 // modelStore.load() runs onMount and fetches; stub global fetch so it no-ops.
 vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('[]', { status: 200 })));
 import Composer from './Composer.svelte';
