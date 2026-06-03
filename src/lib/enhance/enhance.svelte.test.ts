@@ -60,4 +60,25 @@ describe('createEnhance', () => {
     expect(e.status).toBe('idle');
     expect(e.result).toBeNull();
   });
+
+  it('sends chat_id: null when constructed with a null chatId (standalone landing enhance)', async () => {
+    let capturedBody: unknown;
+    const fetchFn = (async (_url: string, init: RequestInit) => {
+      capturedBody = JSON.parse(init.body as string);
+      return new Response(
+        JSON.stringify({ expansion_applied: true, expanded_prompt: 'better', interaction_id: 'i1' }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }) as unknown as typeof fetch;
+
+    const e = createEnhance(null, () => ['nda-review']);
+    await e.run('draft a clause', fetchFn);
+
+    expect(capturedBody).toEqual({
+      raw_input: 'draft a clause',
+      chat_id: null,
+      attached_skills: [{ name: 'nda-review' }]
+    });
+    expect(e.status).toBe('preview');
+  });
 });
