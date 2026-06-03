@@ -59,7 +59,7 @@
   </div>
 
   {#if tab === 'matter'}
-    <MatterPicker {matters} bind:selectedId={matterId} />
+    <MatterPicker {matters} bind:selectedId={matterId} placement="down" />
     {#if matterFiles.length}
       <ul class="space-y-1">
         {#each matterFiles as f (f.document_id)}
