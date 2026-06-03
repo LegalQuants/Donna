@@ -1,0 +1,67 @@
+import { describe, it, expect } from 'vitest';
+import { createTabularBuilder } from './tabularBuilder.svelte';
+
+describe('createTabularBuilder', () => {
+  it('starts with no docs and one empty column; cannot run', () => {
+    const b = createTabularBuilder();
+    expect(b.docs).toEqual([]);
+    expect(b.columns.length).toBe(1);
+    expect(b.columns[0].name).toBe('');
+    expect(b.cellCount).toBe(0);
+    expect(b.canRun).toBe(false);
+  });
+
+  it('addDoc is idempotent by document_id and drives cellCount', () => {
+    const b = createTabularBuilder();
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.addDoc({ document_id: 'd2', name: 'b.pdf' });
+    expect(b.docs.length).toBe(2);
+    expect(b.hasDoc('d1')).toBe(true);
+    b.setColumn(b.columns[0].id, { name: 'Term', query: 'How long?' });
+    expect(b.cellCount).toBe(2);
+    expect(b.canRun).toBe(true);
+  });
+
+  it('removeDoc removes by id', () => {
+    const b = createTabularBuilder();
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.removeDoc('d1');
+    expect(b.docs).toEqual([]);
+  });
+
+  it('addColumn/removeColumn manage the column list (never below one)', () => {
+    const b = createTabularBuilder();
+    const first = b.columns[0].id;
+    b.addColumn();
+    expect(b.columns.length).toBe(2);
+    b.removeColumn(first);
+    expect(b.columns.length).toBe(1);
+    b.removeColumn(b.columns[0].id);
+    expect(b.columns.length).toBe(1); // floor of one
+  });
+
+  it('validColumns trims and drops incomplete rows; canRun needs a valid column + a doc', () => {
+    const b = createTabularBuilder();
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.setColumn(b.columns[0].id, { name: '  ', query: 'q' }); // blank name
+    expect(b.validColumns()).toEqual([]);
+    expect(b.canRun).toBe(false);
+    b.setColumn(b.columns[0].id, { name: 'Term ', query: ' How long? ' });
+    expect(b.validColumns()).toEqual([{ name: 'Term', query: 'How long?' }]);
+    expect(b.canRun).toBe(true);
+  });
+
+  it('blocks canRun and flags duplicateNames when two valid columns share a name (case-insensitive)', () => {
+    const b = createTabularBuilder();
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.setColumn(b.columns[0].id, { name: 'Term', query: 'q1' });
+    b.addColumn();
+    b.setColumn(b.columns[1].id, { name: 'term', query: 'q2' });
+    expect(b.duplicateNames).toBe(true);
+    expect(b.canRun).toBe(false);
+    b.setColumn(b.columns[1].id, { name: 'Governing law', query: 'q2' });
+    expect(b.duplicateNames).toBe(false);
+    expect(b.canRun).toBe(true);
+  });
+});
