@@ -1,8 +1,13 @@
 <script lang="ts">
   import { X } from '@lucide/svelte';
-  import type { TabularCell } from './types';
+  import type { TabularCell, TabularCitation } from './types';
 
-  let { column, cell, onclose }: { column: string; cell: TabularCell; onclose: () => void } = $props();
+  let { column, cell, onclose, onactivatecitation }: {
+    column: string;
+    cell: TabularCell;
+    onclose: () => void;
+    onactivatecitation?: (c: TabularCitation) => void;
+  } = $props();
 
   $effect(() => {
     function onkey(e: KeyboardEvent) {
@@ -23,6 +28,27 @@
   {:else}
     <p class="mt-3 whitespace-pre-wrap text-sm text-mlq-text">{cell.value}</p>
     <p class="mt-3 text-xs text-mlq-muted">Confidence: {cell.confidence}</p>
-    <p class="text-xs text-mlq-muted">{cell.cited_chunk_ids.length} citation{cell.cited_chunk_ids.length === 1 ? '' : 's'}</p>
+    {#if cell.citations.length > 0}
+      <p class="mt-2 text-xs font-medium text-mlq-text">{cell.citations.length} citation{cell.citations.length === 1 ? '' : 's'}</p>
+      <ul class="mt-1 space-y-1">
+        {#each cell.citations as c}
+          <li>
+            <button
+              type="button"
+              aria-label="Open source, page {c.source_page ?? 'unknown'}"
+              class="w-full rounded border border-mlq-subtle px-2 py-1 text-left text-xs text-mlq-text hover:bg-mlq-surface-alt"
+              onclick={() => onactivatecitation?.(c)}
+            >
+              <span class="font-medium">Source · p.{c.source_page ?? '—'}</span>
+              {#if c.source_text}
+                <span class="mt-0.5 block truncate text-mlq-muted">{c.source_text}</span>
+              {/if}
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="text-xs text-mlq-muted">{cell.cited_chunk_ids.length} citation{cell.cited_chunk_ids.length === 1 ? '' : 's'}</p>
+    {/if}
   {/if}
 </div>

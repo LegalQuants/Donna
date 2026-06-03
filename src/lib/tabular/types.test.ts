@@ -54,4 +54,32 @@ describe('parseTabularResults', () => {
     expect(out?.rows.length).toBe(1);
     expect(out?.rows[0].document_id).toBe('ok');
   });
+
+  it('falls back to the parallel document_names map when a row name is missing', () => {
+    const out = parseTabularResults(
+      { rows: [{ document_id: 'd2', cells: {} }] },
+      { d2: 'contract.pdf' }
+    );
+    expect(out?.rows[0].document_name).toBe('contract.pdf');
+  });
+
+  it('prefers the row name over the map, and the id when neither is present', () => {
+    const out = parseTabularResults(
+      { rows: [{ document_id: 'd1', document_name: 'real.pdf', cells: {} }, { document_id: 'd3', cells: {} }] },
+      { d1: 'ignored.pdf' }
+    );
+    expect(out?.rows[0].document_name).toBe('real.pdf');
+    expect(out?.rows[1].document_name).toBe('d3');
+  });
+
+  it('narrows navigable citations off a cell', () => {
+    const out = parseTabularResults({
+      rows: [{ document_id: 'd1', cells: { Term: { value: 'x', confidence: 'high',
+        cited_chunk_ids: ['c1'],
+        citations: [{ source_file_id: 'file-1', source_page: 4, source_text: 'the clause', chunk_id: 'c1' },
+                    { source_file_id: null, source_page: null, source_text: '' }] } } }]
+    });
+    const cits = out?.rows[0].cells.Term.citations;
+    expect(cits).toEqual([{ source_file_id: 'file-1', source_page: 4, source_text: 'the clause', chunk_id: 'c1', document_id: undefined }]);
+  });
 });

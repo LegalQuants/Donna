@@ -2,18 +2,33 @@
   import { untrack, onMount, onDestroy } from 'svelte';
   import TabularGrid from '$lib/tabular/TabularGrid.svelte';
   import { createRunPoll } from '$lib/tabular/runPoll.svelte';
-  import { parseTabularResults, isTerminal, type TabularExecution } from '$lib/tabular/types';
+  import { parseTabularResults, isTerminal, type TabularExecution, type TabularCitation } from '$lib/tabular/types';
   import type { PageData } from './$types';
+  import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
+  import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
+  import type { Citation } from '$lib/citations/types';
 
   let { data }: { data: PageData } = $props();
   // untrack: intentional one-time seed — data.execution won't change without navigation.
   const poll = untrack(() => createRunPoll(data.execution.id, data.execution));
+  const docPanel = createDocPanel();
+
+  function openCitation(c: TabularCitation) {
+    // Doc panel reads only source_file_id / source_page / source_text; cast the minimal shape.
+    // Tabular cells carry `confidence`, not a verification signal, so this citation has no
+    // `verified`/`verification_method` — the panel's chip will read "Unverified". Surfacing cell
+    // confidence in place of the chat verification chip is a tracked fast-follow (P6-B.1).
+    docPanel.open({ source_file_id: c.source_file_id, source_page: c.source_page, source_text: c.source_text } as Citation);
+  }
   onMount(() => poll.start());
   onDestroy(() => poll.stop());
 
   const current = $derived((poll.execution ?? data.execution) as TabularExecution);
   const columns = $derived(current.columns.map((c) => c.name));
-  const results = $derived(parseTabularResults(current.results));
+  const documentNamesById = $derived(
+    Object.fromEntries(current.document_ids.map((id, i) => [id, current.document_names[i]]))
+  );
+  const results = $derived(parseTabularResults(current.results, documentNamesById));
   let cancelling = $state(false);
 
   async function cancel() {
@@ -47,9 +62,10 @@
     <p class="mt-6 text-sm text-mlq-muted">This review was cancelled.</p>
   {:else if results}
     <div class="mt-6">
-      <TabularGrid {results} {columns} executionId={current.id} />
+      <TabularGrid {results} {columns} executionId={current.id} onactivatecitation={openCitation} />
     </div>
   {:else}
     <p class="mt-6 text-sm text-mlq-muted">No results to show.</p>
   {/if}
 </div>
+{#if docPanel.open_}<DocumentPanel {docPanel} />{/if}

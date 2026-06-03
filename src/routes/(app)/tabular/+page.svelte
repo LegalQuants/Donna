@@ -1,119 +1,31 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { goto } from '$app/navigation';
-  import DocumentMultiPicker from '$lib/tabular/DocumentMultiPicker.svelte';
-  import ColumnBuilder from '$lib/tabular/ColumnBuilder.svelte';
-  import CostPreviewModal from '$lib/tabular/CostPreviewModal.svelte';
-  import { createTabularBuilder } from '$lib/tabular/tabularBuilder.svelte';
-  import { createTabularUploads } from '$lib/tabular/tabularUploads.svelte';
-  import type { TabularPreviewCostResponse, TabularExecution } from '$lib/tabular/types';
-  import type { PageData } from './$types';
+  import { Plus } from '@lucide/svelte';
+  import TabularExecutionRow from '$lib/tabular/TabularExecutionRow.svelte';
+  import type { PageProps } from './$types';
 
-  let { data }: { data: PageData } = $props();
-
-  const builder = createTabularBuilder();
-  const uploads = createTabularUploads();
-  onDestroy(() => uploads.dispose());
-
-  let preview = $state<TabularPreviewCostResponse | null>(null);
-  let busy = $state(false);
-  let error = $state<string | null>(null);
-
-  function onmatter(id: string | null) {
-    goto(id ? `/tabular?matter=${id}` : '/tabular', { keepFocus: true, noScroll: true });
-  }
-
-  async function openPreview() {
-    if (!builder.canRun || busy) return;
-    error = null;
-    busy = true;
-    try {
-      const res = await fetch('/tabular/preview-cost', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ document_ids: builder.docs.map((d) => d.document_id), columns: builder.validColumns() })
-      });
-      if (!res.ok) {
-        error = 'Could not estimate the cost. Please try again.';
-        return;
-      }
-      preview = (await res.json()) as TabularPreviewCostResponse;
-    } catch {
-      error = 'Could not estimate the cost. Please try again.';
-    } finally {
-      busy = false;
-    }
-  }
-
-  async function confirmRun() {
-    if (busy) return;
-    busy = true;
-    error = null;
-    try {
-      const res = await fetch('/tabular/execute', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          document_ids: builder.docs.map((d) => d.document_id),
-          columns: builder.validColumns(),
-          confirmed_cost_usd: preview?.estimated_cost_usd
-        })
-      });
-      if (!res.ok) {
-        error = 'Could not start the review. Please try again.';
-        busy = false;
-        return;
-      }
-      const exec = (await res.json()) as TabularExecution;
-      preview = null;
-      await goto(`/tabular/${exec.id}`);
-    } catch {
-      error = 'Could not start the review. Please try again.';
-      busy = false;
-    }
-  }
+  let { data }: PageProps = $props();
 </script>
 
-<div class="mx-auto max-w-5xl px-6 py-8 pb-28">
-  <h1 class="font-serif text-2xl text-mlq-strong">New tabular review</h1>
-  <p class="mt-1 text-sm text-mlq-muted">Ask the same questions across many documents and get a cited table.</p>
+<svelte:head><title>Tabular reviews — Donna</title></svelte:head>
 
-  <div class="mt-6 grid gap-8 md:grid-cols-2">
-    <section>
-      <h2 class="mb-2 text-sm font-semibold text-mlq-strong">Documents</h2>
-      <DocumentMultiPicker
-        {builder}
-        {uploads}
-        matters={data.matters}
-        matterFiles={data.matterFiles}
-        selectedMatterId={data.selectedMatterId}
-        {onmatter}
-      />
-    </section>
-    <section>
-      <h2 class="mb-2 text-sm font-semibold text-mlq-strong">Columns</h2>
-      <ColumnBuilder {builder} />
-      {#if builder.duplicateNames}<p class="mt-2 text-xs text-mlq-error">Column names must be unique.</p>{/if}
-    </section>
+<div class="mx-auto max-w-3xl px-4 py-6">
+  <div class="mb-4 flex items-center justify-between">
+    <h1 class="text-xl font-medium text-mlq-text">Tabular reviews</h1>
+    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app new-review link -->
+    <a href="/tabular/new" class="inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"><Plus size={13} /> New review</a>
   </div>
 
-  {#if error}<p class="mt-4 text-sm text-mlq-error">{error}</p>{/if}
+  {#if data.executions.length === 0}
+    <div class="rounded-mlq-control border border-dashed border-mlq-subtle p-10 text-center">
+      <p class="text-sm text-mlq-muted">No tabular reviews yet — start one to ask the same questions across many documents.</p>
+      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app new-review link -->
+      <a href="/tabular/new" class="mt-3 inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"><Plus size={13} /> New review</a>
+    </div>
+  {:else}
+    <ul class="divide-y divide-mlq-subtle rounded-mlq-control border border-mlq-subtle">
+      {#each data.executions as execution (execution.id)}
+        <li><TabularExecutionRow summary={execution} /></li>
+      {/each}
+    </ul>
+  {/if}
 </div>
-
-<div class="fixed inset-x-0 bottom-0 border-t border-mlq-subtle bg-mlq-surface px-6 py-3">
-  <div class="mx-auto flex max-w-5xl items-center justify-between">
-    <span class="text-sm text-mlq-muted">{builder.docs.length} docs × {builder.validColumns().length} cols = {builder.cellCount} cells</span>
-    <button
-      type="button"
-      onclick={openPreview}
-      disabled={!builder.canRun || busy}
-      class="rounded-mlq-control bg-mlq-strong px-4 py-2 text-sm text-white disabled:opacity-40"
-    >
-      Preview cost
-    </button>
-  </div>
-</div>
-
-{#if preview}
-  <CostPreviewModal {preview} {busy} onconfirm={confirmRun} oncancel={() => (preview = null)} />
-{/if}

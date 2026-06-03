@@ -7,6 +7,9 @@ export type TabularExecutionCreate = components['schemas']['TabularExecutionCrea
 export type TabularPreviewCostRequest = components['schemas']['TabularPreviewCostRequest'];
 export type TabularPreviewCostResponse = components['schemas']['TabularPreviewCostResponse'];
 
+/** Compact projection from the list endpoint (no inlined results). */
+export type TabularExecutionSummary = components['schemas']['TabularExecutionSummary'];
+
 /** Terminal execution statuses (no more polling once reached). */
 export const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled'] as const;
 export type ExecutionStatus = TabularExecution['status'];
@@ -18,11 +21,21 @@ export function isTerminal(status: ExecutionStatus): boolean {
 /** Per-cell confidence from the m3-c2-v1 results grid. */
 export type CellConfidence = 'high' | 'medium' | 'low' | 'failed';
 
+/** Read-time-resolved navigable citation on a tabular cell (DE-330: not yet in the generated schema). */
+export interface TabularCitation {
+  source_file_id: string;
+  source_page: number | null;
+  source_text: string;
+  document_id?: string;
+  chunk_id?: string;
+}
+
 export interface TabularCell {
   value: string;
   cited_chunk_ids: string[];
   confidence: CellConfidence;
   error?: string | null;
+  citations: TabularCitation[];
 }
 
 export interface TabularRow {
@@ -55,7 +68,10 @@ export interface ColumnDraft {
  * typed grid, or null if the payload is missing/malformed. Tolerant: filters out
  * non-object rows and coerces missing cell fields to safe defaults.
  */
-export function parseTabularResults(raw: unknown): TabularResults | null {
+export function parseTabularResults(
+  raw: unknown,
+  documentNamesById?: Record<string, string>
+): TabularResults | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   if (!Array.isArray(r.rows)) return null;
@@ -77,12 +93,28 @@ export function parseTabularResults(raw: unknown): TabularResults | null {
           ? co.cited_chunk_ids.filter((x): x is string => typeof x === 'string')
           : [],
         confidence,
-        error: typeof co.error === 'string' ? co.error : null
+        error: typeof co.error === 'string' ? co.error : null,
+        citations: Array.isArray(co.citations)
+          ? co.citations.flatMap((c): TabularCitation[] => {
+              const cc = (c && typeof c === 'object' ? c : {}) as Record<string, unknown>;
+              if (typeof cc.source_file_id !== 'string') return [];
+              return [{
+                source_file_id: cc.source_file_id,
+                source_page: typeof cc.source_page === 'number' ? cc.source_page : null,
+                source_text: typeof cc.source_text === 'string' ? cc.source_text : '',
+                document_id: typeof cc.document_id === 'string' ? cc.document_id : undefined,
+                chunk_id: typeof cc.chunk_id === 'string' ? cc.chunk_id : undefined
+              }];
+            })
+          : []
       };
     }
     rows.push({
       document_id: ro.document_id,
-      document_name: typeof ro.document_name === 'string' ? ro.document_name : ro.document_id,
+      document_name:
+        typeof ro.document_name === 'string'
+          ? ro.document_name
+          : (documentNamesById?.[ro.document_id] ?? ro.document_id),
       cells
     });
   }
