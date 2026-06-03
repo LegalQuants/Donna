@@ -2,8 +2,8 @@
   import { FolderKanban, ChevronDown } from '@lucide/svelte';
   import type { MatterSummary } from './types';
 
-  let { matters, selectedId = $bindable<string | null>(null) }:
-    { matters: MatterSummary[]; selectedId?: string | null } = $props();
+  let { matters, selectedId = $bindable<string | null>(null), placement = 'up' }:
+    { matters: MatterSummary[]; selectedId?: string | null; placement?: 'up' | 'down' } = $props();
 
   let open = $state(false);
   let q = $state('');
@@ -48,7 +48,7 @@
   </button>
 
   {#if open}
-    <div class="absolute bottom-full left-0 z-20 mb-1 w-64 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md">
+    <div class="absolute {placement === 'down' ? 'top-full mt-1' : 'bottom-full mb-1'} left-0 z-20 w-64 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md">
       <input
         type="text"
         aria-label="Search matters"
