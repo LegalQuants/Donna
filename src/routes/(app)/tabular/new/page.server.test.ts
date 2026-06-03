@@ -6,10 +6,10 @@ vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(.
 import { load } from './+page.server';
 
 const ev = (matter?: string) =>
-  ({ url: new URL(`http://x/tabular${matter ? `?matter=${matter}` : ''}`) }) as never;
+  ({ url: new URL(`http://x/tabular/new${matter ? `?matter=${matter}` : ''}`) }) as never;
 beforeEach(() => lqFetch.mockReset());
 
-describe('/tabular load', () => {
+describe('/tabular/new load', () => {
   it('returns matters and no matterFiles without ?matter=', async () => {
     lqFetch.mockResolvedValueOnce(new Response(JSON.stringify([{ id: 'm1', name: 'Acme' }]), { status: 200 }));
     const out = (await load(ev())) as { matters: { id: string }[]; matterFiles: unknown[] };
