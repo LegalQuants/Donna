@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const lqFetch = vi.fn();
 vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(...a) }));
-import { load } from './+page.server';
+import { load, actions } from './+page.server';
 
 const modelsBody = {
   object: 'list',
@@ -53,5 +53,34 @@ describe('/settings/models load', () => {
     const out = (await load(ev(true))) as { modelsError: boolean; categories: { name: string; currentTargetId: string | null }[] };
     expect(out.modelsError).toBe(false);
     expect(out.categories[0]).toMatchObject({ name: 'smart', currentTargetId: 'anthropic-prod/claude-opus-4-7' });
+  });
+});
+
+const form = (fields: Record<string, string>) => {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+  return { request: { formData: async () => fd }, locals: { user: { is_admin: true } } } as never;
+};
+
+describe('/settings/models ?/reassign', () => {
+  it('re-reads the alias for its fallback, then PATCHes the new primary preserving it', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 })) // resolve target
+      .mockResolvedValueOnce(new Response(JSON.stringify({ name: 'smart', provider: 'anthropic-prod', model: 'claude-opus-4-7', fallback: [{ provider: 'openai-prod', model: 'gpt-4' }] }), { status: 200 })) // GET alias
+      .mockResolvedValueOnce(new Response(JSON.stringify({ name: 'smart' }), { status: 200 })); // PATCH
+    const res = await actions.reassign(form({ name: 'smart', target_id: 'ollama-local/llama3.1:8b' }));
+    expect(res).toMatchObject({ success: true });
+    expect(lqFetch.mock.calls[2][1]).toBe('/api/v1/admin/aliases/smart');
+    const patchInit = lqFetch.mock.calls[2][2] as RequestInit;
+    expect(patchInit.method).toBe('PATCH');
+    expect(JSON.parse(patchInit.body as string)).toEqual({ provider: 'ollama-local', model: 'llama3.1:8b', fallback: [{ provider: 'openai-prod', model: 'gpt-4' }] });
+  });
+
+  it('returns a 403 failure when the backend rejects the alias read (non-admin)', async () => {
+    lqFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }))
+      .mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
+    const res = (await actions.reassign(form({ name: 'smart', target_id: 'ollama-local/llama3.1:8b' }))) as { status: number };
+    expect(res.status).toBe(403);
   });
 });
