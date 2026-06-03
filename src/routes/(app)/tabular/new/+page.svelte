@@ -20,7 +20,7 @@
   let error = $state<string | null>(null);
 
   function onmatter(id: string | null) {
-    goto(id ? `/tabular?matter=${id}` : '/tabular', { keepFocus: true, noScroll: true });
+    goto(id ? `/tabular/new?matter=${id}` : '/tabular/new', { keepFocus: true, noScroll: true });
   }
 
   async function openPreview() {
