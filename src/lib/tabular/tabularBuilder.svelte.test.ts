@@ -82,6 +82,20 @@ describe('createTabularBuilder', () => {
     expect(b.validColumns()).toEqual([{ name: 'Term', query: 'q' }]);
   });
 
+  it('moveColumn swaps adjacent columns and is boundary-safe', () => {
+    const b = createTabularBuilder();
+    b.setColumn(b.columns[0].id, { name: 'A', query: 'qa' });
+    b.addColumn();
+    b.setColumn(b.columns[1].id, { name: 'B', query: 'qb' });
+    const [a, bb] = [b.columns[0].id, b.columns[1].id];
+    b.moveColumn(a, 1); // A down → [B, A]
+    expect(b.columns.map((c) => c.name)).toEqual(['B', 'A']);
+    b.moveColumn(a, 1); // A already last → no-op
+    expect(b.columns.map((c) => c.name)).toEqual(['B', 'A']);
+    b.moveColumn(bb, -1); // B already first → no-op
+    expect(b.columns.map((c) => c.name)).toEqual(['B', 'A']);
+  });
+
   it('skill mode needs a doc + a selected skill, and builds a skill request body', () => {
     const b = createTabularBuilder();
     b.setMode('skill');
