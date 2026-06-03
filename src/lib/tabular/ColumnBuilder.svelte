@@ -23,6 +23,22 @@
           aria-label="Column question"
           class="w-full rounded-mlq-control border border-mlq-subtle px-2.5 py-1.5 text-sm text-mlq-text"
         />
+        <label class="flex items-center gap-2 text-xs text-mlq-muted">
+          Min. model tier
+          <select
+            value={col.minimum_inference_tier ?? ''}
+            onchange={(e) => builder.setColumn(col.id, { minimum_inference_tier: e.currentTarget.value ? Number(e.currentTarget.value) : null })}
+            aria-label="Minimum model tier for {col.name || 'this column'}"
+            class="rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-2 py-1 text-xs text-mlq-text"
+          >
+            <option value="">None</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
       </div>
       {#if builder.columns.length > 1}
         <button

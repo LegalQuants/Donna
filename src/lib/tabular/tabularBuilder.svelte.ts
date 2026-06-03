@@ -13,7 +13,12 @@ export function createTabularBuilder() {
 
   function validColumns(): ColumnSpec[] {
     return columns
-      .map((c) => ({ name: c.name.trim(), query: c.query.trim() }))
+      .map((c) => {
+        const base = { name: c.name.trim(), query: c.query.trim() };
+        return c.minimum_inference_tier != null
+          ? { ...base, minimum_inference_tier: c.minimum_inference_tier }
+          : base;
+      })
       .filter((c) => c.name.length > 0 && c.query.length > 0);
   }
 
@@ -72,7 +77,7 @@ export function createTabularBuilder() {
       if (columns.length <= 1) return; // keep at least one row
       columns = columns.filter((c) => c.id !== id);
     },
-    setColumn(id: string, patch: Partial<Pick<ColumnDraft, 'name' | 'query'>>) {
+    setColumn(id: string, patch: Partial<Pick<ColumnDraft, 'name' | 'query' | 'minimum_inference_tier'>>) {
       columns = columns.map((c) => (c.id === id ? { ...c, ...patch } : c));
     },
     validColumns,
