@@ -25,7 +25,7 @@
       <thead>
         <tr>
           <th class="sticky left-0 z-10 border border-mlq-subtle bg-mlq-surface-alt px-2 py-1.5 text-mlq-strong">Document</th>
-          {#each columns as col (col)}
+          {#each columns as col, i (i)}
             <th class="border border-mlq-subtle bg-mlq-surface-alt px-2 py-1.5 text-mlq-strong">{col}</th>
           {/each}
         </tr>
@@ -34,7 +34,7 @@
         {#each results.rows as row (row.document_id)}
           <tr>
             <td class="sticky left-0 z-10 whitespace-nowrap border border-mlq-subtle bg-mlq-surface px-2 py-1.5 font-semibold text-mlq-text">{row.document_name}</td>
-            {#each columns as col (col)}
+            {#each columns as col, i (i)}
               {@const cell = row.cells[col]}
               <td class="border border-mlq-subtle px-2 py-1.5 align-top">
                 {#if cell}

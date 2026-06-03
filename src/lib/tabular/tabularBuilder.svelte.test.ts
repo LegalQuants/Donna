@@ -51,4 +51,17 @@ describe('createTabularBuilder', () => {
     expect(b.validColumns()).toEqual([{ name: 'Term', query: 'How long?' }]);
     expect(b.canRun).toBe(true);
   });
+
+  it('blocks canRun and flags duplicateNames when two valid columns share a name (case-insensitive)', () => {
+    const b = createTabularBuilder();
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.setColumn(b.columns[0].id, { name: 'Term', query: 'q1' });
+    b.addColumn();
+    b.setColumn(b.columns[1].id, { name: 'term', query: 'q2' });
+    expect(b.duplicateNames).toBe(true);
+    expect(b.canRun).toBe(false);
+    b.setColumn(b.columns[1].id, { name: 'Governing law', query: 'q2' });
+    expect(b.duplicateNames).toBe(false);
+    expect(b.canRun).toBe(true);
+  });
 });

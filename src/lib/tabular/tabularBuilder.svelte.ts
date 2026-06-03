@@ -10,6 +10,11 @@ export function createTabularBuilder() {
       .filter((c) => c.name.length > 0 && c.query.length > 0);
   }
 
+  function hasDuplicateNames(): boolean {
+    const names = validColumns().map((c) => c.name.toLowerCase());
+    return new Set(names).size !== names.length;
+  }
+
   return {
     get docs() {
       return docs;
@@ -21,7 +26,10 @@ export function createTabularBuilder() {
       return docs.length * validColumns().length;
     },
     get canRun() {
-      return docs.length > 0 && validColumns().length > 0;
+      return docs.length > 0 && validColumns().length > 0 && !hasDuplicateNames();
+    },
+    get duplicateNames() {
+      return hasDuplicateNames();
     },
     hasDoc(documentId: string) {
       return docs.some((d) => d.document_id === documentId);
