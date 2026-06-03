@@ -34,7 +34,8 @@
         body: JSON.stringify({ document_ids: builder.docs.map((d) => d.document_id), columns: builder.validColumns() })
       });
       if (!res.ok) {
-        error = 'Could not estimate the cost. Please try again.';
+        const body = (await res.json().catch(() => null)) as { message?: string } | null;
+        error = body?.message ?? 'Could not estimate the cost. Please try again.';
         return;
       }
       preview = (await res.json()) as TabularPreviewCostResponse;
@@ -60,7 +61,8 @@
         })
       });
       if (!res.ok) {
-        error = 'Could not start the review. Please try again.';
+        const body = (await res.json().catch(() => null)) as { message?: string } | null;
+        error = body?.message ?? 'Could not start the review. Please try again.';
         busy = false;
         return;
       }
