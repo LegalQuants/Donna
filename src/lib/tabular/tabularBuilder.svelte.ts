@@ -1,10 +1,17 @@
-import type { SelectedDoc, ColumnDraft } from './types';
+import type { SelectedDoc, ColumnDraft, ColumnSpec, TableSkillSummary } from './types';
+
+type BuildRequest = { document_ids: string[] } & (
+  | { columns: ColumnSpec[] }
+  | { skill_name: string }
+);
 
 export function createTabularBuilder() {
   let docs = $state<SelectedDoc[]>([]);
   let columns = $state<ColumnDraft[]>([{ id: crypto.randomUUID(), name: '', query: '' }]);
+  let mode = $state<'adhoc' | 'skill'>('adhoc');
+  let selectedSkill = $state<TableSkillSummary | null>(null);
 
-  function validColumns(): { name: string; query: string }[] {
+  function validColumns(): ColumnSpec[] {
     return columns
       .map((c) => ({ name: c.name.trim(), query: c.query.trim() }))
       .filter((c) => c.name.length > 0 && c.query.length > 0);
@@ -22,14 +29,32 @@ export function createTabularBuilder() {
     get columns() {
       return columns;
     },
+    get mode() {
+      return mode;
+    },
+    get selectedSkill() {
+      return selectedSkill;
+    },
     get cellCount() {
       return docs.length * validColumns().length;
     },
     get canRun() {
-      return docs.length > 0 && validColumns().length > 0 && !hasDuplicateNames();
+      if (docs.length === 0) return false;
+      return mode === 'skill'
+        ? selectedSkill !== null
+        : validColumns().length > 0 && !hasDuplicateNames();
     },
     get duplicateNames() {
       return hasDuplicateNames();
+    },
+    setMode(m: 'adhoc' | 'skill') {
+      mode = m;
+    },
+    selectSkill(s: TableSkillSummary) {
+      selectedSkill = s;
+    },
+    clearSkill() {
+      selectedSkill = null;
     },
     hasDoc(documentId: string) {
       return docs.some((d) => d.document_id === documentId);
@@ -50,6 +75,12 @@ export function createTabularBuilder() {
     setColumn(id: string, patch: Partial<Pick<ColumnDraft, 'name' | 'query'>>) {
       columns = columns.map((c) => (c.id === id ? { ...c, ...patch } : c));
     },
-    validColumns
+    validColumns,
+    buildRequest(): BuildRequest {
+      const document_ids = docs.map((d) => d.document_id);
+      return mode === 'skill' && selectedSkill
+        ? { document_ids, skill_name: selectedSkill.name }
+        : { document_ids, columns: validColumns() };
+    }
   };
 }

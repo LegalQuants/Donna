@@ -10,6 +10,13 @@ export type TabularPreviewCostResponse = components['schemas']['TabularPreviewCo
 /** Compact projection from the list endpoint (no inlined results). */
 export type TabularExecutionSummary = components['schemas']['TabularExecutionSummary'];
 
+/** A registered `output_format: table` skill, as surfaced to the builder's picker. */
+export interface TableSkillSummary {
+  name: string;
+  title: string;
+  description?: string | null;
+}
+
 /** Terminal execution statuses (no more polling once reached). */
 export const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled'] as const;
 export type ExecutionStatus = TabularExecution['status'];
