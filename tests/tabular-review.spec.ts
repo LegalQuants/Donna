@@ -114,3 +114,29 @@ test('tabular: a cell citation opens the cited source in the doc panel', async (
   // Doc panel mounts; it fetches /files/{id} and renders the source.
   await expect(page.getByRole('complementary', { name: /document panel/i })).toBeVisible({ timeout: 30_000 });
 });
+
+test('tabular: run a built-in table skill — its resolved columns render in the grid', async ({ page }) => {
+  test.setTimeout(300_000);
+  await login(page);
+  await page.goto('/tabular/new');
+
+  // Upload an answerable doc (starts ingestion).
+  await page.getByRole('button', { name: /^Upload$/ }).click();
+  await page.getByTestId('dropzone-input').setInputFiles(answerablePdfFixture());
+  await expect(page.getByText(/document selected/i)).toBeVisible({ timeout: 120_000 });
+
+  // Switch to table-skill mode and pick a built-in table skill.
+  await page.getByRole('radio', { name: /use a table skill/i }).click();
+  await page.getByRole('button', { name: /contract snapshot/i }).click();
+
+  // Preview → run.
+  await page.getByRole('button', { name: 'Preview cost' }).click();
+  const dialog = page.getByRole('dialog', { name: /confirm review cost/i });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Run review' }).click();
+  await page.waitForURL(/\/tabular\/[0-9a-f-]+$/i, { timeout: 15_000 });
+
+  // The skill resolves to its own columns server-side; the grid renders them.
+  // Contract Snapshot defines a "Governing Law" column.
+  await expect(page.getByText('Governing Law')).toBeVisible({ timeout: 180_000 });
+});
