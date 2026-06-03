@@ -37,8 +37,30 @@ test('enhance rewrites the draft via a preview the user accepts, and records the
   await expect(page.locator('textarea')).toHaveValue(/in-house counsel/i);
 });
 
-test('the landing composer has no enhance affordance', async ({ page }) => {
+test('the landing composer enhances a draft standalone (chat_id: null) and fills the box on accept', async ({ page }) => {
+  test.setTimeout(90_000);
   await login(page);
+
+  // Landing now exposes enhance — the standalone path (no chat yet → chat_id: null).
   await expect(page.getByRole('textbox')).toBeVisible();
-  await expect(page.getByTestId('enhance-button')).toHaveCount(0);
+  await page.fill('textarea', 'review this nda');
+
+  // The POST carries chat_id: null (standalone landing enhance).
+  const postPromise = page.waitForRequest(
+    (r: any) => r.url().includes('/enhance-prompt') && r.method() === 'POST'
+  );
+  await page.getByTestId('enhance-button').click();
+  const postReq = await postPromise;
+  expect(postReq.postDataJSON()?.chat_id).toBeNull();
+
+  // The ~20s call returns a preview card with the expanded prompt.
+  await expect(page.getByTestId('enhance-expanded')).toContainText(/in-house counsel/i, { timeout: 45000 });
+
+  // Accept → the expanded prompt lands in the textarea, and a PATCH outcome is recorded.
+  const patchPromise = page.waitForRequest(
+    (r: any) => r.url().includes('/enhance-prompt/') && r.method() === 'PATCH'
+  );
+  await page.getByTestId('enhance-accept').click();
+  await patchPromise;
+  await expect(page.locator('textarea')).toHaveValue(/in-house counsel/i);
 });
