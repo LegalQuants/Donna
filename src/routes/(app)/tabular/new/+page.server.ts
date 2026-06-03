@@ -1,8 +1,10 @@
 import { lqFetch } from '$lib/server/lqClient';
 import type { PageServerLoad } from './$types';
 import type { components } from '$lib/api/backend';
+import type { TableSkillSummary } from '$lib/tabular/types';
 
 type FileMeta = components['schemas']['File'];
+type SkillSummary = components['schemas']['SkillSummary'];
 
 export const load: PageServerLoad = async (event) => {
   const mRes = await lqFetch(event, '/api/v1/projects');
@@ -29,5 +31,11 @@ export const load: PageServerLoad = async (event) => {
     }
   }
 
-  return { matters, matterFiles, selectedMatterId: matterId };
+  const sRes = await lqFetch(event, '/api/v1/skills');
+  const allSkills = sRes.ok ? ((await sRes.json()) as SkillSummary[]) : [];
+  const tableSkills: TableSkillSummary[] = allSkills
+    .filter((s) => s.output_format === 'table')
+    .map((s) => ({ name: s.name, title: s.title, description: s.description ?? null }));
+
+  return { matters, matterFiles, selectedMatterId: matterId, tableSkills };
 };

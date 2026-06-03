@@ -64,4 +64,50 @@ describe('createTabularBuilder', () => {
     expect(b.duplicateNames).toBe(false);
     expect(b.canRun).toBe(true);
   });
+
+  it('defaults to ad-hoc mode and builds an ad-hoc request body', () => {
+    const b = createTabularBuilder();
+    expect(b.mode).toBe('adhoc');
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.setColumn(b.columns[0].id, { name: 'Term', query: 'How long?' });
+    expect(b.buildRequest()).toEqual({ document_ids: ['d1'], columns: [{ name: 'Term', query: 'How long?' }] });
+  });
+
+  it('carries minimum_inference_tier into validColumns when set, omits it when null', () => {
+    const b = createTabularBuilder();
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.setColumn(b.columns[0].id, { name: 'Term', query: 'q', minimum_inference_tier: 4 });
+    expect(b.validColumns()).toEqual([{ name: 'Term', query: 'q', minimum_inference_tier: 4 }]);
+    b.setColumn(b.columns[0].id, { minimum_inference_tier: null });
+    expect(b.validColumns()).toEqual([{ name: 'Term', query: 'q' }]);
+  });
+
+  it('moveColumn swaps adjacent columns and is boundary-safe', () => {
+    const b = createTabularBuilder();
+    b.setColumn(b.columns[0].id, { name: 'A', query: 'qa' });
+    b.addColumn();
+    b.setColumn(b.columns[1].id, { name: 'B', query: 'qb' });
+    const [a, bb] = [b.columns[0].id, b.columns[1].id];
+    b.moveColumn(a, 1); // A down → [B, A]
+    expect(b.columns.map((c) => c.name)).toEqual(['B', 'A']);
+    b.moveColumn(a, 1); // A already last → no-op
+    expect(b.columns.map((c) => c.name)).toEqual(['B', 'A']);
+    b.moveColumn(bb, -1); // B already first → no-op
+    expect(b.columns.map((c) => c.name)).toEqual(['B', 'A']);
+  });
+
+  it('skill mode needs a doc + a selected skill, and builds a skill request body', () => {
+    const b = createTabularBuilder();
+    b.setMode('skill');
+    expect(b.mode).toBe('skill');
+    expect(b.canRun).toBe(false); // no docs, no skill
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    expect(b.canRun).toBe(false); // still no skill
+    b.selectSkill({ name: 'contract-snapshot', title: 'Contract Snapshot' });
+    expect(b.canRun).toBe(true);
+    expect(b.buildRequest()).toEqual({ document_ids: ['d1'], skill_name: 'contract-snapshot' });
+    b.clearSkill();
+    expect(b.selectedSkill).toBeNull();
+    expect(b.canRun).toBe(false);
+  });
 });
