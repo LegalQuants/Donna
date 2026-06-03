@@ -21,11 +21,21 @@ export function isTerminal(status: ExecutionStatus): boolean {
 /** Per-cell confidence from the m3-c2-v1 results grid. */
 export type CellConfidence = 'high' | 'medium' | 'low' | 'failed';
 
+/** Read-time-resolved navigable citation on a tabular cell (DE-330: not yet in the generated schema). */
+export interface TabularCitation {
+  source_file_id: string;
+  source_page: number | null;
+  source_text: string;
+  document_id?: string;
+  chunk_id?: string;
+}
+
 export interface TabularCell {
   value: string;
   cited_chunk_ids: string[];
   confidence: CellConfidence;
   error?: string | null;
+  citations: TabularCitation[];
 }
 
 export interface TabularRow {
@@ -83,7 +93,20 @@ export function parseTabularResults(
           ? co.cited_chunk_ids.filter((x): x is string => typeof x === 'string')
           : [],
         confidence,
-        error: typeof co.error === 'string' ? co.error : null
+        error: typeof co.error === 'string' ? co.error : null,
+        citations: Array.isArray(co.citations)
+          ? co.citations.flatMap((c): TabularCitation[] => {
+              const cc = (c && typeof c === 'object' ? c : {}) as Record<string, unknown>;
+              if (typeof cc.source_file_id !== 'string') return [];
+              return [{
+                source_file_id: cc.source_file_id,
+                source_page: typeof cc.source_page === 'number' ? cc.source_page : null,
+                source_text: typeof cc.source_text === 'string' ? cc.source_text : '',
+                document_id: typeof cc.document_id === 'string' ? cc.document_id : undefined,
+                chunk_id: typeof cc.chunk_id === 'string' ? cc.chunk_id : undefined
+              }];
+            })
+          : []
       };
     }
     rows.push({
