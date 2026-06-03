@@ -1,9 +1,14 @@
 <script lang="ts">
   import ExportMenu from './ExportMenu.svelte';
   import CellDetail from './CellDetail.svelte';
-  import type { TabularResults, TabularCell, CellConfidence } from './types';
+  import type { TabularResults, TabularCell, CellConfidence, TabularCitation } from './types';
 
-  let { results, columns, executionId }: { results: TabularResults; columns: string[]; executionId: string } = $props();
+  let { results, columns, executionId, onactivatecitation }: {
+    results: TabularResults;
+    columns: string[];
+    executionId: string;
+    onactivatecitation?: (c: TabularCitation) => void;
+  } = $props();
 
   let detail = $state<{ column: string; cell: TabularCell } | null>(null);
 
@@ -60,5 +65,5 @@
 </div>
 
 {#if detail}
-  <CellDetail column={detail.column} cell={detail.cell} onclose={() => (detail = null)} />
+  <CellDetail column={detail.column} cell={detail.cell} onclose={() => (detail = null)} {onactivatecitation} />
 {/if}
