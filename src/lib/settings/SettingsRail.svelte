@@ -6,7 +6,8 @@
     { href: '/settings/account', label: 'Account' },
     { href: '/settings/data', label: 'Data & privacy' },
     { href: '/settings/preferences', label: 'Preferences' },
-    { href: '/settings/trust', label: 'Trust' }
+    { href: '/settings/trust', label: 'Trust' },
+    { href: '/settings/models', label: 'Models' }
   ];
   const isActive = (href: string) => page.url.pathname === href || page.url.pathname.startsWith(href + '/');
 </script>
