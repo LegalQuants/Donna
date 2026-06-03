@@ -68,6 +68,34 @@ same run:
 
 No change to the `skill_name` XOR `columns` contract; `minimum_inference_tier` behavior unchanged.
 
+## Scope refinement (from the backend CC, 2026-06-03) — 4 parts, multi-subsystem
+
+The CC scoped this against the Citation Engine and surfaced that it's a larger, trust-core change than a
+flag flip. Reuse surface is real: `citation/verification.py::verify(candidate, document, *, gateway,
+judge_model, ensemble_config)` — with `ensemble_config`, Stage 4 ensemble replaces Stage 3 and yields
+`verification_method ∈ {ensemble_strict, ensemble_majority}`; chat calls it at `chats.py:1872` with
+`GatewayClient.get_citation_engine_ensemble_config`. The four parts:
+1. `nodes.py`: per cell, when the column's `ensemble_verification` is true (fallback to skill/deployment
+   default when null), call `verify(...)` with `ensemble_config` for each cited chunk (extra async judge
+   calls inside the LangGraph extraction node).
+2. **Design decision — what is verified.** `verify()` is built around a *verbatim quoted span*; a tabular
+   cell has an *extracted value + chunk refs*, not a span. **Donna's recommendation: semantic
+   affirmation** — the ensemble judges affirm *the cited chunk supports the cell's value*. That's the
+   trust question a grid reader has, and it maps onto Donna's existing citation-trust rendering. (Final
+   call is the trust core's; this is the shape Donna can present meaningfully.)
+3. Surface `verification_method` on the cell's citations. **Frontend-preferred contract:** reuse chat's
+   `Citation` field names — `verification_method` (+ optionally `verified`/`partial`) on the cell's
+   citation objects, alongside the `source_*` fields already shipped in `c22360a`. Then Donna's existing
+   `citeState`/`tooltipFor` render it with **zero new frontend code**, and it **auto-closes Donna's
+   P6-B.1** (the doc panel's "Unverified" chip on tabular citations).
+4. `cost.py`: an ensemble premium per ensemble-column cell in `preview-cost` (reuse
+   `estimate_judge_call_cost_usd`).
+
+**Not blocking Donna P6-C.** P6-C (skill mode + per-column tier + column reorder) ships without this. The
+ensemble per-column toggle is a pin-gated task folded in whenever the SHA lands — or, if that's after
+P6-C merges, it becomes a tiny follow-up PR (P6-C.1; the toggle's frontend code is ~3 lines once the
+field is honored). Take the time the trust core deserves.
+
 ## Handoff
 
 Push to `main` and return the **commit SHA**. Donna pins `vendor/lq-ai` to it, regenerates types, and
