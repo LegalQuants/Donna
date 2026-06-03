@@ -25,4 +25,11 @@ describe('POST /tabular/execute', () => {
     lqFetch.mockResolvedValue(new Response('to', { status: 504 }));
     await expect(POST(event({}))).rejects.toMatchObject({ status: 504 });
   });
+
+  it('maps a backend 404/422 (bad document) to a 400 with a document-specific message', async () => {
+    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+    await expect(POST(event({}))).rejects.toMatchObject({ status: 400, body: { message: expect.stringMatching(/document/i) } });
+    lqFetch.mockResolvedValue(new Response('unprocessable', { status: 422 }));
+    await expect(POST(event({}))).rejects.toMatchObject({ status: 400 });
+  });
 });

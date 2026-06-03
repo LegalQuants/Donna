@@ -10,8 +10,8 @@ const results: TabularResults = {
       document_id: 'd1',
       document_name: 'a.pdf',
       cells: {
-        'Governing law': { value: 'Delaware', cited_chunk_ids: ['c1', 'c2'], confidence: 'high', error: null },
-        Term: { value: '', cited_chunk_ids: [], confidence: 'failed', error: 'no answer' }
+        'Governing law': { value: 'Delaware', cited_chunk_ids: ['c1', 'c2'], confidence: 'high', error: null, citations: [] },
+        Term: { value: '', cited_chunk_ids: [], confidence: 'failed', error: 'no answer', citations: [] }
       }
     }
   ],

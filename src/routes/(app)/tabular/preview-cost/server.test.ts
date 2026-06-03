@@ -29,4 +29,11 @@ describe('POST /tabular/preview-cost', () => {
     lqFetch.mockResolvedValue(new Response('down', { status: 503 }));
     await expect(POST(event({ document_ids: [], columns: [] }))).rejects.toMatchObject({ status: 503 });
   });
+
+  it('maps a backend 404/422 (bad document) to a 400 with a document-specific message', async () => {
+    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+    await expect(POST(event({}))).rejects.toMatchObject({ status: 400, body: { message: expect.stringMatching(/document/i) } });
+    lqFetch.mockResolvedValue(new Response('unprocessable', { status: 422 }));
+    await expect(POST(event({}))).rejects.toMatchObject({ status: 400 });
+  });
 });
