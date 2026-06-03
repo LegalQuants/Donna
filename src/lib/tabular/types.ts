@@ -68,6 +68,7 @@ export interface ColumnDraft {
   id: string;
   name: string;
   query: string;
+  minimum_inference_tier?: number | null;
 }
 
 /**

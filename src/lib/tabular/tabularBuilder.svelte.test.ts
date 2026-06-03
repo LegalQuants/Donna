@@ -73,6 +73,15 @@ describe('createTabularBuilder', () => {
     expect(b.buildRequest()).toEqual({ document_ids: ['d1'], columns: [{ name: 'Term', query: 'How long?' }] });
   });
 
+  it('carries minimum_inference_tier into validColumns when set, omits it when null', () => {
+    const b = createTabularBuilder();
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.setColumn(b.columns[0].id, { name: 'Term', query: 'q', minimum_inference_tier: 4 });
+    expect(b.validColumns()).toEqual([{ name: 'Term', query: 'q', minimum_inference_tier: 4 }]);
+    b.setColumn(b.columns[0].id, { minimum_inference_tier: null });
+    expect(b.validColumns()).toEqual([{ name: 'Term', query: 'q' }]);
+  });
+
   it('skill mode needs a doc + a selected skill, and builds a skill request body', () => {
     const b = createTabularBuilder();
     b.setMode('skill');
