@@ -47,7 +47,7 @@ describe('Composer', () => {
     expect(getByTestId('model-picker')).toBeInTheDocument();
     await userEvent.type(getByRole('textbox'), 'hello');
     await userEvent.click(getByRole('button', { name: /send/i }));
-    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String), [], {});
+    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String), [], {}, []);
   });
 
   it('hides skill UI and submits empty skills when no skillAttach is passed (landing)', async () => {
@@ -56,7 +56,7 @@ describe('Composer', () => {
     expect(queryByTestId('skill-attach')).toBeNull();
     await userEvent.type(getByRole('textbox'), 'hello');
     await userEvent.click(getByRole('button', { name: /send/i }));
-    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String), [], {});
+    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String), [], {}, []);
   });
 
   it('renders chips + skill button and submits attached slugs when skillAttach is passed', async () => {
@@ -80,7 +80,7 @@ describe('Composer', () => {
     expect(getByText('NDA Review')).toBeInTheDocument();
     await userEvent.type(getByRole('textbox'), 'review this');
     await userEvent.click(getByRole('button', { name: /send/i }));
-    expect(onsubmit).toHaveBeenCalledWith('review this', expect.any(String), ['nda-review'], {});
+    expect(onsubmit).toHaveBeenCalledWith('review this', expect.any(String), ['nda-review'], {}, []);
   });
 
   it('removes a chip via its remove control', async () => {

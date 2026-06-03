@@ -8,6 +8,7 @@ vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('[]', { status: 20
 import Composer from './Composer.svelte';
 import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
 import { createSkillAttach } from '$lib/skills/attach.svelte';
+import { createFileAttach } from '$lib/files/fileAttach.svelte';
 
 describe('Composer matter picker', () => {
   it('shows the matter picker only when matters are provided', async () => {
@@ -44,5 +45,32 @@ describe('Composer skill inputs', () => {
     expect(send).toBeDisabled();
     await fireEvent.input(party, { target: { value: 'Acme' } });
     expect(send).toBeEnabled();
+  });
+});
+
+describe('Composer file attach', () => {
+  const fileRes = (status: string) =>
+    new Response(JSON.stringify({ id: 'f1', filename: 'a.txt', ingestion_status: status }), { status: 201 });
+
+  it('renders the paperclip attach button when fileAttach is provided', () => {
+    const fa = createFileAttach();
+    render(Composer, { props: { value: '', fileAttach: fa } as never });
+    expect(screen.getByTestId('file-attach')).toBeInTheDocument();
+  });
+
+  it('shows a ready file chip and keeps Send enabled', async () => {
+    const fa = createFileAttach();
+    await fa.attach([new File(['x'], 'a.txt')], vi.fn().mockResolvedValue(fileRes('ready')));
+    render(Composer, { props: { value: 'hello', fileAttach: fa } as never });
+    expect(screen.getByText('a.txt')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
+  });
+
+  it('disables Send when an attached file failed', async () => {
+    const fa = createFileAttach();
+    await fa.attach([new File(['x'], 'a.txt')], vi.fn().mockResolvedValue(new Response('no', { status: 413 })));
+    render(Composer, { props: { value: 'hello', fileAttach: fa } as never });
+    expect(screen.getByText('a.txt')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
   });
 });

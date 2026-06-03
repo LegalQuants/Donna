@@ -6,8 +6,9 @@ export const POST: RequestHandler = async (event) => {
   let model = 'smart';
   let skills: string[] = [];
   let skillInputs: Record<string, Record<string, unknown>> = {};
+  let fileIds: string[] = [];
   try {
-    const body = (await event.request.json()) as { content?: string; model?: string; skills?: string[]; skill_inputs?: unknown };
+    const body = (await event.request.json()) as { content?: string; model?: string; skills?: string[]; skill_inputs?: unknown; file_ids?: unknown };
     content = (body.content ?? '').trim();
     const m = (body.model ?? '').trim();
     if (m) model = m;
@@ -19,13 +20,15 @@ export const POST: RequestHandler = async (event) => {
       }
       skillInputs = si;
     }
+    if (Array.isArray(body.file_ids)) fileIds = body.file_ids.filter((s): s is string => typeof s === 'string');
   } catch {
     content = '';
   }
 
-  const payload: { content: string; model: string; stream: true; skills?: string[]; skill_inputs?: Record<string, Record<string, unknown>> } = { content, model, stream: true };
+  const payload: { content: string; model: string; stream: true; skills?: string[]; skill_inputs?: Record<string, Record<string, unknown>>; file_ids?: string[] } = { content, model, stream: true };
   if (skills.length) payload.skills = skills;
   if (Object.keys(skillInputs).length) payload.skill_inputs = skillInputs;
+  if (fileIds.length) payload.file_ids = fileIds;
 
   const upstream = await lqStream(event, `/api/v1/chats/${event.params.id}/messages`, {
     method: 'POST',

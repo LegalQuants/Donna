@@ -19,6 +19,8 @@ export interface ChatMessage {
   anonymized?: boolean;
   /** Slugs of the skills the backend reported as applied to this assistant turn. */
   applied_skills?: string[];
+  /** File ids the backend reported as applied to this assistant turn (turn-scoped echo). */
+  applied_file_ids?: string[];
 }
 
 export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
@@ -40,12 +42,16 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
       m.content += frame.delta;
       if (frame.routed_inference_tier != null) m.routed_inference_tier = frame.routed_inference_tier;
       if (frame.applied_skills) m.applied_skills = frame.applied_skills;
+      if (frame.applied_file_ids) m.applied_file_ids = frame.applied_file_ids;
     } else if (frame.type === 'complete') {
       m.id = frame.message.id ?? m.id;
       m.content = frame.message.content ?? m.content;
       const tier = frame.message.routed_inference_tier ?? frame.routed_inference_tier;
       if (tier != null) m.routed_inference_tier = tier;
-      if (frame.message.applied_skills) m.applied_skills = frame.message.applied_skills;
+      // applied_skills and applied_file_ids are emitted at the top level of the
+      // complete frame by the backend (not inside message), mirroring applied_skills.
+      if (frame.applied_skills) m.applied_skills = frame.applied_skills;
+      if (frame.applied_file_ids) m.applied_file_ids = frame.applied_file_ids;
       m.status = 'done';
     } else if (frame.type === 'error') {
       setError(idx, frame.message);
@@ -56,6 +62,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
   let lastModel = 'smart';
   let lastSkills: string[] = [];
   let lastSkillInputs: Record<string, Record<string, unknown>> = {};
+  let lastFileIds: string[] = [];
 
   // Citations live in the M2-A2 relational table, not the SSE complete frame.
   // Fetch them by message id once the assistant turn is persisted (one retry to
@@ -102,13 +109,14 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 
   // Stream a response into the assistant message at `idx` (already present and
   // reset to a streaming state by the caller). Shared by send() and retry().
-  async function runStream(idx: number, content: string, model: string, skills: string[], skillInputs: Record<string, Record<string, unknown>>) {
+  async function runStream(idx: number, content: string, model: string, skills: string[], skillInputs: Record<string, Record<string, unknown>>, fileIds: string[]) {
     status = 'streaming';
     controller = new AbortController();
     try {
-      const body: { content: string; model: string; skills?: string[]; skill_inputs?: Record<string, Record<string, unknown>> } = { content, model };
+      const body: { content: string; model: string; skills?: string[]; skill_inputs?: Record<string, Record<string, unknown>>; file_ids?: string[] } = { content, model };
       if (skills.length) body.skills = skills;
       if (Object.keys(skillInputs).length) body.skill_inputs = skillInputs;
+      if (fileIds.length) body.file_ids = fileIds;
       const res = await fetch(`/chats/${chatId}/messages`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -168,18 +176,19 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     }
   }
 
-  async function send(content: string, model = 'smart', skills: string[] = [], skillInputs: Record<string, Record<string, unknown>> = {}) {
+  async function send(content: string, model = 'smart', skills: string[] = [], skillInputs: Record<string, Record<string, unknown>> = {}, fileIds: string[] = []) {
     if (status === 'streaming') return;
     lastUserContent = content;
     lastModel = model;
     lastSkills = skills;
     lastSkillInputs = skillInputs;
+    lastFileIds = fileIds;
     messages = [
       ...messages,
       { key: crypto.randomUUID(), id: crypto.randomUUID(), role: 'user', content },
       { key: crypto.randomUUID(), id: 'pending', role: 'assistant', content: '', status: 'streaming' }
     ];
-    await runStream(messages.length - 1, content, model, skills, skillInputs);
+    await runStream(messages.length - 1, content, model, skills, skillInputs, fileIds);
   }
 
   // Re-run the last exchange in place (no duplicate user/assistant turns): reset
@@ -194,8 +203,9 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
     messages[idx].citations = undefined;
     messages[idx].anonymized = undefined;
     messages[idx].applied_skills = undefined;
+    messages[idx].applied_file_ids = undefined;
     messages[idx].status = 'streaming';
-    await runStream(idx, lastUserContent, lastModel, lastSkills, lastSkillInputs);
+    await runStream(idx, lastUserContent, lastModel, lastSkills, lastSkillInputs, lastFileIds);
   }
 
   function stop() {
