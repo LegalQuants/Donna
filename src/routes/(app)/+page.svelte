@@ -3,6 +3,7 @@
   import { onDestroy } from 'svelte';
   import Composer from '$lib/components/Composer.svelte';
   import { createSkillAttach } from '$lib/skills/attach.svelte';
+  import { createEnhance } from '$lib/enhance/enhance.svelte';
   import { createFileAttach } from '$lib/files/fileAttach.svelte';
   import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
   import { rebrandName } from '$lib/brand';
@@ -12,6 +13,10 @@
   let selectedMatterId = $state<string | null>(null);
   let formEl = $state<HTMLFormElement>();
   const skillAttach = createSkillAttach();
+  // Standalone enhance: landing has no chat yet, so chat_id is null (backend accepts it).
+  // Named `promptEnhance` to avoid shadowing the `$app/forms` `enhance` form action above.
+  // No `untrack` needed (unlike the in-chat page) — nothing reactive is read at construction.
+  const promptEnhance = createEnhance(null, () => skillAttach.names);
   const fileAttach = createFileAttach();
   onDestroy(() => fileAttach.dispose());
   const promptLibrary = createPromptLibrary();
@@ -30,7 +35,7 @@
     {/each}
     <input type="hidden" name="skill_inputs" value={JSON.stringify(skillAttach.skillInputs)} />
     <input type="hidden" name="file_ids" value={JSON.stringify(fileAttach.fileIds)} />
-    <Composer bind:value={message} matters={data.matters} bind:selectedMatterId {skillAttach} {fileAttach} {promptLibrary} onsubmit={() => formEl?.requestSubmit()} />
+    <Composer bind:value={message} matters={data.matters} bind:selectedMatterId {skillAttach} {fileAttach} enhance={promptEnhance} {promptLibrary} onsubmit={() => formEl?.requestSubmit()} />
   </form>
 
   {#if form?.error}<p class="mt-3 text-center text-sm text-mlq-error">{form.error}</p>{/if}
