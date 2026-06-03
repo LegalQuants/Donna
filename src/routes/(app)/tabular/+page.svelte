@@ -93,6 +93,7 @@
     <section>
       <h2 class="mb-2 text-sm font-semibold text-mlq-strong">Columns</h2>
       <ColumnBuilder {builder} />
+      {#if builder.duplicateNames}<p class="mt-2 text-xs text-mlq-error">Column names must be unique.</p>{/if}
     </section>
   </div>
 
