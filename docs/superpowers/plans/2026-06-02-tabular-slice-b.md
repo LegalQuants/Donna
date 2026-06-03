@@ -575,9 +575,23 @@ panel and a callback is threaded **run page → `TabularGrid` → `CellDetail`**
 it through `Message`. The cell's `citations` (from the bumped types) carry the navigable
 `{ source_file_id, source_page, source_text }` that `docPanel.open(c)` consumes.
 
+**⚠️ Known caveat (confirmed by the backend author):** `npm run gen:api` will **NOT** emit typed
+`source_file_id`/`source_page`/`source_text` — the tabular results object is `additionalProperties: true`
+with no named cell/citation component across the whole tabular tree (pre-existing; formalization tracked
+upstream as DE-330). The fields **are** present in the runtime JSON on `GET /tabular/executions/{id}`;
+we **hand-type** them on the frontend and narrow them in `parseTabularResults` (which already narrows the
+untyped `results` blob). So: regenerate types as a matter of hygiene, but do **not** expect or wait for
+the cell citation fields to appear in `backend.d.ts`, and do **not** stop when they're absent.
+
+**Pin SHA:** `c22360ada0cd0e3f68c23d9fb744024e0416026b` (backend `main`, #125 — non-null `source_file_id`
+pointing at a real `files.id`, `source_page`, `source_text` = full chunk content; resolved read-time, so
+existing executions are navigable with no backfill).
+
 **Files:**
-- Modify: `vendor/lq-ai` pin + `src/lib/api/backend.d.ts` (regenerate)
-- Modify: `src/routes/(app)/tabular/[executionId]/+page.svelte` (own `createDocPanel` + render `DocumentPanel` + pass callback)
+- Modify: `vendor/lq-ai` pin + `src/lib/api/backend.d.ts`, `src/lib/api/gateway.d.ts` (regenerate)
+- Modify: `src/lib/tabular/types.ts` (hand-typed `TabularCitation` + parse `cell.citations`)
+- Modify: `src/lib/tabular/types.test.ts` (citation-parse cases)
+- Modify: `src/routes/(app)/tabular/[executionId]/+page.svelte` (own `createDocPanel` + render `DocumentPanel` + adapt callback)
 - Modify: `src/lib/tabular/TabularGrid.svelte` (accept + forward `onactivatecitation` to `CellDetail`)
 - Modify: `src/lib/tabular/CellDetail.svelte` (clickable citations → callback)
 - Create: `src/lib/tabular/CellDetail.svelte.test.ts`
@@ -585,62 +599,165 @@ it through `Message`. The cell's `citations` (from the bumped types) carry the n
 - [ ] **Step 1: Bump the pin and regenerate types**
 
 ```bash
-cd /Users/kevinkeller/Code/Donna/vendor/lq-ai && git fetch origin && git checkout <SHA> && cd -
-# regenerate backend.d.ts via the repo's codegen (check package.json "scripts" for the openapi/types
-# target, e.g. `npm run gen:api`); then:
+cd /Users/kevinkeller/Code/Donna/vendor/lq-ai && git fetch origin && git checkout c22360ada0cd0e3f68c23d9fb744024e0416026b && cd -
+npm run gen:api
 npm run check
 ```
 
-Expected: `0 errors and 0 warnings`. Confirm the tabular cell's `Citation` in `backend.d.ts` now includes
-`source_file_id` / `source_page` / `source_text`. **If those fields are absent, STOP — the backend change
-is incomplete; report back rather than faking nav.** Also re-read `src/lib/docpanel/docPanel.svelte.ts`
-`open()` and the cell `citations` field name on the regenerated `TabularExecution.results` cell shape, and
-update `parseTabularResults`/`TabularCell` to carry `citations` if the grid will read them off the typed
-cell (today it only parses `cited_chunk_ids`).
+Expected: `0 errors and 0 warnings`. Per the caveat above, the tabular cell citation `source_*` fields
+will **not** be typed in `backend.d.ts` — that is expected, not a failure. (Sanity-check the runtime shape
+if you like: `docker compose exec -T postgres psql -U lq_ai -d lq_ai -At -c "select results from tabular_executions where status='completed' limit 1;"` — note results are read-time enriched on the API, not stored, so the DB blob may still lack `source_*`; the authoritative check is the live `GET /tabular/executions/{id}` response.)
 
-- [ ] **Step 2: Thread the callback type through the components**
+- [ ] **Step 2: Hand-type the citation and write the failing parser test**
 
-Decide the callback prop `onactivatecitation: (c: Citation) => void` (import `Citation` from
-`src/lib/citations/types`, the type `docPanel.open` accepts). `CellDetail` gains it as an optional prop;
-`TabularGrid` gains it and forwards to `CellDetail`; the run page passes `(c) => docPanel.open(c)`.
+Add to `src/lib/tabular/types.ts` a hand-typed citation and extend `TabularCell`:
 
-- [ ] **Step 3: Write the failing CellDetail test**
+```ts
+/** Read-time-resolved navigable citation on a tabular cell (DE-330: not yet in the generated schema). */
+export interface TabularCitation {
+  source_file_id: string;
+  source_page: number | null;
+  source_text: string;
+  document_id?: string;
+  chunk_id?: string;
+}
+```
+
+Add `citations: TabularCitation[];` to the `TabularCell` interface. Then add a failing case to
+`src/lib/tabular/types.test.ts` inside the `parseTabularResults` describe:
+
+```ts
+  it('narrows navigable citations off a cell', () => {
+    const out = parseTabularResults({
+      rows: [{ document_id: 'd1', cells: { Term: { value: 'x', confidence: 'high',
+        cited_chunk_ids: ['c1'],
+        citations: [{ source_file_id: 'file-1', source_page: 4, source_text: 'the clause', chunk_id: 'c1' },
+                    { source_file_id: null, source_page: null, source_text: '' }] } } }]
+    });
+    const cits = out?.rows[0].cells.Term.citations;
+    expect(cits).toEqual([{ source_file_id: 'file-1', source_page: 4, source_text: 'the clause', chunk_id: 'c1', document_id: undefined }]);
+  });
+```
+
+(The malformed second citation — null `source_file_id` — is dropped: a citation with no file can't navigate.)
+
+- [ ] **Step 3: Run it to confirm it fails**
+
+Run: `npx vitest run src/lib/tabular/types.test.ts`
+Expected: FAIL (`citations` is undefined / not parsed).
+
+- [ ] **Step 4: Parse `citations` in `parseTabularResults`**
+
+In the cell-building loop of `parseTabularResults`, after the `cited_chunk_ids` field, add a tolerant
+narrow that keeps only citations with a usable `source_file_id`:
+
+```ts
+        citations: Array.isArray(co.citations)
+          ? co.citations.flatMap((c): TabularCitation[] => {
+              const cc = (c && typeof c === 'object' ? c : {}) as Record<string, unknown>;
+              if (typeof cc.source_file_id !== 'string') return [];
+              return [{
+                source_file_id: cc.source_file_id,
+                source_page: typeof cc.source_page === 'number' ? cc.source_page : null,
+                source_text: typeof cc.source_text === 'string' ? cc.source_text : '',
+                document_id: typeof cc.document_id === 'string' ? cc.document_id : undefined,
+                chunk_id: typeof cc.chunk_id === 'string' ? cc.chunk_id : undefined
+              }];
+            })
+          : [],
+```
+
+Run: `npx vitest run src/lib/tabular/types.test.ts`
+Expected: PASS (all cases, including the existing ones — they pass no `citations`, so it defaults to `[]`).
+
+- [ ] **Step 5: Write the failing CellDetail test**
 
 Create `src/lib/tabular/CellDetail.svelte.test.ts`: render `CellDetail` with a cell whose `citations`
-carry a `source_file_id`, pass a spy `onactivatecitation`, click the first citation control, and assert
-the spy was called with the citation. (Mirror `TabularGrid.svelte.test.ts`'s render style.)
+carry a `source_file_id`, pass a spy `onactivatecitation`, click the first citation control, assert the
+spy was called with that citation. Mirror `TabularGrid.svelte.test.ts`'s render style and use
+`@testing-library/user-event` or `fireEvent.click` (whichever the existing svelte component tests use).
 
-- [ ] **Step 4: Run it to confirm it fails**
+```ts
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/svelte';
+import { fireEvent } from '@testing-library/dom';
+import CellDetail from './CellDetail.svelte';
+import type { TabularCell } from './types';
+
+const cell: TabularCell = {
+  value: 'Delaware', confidence: 'high', error: null, cited_chunk_ids: ['c1'],
+  citations: [{ source_file_id: 'file-1', source_page: 4, source_text: 'governed by Delaware law' }]
+};
+
+describe('CellDetail citations', () => {
+  it('calls onactivatecitation with the citation when a source is clicked', async () => {
+    const onactivatecitation = vi.fn();
+    render(CellDetail, { props: { column: 'Governing law', cell, onclose: () => {}, onactivatecitation } as never });
+    await fireEvent.click(screen.getByRole('button', { name: /source|p\.?\s?4|citation/i }));
+    expect(onactivatecitation).toHaveBeenCalledWith(cell.citations[0]);
+  });
+});
+```
+
+- [ ] **Step 6: Run it to confirm it fails**
 
 Run: `npx vitest run src/lib/tabular/CellDetail.svelte.test.ts`
-Expected: FAIL (citations not clickable / prop not wired yet).
+Expected: FAIL (no clickable citation / prop not wired).
 
-- [ ] **Step 5: Implement the three component edits**
+- [ ] **Step 7: Thread the callback through the three components**
 
-`CellDetail.svelte`: replace the counts-only line (26) with the count as a heading + a list of buttons,
-one per citation, each `onclick={() => onactivatecitation?.(c)}`. `TabularGrid.svelte`: accept
-`onactivatecitation` and pass it to `<CellDetail … {onactivatecitation} />`. Run page
-`[executionId]/+page.svelte`: `import { createDocPanel } from '$lib/docpanel/docPanel.svelte'` + the
-`DocumentPanel` component, `const docPanel = createDocPanel()`, pass
-`onactivatecitation={(c) => docPanel.open(c)}` to `<TabularGrid>`, and render
-`{#if docPanel.open_}<DocumentPanel {docPanel} />{/if}`. No `any`, no `!`.
+The doc panel is **page-owned** (chat precedent). Implement:
 
-- [ ] **Step 6: Run the test — expect PASS; full check**
+`src/lib/tabular/CellDetail.svelte` — add optional prop `onactivatecitation?: (c: TabularCitation) => void`
+(import `TabularCitation` from `./types`). Replace the counts-only line (26): keep the count as a small
+heading, then render a list — one button per `cell.citations`, each
+`onclick={() => onactivatecitation?.(c)}`, labelled with its page (e.g. `Source · p.${c.source_page ?? '—'}`)
+and a truncated `source_text`. If `cell.citations` is empty, keep the existing
+`{cell.cited_chunk_ids.length} citation(s)` count line as the fallback.
 
-Run: `npx vitest run src/lib/tabular/CellDetail.svelte.test.ts "src/routes/(app)/tabular"`
+`src/lib/tabular/TabularGrid.svelte` — add prop
+`onactivatecitation?: (c: TabularCitation) => void` (import the type), and forward it:
+`<CellDetail column={detail.column} cell={detail.cell} onclose={() => (detail = null)} {onactivatecitation} />`.
+
+`src/routes/(app)/tabular/[executionId]/+page.svelte` — own the panel and adapt the cell citation to the
+doc-panel `Citation`:
+
+```svelte
+  import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
+  import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
+  import type { Citation } from '$lib/citations/types';
+  import type { TabularCitation } from '$lib/tabular/types';
+
+  const docPanel = createDocPanel();
+  function openCitation(c: TabularCitation) {
+    // doc panel reads source_file_id / source_page / source_text; cast the minimal shape.
+    docPanel.open({ source_file_id: c.source_file_id, source_page: c.source_page, source_text: c.source_text } as Citation);
+  }
+```
+
+Pass `onactivatecitation={openCitation}` to `<TabularGrid>` and render
+`{#if docPanel.open_}<DocumentPanel {docPanel} />{/if}` at the end of the template. No `any`; the single
+`as Citation` is a post-construction cast of a known-good minimal shape (the doc panel only reads those
+three fields), consistent with the codebase's "post-guard `as` is fine" rule.
+
+- [ ] **Step 8: Run tests — expect PASS; full check**
+
+Run: `npx vitest run src/lib/tabular/CellDetail.svelte.test.ts src/lib/tabular/types.test.ts "src/routes/(app)/tabular"`
 Expected: PASS.
 Run: `npm run check`
 Expected: `0 errors and 0 warnings`.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add vendor/lq-ai src/lib/api/backend.d.ts src/lib/tabular/CellDetail.svelte src/lib/tabular/CellDetail.svelte.test.ts src/lib/tabular/TabularGrid.svelte "src/routes/(app)/tabular/[executionId]/+page.svelte"
+git add vendor/lq-ai src/lib/api/backend.d.ts src/lib/api/gateway.d.ts src/lib/tabular/types.ts src/lib/tabular/types.test.ts src/lib/tabular/CellDetail.svelte src/lib/tabular/CellDetail.svelte.test.ts src/lib/tabular/TabularGrid.svelte "src/routes/(app)/tabular/[executionId]/+page.svelte"
 git commit -m "feat(tabular): open a cited source from a grid cell
 
-Bumps the lq-ai pin to <SHA> (navigable tabular cell citations) and threads a
-doc-panel open callback run page -> TabularGrid -> CellDetail so each citation
-opens the cited document in the doc panel."
+Pins lq-ai to c22360a (read-side navigable tabular cell citations). The source_*
+fields are additionalProperties (DE-330) so they're hand-typed as TabularCitation
+and narrowed in parseTabularResults; a doc-panel open callback is threaded run
+page -> TabularGrid -> CellDetail so each citation opens the cited document, same
+as chat."
 ```
 
 ---
