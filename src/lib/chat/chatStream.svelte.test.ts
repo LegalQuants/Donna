@@ -258,7 +258,7 @@ describe('createChatStream', () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(streamResponse([
         'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi","applied_skills":["nda-review"]}}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","applied_skills":["nda-review"],"message":{"id":"a1","content":"hi"}}\n\n',
         'data: [DONE]\n\n'
       ]))
       .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })));
@@ -355,5 +355,82 @@ describe('createChatStream skill_inputs', () => {
     await chat.retry();
     const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
     expect(retryBody.skill_inputs).toEqual({ 'nda-review': { party: 'Acme' } });
+  });
+});
+
+describe('createChatStream file_ids', () => {
+  const okFrames = () => streamResponse([
+    'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+    'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+    'data: [DONE]\n\n'
+  ]);
+
+  it('includes file_ids in the POST body when provided and reuses them on retry', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(okFrames())
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      .mockResolvedValueOnce(okFrames())
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', [], {}, ['file-1', 'file-2']);
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.file_ids).toEqual(['file-1', 'file-2']);
+    await chat.retry();
+    const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+    expect(retryBody.file_ids).toEqual(['file-1', 'file-2']);
+  });
+
+  it('omits file_ids when none attached', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(okFrames())
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', [], {}, []);
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect('file_ids' in body).toBe(false);
+  });
+
+  it('captures applied_file_ids from the complete frame', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(streamResponse([
+        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+        'data: {"type":"complete","lq_ai_message_id":"a1","applied_file_ids":["file-1"],"message":{"id":"a1","content":"ok"}}\n\n',
+        'data: [DONE]\n\n'
+      ]))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', [], {}, ['file-1']);
+    expect(chat.messages[chat.messages.length - 1].applied_file_ids).toEqual(['file-1']);
+  });
+
+  it('clears applied_file_ids on retry before re-streaming', async () => {
+    const withIds = () => streamResponse([
+      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","applied_file_ids":["file-1"],"message":{"id":"a1","content":"ok"}}\n\n',
+      'data: [DONE]\n\n'
+    ]);
+    const noIds = () => streamResponse([
+      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok2"}}\n\n',
+      'data: [DONE]\n\n'
+    ]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(withIds())
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      .mockResolvedValueOnce(noIds())
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const chat = createChatStream('c1');
+    await chat.send('hi', 'smart', [], {}, ['file-1']);
+    expect(chat.messages[1].applied_file_ids).toEqual(['file-1']);
+    await chat.retry();
+    expect(chat.messages[1].applied_file_ids).toBeUndefined();
   });
 });

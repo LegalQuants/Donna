@@ -63,3 +63,19 @@ describe('POST messages skill_inputs', () => {
     expect('skill_inputs' in sentBody()).toBe(false);
   });
 });
+
+describe('POST messages file_ids', () => {
+  it('forwards file_ids when present', async () => {
+    lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+    await POST(event({ content: 'hi', model: 'smart', file_ids: ['f1', 'f2'] }));
+    expect(sentBody().file_ids).toEqual(['f1', 'f2']);
+  });
+
+  it('omits file_ids when absent or malformed', async () => {
+    lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+    await POST(event({ content: 'hi', model: 'smart' }));
+    expect('file_ids' in sentBody()).toBe(false);
+    await POST(event({ content: 'hi', model: 'smart', file_ids: 'nope' }));
+    expect('file_ids' in sentBody()).toBe(false);
+  });
+});
