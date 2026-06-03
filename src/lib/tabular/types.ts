@@ -7,6 +7,9 @@ export type TabularExecutionCreate = components['schemas']['TabularExecutionCrea
 export type TabularPreviewCostRequest = components['schemas']['TabularPreviewCostRequest'];
 export type TabularPreviewCostResponse = components['schemas']['TabularPreviewCostResponse'];
 
+/** Compact projection from the list endpoint (no inlined results). */
+export type TabularExecutionSummary = components['schemas']['TabularExecutionSummary'];
+
 /** Terminal execution statuses (no more polling once reached). */
 export const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled'] as const;
 export type ExecutionStatus = TabularExecution['status'];
