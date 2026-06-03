@@ -6,7 +6,7 @@
 </script>
 
 <div class="space-y-2">
-  {#each builder.columns as col (col.id)}
+  {#each builder.columns as col, i (col.id)}
     <div class="flex items-start gap-2">
       <div class="flex-1 space-y-1">
         <input
@@ -41,14 +41,14 @@
         </label>
       </div>
       {#if builder.columns.length > 1}
-        <button
-          type="button"
-          aria-label="Remove column"
-          onclick={() => builder.removeColumn(col.id)}
-          class="mt-1.5 text-mlq-muted hover:text-mlq-text"
-        >
-          <X size={16} />
-        </button>
+        <div class="mt-1.5 flex flex-col items-center">
+          <button type="button" aria-label="Move {col.name || 'column'} up" onclick={() => builder.moveColumn(col.id, -1)} disabled={i === 0}
+                  class="px-1 text-mlq-muted hover:text-mlq-text disabled:opacity-30">↑</button>
+          <button type="button" aria-label="Move {col.name || 'column'} down" onclick={() => builder.moveColumn(col.id, 1)} disabled={i === builder.columns.length - 1}
+                  class="px-1 text-mlq-muted hover:text-mlq-text disabled:opacity-30">↓</button>
+          <button type="button" aria-label="Remove column" onclick={() => builder.removeColumn(col.id)}
+                  class="px-1 text-mlq-muted hover:text-mlq-text"><X size={16} /></button>
+        </div>
       {/if}
     </div>
   {/each}

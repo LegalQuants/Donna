@@ -77,6 +77,14 @@ export function createTabularBuilder() {
       if (columns.length <= 1) return; // keep at least one row
       columns = columns.filter((c) => c.id !== id);
     },
+    moveColumn(id: string, dir: -1 | 1) {
+      const i = columns.findIndex((c) => c.id === id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= columns.length) return;
+      const next = [...columns];
+      [next[i], next[j]] = [next[j], next[i]];
+      columns = next;
+    },
     setColumn(id: string, patch: Partial<Pick<ColumnDraft, 'name' | 'query' | 'minimum_inference_tier'>>) {
       columns = columns.map((c) => (c.id === id ? { ...c, ...patch } : c));
     },
