@@ -64,4 +64,27 @@ describe('createTabularBuilder', () => {
     expect(b.duplicateNames).toBe(false);
     expect(b.canRun).toBe(true);
   });
+
+  it('defaults to ad-hoc mode and builds an ad-hoc request body', () => {
+    const b = createTabularBuilder();
+    expect(b.mode).toBe('adhoc');
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.setColumn(b.columns[0].id, { name: 'Term', query: 'How long?' });
+    expect(b.buildRequest()).toEqual({ document_ids: ['d1'], columns: [{ name: 'Term', query: 'How long?' }] });
+  });
+
+  it('skill mode needs a doc + a selected skill, and builds a skill request body', () => {
+    const b = createTabularBuilder();
+    b.setMode('skill');
+    expect(b.mode).toBe('skill');
+    expect(b.canRun).toBe(false); // no docs, no skill
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    expect(b.canRun).toBe(false); // still no skill
+    b.selectSkill({ name: 'contract-snapshot', title: 'Contract Snapshot' });
+    expect(b.canRun).toBe(true);
+    expect(b.buildRequest()).toEqual({ document_ids: ['d1'], skill_name: 'contract-snapshot' });
+    b.clearSkill();
+    expect(b.selectedSkill).toBeNull();
+    expect(b.canRun).toBe(false);
+  });
 });
