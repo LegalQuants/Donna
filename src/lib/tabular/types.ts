@@ -58,7 +58,10 @@ export interface ColumnDraft {
  * typed grid, or null if the payload is missing/malformed. Tolerant: filters out
  * non-object rows and coerces missing cell fields to safe defaults.
  */
-export function parseTabularResults(raw: unknown): TabularResults | null {
+export function parseTabularResults(
+  raw: unknown,
+  documentNamesById?: Record<string, string>
+): TabularResults | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   if (!Array.isArray(r.rows)) return null;
@@ -85,7 +88,10 @@ export function parseTabularResults(raw: unknown): TabularResults | null {
     }
     rows.push({
       document_id: ro.document_id,
-      document_name: typeof ro.document_name === 'string' ? ro.document_name : ro.document_id,
+      document_name:
+        typeof ro.document_name === 'string'
+          ? ro.document_name
+          : (documentNamesById?.[ro.document_id] ?? ro.document_id),
       cells
     });
   }

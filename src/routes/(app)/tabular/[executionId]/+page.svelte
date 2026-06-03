@@ -13,7 +13,10 @@
 
   const current = $derived((poll.execution ?? data.execution) as TabularExecution);
   const columns = $derived(current.columns.map((c) => c.name));
-  const results = $derived(parseTabularResults(current.results));
+  const documentNamesById = $derived(
+    Object.fromEntries(current.document_ids.map((id, i) => [id, current.document_names[i]]))
+  );
+  const results = $derived(parseTabularResults(current.results, documentNamesById));
   let cancelling = $state(false);
 
   async function cancel() {
