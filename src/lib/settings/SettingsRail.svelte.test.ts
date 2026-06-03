@@ -55,4 +55,16 @@ describe('SettingsRail', () => {
     render(SettingsRail);
     expect(screen.getByRole('link', { name: 'Trust' })).toHaveAttribute('aria-current', 'page');
   });
+
+  it('renders the Models section link', () => {
+    h.pathname = '/settings/account';
+    render(SettingsRail);
+    expect(screen.getByRole('link', { name: 'Models' })).toHaveAttribute('href', '/settings/models');
+  });
+
+  it('marks Models active on /settings/models', () => {
+    h.pathname = '/settings/models';
+    render(SettingsRail);
+    expect(screen.getByRole('link', { name: 'Models' })).toHaveAttribute('aria-current', 'page');
+  });
 });
