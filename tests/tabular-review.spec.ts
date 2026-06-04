@@ -115,6 +115,40 @@ test('tabular: a cell citation opens the cited source in the doc panel', async (
   await expect(page.getByRole('complementary', { name: /document panel/i })).toBeVisible({ timeout: 30_000 });
 });
 
+// The per-column Ensemble verification toggle reaches the run and the review completes.
+// NOTE: the ensemble *output* (cost premium + a "✓ Verified" doc-panel chip) only appears when the
+// gateway has `citation_engine.ensemble_verification.judge_models` configured (a deployment setting;
+// the dev stack ships it opt-in/empty, which disables Stage 4). The premium-line and verified-chip
+// *rendering* are covered deterministically by unit tests (CostPreviewModal / citations / DocumentPanel);
+// this e2e proves the FE sends the flag and the backend accepts it end-to-end without breaking the run.
+test('tabular: an ensemble-verified column runs to completion', async ({ page }) => {
+  test.setTimeout(300_000);
+  await login(page);
+  await page.goto('/tabular/new');
+
+  await page.getByRole('button', { name: /^Upload$/ }).click();
+  await page.getByTestId('dropzone-input').setInputFiles(answerablePdfFixture());
+  await expect(page.getByText(/document selected/i)).toBeVisible({ timeout: 120_000 });
+  await page.getByPlaceholder('Column name').fill('Governing law');
+  await page.getByLabel('Column question').fill("Which state's law governs this document?");
+
+  // The per-column Ensemble verification checkbox is present and toggles on.
+  const ensemble = page.getByRole('checkbox', { name: /ensemble verification/i });
+  await expect(ensemble).toBeVisible();
+  await ensemble.check();
+  await expect(ensemble).toBeChecked();
+
+  // Preview → run; the request carrying ensemble_verification is accepted and the review completes.
+  await page.getByRole('button', { name: 'Preview cost' }).click();
+  const dialog = page.getByRole('dialog', { name: /confirm review cost/i });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Run review' }).click();
+  await page.waitForURL(/\/tabular\/[0-9a-f-]+$/i, { timeout: 15_000 });
+
+  await expect(page.getByText('Governing law')).toBeVisible({ timeout: 240_000 });
+  await expect(page.locator('table tbody tr')).toHaveCount(1, { timeout: 240_000 });
+});
+
 test('tabular: run a built-in table skill — its resolved columns render in the grid', async ({ page }) => {
   test.setTimeout(300_000);
   await login(page);

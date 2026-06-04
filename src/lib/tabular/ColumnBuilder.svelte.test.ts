@@ -30,4 +30,13 @@ describe('ColumnBuilder', () => {
     await fireEvent.click(removes[0]);
     expect(b.columns.length).toBe(1);
   });
+
+  it('toggling Ensemble verification calls setColumn with ensemble_verification', async () => {
+    const b = createTabularBuilder();
+    render(ColumnBuilder, { props: { builder: b } as never });
+    const cb = screen.getByRole('checkbox', { name: /ensemble verification/i });
+    expect(b.columns[0].ensemble_verification ?? null).toBeNull();
+    await fireEvent.click(cb);
+    expect(b.columns[0].ensemble_verification).toBe(true);
+  });
 });

@@ -14,10 +14,10 @@ export function createTabularBuilder() {
   function validColumns(): ColumnSpec[] {
     return columns
       .map((c) => {
-        const base = { name: c.name.trim(), query: c.query.trim() };
-        return c.minimum_inference_tier != null
-          ? { ...base, minimum_inference_tier: c.minimum_inference_tier }
-          : base;
+        const base: ColumnSpec = { name: c.name.trim(), query: c.query.trim() };
+        if (c.minimum_inference_tier != null) base.minimum_inference_tier = c.minimum_inference_tier;
+        if (c.ensemble_verification === true) base.ensemble_verification = true;
+        return base;
       })
       .filter((c) => c.name.length > 0 && c.query.length > 0);
   }
@@ -85,7 +85,7 @@ export function createTabularBuilder() {
       [next[i], next[j]] = [next[j], next[i]];
       columns = next;
     },
-    setColumn(id: string, patch: Partial<Pick<ColumnDraft, 'name' | 'query' | 'minimum_inference_tier'>>) {
+    setColumn(id: string, patch: Partial<Pick<ColumnDraft, 'name' | 'query' | 'minimum_inference_tier' | 'ensemble_verification'>>) {
       columns = columns.map((c) => (c.id === id ? { ...c, ...patch } : c));
     },
     validColumns,
