@@ -76,6 +76,21 @@ describe('/settings/models ?/reassign', () => {
     expect(JSON.parse(patchInit.body as string)).toEqual({ provider: 'ollama-local', model: 'llama3.1:8b', fallback: [{ provider: 'openai-prod', model: 'gpt-4' }] });
   });
 
+  it('fails 400 when required fields are missing (no fetch)', async () => {
+    const res = (await actions.reassign(form({}))) as { status: number; data: { message: string } };
+    expect(res.status).toBe(400);
+    expect(res.data.message).toMatch(/missing/i);
+    expect(lqFetch).not.toHaveBeenCalled();
+  });
+
+  it('fails 400 when the target_id is not an available model', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }));
+    const res = (await actions.reassign(form({ name: 'smart', target_id: 'nope/not-real' }))) as { status: number; data: { message: string } };
+    expect(res.status).toBe(400);
+    expect(res.data.message).toMatch(/unknown model/i);
+    expect(lqFetch).toHaveBeenCalledTimes(1); // only the models lookup; no alias GET/PATCH
+  });
+
   it('returns a 403 failure when the backend rejects the alias read (non-admin)', async () => {
     lqFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }))
