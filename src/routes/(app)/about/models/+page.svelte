@@ -28,9 +28,9 @@
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   Some matters enforce a minimum inference tier. When you open a matter that requires a higher-tier
-  model than your current selection, Donna automatically promotes your choice to the lowest alias
-  that satisfies the requirement — preferring <strong>smart</strong> when it qualifies — so you
-  never accidentally send a message with an underpowered model.
+  model than your current selection, Donna automatically promotes your choice to a model that
+  satisfies the floor — preferring <strong>smart</strong> when it qualifies, otherwise the
+  highest-tier option available — so you never accidentally send a message with an underpowered model.
 </p>
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Settings → Models</h2>

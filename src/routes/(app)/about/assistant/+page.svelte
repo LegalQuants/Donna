@@ -47,8 +47,8 @@
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   Skills are structured workflows that guide Donna's response — for example, a contract review
-  checklist or a clause extraction routine. To attach one, click the <strong>+ Skill</strong> button
-  in the composer toolbar. A small search panel opens; type a keyword to find skills by name or
+  checklist or a clause extraction routine. To attach one, click the <strong>Skill</strong> button
+  (a + icon) in the composer toolbar. A small search panel opens; type a keyword to find skills by name or
   description and click the skill you want to add.
 </p>
 
