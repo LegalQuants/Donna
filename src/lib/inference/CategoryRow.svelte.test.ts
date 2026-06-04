@@ -29,6 +29,15 @@ describe('CategoryRow', () => {
     expect(placeholder.disabled).toBe(true);
   });
 
+  it('admin: shows a "Select a model" placeholder when no backing is set', () => {
+    const unset: CategoryView = { name: 'smart', backingLabel: '', currentTargetId: null, tier: 4, group: 'cloud' };
+    render(CategoryRow, { props: { category: unset, targets, isAdmin: true } as never });
+    const select = screen.getByRole('combobox', { name: /model for smart/i }) as HTMLSelectElement;
+    expect(select.value).toBe('');
+    const placeholder = screen.getByRole('option', { name: /select a model/i }) as HTMLOptionElement;
+    expect(placeholder.disabled).toBe(true);
+  });
+
   it('non-admin: renders the backing caption read-only (no select)', () => {
     render(CategoryRow, { props: { category, targets, isAdmin: false } as never });
     expect(screen.getByText(/Backed by Opus 4\.7/)).toBeInTheDocument();
