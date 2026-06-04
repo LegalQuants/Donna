@@ -38,6 +38,12 @@
         {/each}
       </ul>
     {/if}
+    {#if preview.ensemble_cells_count}
+      <p data-testid="ensemble-premium" class="mt-2 text-xs text-mlq-muted">
+        {preview.ensemble_cells_count} ensemble-verified cell{preview.ensemble_cells_count === 1 ? '' : 's'}
+        · +${preview.ensemble_premium_usd ?? '0'} ensemble premium (included above)
+      </p>
+    {/if}
     <p class="mt-3 text-xs text-mlq-muted">Cost is an estimate. You'll be able to cancel a running review.</p>
     <div class="mt-5 flex justify-end gap-2">
       <button type="button" onclick={oncancel} class="rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-sm text-mlq-text">Cancel</button>

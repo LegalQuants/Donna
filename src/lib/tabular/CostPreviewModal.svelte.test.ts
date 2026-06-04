@@ -25,4 +25,18 @@ describe('CostPreviewModal', () => {
     render(CostPreviewModal, { props: { preview, busy: true, onconfirm: vi.fn(), oncancel: vi.fn() } as never });
     expect(screen.getByRole('button', { name: /run review/i })).toBeDisabled();
   });
+
+  it('shows the ensemble premium line when ensemble cells are present', () => {
+    const previewWithEnsemble = { cells_count: 4, estimated_cost_usd: '0.10', per_tier_breakdown: {}, ensemble_cells_count: 2, ensemble_premium_usd: '0.04' };
+    render(CostPreviewModal, { props: { preview: previewWithEnsemble, busy: false, onconfirm: vi.fn(), oncancel: vi.fn() } as never });
+    const el = screen.getByTestId('ensemble-premium');
+    expect(el.textContent).toMatch(/2 ensemble-verified cell/i);
+    expect(el.textContent).toMatch(/\+\$0\.04 ensemble premium/i);
+  });
+
+  it('omits the premium line when there are no ensemble cells', () => {
+    const previewNoEnsemble = { cells_count: 4, estimated_cost_usd: '0.10', per_tier_breakdown: {} };
+    render(CostPreviewModal, { props: { preview: previewNoEnsemble, busy: false, onconfirm: vi.fn(), oncancel: vi.fn() } as never });
+    expect(screen.queryByTestId('ensemble-premium')).not.toBeInTheDocument();
+  });
 });
