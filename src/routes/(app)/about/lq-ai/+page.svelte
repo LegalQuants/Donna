@@ -83,6 +83,12 @@
     ongoing cost.
   </p>
 
+  <p class="mb-4 max-w-prose text-sm leading-relaxed text-mlq-text">
+    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- to how-to-build -->
+    <a href="/about/lq-ai/build" class="font-medium text-mlq-strong hover:underline">How to build on LQ-AI →</a>
+    — the contribution path, skill authoring (with an interactive SKILL.md explorer), and the roadmap.
+  </p>
+
   <p class="max-w-prose text-sm text-mlq-muted">
     Explore the project:
     <a href="https://github.com/LegalQuants/lq-ai" target="_blank" rel="noopener noreferrer" class="font-medium text-mlq-strong underline">LegalQuants / lq-ai on GitHub</a>.
