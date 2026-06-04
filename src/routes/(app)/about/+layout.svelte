@@ -6,10 +6,15 @@
 
   // The callout points at /about/lq-ai, so hide it when we're already there.
   const showCallout = $derived(page.url.pathname !== '/about/lq-ai');
+
+  // The LQ-AI page embeds wide interactive playgrounds, so give it the widest container. The prose
+  // guide pages use max-w-5xl so the text reaches its full readable width (paragraphs stay capped at
+  // max-w-prose) instead of the cramped, over-centered max-w-3xl.
+  const wide = $derived(page.url.pathname.startsWith('/about/lq-ai'));
 </script>
 
 <!-- The callout always sits full-width above the rail/content row (hence the outer flex-col). -->
-<div class="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
+<div class="mx-auto flex flex-col gap-4 px-4 py-6 {wide ? 'max-w-6xl' : 'max-w-5xl'}">
   {#if showCallout}
     <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- powered-by callout -->
     <a href="/about/lq-ai"
