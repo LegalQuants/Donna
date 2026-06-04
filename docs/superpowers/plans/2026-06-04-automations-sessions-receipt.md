@@ -554,9 +554,14 @@ git commit -m "feat(automations): merge phase transitions and tool calls into on
 ```ts
 // src/lib/automations/display.test.ts
 import { describe, it, expect } from 'vitest';
-import { formatUsd, formatWhen, statusTone, terminalReasonLabel } from './display';
+import { formatUsd, formatWhen, statusTone, terminalReasonLabel, outcomeTone } from './display';
 
 describe('display helpers', () => {
+  it('outcomeTone maps started/success/other to distinct classes', () => {
+    expect(outcomeTone('success')).toContain('emerald');
+    expect(outcomeTone('started')).toContain('muted');
+    expect(outcomeTone('error')).toContain('amber');
+  });
   it('formatUsd renders dollars or a dash', () => {
     expect(formatUsd(0.42)).toBe('$0.42');
     expect(formatUsd(0)).toBe('$0.00');
@@ -636,6 +641,19 @@ export function phaseLabel(phase: string | null): string {
 }
 export function triggerLabel(kind: string): string {
   return kind.replace(/_/g, ' ');
+}
+
+/** Tailwind text color for a tool-call outcome. Real values seen: `started`, `success`
+ *  (see receipt spike notes). `success` → positive; `started` → neutral; else → warning. */
+export function outcomeTone(outcome: string): string {
+  switch (outcome) {
+    case 'success':
+      return 'text-emerald-400';
+    case 'started':
+      return 'text-mlq-muted';
+    default:
+      return 'text-amber-400';
+  }
 }
 ```
 
@@ -1367,7 +1385,7 @@ Expected: PASS.
 <script lang="ts">
   import type { SessionReceipt } from './types';
   import { mergeTimeline } from './timeline';
-  import { formatUsd, formatTime, phaseLabel } from './display';
+  import { formatUsd, formatTime, phaseLabel, outcomeTone } from './display';
   let { receipt }: { receipt: SessionReceipt | null } = $props();
   const events = $derived(receipt ? mergeTimeline(receipt) : []);
 </script>
@@ -1388,8 +1406,8 @@ Expected: PASS.
           <span class="text-sm font-medium text-mlq-text">phase: {phaseLabel(ev.label)}</span>
         {:else}
           <span class="font-mono text-xs text-mlq-text">{ev.label}</span>
-          {#if ev.outcome}<span class="ml-1 text-xs {ev.outcome === 'ok' ? 'text-emerald-400' : 'text-amber-400'}">{ev.outcome}</span>{/if}
-          {#if ev.cost_usd !== null}<span class="ml-1 text-xs tabular-nums text-mlq-muted">{formatUsd(ev.cost_usd)}</span>{/if}
+          {#if ev.outcome}<span class="ml-1 text-xs {outcomeTone(ev.outcome)}">{ev.outcome}</span>{/if}
+          {#if ev.cost_usd !== null && ev.cost_usd > 0}<span class="ml-1 text-xs tabular-nums text-mlq-muted">{formatUsd(ev.cost_usd)}</span>{/if}
         {/if}
         {#if ev.timestamp}<span class="ml-2 text-[11px] text-mlq-muted">{formatTime(ev.timestamp)}</span>{/if}
       </li>
@@ -1463,7 +1481,7 @@ const receipt: SessionReceipt = {
   current_phase: 'delivery', cost_total_usd: 0.42, max_cost_usd: 2, cost_cap_reached: false,
   created_at: '2026-06-04T09:00:00Z', completed_at: '2026-06-04T09:04:00Z',
   phase_transitions: [{ to_phase: 'intake', timestamp: '2026-06-04T09:00:00Z' }],
-  tool_calls: [{ tool: 'kb.search', outcome: 'ok', timestamp: '2026-06-04T09:01:00Z', cost_usd: 0.01 }],
+  tool_calls: [{ tool: 'run_playbook', outcome: 'success', timestamp: '2026-06-04T09:01:00Z', cost_usd: 0.005 }],
   terminal_reason: 'completed'
 };
 
@@ -1476,7 +1494,8 @@ describe('Session receipt view', () => {
   it('timeline renders merged phase and tool events', () => {
     render(SessionTimeline, { props: { receipt } });
     expect(screen.getByText(/phase: intake/)).toBeInTheDocument();
-    expect(screen.getByText('kb.search')).toBeInTheDocument();
+    expect(screen.getByText('run_playbook')).toBeInTheDocument();
+    expect(screen.getByText('success')).toBeInTheDocument();
   });
   it('timeline shows the degraded state for a null receipt', () => {
     render(SessionTimeline, { props: { receipt: null } });
