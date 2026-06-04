@@ -1377,7 +1377,7 @@ Expected: PASS.
     <span class="text-sm text-mlq-text">trigger: {triggerLabel(session.trigger_kind)}</span>
     <span class="text-xs tabular-nums text-mlq-muted">{formatUsd(session.cost_total_usd)} / {capLabel}</span>
     {#if session.cost_cap_reached}<span class="text-xs text-amber-400">cost cap reached</span>{/if}
-    <span class="ml-auto text-xs text-mlq-muted">{terminalReasonLabel(receipt?.terminal_reason ?? null)}</span>
+    {#if receipt}<span class="ml-auto text-xs text-mlq-muted">{terminalReasonLabel(receipt.terminal_reason)}</span>{/if}
   </div>
   <div class="mt-2 text-xs text-mlq-muted">
     started {formatWhen(session.created_at)} · {session.completed_at ? `finished ${formatWhen(session.completed_at)}` : 'running'}
@@ -1409,9 +1409,9 @@ Expected: PASS.
   <p class="px-1 py-4 text-xs text-mlq-muted">No activity recorded yet.</p>
 {:else}
   <ol class="relative ml-2 border-l border-mlq-subtle">
-    {#each events as ev, i (i)}
+    {#each events as ev (ev.order)}
       <li class="relative py-2 pl-5">
-        <span class="absolute -left-[5px] top-3.5 h-2.5 w-2.5 rounded-full {ev.kind === 'phase' ? 'bg-mlq-workflow' : 'bg-emerald-500'}"></span>
+        <span aria-hidden="true" class="absolute -left-[5px] top-3.5 h-2.5 w-2.5 rounded-full {ev.kind === 'phase' ? 'bg-mlq-workflow' : 'bg-emerald-500'}"></span>
         {#if ev.kind === 'phase'}
           <span class="text-sm font-medium text-mlq-text">phase: {phaseLabel(ev.label)}</span>
         {:else}
@@ -1431,7 +1431,7 @@ Expected: PASS.
 ```svelte
 <!-- src/routes/(app)/automations/[id]/+page.svelte -->
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { untrack } from 'svelte';
   import WorkflowsNav from '$lib/workflows/WorkflowsNav.svelte';
   import SessionReceiptHeader from '$lib/automations/SessionReceiptHeader.svelte';
   import SessionTimeline from '$lib/automations/SessionTimeline.svelte';
@@ -1441,11 +1441,13 @@ Expected: PASS.
   let { data }: { data: PageData } = $props();
 
   // If the session arrived still running, live-poll to terminal and swap in fresh data.
-  const live = createSessionPoll(data.session.id);
+  // untrack the id read so an invalidate() doesn't recreate the poll (state_referenced_locally).
+  const live = createSessionPoll(untrack(() => data.session.id));
   const session = $derived(live.session ?? data.session);
   const receipt = $derived(live.session ? live.receipt : data.receipt);
 
-  onMount(() => {
+  // Live-poll a running session to terminal; re-evaluates if a fresh load changes status.
+  $effect(() => {
     if (data.session.status === 'running') {
       live.start();
       return () => live.stop();
