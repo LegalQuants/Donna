@@ -60,3 +60,18 @@ test('the Powered by LQ-AI page renders How-It-Works sections + Build & Learn', 
   // The authored closing section.
   await expect(page.getByRole('heading', { name: /Build & learn with LQ-AI/i, level: 2 })).toBeVisible();
 });
+
+test('How It Works links to How to Build, which renders the Skill Format playground', async ({ page }) => {
+  await login(page);
+  await page.goto('/about/lq-ai');
+
+  await page.getByRole('link', { name: /how to build on LQ-AI/i }).click();
+  await expect(page).toHaveURL(/\/about\/lq-ai\/build$/);
+  await expect(page.getByRole('heading', { name: /How to Build/i, level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /skill/i }).first()).toBeVisible();
+  await expect(page.locator('iframe[src="/learn/playgrounds/skill-format.html"]')).toHaveCount(1);
+
+  // Back-link returns to How It Works.
+  await page.getByRole('link', { name: /← How it works/i }).click();
+  await expect(page).toHaveURL(/\/about\/lq-ai$/);
+});
