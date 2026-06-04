@@ -17,7 +17,7 @@
   <ol class="relative ml-2 border-l border-mlq-subtle">
     {#each events as ev (ev.order)}
       <li class="relative py-2 pl-5">
-        <span aria-hidden="true" class="absolute -left-[5px] top-3.5 h-2.5 w-2.5 rounded-full {ev.kind === 'phase' ? 'bg-mlq-workflow' : 'bg-emerald-500'}"></span>
+        <span aria-hidden="true" class="absolute -left-[5px] top-3.5 h-2.5 w-2.5 rounded-full {ev.kind === 'phase' ? 'bg-mlq-workflow' : 'bg-mlq-success'}"></span>
         {#if ev.kind === 'phase'}
           <span class="text-sm font-medium text-mlq-text">phase: {phaseLabel(ev.label)}</span>
         {:else}

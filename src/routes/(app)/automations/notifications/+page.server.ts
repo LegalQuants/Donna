@@ -1,6 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
 import { parseNotificationList } from '$lib/automations/types';
+import { unreadCount } from '$lib/automations/unread.server';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -8,10 +9,10 @@ export const load: PageServerLoad = async (event) => {
   const path = unreadOnly
     ? '/api/v1/autonomous/notifications?unread=true'
     : '/api/v1/autonomous/notifications';
-  const res = await lqFetch(event, path);
+  const [res, unread] = await Promise.all([lqFetch(event, path), unreadCount(event)]);
   if (!res.ok) throw error(502, 'Could not load notifications.');
   const notifications = parseNotificationList(await res.json());
-  return { notifications, unreadOnly };
+  return { notifications, unreadOnly, unread };
 };
 
 export const actions: Actions = {
