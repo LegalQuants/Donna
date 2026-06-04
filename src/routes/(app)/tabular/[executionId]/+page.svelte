@@ -14,11 +14,18 @@
   const docPanel = createDocPanel();
 
   function openCitation(c: TabularCitation) {
-    // Doc panel reads only source_file_id / source_page / source_text; cast the minimal shape.
-    // Tabular cells carry `confidence`, not a verification signal, so this citation has no
-    // `verified`/`verification_method` — the panel's chip will read "Unverified". Surfacing cell
-    // confidence in place of the chat verification chip is a tracked fast-follow (P6-B.1).
-    docPanel.open({ source_file_id: c.source_file_id, source_page: c.source_page, source_text: c.source_text } as Citation);
+    // Ensemble-verified cells carry a verification_method → show the green "✓ Verified" chip.
+    // Non-ensemble cells have no verification concept (trust comes from the grid's confidence dot),
+    // so suppress the chip rather than mislabel them "Unverified" (closes P6-B.1).
+    const verified = c.verification_method != null;
+    docPanel.open({
+      source_file_id: c.source_file_id,
+      source_page: c.source_page,
+      source_text: c.source_text,
+      ...(verified
+        ? { verified: true, verification_method: c.verification_method ?? undefined }
+        : { verificationApplicable: false })
+    } as Citation);
   }
   onMount(() => poll.start());
   onDestroy(() => poll.stop());
