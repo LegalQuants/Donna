@@ -19,7 +19,7 @@ export const actions: Actions = {
     const form = await event.request.formData();
     const id = String(form.get('id') ?? '');
     if (!id) return fail(400, { error: 'Missing notification id.' });
-    const res = await lqFetch(event, `/api/v1/autonomous/notifications/${id}/read`, { method: 'POST' });
+    const res = await lqFetch(event, `/api/v1/autonomous/notifications/${encodeURIComponent(id)}/read`, { method: 'POST' });
     if (!res.ok) return fail(502, { error: 'Could not mark as read.' });
     return { success: true };
   }
