@@ -8,7 +8,13 @@ interface PollOpts {
 }
 
 /** Polls the BFF proxy for one session until it reaches a terminal status.
- *  Mirrors the runFlow.svelte.ts pattern (rune state + sleep loop). */
+ *  Mirrors the runFlow.svelte.ts pattern (rune state + sleep loop).
+ *
+ *  Contract:
+ *  - `done` is true ONLY when polling ended on its own — a terminal status
+ *    OR an error. An external `stop()` (e.g. unmount) leaves `done` false.
+ *  - When `done` is true, check `error`: null = clean terminal stop, non-null
+ *    = stopped because of a transport/parse failure. */
 export function createSessionPoll(id: string, opts: PollOpts = {}) {
   const pollMs = opts.pollMs ?? 2000;
   let session = $state<SessionSummary | null>(null);
@@ -17,16 +23,22 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
   let error = $state<string | null>(null);
   let running = false;
 
+  /** One poll. Returns true when polling should stop (terminal status or error). */
   async function tick(): Promise<boolean> {
     const res = await fetch(`/automations/${id}`);
     if (!res.ok) {
       error = 'Lost contact with the session.';
-      return true; // stop on error
+      return true;
     }
     const body = (await res.json()) as { session?: unknown; receipt?: unknown };
-    session = parseSessionSummary(body.session);
+    const parsed = parseSessionSummary(body.session);
+    if (!parsed) {
+      error = 'Received a malformed session response.';
+      return true;
+    }
+    session = parsed;
     receipt = parseReceipt(body.receipt);
-    return !!session && TERMINAL.has(session.status);
+    return TERMINAL.has(parsed.status);
   }
 
   async function start() {
@@ -35,11 +47,13 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
     done = false;
     error = null;
     while (running) {
-      const terminal = await tick();
-      if (terminal) break;
+      const finished = await tick();
+      if (finished) {
+        done = true;
+        break;
+      }
       await sleep(pollMs);
     }
-    done = true;
     running = false;
   }
 

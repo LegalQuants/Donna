@@ -16,6 +16,10 @@ function mockFetchSequence(statuses: string[]) {
   }));
 }
 
+function fetchCalls(): number {
+  return (fetch as unknown as { mock: { calls: unknown[] } }).mock.calls.length;
+}
+
 describe('createSessionPoll', () => {
   it('stops polling once the session reaches a terminal status', async () => {
     mockFetchSequence(['running', 'running', 'completed']);
@@ -24,8 +28,22 @@ describe('createSessionPoll', () => {
     await vi.advanceTimersByTimeAsync(3000);
     expect(poll.session?.status).toBe('completed');
     expect(poll.done).toBe(true);
-    const callsAtStop = (fetch as unknown as { mock: { calls: unknown[] } }).mock.calls.length;
+    expect(poll.error).toBeNull();
+    const callsAtStop = fetchCalls();
+    expect(callsAtStop).toBe(3); // tick at t=0, 1000, 2000 → terminal
     await vi.advanceTimersByTimeAsync(3000);
-    expect((fetch as unknown as { mock: { calls: unknown[] } }).mock.calls.length).toBe(callsAtStop);
+    expect(fetchCalls()).toBe(callsAtStop); // no further polling
+  });
+
+  it('does not mark done when stopped before a terminal status', async () => {
+    mockFetchSequence(['running']); // never terminal
+    const poll = createSessionPoll('s1', { pollMs: 1000 });
+    poll.start();
+    await vi.advanceTimersByTimeAsync(1500);
+    poll.stop();
+    await vi.advanceTimersByTimeAsync(2000); // let the in-flight sleep resolve and the loop exit
+    expect(poll.session?.status).toBe('running');
+    expect(poll.done).toBe(false);
+    expect(poll.error).toBeNull();
   });
 });
