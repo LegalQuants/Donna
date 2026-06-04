@@ -23,4 +23,11 @@ describe('/workflows hub', () => {
     const nav = screen.getByRole('navigation', { name: 'Workflows sections' });
     expect(nav.querySelector('[aria-current="page"]')).toBeNull();
   });
+
+  it('shows an Automations card linking to /automations', () => {
+    render(Page);
+    const cards = screen.getByTestId('workflows-cards');
+    const link = within(cards).getByRole('link', { name: /automations/i });
+    expect(link).toHaveAttribute('href', '/automations');
+  });
 });

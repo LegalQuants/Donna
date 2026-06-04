@@ -1,11 +1,12 @@
 <script lang="ts">
-  type Tool = 'skills' | 'playbooks' | 'prompts';
+  type Tool = 'skills' | 'playbooks' | 'prompts' | 'automations';
   let { active }: { active: Tool | null } = $props();
 
   const segments: { id: Tool; label: string; href: string }[] = [
     { id: 'skills', label: 'Skills', href: '/skills' },
     { id: 'playbooks', label: 'Playbooks', href: '/playbooks' },
-    { id: 'prompts', label: 'Prompts', href: '/prompts' }
+    { id: 'prompts', label: 'Prompts', href: '/prompts' },
+    { id: 'automations', label: 'Automations', href: '/automations' }
   ];
 </script>
 
