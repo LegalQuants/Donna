@@ -52,6 +52,11 @@ describe('parseReceipt', () => {
 });
 
 describe('parseSessionSummary / parseSessionList', () => {
+  it('returns null for non-objects and rows without an id', () => {
+    expect(parseSessionSummary(null)).toBeNull();
+    expect(parseSessionSummary({})).toBeNull();
+    expect(parseSessionSummary({ id: 'a' })?.status).toBe('running'); // defaults applied
+  });
   it('parses a list envelope and drops rows without an id', () => {
     const list = parseSessionList({
       sessions: [
