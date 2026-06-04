@@ -82,6 +82,20 @@ describe('createTabularBuilder', () => {
     expect(b.validColumns()).toEqual([{ name: 'Term', query: 'q' }]);
   });
 
+  it('includes ensemble_verification in validColumns only when toggled on', () => {
+    const b = createTabularBuilder();
+    b.addDoc({ document_id: 'd1', name: 'a.pdf' });
+    b.setColumn(b.columns[0].id, { name: 'Term', query: 'q' });
+    // off by default — ensemble_verification key must be absent
+    expect(b.validColumns()[0]).not.toHaveProperty('ensemble_verification');
+    // set true → key must be present and true
+    b.setColumn(b.columns[0].id, { ensemble_verification: true });
+    expect(b.validColumns()[0]).toMatchObject({ name: 'Term', query: 'q', ensemble_verification: true });
+    // set null → key must be absent again
+    b.setColumn(b.columns[0].id, { ensemble_verification: null });
+    expect(b.validColumns()[0]).not.toHaveProperty('ensemble_verification');
+  });
+
   it('moveColumn swaps adjacent columns and is boundary-safe', () => {
     const b = createTabularBuilder();
     b.setColumn(b.columns[0].id, { name: 'A', query: 'qa' });
