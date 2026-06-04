@@ -1,41 +1,35 @@
 # Donna — Handoff for the next session
 
-**Date:** 2026-06-03 · **Pin:** `vendor/lq-ai` @ `c22360a` · **`main` HEAD:** `a86c178` (model/inference settings, PR #51).
+**Date:** 2026-06-04 · **Pin:** `vendor/lq-ai` @ `541bd6f` (bumped from `c22360a` in PR #57) · **`main` HEAD:** model/inference settings + the 2026-06-03/04 session merges.
 
-## Where we are
-This session opened **3 PRs** (all green, awaiting your review/merge), completing the three unblocked slices from the prior handoff:
+## Where we are — the planned pre-wrap surface work is essentially DONE
+This session shipped **6 PRs** (the first five merged to `main`; #57 open at handoff time):
 
-- **Enhance-on-landing → PR #52** (`feat/enhance-on-landing`): the `✦ Enhance` affordance now works on the landing/Assistant composer. `createEnhance(chatId: string | null)` sends `chat_id: null` standalone (spike-confirmed); wired into `(app)/+page.svelte`. The obsolete "landing has no enhance" e2e was flipped to a positive flow. 910 unit + 2 live e2e.
-- **About page slice 2a → PR #53** (`feat/about-page`): sidebar **About** entry (above Settings) → `/about` rail + page-per-topic guide mirroring `/settings`, with **8 instructional content pages** (Overview, Assistant, Projects, Workflows, Tabular, Knowledge, Models, Trust & citations) fact-checked against the real components, plus a **"Powered by LQ-AI" callout** → a minimal `/about/lq-ai` **stub**. 909 unit + 3 live e2e (`tests/about.spec.ts`).
-- **Model-settings polish slice 3 → PR #54** (`feat/model-settings-polish`): stale-backing **disabled placeholder `<option>`** in `CategoryRow`, `OLLAMA_BASE_URL` documented in `.env.example`, and two `fail(400)` `?/reassign` tests. 913 unit.
+- **Enhance-on-landing → PR #52 (merged):** `✦ Enhance` on the landing/Assistant composer (`createEnhance(chatId: string | null)` → `chat_id: null` standalone).
+- **About page → PRs #53 + #55 + #56 (all merged) — COMPLETE:**
+  - **2a (#53):** sidebar **About** entry (above Settings) → `/about` rail + 8 instructional topic pages (Overview, Assistant, Projects, Workflows, Tabular, Knowledge, Models, Trust & citations), mirroring `/settings`; + a "Powered by LQ-AI" callout → an `/about/lq-ai` stub.
+  - **2b-i (#55):** the stub → **"How It Works"** — 16 re-skinned playground sections + a Donna-authored **"Build & Learn with LQ-AI"** closing section; + the layout widening (`/about/lq-ai` → `max-w-6xl`, prose pages → `max-w-5xl`).
+  - **2b-ii (#56):** **"How to Build"** at `/about/lq-ai/build` (curated contributor port + `skill-format` playground); all 18 playgrounds now copied; How-It-Works ↔ How-to-Build cross-links.
+- **Model-settings polish → PR #54 (merged):** stale-backing disabled `<option>` in `CategoryRow`; `OLLAMA_BASE_URL` in `.env.example`; two `?/reassign` 400 tests.
+- **P6-C.1 tabular ensemble verification → PR #57 (open at handoff):** pin bump `c22360a`→`541bd6f` (Donna #6 / lq-ai #127) + `gen:api`; per-column **Ensemble verification** toggle + **cost premium** + `verification_method` on cell citations; **closes P6-B.1** (doc panel shows green "✓ Verified" for ensemble citations, no chip for non-ensemble). Note: this also makes **ensemble-verified CHAT citations read green "Verified"** (shared `citeState` GREEN set — a correctness fix matching the tooltip); Trust About page copy updated to match.
 
-See [[donna-phase-status]] for full roadmap history. Each slice ran the normal loop (brainstorm→spec→plan→subagent-driven-execute→whole-branch Opus review→PR); specs/plans under `docs/superpowers/{specs,plans}/2026-06-03-*`.
+See [[donna-phase-status]] for full history. Every slice ran the loop (brainstorm→spec→plan→subagent-execute→whole-branch Opus review→PR); specs/plans under `docs/superpowers/{specs,plans}/2026-06-0{3,4}-*`.
 
-## Your job: the ONE remaining pre-wrap slice — About slice 2b
-**About slice 2b — the "Powered by LQ-AI" full mirror** (replaces the `/about/lq-ai` stub from 2a). See [[donna-about-page]].
+## Your job: the only remaining pre-wrap item is upstream-BLOCKED
+**Provider keys / BYOK** on `/settings/models` — still pin-gated, **no backend SHA yet**. Upstream request: `docs/upstream-requests/lq-ai-provider-key-management.md`. The card is stubbed/pin-gated on `/settings/models` (Task 5 of `docs/superpowers/plans/2026-06-03-model-inference-settings.md`). When the user sends a SHA: bump `vendor/lq-ai` + `npm run gen:api` + rebuild, then wire the provider-keys card. **There is no unblocked Donna feature work pending** beyond this — the roadmap's planned surfaces (P0–P7, P6 Tabular A–C + C.1, model/inference settings, About) are all shipped.
 
-**Decisions LOCKED in the 2a brainstorm (don't re-litigate):**
-- Mirror LQ-AI's **"How It Works" (16 sections)** + **"How to Build"** (contributor guide). Together they cover **all 18 playgrounds**.
-- Playgrounds at `vendor/lq-ai/web/static/learn/playgrounds/*.html` are **zero-dependency vanilla HTML, copyable verbatim** → `Donna/static/learn/playgrounds/` and iframed (same as LQ-AI). LQ-AI Learn source pages: `vendor/lq-ai/web/src/routes/lq-ai/learn/{how,build}/+page.svelte` (how = 957 lines / 16 iframes; build = 599 lines). Both apps are SvelteKit/Svelte 5.
-- Port = copy the 18 playgrounds + recreate the wrapper Svelte pages, swapping LQ-AI `--lq-*` CSS tokens → Donna `mlq-*`, with the user's intro paragraph on top ("Donna is powered by LQ-AI, an open source legal operating system. Donna uses some, but not all, of the functionality available in LQ-AI…").
-- **Framing:** Donna showcases ONE subset of LQ-AI; this page exists to **inspire** what else you could build/power on the LQ-AI backend.
+If the user wants more, options live in [[donna-product-direction]] (capability backlog) and `docs/roadmap/donna-future-roadmap.md` (autonomous workflows surface, etc.).
 
-**Sequencing:** gated on #53 (builds on the `/about` IA + replaces its stub) — **branch 2b off `feat/about-page`**, or off `main` after #53 merges. Run its own brainstorm→spec→plan→execute→PR. It's design-heavy (18 large static files + 2 wrapper pages + token adaptation) — consider sub-slicing (e.g. How-It-Works first, then How-to-Build) if it's too big for one PR.
-
-After 2b, the planned pre-wrap surface work is complete.
-
-## Pending upstream (pin-gated, NOT blocking 2b)
-When the user sends a SHA, pin `vendor/lq-ai` to it + `npm run gen:api`, then wire:
-- **Ensemble verification** (`docs/upstream-requests/lq-ai-tabular-ensemble-verification.md`) → **P6-C.1**: per-column `ensemble_verification` toggle (plan Task 7 in `docs/superpowers/plans/2026-06-03-tabular-slice-c.md`). Also surfaces `verification_method` on tabular cell citations → **closes P6-B.1** (doc-panel "Unverified" chip).
-- **Provider keys / BYOK** (`docs/upstream-requests/lq-ai-provider-key-management.md`) → the **provider-keys card** on `/settings/models`.
+## Pending upstream (pin-gated)
+- **Provider keys / BYOK** → the provider-keys card (above). The ONLY open Donna ask.
+- (P6-C.1 ensemble verification's *live output* — cost premium + ✓Verified on real runs — needs the deployment's gateway `citation_engine.ensemble_verification.judge_models` to be non-empty; the dev stack ships it empty/opt-in. FE rendering is unit-tested; not a Donna code gap.)
 
 ## Dev-stack reminders (see [[donna-dev-stack]])
-- Shifted ports (coexists with the user's own lq-ai). Cold start: `set -a; . ./.env; set +a; docker compose up -d --build postgres redis minio gateway api donna-web ingest-worker arq-worker`. App: http://localhost:13002 · API: :18000 · admin `admin@lq.ai`/`$DONNA_E2E_PASSWORD`.
-- **Rebuild `donna-web` before any live e2e** (serves built code). `.txt` won't ingest — use a `.pdf` fixture.
-- Gate: **`npm run check` = 0 errors/0 warnings** is THE bar (the vendor `ERR_MODULE_NOT_FOUND` stderr is harmless). `npm run lint`/`npx eslint .` has **~53 PRE-EXISTING errors on `main`** (unadopted svelte rules) — don't treat those as regressions; add no NEW ones (use the `<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->` comment on internal `<a href>`, as the sidebar/rail code does). `npx vitest run` ≈ **909 green** on `main`.
-- **Ollama-in-Docker (in `.env`, now also documented in `.env.example` via #54):** `OLLAMA_BASE_URL=http://host.docker.internal:11434`.
+- Shifted ports. Cold start: `set -a; . ./.env; set +a; docker compose up -d --build postgres redis minio gateway api donna-web ingest-worker arq-worker`. App: http://localhost:13002 · API: :18000 · admin `admin@lq.ai`/`$DONNA_E2E_PASSWORD`.
+- **Rebuild `donna-web` before any live FE e2e**; rebuild **api+gateway+arq-worker+ingest-worker** when the pin changes. `.txt` won't ingest — use a `.pdf` fixture.
+- Gate: **`npm run check` = 0 errors/0 warnings** is THE bar (vendor `ERR_MODULE_NOT_FOUND` stderr is harmless). `npm run lint`/`npx eslint .` has **~53 PRE-EXISTING errors on `main`** (unadopted svelte rules) — add no NEW ones (use the `<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->` comment on internal/dynamic `<a href>`; static external https links don't need it). `npx vitest run` ≈ **925 green**.
 
-## The build loop (working well all session)
-brainstorm → spec (`docs/superpowers/specs/`) → plan (`docs/superpowers/plans/`) → **subagent-driven execute** (fresh Sonnet per task, full task text pasted in, per-task spec + code-quality review, fix→amend) → **whole-branch Opus review** → `finishing-a-development-branch` → PR. For content-heavy work (the 8 About pages), parallel write-only content agents + ONE consolidated Opus content-accuracy fact-check pass worked well (it caught a real Knowledge defect). Upstream-request pattern: write `docs/upstream-requests/<name>.md`, hand to the user's parallel LQ-AI CC, pin the returned SHA.
+## The build loop (worked well all session)
+brainstorm → spec → plan → **subagent-driven execute** (fresh Sonnet per task, full task text, per-task spec + code-quality review, fix→amend) → **whole-branch Opus review** → `finishing-a-development-branch` → PR. The whole-branch Opus review keeps earning its keep (this session it caught the `$app/forms` `enhance` shadowing, the Knowledge "sidebar" content defect, and the stale Trust-page copy after the ensemble GREEN change). For content-heavy work, parallel write-only content agents + one consolidated Opus fact-check pass. Upstream-pin pattern: bump submodule → `gen:api` → rebuild → verify → update `docs/decisions/lq-ai-pin.md` → commit on the phase branch.
 
-See memories: [[donna-phase-status]] [[donna-about-page]] [[donna-enhance-on-landing]] [[donna-model-inference-settings]] [[donna-workflow]] [[donna-dev-stack]] [[donna-product-direction]] [[donna-citation-contract]] [[donna-reviewer-remote-hygiene]].
+See memories: [[donna-phase-status]] [[donna-about-page]] [[donna-model-inference-settings]] [[donna-enhance-on-landing]] [[donna-workflow]] [[donna-dev-stack]] [[donna-product-direction]] [[donna-citation-contract]] [[donna-reviewer-remote-hygiene]].
