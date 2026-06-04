@@ -117,12 +117,14 @@
       {#if tab.page}
         <span class="shrink-0 text-[10px] text-mlq-muted">p.{tab.page}</span>
       {/if}
-      <span
-        class="shrink-0 rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold {cs === 'verified' ? 'bg-mlq-success/15 text-mlq-success' : cs === 'caveats' ? 'bg-mlq-caveats/15 text-mlq-caveats' : 'bg-mlq-error/15 text-mlq-error'}"
-        title={tooltipFor(tab.cite)}
-      >
-        {cs === 'verified' ? '✓ Verified' : cs === 'caveats' ? 'Caveats' : 'Unverified'}
-      </span>
+      {#if tab.cite?.verificationApplicable !== false}
+        <span
+          class="shrink-0 rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold {cs === 'verified' ? 'bg-mlq-success/15 text-mlq-success' : cs === 'caveats' ? 'bg-mlq-caveats/15 text-mlq-caveats' : 'bg-mlq-error/15 text-mlq-error'}"
+          title={tooltipFor(tab.cite)}
+        >
+          {cs === 'verified' ? '✓ Verified' : cs === 'caveats' ? 'Caveats' : 'Unverified'}
+        </span>
+      {/if}
       {#if tab.highlightStatus === 'miss'}
         <span class="line-clamp-2 min-w-0 text-mlq-text">Cited passage on this page — couldn't pinpoint the exact span. <span class="italic text-mlq-muted">"{tab.quote}"</span></span>
       {:else}
