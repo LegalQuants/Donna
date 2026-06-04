@@ -33,4 +33,13 @@ describe('mark-read action', () => {
     expect(lqFetch.mock.calls[0][2]).toMatchObject({ method: 'POST' });
     expect(out).toMatchObject({ success: true });
   });
+  it('fails 400 when the id is missing', async () => {
+    const ev = { request: new Request('http://x', { method: 'POST', body: new URLSearchParams({}) }) } as never;
+    await expect(actions.markRead(ev)).resolves.toMatchObject({ status: 400 });
+  });
+  it('fails 502 when the backend rejects the mark-read', async () => {
+    lqFetch.mockResolvedValueOnce(new Response('x', { status: 500 }));
+    const ev = { request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ id: 'n1' }) }) } as never;
+    await expect(actions.markRead(ev)).resolves.toMatchObject({ status: 502 });
+  });
 });
