@@ -1612,7 +1612,7 @@ export const actions: Actions = {
     const form = await event.request.formData();
     const id = String(form.get('id') ?? '');
     if (!id) return fail(400, { error: 'Missing notification id.' });
-    const res = await lqFetch(event, `/api/v1/autonomous/notifications/${id}/read`, { method: 'POST' });
+    const res = await lqFetch(event, `/api/v1/autonomous/notifications/${encodeURIComponent(id)}/read`, { method: 'POST' });
     if (!res.ok) return fail(502, { error: 'Could not mark as read.' });
     return { success: true };
   }
@@ -1630,13 +1630,14 @@ Expected: PASS.
 <!-- src/lib/automations/NotificationRow.svelte -->
 <script lang="ts">
   import type { NotificationItem } from './types';
+  import { enhance } from '$app/forms';
   import { formatWhen } from './display';
   let { notification }: { notification: NotificationItem } = $props();
   const unread = $derived(notification.read_at === null);
 </script>
 
 <div class="flex items-start gap-3 rounded-mlq-control border border-mlq-subtle p-3 {unread ? 'bg-mlq-subtle/30' : ''}">
-  {#if unread}<span aria-label="unread" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-mlq-workflow"></span>{/if}
+  {#if unread}<span aria-hidden="true" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-mlq-workflow"></span>{/if}
   <div class="min-w-0 flex-1">
     <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- notification → session receipt -->
     <a href="/automations/{notification.session_id}" class="text-sm font-medium text-mlq-text hover:underline">{notification.title}</a>
@@ -1644,7 +1645,7 @@ Expected: PASS.
     <span class="text-[11px] text-mlq-muted">{notification.channel} · {formatWhen(notification.created_at)}</span>
   </div>
   {#if unread}
-    <form method="POST" action="?/markRead">
+    <form method="POST" action="?/markRead" use:enhance>
       <input type="hidden" name="id" value={notification.id} />
       <button type="submit" class="shrink-0 text-xs text-mlq-muted hover:text-mlq-text">Mark read</button>
     </form>
@@ -1662,14 +1663,14 @@ Expected: PASS.
   let { notifications, unreadOnly }: { notifications: NotificationItem[]; unreadOnly: boolean } = $props();
 </script>
 
-<div class="mb-3 inline-flex gap-1 rounded-mlq-control border border-mlq-subtle p-1 text-sm">
+<nav aria-label="Notification filters" class="mb-3 inline-flex gap-1 rounded-mlq-control border border-mlq-subtle p-1 text-sm">
   <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- notifications filter -->
   <a href="/automations/notifications" aria-current={!unreadOnly ? 'page' : undefined}
      class="rounded-mlq-control px-3 py-1 {!unreadOnly ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text hover:bg-mlq-subtle/50'}">All</a>
   <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- notifications filter -->
   <a href="/automations/notifications?unread=true" aria-current={unreadOnly ? 'page' : undefined}
      class="rounded-mlq-control px-3 py-1 {unreadOnly ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text hover:bg-mlq-subtle/50'}">Unread</a>
-</div>
+</nav>
 
 {#if notifications.length === 0}
   <div class="rounded-mlq-control border border-dashed border-mlq-subtle p-8 text-center">
