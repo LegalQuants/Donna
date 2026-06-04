@@ -5,7 +5,7 @@
   let { children } = $props();
 
   // The callout points at /about/lq-ai, so hide it when we're already there.
-  const showCallout = $derived(page.url.pathname !== '/about/lq-ai');
+  const showCallout = $derived(!page.url.pathname.startsWith('/about/lq-ai'));
 
   // The LQ-AI page embeds wide interactive playgrounds, so give it the widest container. The prose
   // guide pages use max-w-5xl so the text reaches its full readable width (paragraphs stay capped at
