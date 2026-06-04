@@ -99,4 +99,17 @@ describe('DocumentPanel', () => {
     render(DocumentPanel, { props: { docPanel: stub() } }); // default activeTab: spike.pdf, page 1, pdf, ready
     expect(screen.getByText('p.1')).toBeInTheDocument();
   });
+
+  it('suppresses the verification chip when verificationApplicable is false (non-ensemble tabular citation)', () => {
+    const noChipCite = { ...STUB_CITE, verificationApplicable: false as const };
+    const noChipTab: DocTab = { fileId: 'f1', filename: 'spike.pdf', mime: 'application/pdf', status: 'ready', page: 1, quote: 'x', cite: noChipCite, highlightStatus: 'found' };
+    render(DocumentPanel, { props: { docPanel: stub({ tabs: [noChipTab], activeTab: noChipTab }) } });
+    expect(screen.queryByText(/✓ Verified|Caveats|Unverified/)).not.toBeInTheDocument();
+  });
+
+  it('shows the verification chip for a normal cite (chat citations unchanged)', () => {
+    const foundTab: DocTab = { fileId: 'f1', filename: 'spike.pdf', mime: 'application/pdf', status: 'ready', page: 1, quote: 'x', cite: STUB_CITE, highlightStatus: 'found' };
+    render(DocumentPanel, { props: { docPanel: stub({ tabs: [foundTab], activeTab: foundTab }) } });
+    expect(screen.getByText('✓ Verified')).toBeInTheDocument();
+  });
 });

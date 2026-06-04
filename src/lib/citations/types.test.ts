@@ -11,10 +11,12 @@ describe('citeState', () => {
     expect(citeState(base({ verification_method: 'exact_match' }))).toBe('verified');
     expect(citeState(base({ verification_method: 'tolerant_match' }))).toBe('verified');
   });
-  it('judge / ensemble methods → caveats (yellow)', () => {
+  it('judge method → caveats (yellow)', () => {
     expect(citeState(base({ verification_method: 'paraphrase_judge' }))).toBe('caveats');
-    expect(citeState(base({ verification_method: 'ensemble_majority' }))).toBe('caveats');
-    expect(citeState(base({ verification_method: 'ensemble_strict' }))).toBe('caveats');
+  });
+  it('treats ensemble methods as verified (green)', () => {
+    expect(citeState({ verified: true, verification_method: 'ensemble_strict' } as never)).toBe('verified');
+    expect(citeState({ verified: true, verification_method: 'ensemble_majority' } as never)).toBe('verified');
   });
   it('partial → caveats even if method is green', () => {
     expect(citeState(base({ verification_method: 'exact_match', partial: true }))).toBe('caveats');

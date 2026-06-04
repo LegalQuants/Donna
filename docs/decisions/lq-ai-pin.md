@@ -2,11 +2,23 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `945ad31` (bumped 2026-06-01 from `badf83d`)
+- Pinned SHA: `541bd6f` (bumped 2026-06-03 from `c22360a`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+- `c22360a` → `541bd6f` (2026-06-03): lq-ai **#127** (Donna ask **#6**) — **per-column
+  `ensemble_verification` for tabular**. `ColumnSpec` gains `ensemble_verification?: boolean | null`
+  (true → routes that column's cells through Stage 4 of the Citation Engine cascade). The cost-preview
+  response gains `ensemble_cells_count?` + `ensemble_premium_usd?` (judge-call premium folded into
+  `estimated_cost_usd`). Each tabular cell result + its citations now carry `verification_method`
+  (string|null: `ensemble_strict` / `ensemble_majority`; null when the column isn't ensemble-verified
+  or support wasn't confirmed) — described in the loosely-typed `results` prose (like the `source_*`
+  fields, DE-330), so **hand-typed** in `parseTabularResults`. `npm run gen:api` → **+28-line additive
+  diff** (ColumnSpec field + cost-preview fields + prose); `npm run check` 0/0. **Unblocks P6-C.1**
+  (per-column ensemble toggle) and **closes P6-B.1** (surface `verification_method` on tabular cell
+  citations instead of the doc-panel "Unverified" chip). (Prior pin `c22360a` = lq-ai **#125**, P6-B
+  navigable tabular cell citations — its bump-log entry was not recorded here.)
 - `badf83d` → `945ad31` (2026-06-01): lq-ai #120 (Donna ask **P1.4**) — exposes nullable
   `deletion_scheduled_at` on the `User` object returned by `GET /users/me` (+login/refresh).
   Read-only echo of the existing column (non-null while a grace-period deletion is pending,

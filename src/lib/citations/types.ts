@@ -8,11 +8,13 @@ export type VerificationMethod =
 export type Citation = components['schemas']['Citation'] & {
   verification_method?: VerificationMethod | (string & {});
   verification_confidence?: number | null;
+  /** Doc-panel hint: when false, suppress the verification chip (e.g. a non-ensemble tabular citation, which carries confidence, not verification). Undefined ⇒ chip shown (chat default). */
+  verificationApplicable?: boolean;
 };
 
 export type CiteState = 'verified' | 'caveats' | 'unverified';
 
-const GREEN = new Set(['exact_match', 'tolerant_match']);
+const GREEN = new Set(['exact_match', 'tolerant_match', 'ensemble_strict', 'ensemble_majority']);
 
 /** Derive the UI state. Method drives green-vs-yellow (per citation-engine doc). */
 export function citeState(c: Citation | undefined): CiteState {
