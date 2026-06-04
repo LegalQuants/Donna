@@ -8631,6 +8631,22 @@ export interface components {
             per_tier_breakdown: {
                 [key: string]: number;
             };
+            /**
+             * @description Number of cells that will run ensemble Citation-Engine
+             *     verification (``len(document_ids) * ensemble-column count``).
+             *     ``0`` when no column is ensemble-verified.
+             */
+            ensemble_cells_count?: number;
+            /**
+             * @description The ensemble judge-call cost included in
+             *     ``estimated_cost_usd`` (= ``n_judges * per-judge-cost *
+             *     ensemble_cells_count``), serialized as a JSON string to
+             *     preserve decimal precision. ``"0"`` when no column is
+             *     ensemble-verified. Note that ``estimated_cost_usd`` is the
+             *     TOTAL (base extraction + this premium); ``estimated_tokens``
+             *     is extraction-only and excludes judge tokens.
+             */
+            ensemble_premium_usd?: string;
         };
         /**
          * @description Request body for ``POST /api/v1/tabular/execute``. Either
@@ -8688,12 +8704,23 @@ export interface components {
              * @description Assembled grid shape with rows + per-cell results. Shape is
              *     versioned via ``schema_version`` (currently ``m3-c2-v1``).
              *
+             *     Each cell result also carries ``verification_method``
+             *     (string, nullable) — the per-cell ensemble Citation-Engine
+             *     verification outcome (``ensemble_strict`` /
+             *     ``ensemble_majority``), or ``null`` when the cell's column is
+             *     not ensemble-verified or verification did not confirm support.
+             *
              *     Each cell carries a ``citations`` array. A tabular cell
              *     ``Citation`` is distinct from the chat ``Citation`` schema; it
              *     has: ``citation_id`` (uuid; deterministic display-only id —
              *     DE-309), ``document_id`` (uuid; the source ``documents.id``),
              *     ``chunk_id`` (uuid, nullable; the cited ``document_chunks.id``),
-             *     and ``confidence`` (one of ``high|medium|low|failed``).
+             *     and ``confidence`` (one of ``high|medium|low|failed``). Each
+             *     citation additionally carries ``verification_method`` (string,
+             *     nullable) — the Citation-Engine verification method
+             *     (``ensemble_strict`` / ``ensemble_majority``), or ``null`` when
+             *     the cell's column is not ensemble-verified or verification did
+             *     not confirm support. It is mirrored from the cell-level value.
              *
              *     On ``GET /api/v1/tabular/executions/{id}`` (only) each citation
              *     is additionally enriched at read time so the frontend can open
