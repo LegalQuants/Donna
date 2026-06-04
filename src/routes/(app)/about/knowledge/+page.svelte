@@ -9,10 +9,10 @@
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Creating a knowledge base</h2>
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-  Navigate to <strong>Knowledge</strong> in the sidebar to see all your knowledge bases. Each KB has a name you choose when creating it — pick something descriptive, such as "Acme Master Agreements" or "Company Policies Q4". A name is required; you can also add an optional description to remind yourself what the KB contains.
+  Knowledge bases live inside <strong>Projects</strong>. Open a Project and find its <strong>Knowledge</strong> section: the picker there lets you link an existing KB or create a new one. When creating, you give the KB a name — pick something descriptive, such as "Acme Master Agreements" or "Company Policies Q4". Linking a KB to a Project makes its documents available to every chat in that Project.
 </p>
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-  Once created, click a KB in the list to open it. From the KB detail view you can add files, review ingestion status, and manage the KB's settings.
+  Click a linked KB (or its <strong>Manage</strong> link) to open the knowledge base's own page. From there you can add files, review ingestion status, rename it, and tune its retrieval settings.
 </p>
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Renaming and describing a knowledge base</h2>
@@ -36,7 +36,7 @@
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">How retrieval works</h2>
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-  When you ask a question and a knowledge base is active, Donna searches your documents for the passages most relevant to your query. Matching chunks are included in the context sent to the AI model, so the answer is grounded in your actual materials rather than model knowledge alone.
+  When you chat within a Project that has a linked knowledge base, Donna searches those documents for the passages most relevant to your query. Matching chunks are included in the context sent to the AI model, so the answer is grounded in your actual materials rather than model knowledge alone.
 </p>
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   Each KB also exposes a <strong>Hybrid alpha</strong> control (in the <strong>Advanced</strong> section of the KB detail view). This slider blends two retrieval strategies: pure vector similarity search at one end, and full-text search (FTS) at the other. The default balance works well for most document types; you can tune it if you find one strategy returns better results for your content.
