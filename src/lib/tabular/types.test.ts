@@ -72,6 +72,20 @@ describe('parseTabularResults', () => {
     expect(out?.rows[1].document_name).toBe('d3');
   });
 
+  it('parses verification_method on a navigable citation (null when absent)', () => {
+    const out = parseTabularResults({
+      rows: [{ document_id: 'd1', cells: { Term: { value: 'x', confidence: 'high',
+        cited_chunk_ids: ['c1'],
+        citations: [
+          { source_file_id: 'f1', source_page: 2, source_text: 'q', verification_method: 'ensemble_strict' },
+          { source_file_id: 'f2', source_page: 1, source_text: 'r' }
+        ] } } }]
+    });
+    const cites = out?.rows[0].cells.Term.citations;
+    expect(cites?.[0].verification_method).toBe('ensemble_strict');
+    expect(cites?.[1].verification_method).toBeNull();
+  });
+
   it('narrows navigable citations off a cell', () => {
     const out = parseTabularResults({
       rows: [{ document_id: 'd1', cells: { Term: { value: 'x', confidence: 'high',
@@ -80,6 +94,6 @@ describe('parseTabularResults', () => {
                     { source_file_id: null, source_page: null, source_text: '' }] } } }]
     });
     const cits = out?.rows[0].cells.Term.citations;
-    expect(cits).toEqual([{ source_file_id: 'file-1', source_page: 4, source_text: 'the clause', chunk_id: 'c1', document_id: undefined }]);
+    expect(cits).toEqual([{ source_file_id: 'file-1', source_page: 4, source_text: 'the clause', chunk_id: 'c1', document_id: undefined, verification_method: null }]);
   });
 });

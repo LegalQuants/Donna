@@ -35,6 +35,7 @@ export interface TabularCitation {
   source_text: string;
   document_id?: string;
   chunk_id?: string;
+  verification_method?: string | null;
 }
 
 export interface TabularCell {
@@ -112,7 +113,8 @@ export function parseTabularResults(
                 source_page: typeof cc.source_page === 'number' ? cc.source_page : null,
                 source_text: typeof cc.source_text === 'string' ? cc.source_text : '',
                 document_id: typeof cc.document_id === 'string' ? cc.document_id : undefined,
-                chunk_id: typeof cc.chunk_id === 'string' ? cc.chunk_id : undefined
+                chunk_id: typeof cc.chunk_id === 'string' ? cc.chunk_id : undefined,
+                verification_method: typeof cc.verification_method === 'string' ? cc.verification_method : null
               }];
             })
           : []
