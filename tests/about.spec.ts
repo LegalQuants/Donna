@@ -44,7 +44,7 @@ test('the About rail navigates between topics and marks the active one', async (
   await expect(railTabular).toHaveAttribute('aria-current', 'page');
 });
 
-test('the Powered by LQ-AI callout reaches the lq-ai page', async ({ page }) => {
+test('the Powered by LQ-AI page renders How-It-Works sections + Build & Learn', async ({ page }) => {
   await login(page);
   await page.goto('/about/overview');
 
@@ -52,4 +52,11 @@ test('the Powered by LQ-AI callout reaches the lq-ai page', async ({ page }) => 
   await expect(page).toHaveURL(/\/about\/lq-ai$/);
   await expect(page.getByRole('heading', { name: 'Powered by LQ-AI', level: 1 })).toBeVisible();
   await expect(page.getByText(/open source legal operating system/i)).toBeVisible();
+
+  // A How-It-Works section + its embedded playground iframe.
+  await expect(page.getByRole('heading', { name: '1. The big picture: System Architecture', level: 2 })).toBeVisible();
+  await expect(page.locator('iframe[src="/learn/playgrounds/system-architecture.html"]')).toHaveCount(1);
+
+  // The authored closing section.
+  await expect(page.getByRole('heading', { name: /Build & learn with LQ-AI/i, level: 2 })).toBeVisible();
 });
