@@ -11,7 +11,7 @@
     <span class="text-sm text-mlq-text">trigger: {triggerLabel(session.trigger_kind)}</span>
     <span class="text-xs tabular-nums text-mlq-muted">{formatUsd(session.cost_total_usd)} / {capLabel}</span>
     {#if session.cost_cap_reached}<span class="text-xs text-amber-400">cost cap reached</span>{/if}
-    <span class="ml-auto text-xs text-mlq-muted">{terminalReasonLabel(receipt?.terminal_reason ?? null)}</span>
+    {#if receipt}<span class="ml-auto text-xs text-mlq-muted">{terminalReasonLabel(receipt.terminal_reason)}</span>{/if}
   </div>
   <div class="mt-2 text-xs text-mlq-muted">
     started {formatWhen(session.created_at)} · {session.completed_at ? `finished ${formatWhen(session.completed_at)}` : 'running'}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { untrack } from 'svelte';
   import WorkflowsNav from '$lib/workflows/WorkflowsNav.svelte';
   import SessionReceiptHeader from '$lib/automations/SessionReceiptHeader.svelte';
   import SessionTimeline from '$lib/automations/SessionTimeline.svelte';
@@ -13,7 +13,8 @@
   const session = $derived(live.session ?? data.session);
   const receipt = $derived(live.session ? live.receipt : data.receipt);
 
-  onMount(() => {
+  // Live-poll a running session to terminal; re-evaluates if a fresh load changes status.
+  $effect(() => {
     if (data.session.status === 'running') {
       live.start();
       return () => live.stop();
