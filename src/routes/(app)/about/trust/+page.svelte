@@ -16,8 +16,8 @@
 </p>
 
 <ul class="mb-3 ml-4 list-disc space-y-1 text-sm text-mlq-text">
-  <li><strong>Green — Verified.</strong> The passage was found in the source as an exact or normalised match.</li>
-  <li><strong>Amber — Caveats.</strong> The source partially supports the claim, or the match was made by a paraphrase or ensemble judge rather than a direct text search.</li>
+  <li><strong>Green — Verified.</strong> The passage was found in the source as an exact or normalised match, or confirmed by ensemble verification (multiple judges agreed it is supported).</li>
+  <li><strong>Amber — Caveats.</strong> The source partially supports the claim, or the match was made by a single paraphrase judge rather than a direct text search.</li>
   <li><strong>Red — Unverified.</strong> The citation could not be confirmed against the source document.</li>
 </ul>
 
