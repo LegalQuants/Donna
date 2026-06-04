@@ -1,6 +1,6 @@
 import type { EnhancePromptResponse } from './types';
 
-export function createEnhance(chatId: string, getSkills: () => string[]) {
+export function createEnhance(chatId: string | null, getSkills: () => string[]) {
   let status = $state<'idle' | 'loading' | 'preview' | 'skipped' | 'error'>('idle');
   let result = $state<EnhancePromptResponse | null>(null);
   let controller: AbortController | null = null;
