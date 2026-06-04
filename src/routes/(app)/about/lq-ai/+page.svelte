@@ -9,7 +9,6 @@
 
 <p class="text-sm text-mlq-muted">
   A full "How it works" walkthrough is coming soon. In the meantime, explore the open-source project:
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external repo link -->
   <a href="https://github.com/LegalQuants/lq-ai" target="_blank" rel="noopener noreferrer"
      class="font-medium text-mlq-strong underline">LegalQuants / lq-ai on GitHub</a>.
 </p>
