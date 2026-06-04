@@ -10,6 +10,14 @@
 
   const cloud = $derived(targets.filter((t) => t.group === 'cloud'));
   const local = $derived(targets.filter((t) => t.group === 'local'));
+  // True when the current backing maps to a selectable target. When false (stale/removed
+  // backing, or none set) we render a disabled placeholder so the select doesn't silently
+  // show the first real option as if it were the backing.
+  const knownTarget = $derived(
+    category.currentTargetId != null &&
+      category.currentTargetId !== '' &&
+      targets.some((t) => t.id === category.currentTargetId)
+  );
 
   const submit: SubmitFunction = () => {
     status = 'saving';
@@ -38,6 +46,11 @@
         onchange={() => formEl?.requestSubmit()}
         class="rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-2 py-1 text-xs text-mlq-text"
       >
+        {#if !knownTarget}
+          <option value={category.currentTargetId ?? ''} disabled>
+            {category.currentTargetId ? `${category.backingLabel || category.currentTargetId} (unavailable)` : 'Select a model…'}
+          </option>
+        {/if}
         {#if cloud.length}
           <optgroup label="Cloud">
             {#each cloud as t (t.id)}<option value={t.id}>{t.label}</option>{/each}
