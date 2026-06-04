@@ -19,15 +19,15 @@ export function formatTime(iso: string | null): string {
 export function statusTone(status: string): string {
   switch (status) {
     case 'completed':
-      return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+      return 'bg-mlq-success/15 text-mlq-success';
     case 'running':
-      return 'bg-sky-500/15 text-sky-400 border border-sky-500/30';
+      return 'bg-mlq-workflow/15 text-mlq-workflow';
     case 'halted':
-      return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
+      return 'bg-mlq-caveats/20 text-mlq-caveats';
     case 'failed':
-      return 'bg-rose-500/15 text-rose-400 border border-rose-500/30';
+      return 'bg-mlq-error/15 text-mlq-error';
     default:
-      return 'bg-mlq-subtle text-mlq-muted border border-mlq-subtle';
+      return 'bg-mlq-subtle text-mlq-muted';
   }
 }
 
@@ -54,10 +54,10 @@ export function triggerLabel(kind: string): string {
 export function outcomeTone(outcome: string): string {
   switch (outcome) {
     case 'success':
-      return 'text-emerald-400';
+      return 'text-mlq-success';
     case 'started':
       return 'text-mlq-muted';
     default:
-      return 'text-amber-400';
+      return 'text-mlq-caveats';
   }
 }

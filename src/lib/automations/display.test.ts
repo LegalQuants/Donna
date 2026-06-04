@@ -4,9 +4,9 @@ import { formatUsd, formatWhen, statusTone, terminalReasonLabel, outcomeTone } f
 
 describe('display helpers', () => {
   it('outcomeTone maps started/success/other to distinct classes', () => {
-    expect(outcomeTone('success')).toContain('emerald');
-    expect(outcomeTone('started')).toContain('muted');
-    expect(outcomeTone('error')).toContain('amber');
+    expect(outcomeTone('success')).toContain('mlq-success');
+    expect(outcomeTone('started')).toContain('mlq-muted');
+    expect(outcomeTone('error')).toContain('mlq-caveats');
   });
   it('formatUsd renders dollars or a dash', () => {
     expect(formatUsd(0.42)).toBe('$0.42');
