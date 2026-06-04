@@ -39,6 +39,16 @@
             <option value="5">5</option>
           </select>
         </label>
+        <label class="flex items-center gap-2 text-xs text-mlq-muted">
+          <input
+            type="checkbox"
+            checked={col.ensemble_verification ?? false}
+            onchange={(e) => builder.setColumn(col.id, { ensemble_verification: e.currentTarget.checked || null })}
+            aria-label="Ensemble verification for {col.name || 'this column'}"
+            class="rounded-mlq-control border border-mlq-subtle"
+          />
+          Ensemble verification
+        </label>
       </div>
       {#if builder.columns.length > 1}
         <div class="mt-1.5 flex flex-col items-center">
