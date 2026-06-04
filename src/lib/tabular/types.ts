@@ -69,6 +69,7 @@ export interface ColumnDraft {
   name: string;
   query: string;
   minimum_inference_tier?: number | null;
+  ensemble_verification?: boolean | null;
 }
 
 /**
