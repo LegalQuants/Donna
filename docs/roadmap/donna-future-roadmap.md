@@ -5,15 +5,21 @@ later. This is **forward-looking** — see the `donna-phase-status` project memo
 
 ---
 
-## Autonomous workflows (deferred 2026-05-31)
+## Autonomous workflows (deferred 2026-05-31 · **backend now SHIPPED + scoped 2026-06-04**)
 
-**Status:** waiting on the LQ_AI backend. The backend's *autonomous workflows* (multi-step agentic
-flows) are being built as part of LQ_AI **Milestone 4**. Donna will expose them once that lands and
-the `vendor/lq-ai` pin is bumped. The unified **Workflows** area (shipped in #31 — hub + segmented
-sub-nav `Skills · Playbooks · Prompts`) was deliberately built to **extend** to this: an autonomous
-workflows surface is the natural fourth tool/segment ("Workflows"/"Automations").
+**Status (updated 2026-06-04):** the backend **has shipped** (`/api/v1/autonomous/*`, v0.4.0, fully typed
+at pin `541bd6f`) and is **buildable now** as the 4th Workflows segment ("Automations") — Donna just
+doesn't consume it yet. The unified **Workflows** area (shipped in #31 — hub + segmented sub-nav
+`Skills · Playbooks · Prompts`) was deliberately built to **extend** to this.
 
-**Why deferred:** no contract yet — can't spec the Donna surface until the backend API exists.
+➡️ **A full implementation scoping — API surface, ~8 PR slices with sizes, blockers, recommendation —
+lives in [`autonomous-workflows-scope.md`](./autonomous-workflows-scope.md). Build a plan from that doc.**
+
+**Several questions in the checklist below are now answered** by the scoping: #4 → runs **poll, not SSE**;
+#6 → **no human-in-the-loop / resume** (only `halt`); #9 → **per-user `autonomous_enabled` opt-in** (not
+admin-gated); #10 → arq `autonomous_worker`. The remaining live blocker: **where a user flips
+`autonomous_enabled`** (no endpoint in the autonomous surface sets it). The checklist below is kept for
+historical context; the scope doc is the current source of truth.
 
 ### When it lands — start with the brainstorming skill (fresh feature)
 

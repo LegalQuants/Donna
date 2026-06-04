@@ -26,7 +26,7 @@ Donna's only outstanding planned item. The provider-keys card on `/settings/mode
 Run the normal loop (brainstorm→spec→plan→subagent-execute→whole-branch Opus review→PR).
 
 ## Option 2 — Autonomous-workflows surface (buildable NOW, no SHA needed; mostly)
-The planned **4th Workflows segment** over LQ-AI's `/api/v1/autonomous/*` (shipped v0.4.0, typed at the current pin). Full scope + slicing + effort + unknowns are in memory **[[donna-autonomous-workflows-scope]]** (and `docs/roadmap/donna-future-roadmap.md`). Highlights:
+The planned **4th Workflows segment** over LQ-AI's `/api/v1/autonomous/*` (shipped v0.4.0, typed at the current pin). **Full plan-ready scoping (API surface table, ~8 PR slices with sizes, blockers, recommendation) → `docs/roadmap/autonomous-workflows-scope.md`** (also memory **[[donna-autonomous-workflows-scope]]**). Highlights:
 - **Clean extension of the Workflows IA**, not a re-architecture. Runs **POLL, not SSE** → reuse `src/lib/{playbooks/runFlow,tabular/runPoll}.svelte.ts`. ~8 slices (~1 L + 4 M + 3 S).
 - **Start with Slice A — read-only Sessions + receipt view** (the transparency payoff): no opt-in, no cron, no mutate. Main work = hand-typing the loosely-typed `receipt` blob (`backend.d.ts:9155`) — **spike: capture a real `GET /sessions/{id}` receipt first**.
 - **Blocker for the *mutate* slices (run-now/schedules/watches):** they 403 until a per-user `autonomous_enabled` flag is on, and **there's no endpoint in the autonomous surface to set it** — resolve where a user enables it (likely a `/settings` or users endpoint, possibly an upstream ask) before committing to those slices. Read-only A + B (notifications) need no opt-in.
