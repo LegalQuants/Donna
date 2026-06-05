@@ -33,6 +33,12 @@ describe('ScheduleForm', () => {
     expect(container.querySelector('input[name="skill_ref"]')).toBeNull();
   });
 
+  it('puts a typed cost cap into the hidden max_cost_usd input (string, no number coercion)', async () => {
+    const { container } = render(ScheduleForm, { props: base });
+    await fireEvent.input(screen.getByLabelText(/cost cap/i), { target: { value: '2.50' } });
+    expect((container.querySelector('input[name="max_cost_usd"]') as HTMLInputElement).value).toBe('2.50');
+  });
+
   it('prefills from initial in edit mode (skill source) and shows the given submit label', () => {
     const { container } = render(ScheduleForm, {
       props: {
