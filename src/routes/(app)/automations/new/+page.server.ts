@@ -24,8 +24,7 @@ export const load: PageServerLoad = async (event) => {
   const userSkills = (await jsonOr<{ slug: string; display_name: string; description?: string }[]>(userSkillsRes, []))
     .filter((s) => Boolean(s.slug));
   const builtins = await jsonOr<{ name: string; title: string; description?: string }[]>(builtinsRes, []);
-  const kbsBody = await jsonOr<{ knowledge_bases?: KnowledgeBase[] } | KnowledgeBase[]>(kbsRes, []);
-  const kbs: KnowledgeBase[] = Array.isArray(kbsBody) ? kbsBody : (kbsBody.knowledge_bases ?? []);
+  const kbs = await jsonOr<KnowledgeBase[]>(kbsRes, []);
   const matters = await jsonOr<{ id: string; name: string }[]>(mattersRes, []);
 
   return {
@@ -45,7 +44,7 @@ export const actions: Actions = {
     const skillRef = String(form.get('skill_ref') ?? '');
     const targetKbId = String(form.get('target_kb_id') ?? '');
     const projectId = String(form.get('project_id') ?? '');
-    const maxCost = String(form.get('max_cost_usd') ?? '');
+    const maxCost = String(form.get('max_cost_usd') ?? '').trim();
 
     const sourceOk = mode === 'skill' ? Boolean(skillRef) : Boolean(playbookId);
     if (!sourceOk || !targetKbId) {
@@ -55,7 +54,7 @@ export const actions: Actions = {
     const body: Record<string, string> = { target_kb_id: targetKbId };
     if (mode === 'skill') body.skill_ref = skillRef; else body.playbook_id = playbookId;
     if (projectId) body.project_id = projectId;
-    if (maxCost) body.max_cost_usd = maxCost;
+    if (maxCost && Number.isFinite(Number(maxCost)) && Number(maxCost) >= 0) body.max_cost_usd = maxCost;
 
     const res = await lqFetch(event, '/api/v1/autonomous/run-now', { method: 'POST', body: JSON.stringify(body) });
     if (res.status === 403) throw redirect(303, '/automations'); // not opted in → gate

@@ -19,7 +19,7 @@
     <AutomationsGate />
   {:else}
     <h2 class="mb-3 text-lg font-medium text-mlq-text">Run an automation</h2>
-    {#if form?.error}<p role="status" aria-live="polite" class="mb-3 text-sm text-mlq-error">{form.error}</p>{/if}
+    {#if form?.error}<p role="alert" class="mb-3 text-sm text-mlq-error">{form.error}</p>{/if}
     <form method="POST" action="?/run" use:enhance>
       <RunNowForm playbookItems={data.playbookItems} skillItems={data.skillItems} kbs={data.kbs} matters={data.matters} />
     </form>
