@@ -4,13 +4,9 @@ import { isAutonomousEnabled } from '$lib/automations/optin.server';
 import { unreadCount } from '$lib/automations/unread.server';
 import { toPlaybookItems, toSkillItems } from '$lib/automations/runNow';
 import { parseScheduleList, buildScheduleBody } from '$lib/automations/schedules';
+import { jsonOr } from '$lib/server/loadJson';
 import type { KnowledgeBase } from '$lib/knowledge/types';
 import type { PageServerLoad, Actions } from './$types';
-
-async function jsonOr<T>(res: Response, fallback: T): Promise<T> {
-  if (!res.ok) return fallback;
-  try { return (await res.json()) as T; } catch { return fallback; }
-}
 
 export const load: PageServerLoad = async (event) => {
   const autonomousEnabled = await isAutonomousEnabled(event);
