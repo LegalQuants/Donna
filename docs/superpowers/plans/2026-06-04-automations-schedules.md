@@ -15,7 +15,7 @@
 - `/api/v1/autonomous/schedules/{schedule_id}` exposes only **PATCH** and **DELETE** (DELETE → **200** with the soft-deleted `AutonomousScheduleRead`). **There is no GET-single** — the edit page loads the list and finds by id (404 if absent). Path param is `schedule_id`.
 - List response is the envelope `AutonomousScheduleListResponse` `{ schedules[], total_count, limit, offset }`.
 - Invalid `cron_expr` → **422**; missing opt-in → **403**; cross-user id → **404**.
-- The checked-in `src/lib/api/backend.d.ts` is **stale** (missing `max_cost_usd`) — Task 1 regenerates it.
+- `max_cost_usd` is a real backend field (Pydantic `AutonomousScheduleCreate` + migration `0045` + `tests/autonomous/test_watch_schedule_max_cost_field.py`) but is **missing from the OpenAPI YAML sketch** (`vendor/lq-ai/docs/api/backend-openapi.yaml`) that `gen:api` reads — so it is **not** in the generated `AutonomousScheduleCreate` type. The schedule form posts it in an **untyped** JSON body (`buildScheduleBody` returns `Record<string, unknown>`), exactly as run-now does (`RunNowForm`'s action builds an untyped body too) — works at runtime, no generated type required. **No `gen:api` run is needed** (`backend.d.ts` already carries the schedule schemas). The doc drift is filed upstream in Task 1.
 - Cron field bounds (from `vendor/lq-ai/api/app/autonomous/cron.py`): minute 0–59, hour 0–23, day-of-month 1–31, month 1–12, day-of-week 0–7; tokens support `*`, lists `1,2`, ranges `1-5`, steps `*/5`.
 
 ---
@@ -37,41 +37,55 @@
 - `src/routes/(app)/automations/schedules/[id]/+page.svelte` + `page.svelte.test.ts`
 
 **Modify:**
-- `src/lib/api/backend.d.ts` (via `npm run gen:api` — Task 1, generated)
 - `src/lib/automations/AutomationsNav.svelte` (+ `.svelte.test.ts`) — add the Schedules tab.
+
+**Note (no codegen):** `gen:api` reads the static OpenAPI YAML sketches, which lag the backend for the schedule `max_cost_usd` field — running it would NOT add that field and is unnecessary (the schedule schemas are already in `backend.d.ts`). Task 1 instead records the drift for the upstream lq-ai fix.
 
 ---
 
-## Task 1: Regenerate API types
+## Task 1: File the upstream OpenAPI drift note (no codegen)
+
+**Decision (user, 2026-06-04):** Keep the schedule cost cap, post it untyped (works at runtime), and record the OpenAPI-sketch drift for the upstream lq-ai fix. Do **not** edit vendored files or run `gen:api`.
 
 **Files:**
-- Modify (generated): `src/lib/api/backend.d.ts`
+- Create: `docs/superpowers/notes/2026-06-04-upstream-lq-ai-schedule-maxcost-openapi-drift.md`
 
-- [ ] **Step 1: Confirm the backend exposes `max_cost_usd` on schedules**
+- [ ] **Step 1: Confirm the drift (both sides)**
 
 Run: `grep -n "max_cost_usd" vendor/lq-ai/api/app/schemas/autonomous.py`
-Expected: a match inside `class AutonomousScheduleCreate` (and `AutonomousWatchCreate`).
+Expected: present under `class AutonomousScheduleCreate` (and `AutonomousWatchCreate`).
 
-- [ ] **Step 2: Regenerate types**
+Run: `awk '/AutonomousScheduleCreate:/,/AutonomousScheduleUpdate:/' vendor/lq-ai/docs/api/backend-openapi.yaml | grep -c max_cost_usd`
+Expected: `0` — the YAML sketch omits it (drift confirmed).
 
-Run: `npm run gen:api`
-(If the gateway must be up for generation, follow the dev-stack cold-start in the spec/handoff first.)
+- [ ] **Step 2: Write the upstream note**
 
-- [ ] **Step 3: Verify `max_cost_usd` now appears**
+```markdown
+# Upstream lq-ai drift — schedule `max_cost_usd` missing from OpenAPI sketch
 
-Run: `grep -n "max_cost_usd" src/lib/api/backend.d.ts`
-Expected: `max_cost_usd?` now present under `AutonomousScheduleCreate`.
+**Date:** 2026-06-04 · **Found during:** Donna Automations slice F (schedules).
 
-- [ ] **Step 4: Typecheck**
+**Drift:** `api/app/schemas/autonomous.py::AutonomousScheduleCreate` (and `AutonomousScheduleUpdate`)
+expose `max_cost_usd: Decimal | None` (added by migration `0045_autonomous_per_trigger_max_cost.py`,
+covered by `tests/autonomous/test_watch_schedule_max_cost_field.py`). The hand-maintained OpenAPI sketch
+`docs/api/backend-openapi.yaml` does **not** list `max_cost_usd` on those two schemas — though it
+correctly lists it on `AutonomousManualRunRequest` (run-now). The same likely applies to the watch
+create/update schemas (verify when slice G lands).
 
-Run: `npm run check`
-Expected: 0 errors / 0 warnings (vendor `ERR_MODULE_NOT_FOUND` on stderr is harmless).
+**Impact on Donna:** `gen:api` reads the sketch, so the generated `AutonomousScheduleCreate` type lacks
+the field. Donna posts `max_cost_usd` in an untyped request body, so it works at runtime; only
+compile-time typing is missing.
 
-- [ ] **Step 5: Commit**
+**Upstream fix:** add `max_cost_usd: {type: string, nullable: true}` to `AutonomousScheduleCreate`,
+`AutonomousScheduleUpdate` (and the watch create/update) in `docs/api/backend-openapi.yaml`, matching the
+`AutonomousManualRunRequest` precedent. After the pin bumps past that fix, Donna can drop the untyped cast.
+```
+
+- [ ] **Step 3: Commit**
 
 ```bash
-git add src/lib/api/backend.d.ts
-git commit -m "chore(api): regenerate backend types for autonomous schedules max_cost_usd"
+git add docs/superpowers/notes/2026-06-04-upstream-lq-ai-schedule-maxcost-openapi-drift.md
+git commit -m "docs(automations): note upstream lq-ai schedule max_cost_usd OpenAPI drift"
 ```
 
 ---
@@ -1550,7 +1564,7 @@ git push -u origin feat/automations-schedules
 ---
 
 ## Self-review notes (coverage vs spec)
-- **Backend contract / gen:api** → Task 1. **Gate (403) / opt-in reuse** → Tasks 8–9 (`isAutonomousEnabled`, `AutomationsGate`). **List envelope** → `parseScheduleList` (Task 3). **`max_cost_usd` kept** → `buildScheduleBody` + form cost field (Tasks 3, 5).
+- **Backend contract / OpenAPI drift filed** → Task 1 (no codegen; cost cap posted untyped). **Gate (403) / opt-in reuse** → Tasks 8–9 (`isAutonomousEnabled`, `AutomationsGate`). **List envelope** → `parseScheduleList` (Task 3). **`max_cost_usd` kept (untyped body)** → `buildScheduleBody` + form cost field (Tasks 3, 5).
 - **IA: Schedules tab** → Task 7. **Routes: list+inline create, `[id]` edit** → Tasks 8–9.
 - **Cron input (presets + advanced + preview + 422)** → Task 4; **`cron.ts` unit** → Task 2; **cadence preset-reverse-map + raw fallback** → `describeCron` (Task 2), used in rows (Task 6).
 - **Reuse without refactoring RunNowForm** → `ScheduleForm` composes `SourcePicker`/`KbPicker`/`MatterPicker` directly (Task 5).
