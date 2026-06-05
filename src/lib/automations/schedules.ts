@@ -54,9 +54,12 @@ export type ScheduleBodyResult =
 
 /** Build the create/update request body from a submitted form. Enforces the
  *  "exactly one source + a cron" rule; cron validity itself is the backend's
- *  job (422). Shared by the list (?/create) and edit (?/update) actions. */
-export function buildScheduleBody(form: FormData): ScheduleBodyResult {
-  const mode = String(form.get('source_mode') ?? 'playbook');
+ *  job (422). Shared by the list (?/create) and edit (?/update) actions.
+ *  `project_id`: create omits it when empty; update always sends it —
+ *  a value reassigns the matter, explicit null unassigns (omit = unchanged,
+ *  per AutonomousScheduleUpdate's exclude_unset PATCH semantics). */
+export function buildScheduleBody(form: FormData, mode: 'create' | 'update'): ScheduleBodyResult {
+  const sourceMode = String(form.get('source_mode') ?? 'playbook');
   const playbookId = String(form.get('playbook_id') ?? '');
   const skillRef = String(form.get('skill_ref') ?? '');
   const cronExpr = String(form.get('cron_expr') ?? '').trim();
@@ -66,15 +69,16 @@ export function buildScheduleBody(form: FormData): ScheduleBodyResult {
   const maxCost = String(form.get('max_cost_usd') ?? '').trim();
   const enabled = String(form.get('enabled') ?? 'true') === 'true';
 
-  const sourceOk = mode === 'skill' ? Boolean(skillRef) : Boolean(playbookId);
+  const sourceOk = sourceMode === 'skill' ? Boolean(skillRef) : Boolean(playbookId);
   if (!sourceOk || !cronExpr) return { ok: false };
 
   const body: Record<string, unknown> = { cron_expr: cronExpr, enabled };
-  if (mode === 'skill') body.skill_ref = skillRef;
+  if (sourceMode === 'skill') body.skill_ref = skillRef;
   else body.playbook_id = playbookId;
   if (name) body.name = name;
   if (targetKbId) body.target_kb_id = targetKbId;
-  if (projectId) body.project_id = projectId;
+  if (mode === 'update') body.project_id = projectId || null;
+  else if (projectId) body.project_id = projectId;
   if (maxCost && Number.isFinite(Number(maxCost)) && Number(maxCost) >= 0) body.max_cost_usd = maxCost;
   return { ok: true, body };
 }
