@@ -62,4 +62,15 @@ describe('/automations/watches/[id] update', () => {
     const out = await actions.update(ev('w1', { source_mode: 'playbook', playbook_id: 'p1' }));
     expect(out).toMatchObject({ status: 404 });
   });
+  it('maps a project-ownership 404 to a matter-specific error', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: 'project not found' }), { status: 404 }));
+    const out = await actions.update(ev('w1', { source_mode: 'playbook', playbook_id: 'p1', project_id: 'm-stale' }));
+    expect(out).toMatchObject({ status: 404, data: { field: 'matter' } });
+    expect((out as { data: { error: string } }).data.error).toMatch(/matter was not found/i);
+  });
+  it('keeps the generic message for a watch-not-found 404', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: 'autonomous watch not found' }), { status: 404 }));
+    const out = await actions.update(ev('missing', { source_mode: 'playbook', playbook_id: 'p1' }));
+    expect(out).toMatchObject({ status: 404, data: { error: 'Watch not found.' } });
+  });
 });
