@@ -10,7 +10,7 @@ import Page from './+page.svelte';
 beforeEach(() => { invalidateAll.mockReset(); });
 afterEach(() => vi.restoreAllMocks());
 
-const data = { user: null, provenancePills: 'always' as const, trustPills: 'labels' as const };
+const data = { user: null, provenancePills: 'always' as const, trustPills: 'labels' as const, autonomousEnabled: false };
 const props = () => ({ data }) as never;
 
 describe('/settings/preferences page', () => {
@@ -39,5 +39,11 @@ describe('/settings/preferences page', () => {
     await fireEvent.click(screen.getByRole('radio', { name: 'Collapsed' }));
     expect(await screen.findByText(/couldn.t save/i)).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Always shown' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('renders the Automations opt-in switch reflecting the loaded value', () => {
+    render(Page, { props: { data: { trustPills: 'labels', provenancePills: 'always', autonomousEnabled: true } } as never });
+    const sw = screen.getByRole('switch', { name: /enable automations/i });
+    expect(sw).toHaveAttribute('aria-checked', 'true');
   });
 });

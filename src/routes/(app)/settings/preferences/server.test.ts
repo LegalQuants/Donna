@@ -29,4 +29,12 @@ describe('PATCH /settings/preferences proxy', () => {
     lqFetch.mockResolvedValue(new Response(null, { status: 500 }));
     await expect(PATCH(event({ provenance_pills: 'collapsed' }))).rejects.toMatchObject({ status: 502 });
   });
+
+  it('forwards autonomous_enabled to the backend', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ autonomous_enabled: true }), { status: 200 }));
+    const ev = { request: new Request('http://x', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ autonomous_enabled: true }) }) } as never;
+    const res = await PATCH(ev);
+    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/users/me/preferences');
+    expect((await res.json()).autonomous_enabled).toBe(true);
+  });
 });
