@@ -22,3 +22,15 @@ compile-time typing is missing.
 **Upstream fix:** add `max_cost_usd: {type: string, nullable: true}` to `AutonomousScheduleCreate`,
 `AutonomousScheduleUpdate` (and the watch create/update) in `docs/api/backend-openapi.yaml`, matching the
 `AutonomousManualRunRequest` precedent. After the pin bumps past that fix, Donna can drop the untyped cast.
+
+---
+
+## Related asymmetry — `project_id` is absent from `AutonomousScheduleUpdate` (not just the sketch)
+
+Found during slice F whole-branch review. `AutonomousScheduleCreate` accepts `project_id`, but
+`AutonomousScheduleUpdate` (both the Pydantic model and the generated `backend.d.ts`) has **no
+`project_id`** — so a schedule's matter is effectively **fixed at creation**; a PATCH carrying
+`project_id` is silently ignored (Pydantic `extra='ignore'`). Donna handles this by rendering the matter
+**read-only** in the edit form (`ScheduleForm` `editing` branch) instead of an editable control that does
+nothing. If reassigning a schedule's matter is ever desired, that's an upstream ask to add `project_id`
+to `AutonomousScheduleUpdate`; otherwise the current read-only treatment is correct.

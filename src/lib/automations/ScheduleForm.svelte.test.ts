@@ -51,6 +51,8 @@ describe('ScheduleForm', () => {
     expect(screen.getByRole('radio', { name: /skill/i })).toHaveAttribute('aria-checked', 'true');
     // The KB trigger reflects the seeded selection, not the generic "Choose…" label.
     expect(screen.getByRole('button', { name: /Knowledge base: Contracts KB/i })).toBeInTheDocument();
+    // Matter is fixed at creation — edit mode shows it read-only, not an editable picker.
+    expect(screen.getByText(/set at creation/i)).toBeInTheDocument();
     expect((container.querySelector('input[name="cron_expr"]') as HTMLInputElement).value).toBe('0 9 * * 1');
     expect((container.querySelector('input[name="skill_ref"]') as HTMLInputElement).value).toBe('comms');
     expect((container.querySelector('input[name="enabled"]') as HTMLInputElement).value).toBe('false');

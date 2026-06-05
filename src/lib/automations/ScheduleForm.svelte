@@ -54,7 +54,13 @@
 
   const items = $derived(mode === 'playbook' ? playbookItems : skillItems);
   const kbName = $derived(kbs.find((k) => k.id === kbId)?.name ?? null);
+  const matterName = $derived(matters.find((m) => m.id === projectId)?.name ?? null);
   const canSave = $derived(sourceValue !== null && looksValid(cronExpr));
+
+  // A schedule's matter is fixed at creation: AutonomousScheduleUpdate has no
+  // project_id, so the backend ignores it on PATCH. Show it read-only in edit mode
+  // rather than an editable control that silently does nothing.
+  const editing = $derived(initial !== null);
 
   function setMode(next: SourceMode) {
     if (next === mode) return;
@@ -108,7 +114,11 @@
 
   <div>
     <div class="mb-1 text-xs font-medium text-mlq-muted">Matter (optional)</div>
-    <MatterPicker {matters} bind:selectedId={projectId} placement="down" />
+    {#if editing}
+      <p class="text-xs text-mlq-muted">{matterName ?? 'None'} <span class="text-mlq-muted/70">· set at creation</span></p>
+    {:else}
+      <MatterPicker {matters} bind:selectedId={projectId} placement="down" />
+    {/if}
   </div>
 
   <div>

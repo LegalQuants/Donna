@@ -30,6 +30,12 @@
   {#if !data.autonomousEnabled}
     <AutomationsGate />
   {:else}
+    <!-- Page-level errors (failed toggle/delete, or a create 400/502) render here so they're
+         visible even when the create form is closed. Cron-field 422s surface inside CronInput. -->
+    {#if form?.error && !(form && 'field' in form && form.field === 'cron')}
+      <p role="alert" class="mb-3 text-sm text-mlq-error">{form.error}</p>
+    {/if}
+
     <div class="mb-3">
       <button type="button" onclick={() => (showForm = !showForm)}
         class="rounded-mlq-control bg-mlq-workflow px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow">
@@ -38,7 +44,6 @@
     </div>
 
     {#if showForm}
-      {#if form?.error}<p role="alert" class="mb-3 text-sm text-mlq-error">{form.error}</p>{/if}
       <form method="POST" action="?/create" use:enhance class="mb-6 rounded-mlq-control border border-mlq-subtle p-4">
         <ScheduleForm
           playbookItems={data.playbookItems}
