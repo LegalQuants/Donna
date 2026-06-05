@@ -42,8 +42,20 @@ describe('/settings/preferences page', () => {
   });
 
   it('renders the Automations opt-in switch reflecting the loaded value', () => {
-    render(Page, { props: { data: { trustPills: 'labels', provenancePills: 'always', autonomousEnabled: true } } as never });
+    render(Page, { data: { ...data, autonomousEnabled: true } } as never);
     const sw = screen.getByRole('switch', { name: /enable automations/i });
     expect(sw).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('optimistically flips the Automations switch and PATCHes the proxy on click', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ autonomous_enabled: true }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(Page, { data: { ...data, autonomousEnabled: false } } as never);
+    const sw = screen.getByRole('switch', { name: /enable automations/i });
+    expect(sw).toHaveAttribute('aria-checked', 'false');
+    await fireEvent.click(sw);
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    expect(fetchMock).toHaveBeenCalledWith('/settings/preferences', expect.objectContaining({ method: 'PATCH' }));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ autonomous_enabled: true });
   });
 });

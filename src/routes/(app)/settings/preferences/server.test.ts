@@ -35,6 +35,7 @@ describe('PATCH /settings/preferences proxy', () => {
     const ev = { request: new Request('http://x', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ autonomous_enabled: true }) }) } as never;
     const res = await PATCH(ev);
     expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/users/me/preferences');
+    expect(JSON.parse(lqFetch.mock.calls[0][2].body as string)).toEqual({ autonomous_enabled: true });
     expect((await res.json()).autonomous_enabled).toBe(true);
   });
 });

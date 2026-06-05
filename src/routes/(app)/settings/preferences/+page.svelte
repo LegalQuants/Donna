@@ -16,13 +16,6 @@
   // Sample option to drive the live trust-pill preview.
   const sampleLocal: ChatModelOption = { id: 'preview-local', label: 'Llama 3', resolvedModel: 'ollama/llama3', group: 'local', tier: 1 };
 
-  let autonomousEnabled = $state<boolean>(untrack(() => data.autonomousEnabled));
-  function onAutonomous() {
-    const prev = autonomousEnabled;
-    autonomousEnabled = !prev;
-    save('autonomous_enabled', autonomousEnabled, () => (autonomousEnabled = prev));
-  }
-
   async function save(field: 'trust_pills' | 'provenance_pills' | 'autonomous_enabled', value: string | boolean, revert: () => void) {
     error = null;
     try {
@@ -41,6 +34,13 @@
 
   function onTrust(v: string) { const prev = trust; trust = v as TrustFormat; save('trust_pills', v, () => (trust = prev)); }
   function onProvenance(v: string) { const prev = provenance; provenance = v as ProvenanceMode; save('provenance_pills', v, () => (provenance = prev)); }
+
+  let autonomousEnabled = $state<boolean>(untrack(() => data.autonomousEnabled));
+  function onAutonomous() {
+    const prev = autonomousEnabled;
+    autonomousEnabled = !prev;
+    save('autonomous_enabled', autonomousEnabled, () => (autonomousEnabled = prev));
+  }
 </script>
 
 <svelte:head><title>Preferences — Donna</title></svelte:head>
