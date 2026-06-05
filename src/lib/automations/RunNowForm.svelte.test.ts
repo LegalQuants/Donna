@@ -5,21 +5,24 @@ import { render, screen } from '@testing-library/svelte';
 import { fireEvent } from '@testing-library/dom';
 import RunNowForm from './RunNowForm.svelte';
 import type { SourceItem } from './runNow';
+import type { KnowledgeBase } from '$lib/knowledge/types';
+import type { MatterSummary } from '$lib/matters/types';
 
 const playbookItems: SourceItem[] = [{ value: 'p1', label: 'NDA — Mutual', sub: 'NDA' }];
 const skillItems: SourceItem[] = [{ value: 'comms-improver', label: 'Comms Improver', sub: 'builtin' }];
-const kbs = [{ id: 'kb1', name: 'Contracts KB' }] as never;
-const matters = [{ id: 'm1', name: 'Acme' }] as never;
+const kbs: KnowledgeBase[] = [{ id: 'kb1', name: 'Contracts KB', owner_id: 'u1', hybrid_alpha: 0.5, file_count: 0, chunk_count: 0, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }];
+const matters: MatterSummary[] = [{ id: 'm1', name: 'Acme' }];
 
 function setup() {
   return render(RunNowForm, { props: { playbookItems, skillItems, kbs, matters } });
 }
 
-// KbPicker renders a "Link a knowledge base" trigger button; KB items are only
-// visible after opening that dropdown. Helper opens the picker, then clicks the
-// named KB row (which is a plain <button> rendered by KbPicker's list).
+// KbPicker renders a "Choose a knowledge base" trigger button (triggerLabel passed
+// from RunNowForm); KB items are only visible after opening that dropdown.
+// Helper opens the picker, then clicks the named KB row (a plain <button> rendered
+// by KbPicker's list).
 async function pickKb(name: RegExp | string) {
-  await fireEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
+  await fireEvent.click(screen.getByRole('button', { name: /choose a knowledge base/i }));
   await fireEvent.click(screen.getByRole('button', { name }));
 }
 
