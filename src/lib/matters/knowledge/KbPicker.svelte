@@ -3,7 +3,7 @@
   import type { KnowledgeBase } from '$lib/knowledge/types';
   import CreateKbForm from '$lib/knowledge/CreateKbForm.svelte';
 
-  let { kbs, onpick }: { kbs: KnowledgeBase[]; onpick: (kbId: string) => void } = $props();
+  let { kbs, onpick, triggerLabel = 'Link a knowledge base' }: { kbs: KnowledgeBase[]; onpick: (kbId: string) => void; triggerLabel?: string } = $props();
 
   let open = $state(false);
   let mode = $state<'list' | 'create'>('list');
@@ -53,11 +53,11 @@
     type="button"
     aria-haspopup="dialog"
     aria-expanded={open}
-    aria-label="Link a knowledge base"
+    aria-label={triggerLabel}
     onclick={() => (open = !open)}
     class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
   >
-    <Plus size={13} /> Link a knowledge base
+    <Plus size={13} /> {triggerLabel}
   </button>
 
   {#if open}
