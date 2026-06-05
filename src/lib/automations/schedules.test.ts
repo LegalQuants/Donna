@@ -60,7 +60,7 @@ describe('buildScheduleBody', () => {
     const out = buildScheduleBody(fd({
       source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *',
       name: 'Daily', target_kb_id: 'kb1', project_id: 'm1', max_cost_usd: '2.00', enabled: 'true'
-    }));
+    }), 'create');
     expect(out.ok).toBe(true);
     expect(out.ok && out.body).toEqual({
       cron_expr: '0 9 * * *', enabled: true, playbook_id: 'p1',
@@ -68,20 +68,43 @@ describe('buildScheduleBody', () => {
     });
   });
   it('builds a skill body and honors enabled=false', () => {
-    const out = buildScheduleBody(fd({ source_mode: 'skill', skill_ref: 'comms', cron_expr: '0 9 * * *', enabled: 'false' }));
+    const out = buildScheduleBody(fd({ source_mode: 'skill', skill_ref: 'comms', cron_expr: '0 9 * * *', enabled: 'false' }), 'create');
     expect(out.ok && out.body).toEqual({ cron_expr: '0 9 * * *', enabled: false, skill_ref: 'comms' });
   });
   it('fails when the source or cron is missing', () => {
-    expect(buildScheduleBody(fd({ source_mode: 'playbook', cron_expr: '0 9 * * *' })).ok).toBe(false);
-    expect(buildScheduleBody(fd({ source_mode: 'playbook', playbook_id: 'p1' })).ok).toBe(false);
+    expect(buildScheduleBody(fd({ source_mode: 'playbook', cron_expr: '0 9 * * *' }), 'create').ok).toBe(false);
+    expect(buildScheduleBody(fd({ source_mode: 'playbook', playbook_id: 'p1' }), 'create').ok).toBe(false);
   });
   it('drops a non-numeric or negative max_cost_usd', () => {
-    const out = buildScheduleBody(fd({ source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *', max_cost_usd: 'abc' }));
+    const out = buildScheduleBody(fd({ source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *', max_cost_usd: 'abc' }), 'create');
     expect(out.ok).toBe(true);
     expect(out.ok && 'max_cost_usd' in out.body).toBe(false);
   });
   it('keeps a valid max_cost_usd in the body', () => {
-    const out = buildScheduleBody(fd({ source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *', max_cost_usd: '1.50' }));
+    const out = buildScheduleBody(fd({ source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *', max_cost_usd: '1.50' }), 'create');
     expect(out.ok && out.body.max_cost_usd).toBe('1.50');
+  });
+  it('update: emits project_id verbatim (reassign)', () => {
+    const out = buildScheduleBody(fd({
+      source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *', project_id: 'm2'
+    }), 'update');
+    expect(out.ok && out.body.project_id).toBe('m2');
+  });
+  it('update: maps an empty project_id to null (unassign)', () => {
+    const out = buildScheduleBody(fd({
+      source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *', project_id: ''
+    }), 'update');
+    expect(out.ok).toBe(true);
+    expect(out.ok && out.body.project_id).toBeNull();
+  });
+  it('update: an absent project_id field also maps to null', () => {
+    const out = buildScheduleBody(fd({ source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *' }), 'update');
+    expect(out.ok && out.body.project_id).toBeNull();
+  });
+  it('create: still omits an empty project_id', () => {
+    const out = buildScheduleBody(fd({
+      source_mode: 'playbook', playbook_id: 'p1', cron_expr: '0 9 * * *', project_id: ''
+    }), 'create');
+    expect(out.ok && 'project_id' in out.body).toBe(false);
   });
 });

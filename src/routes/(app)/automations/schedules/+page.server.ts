@@ -45,7 +45,7 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions: Actions = {
   create: async (event) => {
-    const built = buildScheduleBody(await event.request.formData());
+    const built = buildScheduleBody(await event.request.formData(), 'create');
     if (!built.ok) return fail(400, { error: 'Choose a source and a schedule.' });
     const res = await lqFetch(event, '/api/v1/autonomous/schedules', { method: 'POST', body: JSON.stringify(built.body) });
     if (res.status === 403) return fail(403, { error: 'Automations are turned off.' });
