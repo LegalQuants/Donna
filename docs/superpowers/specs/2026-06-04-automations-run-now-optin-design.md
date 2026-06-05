@@ -30,7 +30,11 @@ The autonomous M4 layer is on `main` and present at the current pin — confirme
   - Semantics (`autonomous.py::_spawn_manual_session`): builds `params = { since: null, kb_id?, playbook_id?|skill_ref? }`; the **intake phase scopes the run to that KB's chunks**, the analysis phase runs the playbook/skill over them. `project_id` only associates the session with a matter (context/grouping), it is **not** the document scope → **the target KB is what the agent actually works on; no KB = an empty run.**
 - The spawned session is then viewed via the **A+B receipt** at `/automations/{id}` (live-polls to terminal).
 
-**Two items to verify in the slice's spike (execution task 1):**
+**✅ Spike resolved (2026-06-04, live at pin `541bd6f`):**
+1. **`skill_ref` = the skill `name`/slug** — a built-in skill run (`skill_ref:"contract-qa"` + `target_kb_id`) returned **201**, `params.skill_ref:"contract-qa"`. User skills use their `slug` (same field). → `toSkillItems` (slug for user skills, name for built-ins) is correct.
+2. **run-now does NOT gate built-in playbooks by ownership** — `_load_playbook_system_prompt` (`vendor/lq-ai/api/app/autonomous/prompts.py:226`) loads the playbook by `id` only (`deleted_at IS NULL`), **no `created_by`/admin filter** (unlike the playbooks *execute* endpoint). Any opted-in user can run any playbook by id. → **list all playbooks; no ownership filtering.**
+
+**(Original) two items verified in the spike:**
 1. **`skill_ref` format** — almost certainly the skill `slug` (skills carry `slug` in `src/lib/skills/types.ts`); confirm live by spawning a skill run. (The `playbook_id` path is already proven by A's spike.)
 2. **Run-now playbook ownership** — the playbooks *execute* endpoint is admin-or-owner (non-admins can't execute built-ins). Confirm whether run-now's `run_playbook` tool inherits that gate. If it does, restrict the playbook source list (owned + forked) or mirror playbooks-B's "fork-first"; if not, list all. Dev admin fixture passes regardless. **Decision deferred to the spike** (do not pre-restrict).
 
