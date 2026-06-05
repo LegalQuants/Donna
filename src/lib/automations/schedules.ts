@@ -1,7 +1,7 @@
 // src/lib/automations/schedules.ts
 // Defensively-parsed view models + form helpers for autonomous schedules
 // (lq-ai /api/v1/autonomous/schedules). Mirrors the style of types.ts.
-import type { SourceItem } from './runNow';
+export { sourceLabel } from './sourceLabel';
 
 export interface ScheduleSummary {
   id: string;
@@ -46,13 +46,6 @@ export function parseScheduleList(raw: unknown): ScheduleSummary[] {
   const envelope = obj(raw).schedules;
   const arr = Array.isArray(raw) ? raw : Array.isArray(envelope) ? (envelope as unknown[]) : [];
   return arr.map(parseSchedule).filter((s): s is ScheduleSummary => s !== null);
-}
-
-/** Human label for a schedule's source, resolved against the loaded libraries. */
-export function sourceLabel(s: ScheduleSummary, playbookItems: SourceItem[], skillItems: SourceItem[]): string {
-  if (s.playbook_id) return playbookItems.find((i) => i.value === s.playbook_id)?.label ?? 'Playbook';
-  if (s.skill_ref) return skillItems.find((i) => i.value === s.skill_ref)?.label ?? s.skill_ref;
-  return '—';
 }
 
 export type ScheduleBodyResult =
