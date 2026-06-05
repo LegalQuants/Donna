@@ -5738,6 +5738,249 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/admin/provider-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List provider-key status (admin only)
+         * @description Donna #7 (runtime BYOK). Proxies the gateway's
+         *     ``/admin/v1/provider-keys`` surface. The backend holds the
+         *     gateway-key; the frontend never does. Returns a secret-safe status
+         *     row per configured provider — the response NEVER contains a full
+         *     key, only the last 4 characters of a resolved key. The caller's
+         *     bearer token must have ``is_admin = true`` or the endpoint returns
+         *     403 ``forbidden``.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Provider-key status list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProviderKeyList"];
+                    };
+                };
+                /** @description Caller is not an admin */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Set/replace a provider's runtime key (admin only)
+         * @description Proxies the gateway's set-key path. The gateway encrypts the
+         *     plaintext key, persists it to gateway.yaml, and hot-applies the
+         *     rebuilt adapter — no restart. The backend forwards the JSON and
+         *     never returns the secret. 400 when the gateway master key is unset
+         *     (surfaced as ``validation_error``); 404 when the provider isn't a
+         *     configured entry.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProviderKeySetRequest"];
+                };
+            };
+            responses: {
+                /** @description Key applied; provider status returned (no secret) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProviderKeyStatus"];
+                    };
+                };
+                /** @description Gateway master key is not set */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Caller is not an admin */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Provider not configured */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/provider-keys/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a provider's runtime key (admin only)
+         * @description Proxies the gateway's revoke path. Only runtime
+         *     (encrypted-at-rest) keys can be revoked; an env-sourced key is
+         *     owned by the operator's environment and returns 409.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Runtime key revoked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Caller is not an admin */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Provider not configured */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Provider has no runtime key to revoke (e.g., env-sourced) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Rotate a provider's runtime key (admin only)
+         * @description Same mechanics as POST /api/v1/admin/provider-keys; the provider
+         *     comes from the path. Proxies the gateway, which retires the
+         *     displaced adapter and swaps the rebuilt one in. The backend never
+         *     returns the secret. 400 when the gateway master key is unset; 404
+         *     when the provider isn't configured.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProviderKeyRotateRequest"];
+                };
+            };
+            responses: {
+                /** @description Key rotated; provider status returned (no secret) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProviderKeyStatus"];
+                    };
+                };
+                /** @description Gateway master key is not set */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Caller is not an admin */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Provider not configured */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/admin/config": {
         parameters: {
             query?: never;
@@ -8922,6 +9165,7 @@ export interface components {
             /** Format: uuid */
             target_kb_id?: string | null;
             enabled: boolean;
+            max_cost_usd?: string | null;
             /** Format: date-time */
             last_run_at?: string | null;
             /** Format: date-time */
@@ -8951,6 +9195,7 @@ export interface components {
             project_id?: string | null;
             /** @default true */
             enabled: boolean;
+            max_cost_usd?: string | null;
         };
         /**
          * @description Request body for ``PATCH /autonomous/schedules/{id}``.  All fields
@@ -8966,6 +9211,7 @@ export interface components {
             skill_ref?: string | null;
             /** Format: uuid */
             target_kb_id?: string | null;
+            max_cost_usd?: string | null;
         };
         /**
          * @description Request body for ``POST /autonomous/run-now``.  Spawns one
@@ -9009,6 +9255,7 @@ export interface components {
             playbook_id?: string | null;
             skill_ref?: string | null;
             enabled: boolean;
+            max_cost_usd?: string | null;
             /** Format: date-time */
             deleted_at?: string | null;
             /** Format: date-time */
@@ -9032,6 +9279,7 @@ export interface components {
             project_id?: string | null;
             /** @default true */
             enabled: boolean;
+            max_cost_usd?: string | null;
         };
         /**
          * @description Request body for ``PATCH /autonomous/watches/{id}``.  All fields
@@ -9043,6 +9291,7 @@ export interface components {
             /** Format: uuid */
             playbook_id?: string | null;
             skill_ref?: string | null;
+            max_cost_usd?: string | null;
         };
         /** @description Paginated list of autonomous watches (newest first). */
         AutonomousWatchListResponse: {
@@ -10245,6 +10494,55 @@ export interface components {
             provider: string;
             model: string;
             fallback?: components["schemas"]["AdminAliasFallback"][];
+        };
+        ProviderKeySetRequest: {
+            /** @description Name of an already-configured provider entry. */
+            provider: string;
+            /**
+             * @description Plaintext provider key. The gateway encrypts it with the
+             *     gateway master key before it touches disk; it is never echoed
+             *     back in any response.
+             */
+            api_key: string;
+        };
+        ProviderKeyRotateRequest: {
+            /**
+             * @description Replacement plaintext provider key. Same handling as
+             *     ProviderKeySetRequest.api_key.
+             */
+            api_key: string;
+        };
+        /**
+         * @description Secret-safe status for one provider. Carries at most the last 4
+         *     characters of the resolved key — never the full key or token.
+         */
+        ProviderKeyStatus: {
+            provider: string;
+            /**
+             * @description The provider's adapter type. Null only in the rare race where a
+             *     provider is removed between the write and the status read-back on
+             *     a single-provider (POST/PATCH) response; never null on the list.
+             */
+            type: string | null;
+            /**
+             * @description True when the provider has a live, routable adapter (its key
+             *     resolved). A keyless or unresolvable provider is false.
+             */
+            configured: boolean;
+            /**
+             * @description Last 4 characters of the resolved key, or null when the key is
+             *     absent, unresolvable, or shorter than 4 characters.
+             */
+            last4: string | null;
+            /**
+             * @description Key source: `runtime` (encrypted-at-rest in gateway.yaml),
+             *     `env` (api_key_env), or null (no key configured).
+             * @enum {string|null}
+             */
+            source: "env" | "runtime" | null;
+        };
+        ProviderKeyList: {
+            provider_keys: components["schemas"]["ProviderKeyStatus"][];
         };
         /**
          * @description Canonical structured error envelope returned by every backend
