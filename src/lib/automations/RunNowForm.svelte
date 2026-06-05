@@ -31,15 +31,15 @@
 </script>
 
 <div class="flex flex-col gap-4">
-  <fieldset>
-    <legend class="mb-1 text-xs font-medium text-mlq-muted">Run a</legend>
-    <div role="radiogroup" aria-label="Source type" class="inline-flex gap-1 rounded-mlq-control border border-mlq-subtle p-1">
+  <div>
+    <div class="mb-1 text-xs font-medium text-mlq-muted">Run a</div>
+    <div role="radiogroup" aria-label="Run a" class="inline-flex gap-1 rounded-mlq-control border border-mlq-subtle p-1">
       <button type="button" role="radio" aria-checked={mode === 'playbook'} onclick={() => setMode('playbook')}
         class="rounded-mlq-control px-3 py-1 text-sm {mode === 'playbook' ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text hover:bg-mlq-subtle/50'}">Playbook</button>
       <button type="button" role="radio" aria-checked={mode === 'skill'} onclick={() => setMode('skill')}
         class="rounded-mlq-control px-3 py-1 text-sm {mode === 'skill' ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text hover:bg-mlq-subtle/50'}">Skill</button>
     </div>
-  </fieldset>
+  </div>
 
   <div>
     <div class="mb-1 text-xs font-medium text-mlq-muted">{mode === 'playbook' ? 'Playbook' : 'Skill'}</div>
@@ -61,7 +61,7 @@
         <a href="/knowledge" class="text-mlq-workflow hover:underline">Create one first.</a>
       </p>
     {:else}
-      <KbPicker {kbs} onpick={(id) => (kbId = id)} />
+      <KbPicker {kbs} triggerLabel="Choose a knowledge base" onpick={(id) => (kbId = id)} />
       {#if kbName}<p class="mt-1 text-xs text-mlq-muted">Selected: {kbName}</p>{/if}
     {/if}
   </div>
