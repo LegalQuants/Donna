@@ -51,11 +51,30 @@ describe('ScheduleForm', () => {
     expect(screen.getByRole('radio', { name: /skill/i })).toHaveAttribute('aria-checked', 'true');
     // The KB trigger reflects the seeded selection, not the generic "Choose…" label.
     expect(screen.getByRole('button', { name: /Knowledge base: Contracts KB/i })).toBeInTheDocument();
-    // Matter is fixed at creation — edit mode shows it read-only, not an editable picker.
-    expect(screen.getByText(/set at creation/i)).toBeInTheDocument();
+    // Matter is editable in edit mode (fc832ca: PATCH project_id reassigns/unassigns).
+    expect(screen.getByRole('button', { name: /choose matter/i })).toBeInTheDocument();
+    expect(screen.queryByText(/set at creation/i)).toBeNull();
+    // Edit mode always emits project_id — empty string here (initial project_id: null)
+    // so the server can distinguish "cleared" (→ null) from "untouched".
+    expect((container.querySelector('input[name="project_id"]') as HTMLInputElement).value).toBe('');
     expect((container.querySelector('input[name="cron_expr"]') as HTMLInputElement).value).toBe('0 9 * * 1');
     expect((container.querySelector('input[name="skill_ref"]') as HTMLInputElement).value).toBe('comms');
     expect((container.querySelector('input[name="enabled"]') as HTMLInputElement).value).toBe('false');
     expect((container.querySelector('input[name="max_cost_usd"]') as HTMLInputElement).value).toBe('2.50');
+  });
+
+  it('create mode omits the project_id hidden input until a matter is picked', () => {
+    const { container } = render(ScheduleForm, { props: base });
+    expect(container.querySelector('input[name="project_id"]')).toBeNull();
+  });
+
+  it('edit mode emits a seeded project_id into the hidden field', () => {
+    const { container } = render(ScheduleForm, {
+      props: {
+        ...base,
+        initial: { name: null, cron_expr: '0 9 * * *', playbook_id: 'p1', skill_ref: null, target_kb_id: null, project_id: 'm1', max_cost_usd: null, enabled: true }
+      }
+    });
+    expect((container.querySelector('input[name="project_id"]') as HTMLInputElement).value).toBe('m1');
   });
 });
