@@ -25,7 +25,8 @@ const BOUNDS: ReadonlyArray<readonly [number, number]> = [
   [0, 7] //  day-of-week (Sun=0 or 7 .. Sat=6)
 ];
 
-function normalize(expr: string): string {
+/** Trim and collapse internal whitespace to single spaces. */
+export function normalize(expr: string): string {
   return expr.trim().replace(/\s+/g, ' ');
 }
 
