@@ -22,6 +22,12 @@ describe('/automations/schedules page', () => {
     expect(screen.getByText('Weekly')).toBeInTheDocument();
   });
 
+  it('shows a failed toggle/delete error at page level even with the create form closed', () => {
+    render(Page, { props: { data: { autonomousEnabled: true, unread: 0, schedules: [], ...libs }, form: { error: 'Could not update the schedule.' } } as never });
+    expect(screen.queryByRole('button', { name: /save schedule/i })).toBeNull(); // form closed
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not update the schedule/i);
+  });
+
   it('reveals the inline create form when "New schedule" is clicked', async () => {
     render(Page, { props: { data: { autonomousEnabled: true, unread: 0, schedules: [], playbookItems: [{ value: 'p1', label: 'NDA' }], skillItems: [], kbs: [], matters: [] }, form: null } as never });
     expect(screen.queryByRole('button', { name: /save schedule/i })).toBeNull();
