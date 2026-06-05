@@ -18,4 +18,11 @@ describe('/automations index', () => {
     render(Page, { props: { data: { sessions: [], unread: 0, autonomousEnabled: false } } as never });
     expect(screen.getByText(/automations are off/i)).toBeInTheDocument();
   });
+  it('shows the gate and history (no Run now) when off but sessions exist', () => {
+    const session = { id: 's1', trigger_kind: 'schedule', current_phase: 'delivery', status: 'completed', halt_state: 'running', cost_total_usd: 0.42, max_cost_usd: 2, cost_cap_reached: false, created_at: '2026-06-04T09:00:00Z', completed_at: '2026-06-04T09:04:00Z', last_activity_at: null, error: null };
+    render(Page, { props: { data: { sessions: [session], unread: 0, autonomousEnabled: false } } as never });
+    expect(screen.getByText(/automations are off/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /schedule session, completed/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Run now' })).not.toBeInTheDocument();
+  });
 });
