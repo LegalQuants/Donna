@@ -19,7 +19,10 @@ describe('/automations load', () => {
     expect(out.autonomousEnabled).toBe(true);
   });
   it('throws 502 when the sessions list fails', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    lqFetch
+      .mockResolvedValueOnce(new Response('boom', { status: 500 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ total_count: 0 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ autonomous_enabled: false }), { status: 200 }));
     await expect(load(ev())).rejects.toMatchObject({ status: 502 });
   });
   it('tolerates a failing unread count (defaults to 0)', async () => {
