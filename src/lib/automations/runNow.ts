@@ -11,17 +11,29 @@ interface PlaybookLike { id: string; name: string; contract_type?: string }
 interface UserSkillLike { slug: string; display_name: string; description?: string }
 interface BuiltinSkillLike { name: string; title: string; description?: string }
 
+/** Keep the first item for each distinct `value`. SourcePicker keys its `{#each}`
+ *  by `value`, so any duplicate (e.g. several user skills sharing a slug) would
+ *  throw Svelte's each_key_duplicate. Dedupe defensively at the data boundary. */
+function uniqueByValue(items: SourceItem[]): SourceItem[] {
+  const seen = new Set<string>();
+  return items.filter((i) => {
+    if (seen.has(i.value)) return false;
+    seen.add(i.value);
+    return true;
+  });
+}
+
 export function toPlaybookItems(playbooks: PlaybookLike[]): SourceItem[] {
   if (!Array.isArray(playbooks)) return [];
-  return playbooks.map((p) => ({ value: p.id, label: p.name, sub: p.contract_type }));
+  return uniqueByValue(playbooks.map((p) => ({ value: p.id, label: p.name, sub: p.contract_type })));
 }
 
 export function toSkillItems(userSkills: UserSkillLike[], builtins: BuiltinSkillLike[]): SourceItem[] {
   const u = Array.isArray(userSkills) ? userSkills : [];
   const b = Array.isArray(builtins) ? builtins : [];
   const seen = new Set(u.map((s) => s.slug));
-  return [
+  return uniqueByValue([
     ...u.map((s) => ({ value: s.slug, label: s.display_name, sub: s.description })),
     ...b.filter((s) => !seen.has(s.name)).map((s) => ({ value: s.name, label: s.title, sub: s.description }))
-  ];
+  ]);
 }
