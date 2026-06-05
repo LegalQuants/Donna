@@ -6,7 +6,7 @@ import type { SourceItem } from './runNow';
 const raw = {
   id: 's1', name: 'Weekly summary', cron_expr: '0 9 * * 1',
   playbook_id: 'p1', skill_ref: null, target_kb_id: 'kb1', project_id: 'm1',
-  enabled: true, next_run_at: '2026-06-08T09:00:00Z', last_run_at: null
+  max_cost_usd: '2.50', enabled: true, next_run_at: '2026-06-08T09:00:00Z', last_run_at: null
 };
 
 describe('parseSchedule / parseScheduleList', () => {
@@ -15,6 +15,7 @@ describe('parseSchedule / parseScheduleList', () => {
     expect(s).not.toBeNull();
     expect(s!.id).toBe('s1');
     expect(s!.enabled).toBe(true);
+    expect(s!.max_cost_usd).toBe('2.50');
     expect(s!.next_run_at).toBe('2026-06-08T09:00:00Z');
   });
   it('returns null when id or cron_expr is missing', () => {

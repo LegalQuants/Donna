@@ -17,6 +17,7 @@
     skill_ref: string | null;
     target_kb_id: string | null;
     project_id: string | null;
+    max_cost_usd: string | null;
     enabled: boolean;
   }
 
@@ -46,7 +47,7 @@
   let sourceValue = $state<string | null>(seed?.skill_ref ?? seed?.playbook_id ?? null);
   let kbId = $state<string | null>(seed?.target_kb_id ?? null);
   let projectId = $state<string | null>(seed?.project_id ?? null);
-  let maxCost = $state('');
+  let maxCost = $state(seed?.max_cost_usd ?? '');
   let name = $state(seed?.name ?? '');
   let cronExpr = $state(seed?.cron_expr ?? '0 9 * * *');
   let enabled = $state(seed?.enabled ?? true);

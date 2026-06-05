@@ -38,12 +38,14 @@ describe('ScheduleForm', () => {
       props: {
         ...base,
         submitLabel: 'Save changes',
-        initial: { name: 'Weekly', cron_expr: '0 9 * * 1', playbook_id: null, skill_ref: 'comms', target_kb_id: 'kb1', project_id: null, enabled: false }
+        initial: { name: 'Weekly', cron_expr: '0 9 * * 1', playbook_id: null, skill_ref: 'comms', target_kb_id: 'kb1', project_id: null, max_cost_usd: '2.50', enabled: false }
       }
     });
     expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /skill/i })).toHaveAttribute('aria-checked', 'true');
     expect((container.querySelector('input[name="cron_expr"]') as HTMLInputElement).value).toBe('0 9 * * 1');
     expect((container.querySelector('input[name="skill_ref"]') as HTMLInputElement).value).toBe('comms');
     expect((container.querySelector('input[name="enabled"]') as HTMLInputElement).value).toBe('false');
+    expect((container.querySelector('input[name="max_cost_usd"]') as HTMLInputElement).value).toBe('2.50');
   });
 });
