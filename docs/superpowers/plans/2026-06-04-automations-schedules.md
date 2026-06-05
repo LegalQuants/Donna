@@ -1570,3 +1570,16 @@ git push -u origin feat/automations-schedules
 - **Reuse without refactoring RunNowForm** → `ScheduleForm` composes `SourcePicker`/`KbPicker`/`MatterPicker` directly (Task 5).
 - **Example use-cases copy (weekly summary / dashboard / admin chore; markdown-doc framing)** → `ScheduleList` empty state (Task 6); slide-deck deferred to docs-polish.
 - **Error mapping 422/403/404** → Tasks 8–9 actions. **Tests across units/components/actions** → every task. **Quality bar (check 0/0, vitest, lint)** → Task 10.
+
+---
+
+## Execution deviations (synced post-review)
+What the executed branch did differently from the plan above, and why:
+
+- **Task 1 (no codegen → pin bumped instead):** the user landed the upstream OpenAPI fix mid-session, so rather than ship `max_cost_usd` untyped, the `vendor/lq-ai` submodule pin was bumped `541bd6f → 69a0d35 → 35c8bb6` and `gen:api` rerun. Result: every autonomous cost field is now uniformly typed `string`; the bump also pulled in the BYOK provider-key backend (#128, Donna #7). Drift note updated to RESOLVED.
+- **`max_cost_usd` carried on `ScheduleSummary`/`ScheduleInitial`:** `Read` exposes it, so edit mode prefills the existing cap (Task 3/5 refinement).
+- **Two crash fixes found in manual testing** (also fixed in the shipped run-now form): `runNow.ts` `uniqueByValue` dedupe → `each_key_duplicate`; cost-cap inputs switched `type=number → type=text` → `maxCost.trim()` TypeError.
+- **`jsonOr` extracted** to `$lib/server/loadJson` (shared by run-now + both schedule routes).
+- **Two-step Delete confirm** on `ScheduleRow`; **KB picker `triggerLabel`** reflects the selected/seeded KB; **edit page loads `unreadCount`** for nav-badge consistency.
+- **Whole-branch review fixes:** matter rendered **read-only in edit mode** (`AutonomousScheduleUpdate` has no `project_id`); page-level **toggle/delete error alert** hoisted out of the create-form block.
+- Final gate: `npm run check` 0/0, `npx vitest run` 1060 green, eslint clean in touched areas.
