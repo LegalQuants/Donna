@@ -101,8 +101,8 @@
     {#if kbs.length === 0}
       <p class="text-xs text-mlq-muted">No knowledge bases yet.</p>
     {:else}
-      <KbPicker {kbs} triggerLabel="Choose a knowledge base" onpick={(id) => (kbId = id)} />
-      {#if kbName}<p class="mt-1 text-xs text-mlq-muted">Selected: {kbName}</p>{/if}
+      <!-- triggerLabel reflects the current selection so an edit-mode (or just-picked) KB is visible on the trigger itself. -->
+      <KbPicker {kbs} triggerLabel={kbName ? `Knowledge base: ${kbName}` : 'Choose a knowledge base'} onpick={(id) => (kbId = id)} />
     {/if}
   </div>
 
