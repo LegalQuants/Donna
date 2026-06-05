@@ -24,6 +24,11 @@ describe('SourcePicker', () => {
     expect(screen.queryByText('NDA — Mutual')).not.toBeInTheDocument();
     expect(screen.getByText('DPA — GDPR')).toBeInTheDocument();
   });
+  it('shows a no-matches row when the search filters everything out', async () => {
+    render(SourcePicker, { props: { items, selectedValue: null, label: 'Choose', onselect: () => {} } });
+    await fireEvent.input(screen.getByRole('textbox'), { target: { value: 'zzz-nothing' } });
+    expect(screen.getByText('No matches.')).toBeInTheDocument();
+  });
   it('shows an empty note when there are no items', () => {
     render(SourcePicker, { props: { items: [], selectedValue: null, label: 'Choose', emptyNote: 'No playbooks yet.', onselect: () => {} } });
     expect(screen.getByText('No playbooks yet.')).toBeInTheDocument();

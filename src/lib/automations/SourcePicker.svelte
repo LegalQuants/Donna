@@ -44,6 +44,9 @@
           </button>
         </li>
       {/each}
+      {#if filtered.length === 0}
+        <li class="px-3 py-2 text-xs text-mlq-muted">No matches.</li>
+      {/if}
     </ul>
   </div>
 {/if}
