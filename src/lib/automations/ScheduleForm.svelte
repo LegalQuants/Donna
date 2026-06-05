@@ -113,7 +113,8 @@
 
   <div>
     <label for="schedule-cost-cap" class="mb-1 block text-xs font-medium text-mlq-muted">Cost cap (optional, USD)</label>
-    <input id="schedule-cost-cap" type="number" min="0" step="0.01" inputmode="decimal" bind:value={maxCost}
+    <!-- type=text (not number): number-binding coerces to a number and breaks maxCost.trim(). -->
+    <input id="schedule-cost-cap" type="text" inputmode="decimal" bind:value={maxCost}
       placeholder="e.g. 2.00"
       class="w-32 rounded-mlq-control border border-mlq-subtle bg-transparent px-2 py-1 text-sm text-mlq-text outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow" />
   </div>

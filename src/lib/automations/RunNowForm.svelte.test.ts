@@ -52,4 +52,9 @@ describe('RunNowForm', () => {
     expect((container.querySelector('input[name="skill_ref"]') as HTMLInputElement).value).toBe('comms-improver');
     expect(container.querySelector('input[name="playbook_id"]')).toBeNull();
   });
+  it('puts a typed cost cap into the hidden max_cost_usd input (string, no number coercion)', async () => {
+    const { container } = setup();
+    await fireEvent.input(screen.getByLabelText(/cost cap/i), { target: { value: '2.50' } });
+    expect((container.querySelector('input[name="max_cost_usd"]') as HTMLInputElement).value).toBe('2.50');
+  });
 });
