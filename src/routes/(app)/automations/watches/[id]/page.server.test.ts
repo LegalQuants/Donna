@@ -50,7 +50,7 @@ describe('/automations/watches/[id] update', () => {
     expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/watches/w1');
     expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
     const body = JSON.parse(lqFetch.mock.calls[0][2].body);
-    expect(body).toEqual({ enabled: false, playbook_id: 'p1' }); // KB + project omitted (immutable)
+    expect(body).toEqual({ enabled: false, playbook_id: 'p1', project_id: 'm1' }); // KB omitted (immutable); project_id sent (value = reassign, null = unassign)
   });
   it('fails 400 without a source', async () => {
     const out = await actions.update(ev('w1', { source_mode: 'playbook' }));
