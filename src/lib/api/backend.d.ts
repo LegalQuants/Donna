@@ -9355,10 +9355,8 @@ export interface components {
             current_phase: "intake" | "analysis" | "drafting" | "ethics_review" | "delivery";
             /** @enum {string} */
             halt_state: "running" | "halt_requested" | "halted" | "paused";
-            /** Format: decimal */
-            max_cost_usd?: number | null;
-            /** Format: decimal */
-            cost_total_usd: number;
+            max_cost_usd?: string | null;
+            cost_total_usd: string;
             cost_cap_reached: boolean;
             idle_halt_minutes: number;
             /** Format: date-time */
