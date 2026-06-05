@@ -11,6 +11,7 @@ export interface ScheduleSummary {
   skill_ref: string | null;
   target_kb_id: string | null;
   project_id: string | null;
+  max_cost_usd: string | null;
   enabled: boolean;
   next_run_at: string | null;
   last_run_at: string | null;
@@ -34,6 +35,7 @@ export function parseSchedule(raw: unknown): ScheduleSummary | null {
     skill_ref: str(r.skill_ref),
     target_kb_id: str(r.target_kb_id),
     project_id: str(r.project_id),
+    max_cost_usd: str(r.max_cost_usd),
     enabled: r.enabled === true,
     next_run_at: str(r.next_run_at),
     last_run_at: str(r.last_run_at)
