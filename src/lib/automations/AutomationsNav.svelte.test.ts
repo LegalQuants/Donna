@@ -15,4 +15,10 @@ describe('AutomationsNav', () => {
     render(AutomationsNav, { props: { active: 'notifications', unread: 3 } });
     expect(screen.getByText('3')).toBeInTheDocument();
   });
+  it('renders a Schedules tab linking to /automations/schedules, current when active', () => {
+    render(AutomationsNav, { props: { active: 'schedules' } });
+    const link = screen.getByRole('link', { name: /schedules/i });
+    expect(link).toHaveAttribute('href', '/automations/schedules');
+    expect(link).toHaveAttribute('aria-current', 'page');
+  });
 });
