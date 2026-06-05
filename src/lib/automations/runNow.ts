@@ -19,8 +19,9 @@ export function toPlaybookItems(playbooks: PlaybookLike[]): SourceItem[] {
 export function toSkillItems(userSkills: UserSkillLike[], builtins: BuiltinSkillLike[]): SourceItem[] {
   const u = Array.isArray(userSkills) ? userSkills : [];
   const b = Array.isArray(builtins) ? builtins : [];
+  const seen = new Set(u.map((s) => s.slug));
   return [
     ...u.map((s) => ({ value: s.slug, label: s.display_name, sub: s.description })),
-    ...b.map((s) => ({ value: s.name, label: s.title, sub: s.description }))
+    ...b.filter((s) => !seen.has(s.name)).map((s) => ({ value: s.name, label: s.title, sub: s.description }))
   ];
 }

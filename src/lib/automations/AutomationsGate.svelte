@@ -28,7 +28,7 @@
   <p class="mt-1 text-xs text-mlq-muted">
     Let Donna run skills &amp; playbooks on its own. You control cost and can halt a run anytime.
   </p>
-  {#if error}<p role="status" aria-live="polite" class="mt-2 text-xs text-mlq-error">{error}</p>{/if}
+  {#if error}<p role="alert" class="mt-2 text-xs text-mlq-error">{error}</p>{/if}
   <button
     type="button"
     onclick={enable}

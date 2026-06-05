@@ -26,4 +26,11 @@ describe('toSkillItems', () => {
   it('tolerates missing arrays', () => {
     expect(toSkillItems(undefined as never, undefined as never)).toEqual([]);
   });
+  it('drops a built-in whose name collides with a user-skill slug (user wins)', () => {
+    const items = toSkillItems(
+      [{ slug: 'contract-qa', display_name: 'My Contract QA', description: 'mine' }],
+      [{ name: 'contract-qa', title: 'Built-in Contract QA', description: 'builtin' }]
+    );
+    expect(items).toEqual([{ value: 'contract-qa', label: 'My Contract QA', sub: 'mine' }]);
+  });
 });
