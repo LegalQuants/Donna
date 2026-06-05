@@ -1,6 +1,6 @@
 // Defensively-parsed view models + form helpers for autonomous watches
 // (lq-ai /api/v1/autonomous/watches). Mirrors schedules.ts. A watch is bound to
-// a required, immutable knowledge_base_id; project_id is also immutable on update.
+// a required, immutable knowledge_base_id; project_id is editable on update.
 import type { KnowledgeBase } from '$lib/knowledge/types';
 
 export interface WatchSummary {
@@ -49,7 +49,9 @@ export type WatchBodyResult = { ok: true; body: Record<string, unknown> } | { ok
 
 /** Build the create/update request body. Create requires a source AND a
  *  knowledge_base_id (and may carry project_id). Update omits knowledge_base_id
- *  and project_id (both immutable per AutonomousWatchUpdate). */
+ *  (immutable) but always sends project_id — a value reassigns the matter,
+ *  explicit null unassigns (omit = unchanged, per AutonomousWatchUpdate's
+ *  exclude_unset PATCH semantics). */
 export function buildWatchBody(form: FormData, mode: 'create' | 'update'): WatchBodyResult {
   const srcMode = String(form.get('source_mode') ?? 'playbook');
   const playbookId = String(form.get('playbook_id') ?? '');
@@ -68,6 +70,8 @@ export function buildWatchBody(form: FormData, mode: 'create' | 'update'): Watch
   if (mode === 'create') {
     body.knowledge_base_id = kbId;
     if (projectId) body.project_id = projectId;
+  } else {
+    body.project_id = projectId || null;
   }
   if (maxCost && Number.isFinite(Number(maxCost)) && Number(maxCost) >= 0) body.max_cost_usd = maxCost;
   return { ok: true, body };
