@@ -2,13 +2,9 @@ import { fail, redirect } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
 import { isAutonomousEnabled } from '$lib/automations/optin.server';
 import { toPlaybookItems, toSkillItems } from '$lib/automations/runNow';
+import { jsonOr } from '$lib/server/loadJson';
 import type { KnowledgeBase } from '$lib/knowledge/types';
 import type { PageServerLoad, Actions } from './$types';
-
-async function jsonOr<T>(res: Response, fallback: T): Promise<T> {
-  if (!res.ok) return fallback;
-  try { return (await res.json()) as T; } catch { return fallback; }
-}
 
 export const load: PageServerLoad = async (event) => {
   const [autonomousEnabled, playbooksRes, userSkillsRes, builtinsRes, kbsRes, mattersRes] = await Promise.all([
