@@ -922,8 +922,7 @@ export const load: PageServerLoad = async (event) => {
   const userSkills = (await jsonOr<{ slug: string; display_name: string; description?: string }[]>(userSkillsRes, []))
     .filter((s) => Boolean(s.slug));
   const builtins = await jsonOr<{ name: string; title: string; description?: string }[]>(builtinsRes, []);
-  const kbsBody = await jsonOr<{ knowledge_bases?: { id: string; name: string }[] } | { id: string; name: string }[]>(kbsRes, []);
-  const kbs = Array.isArray(kbsBody) ? kbsBody : (kbsBody.knowledge_bases ?? []);
+  const kbs = await jsonOr<KnowledgeBase[]>(kbsRes, []); // GET /knowledge-bases is a bare array (backend.d.ts:3611)
   const matters = await jsonOr<{ id: string; name: string }[]>(mattersRes, []);
 
   return {
