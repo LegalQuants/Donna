@@ -33,4 +33,25 @@ describe('toSkillItems', () => {
     );
     expect(items).toEqual([{ value: 'contract-qa', label: 'My Contract QA', sub: 'mine' }]);
   });
+  it('dedupes user skills sharing a slug so SourcePicker keys stay unique', () => {
+    const items = toSkillItems(
+      [
+        { slug: 'generated-nda', display_name: 'Generated NDA', description: 'v1' },
+        { slug: 'generated-nda', display_name: 'Generated NDA', description: 'v2' }
+      ],
+      [{ name: 'comms', title: 'Comms', description: 'builtin' }]
+    );
+    expect(items.map((i) => i.value)).toEqual(['generated-nda', 'comms']);
+    expect(new Set(items.map((i) => i.value)).size).toBe(items.length); // no duplicate keys
+  });
+});
+
+describe('toPlaybookItems dedupe', () => {
+  it('dedupes playbooks sharing an id', () => {
+    const items = toPlaybookItems([
+      { id: 'p1', name: 'NDA', contract_type: 'NDA' },
+      { id: 'p1', name: 'NDA copy', contract_type: 'NDA' }
+    ]);
+    expect(items).toEqual([{ value: 'p1', label: 'NDA', sub: 'NDA' }]);
+  });
 });

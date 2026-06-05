@@ -1074,6 +1074,230 @@ export interface paths {
         };
         trace?: never;
     };
+    "/admin/v1/provider-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List provider-key status (secret-safe)
+         * @description Donna #7 (runtime BYOK). Returns a status row per configured
+         *     provider: whether it has a routable adapter, which key source it
+         *     uses (env vs encrypted-at-rest), and the last 4 characters of the
+         *     resolved key. NEVER returns a full key or the encrypted token.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Provider-key status list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProviderKeyList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Set/replace a provider's runtime key and hot-apply it
+         * @description Encrypts the plaintext key with the gateway master key
+         *     (LQ_AI_GATEWAY_MASTER_KEY), persists `api_key_encrypted` to
+         *     gateway.yaml (clearing any `api_key_env`), reloads, and swaps the
+         *     rebuilt adapter into the live registry with no restart. The
+         *     response carries only the secret-safe status (no key, no token).
+         *     400 when the master key is unset; 404 when the provider is not a
+         *     configured entry (adding a new provider is out of scope — that is
+         *     an operator edit of gateway.yaml).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProviderKeySetRequest"];
+                };
+            };
+            responses: {
+                /** @description Key applied; provider status returned */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProviderKeyStatus"];
+                    };
+                };
+                /** @description Master key (LQ_AI_GATEWAY_MASTER_KEY) is not set */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Provider not configured */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Reload validation failed (config rolled back) */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/provider-keys/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a provider's runtime key
+         * @description Deletes `api_key_encrypted` from gateway.yaml, reloads, and pops the
+         *     provider's live adapter (it routes 503 afterward). Only runtime
+         *     (encrypted-at-rest) keys can be revoked through this API; an
+         *     env-sourced key is owned by the operator's environment and returns
+         *     409.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Runtime key revoked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Provider not configured */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Provider has no runtime key to revoke (e.g., env-sourced) */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Rotate the runtime key on a configured provider
+         * @description Same mechanics as POST /admin/v1/provider-keys; the provider name
+         *     comes from the path. The displaced adapter is retired (closed at
+         *     shutdown) and the rebuilt one swapped in. Response is secret-safe.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProviderKeyRotateRequest"];
+                };
+            };
+            responses: {
+                /** @description Key rotated; provider status returned */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProviderKeyStatus"];
+                    };
+                };
+                /** @description Master key (LQ_AI_GATEWAY_MASTER_KEY) is not set */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Provider not configured */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Reload validation failed (config rolled back) */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1301,6 +1525,56 @@ export interface components {
             model: string;
             fallback?: components["schemas"]["AliasFallback"][];
         };
+        ProviderKeySetRequest: {
+            /** @description Name of an already-configured provider entry. */
+            provider: string;
+            /**
+             * @description Plaintext provider key. Encrypted with the gateway master key
+             *     before it touches disk; never echoed back in any response.
+             */
+            api_key: string;
+        };
+        ProviderKeyRotateRequest: {
+            /**
+             * @description Replacement plaintext provider key. Same handling as
+             *     ProviderKeySetRequest.api_key.
+             */
+            api_key: string;
+        };
+        /**
+         * @description Secret-safe status for one provider. Carries at most the last 4
+         *     characters of the resolved key — never the full key or token.
+         */
+        ProviderKeyStatus: {
+            provider: string;
+            /**
+             * @description The provider's adapter type. Null only in the rare race where a
+             *     provider is removed between the write and the status read-back on
+             *     a single-provider (POST/PATCH) response; never null on the list.
+             * @enum {string|null}
+             */
+            type: "anthropic" | "openai" | "vertex" | "cohere" | "azure_openai" | "bedrock" | "ollama" | "vllm" | "openai_compatible" | null;
+            /**
+             * @description True when the provider has a live, routable adapter (its key
+             *     resolved). This is the honest signal: a keyless or unresolvable
+             *     provider is false.
+             */
+            configured: boolean;
+            /**
+             * @description Last 4 characters of the resolved key, or null when the key is
+             *     absent, unresolvable, or shorter than 4 characters.
+             */
+            last4: string | null;
+            /**
+             * @description Key source: `runtime` (encrypted-at-rest in gateway.yaml),
+             *     `env` (api_key_env), or null (no key configured).
+             * @enum {string|null}
+             */
+            source: "env" | "runtime" | null;
+        };
+        ProviderKeyList: {
+            provider_keys: components["schemas"]["ProviderKeyStatus"][];
+        };
         GatewayError: {
             error: {
                 /**
@@ -1311,7 +1585,7 @@ export interface components {
                  *     routing happens.
                  * @enum {string}
                  */
-                code: "tier_below_minimum" | "tier_disallowed_globally" | "anonymization_failed" | "invalid_model" | "provider_unavailable" | "rate_limit_exceeded" | "invalid_request" | "not_implemented" | "unauthorized" | "skill_not_found" | "skill_fetch_failed" | "skill_input_missing" | "not_found" | "conflict" | "internal_error";
+                code: "tier_below_minimum" | "tier_disallowed_globally" | "anonymization_failed" | "invalid_model" | "provider_unavailable" | "rate_limit_exceeded" | "invalid_request" | "not_implemented" | "unauthorized" | "skill_not_found" | "skill_fetch_failed" | "skill_input_missing" | "not_found" | "conflict" | "internal_error" | "failed_precondition";
                 message: string;
                 details?: {
                     [key: string]: unknown;
