@@ -7196,6 +7196,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/autonomous/sessions/{session_id}/findings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List a session's persisted findings (work-product, emission order)
+         * @description Returns the run's persisted findings (the ``emit_finding`` chokepoint
+         *     work-product) ordered by ``created_at ASC`` — emission order, the
+         *     run's output sequence. This differs intentionally from the
+         *     newest-first autonomous lists: these are one run's sequential output.
+         *
+         *     Owner-gated by loading the owned session first (the findings table
+         *     has no ``user_id`` — authz is via the parent session). Another
+         *     user's ``session_id`` — or a missing one — returns 404 (not 403) to
+         *     avoid existence disclosure. ``limit`` is clamped to [1, 200];
+         *     ``offset`` to [0, ∞).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of findings to return (clamped to [1, 200]). */
+                    limit?: number;
+                    /** @description Zero-based index of the first result to return. */
+                    offset?: number;
+                };
+                header?: never;
+                path: {
+                    session_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of the session's findings (emission order) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousFindingListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Session not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/autonomous/sessions/{session_id}/halt": {
         parameters: {
             query?: never;
@@ -7282,6 +7351,8 @@ export interface paths {
                 query?: {
                     /** @description Filter by review state; omit to return all non-deleted entries. */
                     state?: "proposed" | "kept" | "dismissed";
+                    /** @description Narrow to the memories a specific run proposed; omit for all. */
+                    source_session_id?: string;
                     /** @description Maximum number of entries to return (clamped to [1, 200]). */
                     limit?: number;
                     /** @description Zero-based index of the first result to return. */
@@ -9051,6 +9122,34 @@ export interface components {
             last_login_at?: string | null;
             /** Format: date-time */
             deletion_scheduled_at?: string | null;
+        };
+        /**
+         * @description Read-only view of an ``autonomous_findings`` row — one analysis
+         *     finding emitted by a run via the ``emit_finding`` chokepoint.
+         *     ``content`` is the finding body (the LLM's ``summary``).
+         *     ``severity`` is LLM-emitted free text (no CHECK; ``info`` |
+         *     ``warn`` | ``critical`` are the intended values).
+         */
+        AutonomousFindingRead: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            session_id: string;
+            severity: string;
+            title: string;
+            content: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /**
+         * @description Paginated list of a session's findings, in emission order
+         *     (``created_at ASC``) — one run's sequential output.
+         */
+        AutonomousFindingListResponse: {
+            findings: components["schemas"]["AutonomousFindingRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
         };
         /**
          * @description Read-only view of an ``autonomous_memory`` row.  Returned by the
