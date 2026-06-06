@@ -80,7 +80,7 @@ export const actions: Actions = {
 
     const res = await lqFetch(event, '/api/v1/admin/provider-keys', {
       method: 'POST',
-      body: JSON.stringify({ provider, api_key: apiKey })
+      body: JSON.stringify({ provider, api_key: apiKey.trim() })
     });
     if (res.status === 403) return fail(403, { provider, message: 'Managing provider keys requires an admin account.' });
     if (res.status === 404) return fail(404, { provider, message: 'Unknown provider.' });
@@ -105,9 +105,9 @@ export const actions: Actions = {
     if (!provider) return fail(400, { provider, message: 'Missing provider.' });
 
     const res = await lqFetch(event, `/api/v1/admin/provider-keys/${encodeURIComponent(provider)}`, { method: 'DELETE' });
-    if (res.status === 409) return fail(409, { provider, message: "This key comes from the deployment environment and can't be revoked here." });
+    if (res.status === 409) return fail(409, { provider, message: "This key can't be revoked here — it comes from the deployment environment, or was already removed." });
     if (res.status === 403) return fail(403, { provider, message: 'Managing provider keys requires an admin account.' });
-    if (res.ok || res.status === 404) return { success: true, provider }; // 404 = already gone (idempotent)
+    if (res.ok || res.status === 404) return { success: true, provider }; // 404 = provider unknown — treat as gone (idempotent from the UI's perspective)
     return fail(502, { provider, message: 'Could not revoke the key.' });
   }
 };
