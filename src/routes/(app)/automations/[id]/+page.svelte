@@ -13,6 +13,12 @@
   <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- back link to sessions -->
   <a href="/automations" class="mb-3 inline-block text-xs text-mlq-muted hover:text-mlq-text">← Sessions</a>
   {#key data.session.id}
-    <SessionDetail initialSession={data.session} initialReceipt={data.receipt} />
+    <SessionDetail
+      initialSession={data.session}
+      initialReceipt={data.receipt}
+      initialFindings={data.findings}
+      initialFindingsTotal={data.findings_total}
+      initialMemories={data.memories}
+    />
   {/key}
 </div>
