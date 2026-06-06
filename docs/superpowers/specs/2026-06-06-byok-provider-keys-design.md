@@ -86,8 +86,8 @@ Card replaces the placeholder section on `/settings/models/+page.svelte`:
   `providerKeys: ProviderKeyRow[] | null` (null = failed) + the existing payload.
   Non-admin: `providerKeys: null`, no fetch (UI distinguishes via `isAdmin`).
 - `?/setKey` action: reads `provider` + `api_key` from the form; empty either → `fail(400)` with no
-  upstream call. `POST /api/v1/admin/provider-keys`. Mapping (reuses `errorDetail` from
-  `$lib/server/loadJson`): **403** → "Managing provider keys requires an admin account."; **400**
+  upstream call. `POST /api/v1/admin/provider-keys`. Mapping (sniffs the raw response body — the error detail may be a plain string or the structured
+  envelope): **403** → "Managing provider keys requires an admin account."; **400**
   with detail mentioning "master key" → "The gateway has no master key set, so runtime keys can't
   be stored — ask your operator to configure LQ_AI_GATEWAY_MASTER_KEY."; other 400 → generic save
   failure; **404** → "Unknown provider."; other → 502 "Could not save the key." All failure

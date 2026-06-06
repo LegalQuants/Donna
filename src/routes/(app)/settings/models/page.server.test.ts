@@ -129,6 +129,12 @@ describe('/settings/models ?/setKey', () => {
     expect(init.method).toBe('POST');
     expect(JSON.parse(init.body as string)).toEqual({ provider: 'openai-prod', api_key: 'sk-test-123' });
   });
+  it('trims surrounding whitespace from the api_key before sending upstream', async () => {
+    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ provider: 'openai-prod', type: 'openai', configured: true, last4: 'a1b2', source: 'runtime' }), { status: 200 }));
+    await actions.setKey(form({ provider: 'openai-prod', api_key: '  sk-pad  ' }));
+    const init = lqFetch.mock.calls[0][2] as RequestInit;
+    expect(JSON.parse(init.body as string)).toEqual({ provider: 'openai-prod', api_key: 'sk-pad' });
+  });
   it('fails 400 with no upstream call when the key is empty', async () => {
     const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: '   ' }))) as { status: number };
     expect(res.status).toBe(400);
@@ -184,7 +190,7 @@ describe('/settings/models ?/revokeKey', () => {
     lqFetch.mockResolvedValueOnce(new Response('x', { status: 409 }));
     const res = (await actions.revokeKey(form({ provider: 'anthropic-prod' }))) as { status: number; data: { message: string; provider: string } };
     expect(res.status).toBe(409);
-    expect(res.data.message).toMatch(/deployment environment/);
+    expect(res.data.message).toMatch(/can't be revoked here/);
     expect(res.data.provider).toBe('anthropic-prod');
   });
   it('fails 400 with no fetch when provider is missing', async () => {
