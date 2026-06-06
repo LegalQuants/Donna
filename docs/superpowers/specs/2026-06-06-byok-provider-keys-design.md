@@ -42,8 +42,8 @@ touching the server environment.
   default `invalidateAll` after an action refreshes statuses AND the categories/local-models cards
   (hot-apply can make new models routable).
 - **One write verb:** always POST (set/replace) — covers add, rotate, and env-takeover. No PATCH.
-- **Live e2e is non-destructive:** assert the read path + the 409 env-revoke mapping (a designed
-  server-side no-op). No real key writes in tests.
+- **Live e2e is non-destructive:** assert the read path + env-row affordances (env hints, no
+  Revoke control). The 409/error mappings are unit-tested. No real key writes in tests.
 
 ## Changes
 
@@ -95,8 +95,10 @@ Card replaces the placeholder section on `/settings/models/+page.svelte`:
   value is never logged, echoed back, or included in any payload.** Success → `{ success: true }`
   (enhance default `invalidateAll` refreshes statuses).
 - `?/revokeKey` action: `DELETE /api/v1/admin/provider-keys/{provider}` (encodeURIComponent).
-  **409** → "This key comes from the deployment environment and can't be revoked here."; **404** →
-  treat as success (idempotent; playbooks-delete precedent); **403** → admin message; other → 502.
+  **409** → "This key can't be revoked here — it comes from the deployment environment, or was
+  already removed." (the gateway also 409s when no runtime key exists — stale-tab race); **404** →
+  treat as success (provider unknown — idempotent from the UI's perspective); **403** → admin
+  message; other → 502.
 
 ### 4. Out of scope
 
