@@ -15,7 +15,7 @@ export interface RunOutput {
 export async function loadRunOutput(event: RequestEvent, sessionId: string): Promise<RunOutput> {
   const [fRes, mRes] = await Promise.all([
     lqFetch(event, `/api/v1/autonomous/sessions/${sessionId}/findings?limit=200`),
-    lqFetch(event, `/api/v1/autonomous/memory?source_session_id=${sessionId}&limit=200`)
+    lqFetch(event, `/api/v1/autonomous/memory?source_session_id=${encodeURIComponent(sessionId)}&limit=200`)
   ]);
   let findings: FindingItem[] | null = null;
   let findings_total: number | null = null;

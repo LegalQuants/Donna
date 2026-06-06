@@ -35,4 +35,8 @@ describe('Session receipt view', () => {
     render(SessionTimeline, { props: { receipt: null } });
     expect(screen.getByText(/receipt unavailable/i)).toBeInTheDocument();
   });
+  it('timeline always renders the Activity heading', () => {
+    render(SessionTimeline, { props: { receipt: null } });
+    expect(screen.getByRole('heading', { name: 'Activity' })).toBeInTheDocument();
+  });
 });
