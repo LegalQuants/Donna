@@ -1,9 +1,10 @@
 <script lang="ts">
   import CategoryRow from '$lib/inference/CategoryRow.svelte';
   import LocalModelsCard from '$lib/inference/LocalModelsCard.svelte';
-  import type { PageData } from './$types';
+  import ProviderKeysCard from '$lib/inference/ProviderKeysCard.svelte';
+  import type { PageData, ActionData } from './$types';
 
-  let { data }: { data: PageData } = $props();
+  let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <svelte:head><title>Models — Settings — Donna</title></svelte:head>
@@ -30,9 +31,6 @@
 
     <LocalModelsCard localModels={data.localModels} />
 
-    <section class="rounded-mlq-control border border-mlq-subtle px-4 py-3">
-      <h2 class="text-xs font-medium uppercase tracking-wide text-mlq-muted">Provider keys</h2>
-      <p class="mt-1 text-sm text-mlq-muted">Provider API keys are set via your deployment's environment. In-app key management is coming.</p>
-    </section>
+    <ProviderKeysCard isAdmin={data.isAdmin} providerKeys={data.providerKeys} {form} />
   {/if}
 </div>
