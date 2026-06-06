@@ -10,7 +10,8 @@ const mk = (id: string, trigger: string) => ({
     cost_total_usd: 0.1, max_cost_usd: 2, cost_cap_reached: false,
     created_at: '2026-06-04T09:00:00Z', completed_at: '2026-06-04T09:04:00Z', last_activity_at: null, error: null
   } as SessionSummary,
-  receipt: null
+  receipt: null,
+  findings: [] as never[], findings_total: 0, memories: [] as never[]
 });
 
 describe('/automations/[id] page', () => {

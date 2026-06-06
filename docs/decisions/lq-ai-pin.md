@@ -2,11 +2,21 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `fc832ca` (bumped 2026-06-05 from `35c8bb6`)
+- Pinned SHA: `0097b01` (bumped 2026-06-05 from `fc832ca`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+- `fc832ca` → `0097b01` (2026-06-05): lq-ai **#135** (Donna ask `lq-ai-autonomous-run-output.md`) —
+  **run findings persisted + readable**: new `autonomous_findings` table (cascade-delete with the
+  session) + paginated, owner-gated `GET /sessions/{id}/findings` (limit clamped [1,200],
+  `created_at` ASC = emission order; `severity` free-text — intended `info|warn|critical`), plus
+  `?source_session_id=` on `GET /memory` ("memories this run proposed"). Precedents deliberately
+  NOT session-filterable (recurrence-aggregated) — deferred upstream. `npm run gen:api` → additive
+  diff (+99 lines: typed `AutonomousFindingRead`/`AutonomousFindingListResponse` schemas + new
+  `/sessions/{id}/findings` path + `source_session_id` query param on `/memory`). **Unblocks the
+  run-output-surfacing slice** (this bump ships with it): the "Results" section on
+  `/automations/[id]`.
 - `35c8bb6` → `fc832ca` (2026-06-05): lq-ai **#133** — `project_id` added to
   `AutonomousScheduleUpdate` AND `AutonomousWatchUpdate`, so a schedule's/watch's **matter is
   reassignable via PATCH** (value → reassign · explicit `null` → unassign · omit → unchanged).
