@@ -60,12 +60,25 @@ describe('buildWatchBody', () => {
   it('create: fails without a source', () => {
     expect(buildWatchBody(fd({ source_mode: 'playbook', knowledge_base_id: 'kb1' }), 'create').ok).toBe(false);
   });
-  it('update: omits knowledge_base_id and project_id (immutable), keeps source/enabled/cost', () => {
+  it('update: omits knowledge_base_id (immutable) but emits project_id, keeps source/enabled/cost', () => {
     const out = buildWatchBody(fd({
       source_mode: 'skill', skill_ref: 'comms', knowledge_base_id: 'kb1',
       project_id: 'm1', max_cost_usd: '1.50', enabled: 'false'
     }), 'update');
-    expect(out.ok && out.body).toEqual({ enabled: false, skill_ref: 'comms', max_cost_usd: '1.50' });
+    expect(out.ok && out.body).toEqual({ enabled: false, skill_ref: 'comms', project_id: 'm1', max_cost_usd: '1.50' });
+  });
+  it('update: maps an empty project_id to null (unassign)', () => {
+    const out = buildWatchBody(fd({ source_mode: 'playbook', playbook_id: 'p1', project_id: '' }), 'update');
+    expect(out.ok).toBe(true);
+    expect(out.ok && out.body.project_id).toBeNull();
+  });
+  it('update: an absent project_id field also maps to null', () => {
+    const out = buildWatchBody(fd({ source_mode: 'playbook', playbook_id: 'p1' }), 'update');
+    expect(out.ok && out.body.project_id).toBeNull();
+  });
+  it('create: still omits an empty project_id', () => {
+    const out = buildWatchBody(fd({ source_mode: 'playbook', playbook_id: 'p1', knowledge_base_id: 'kb1', project_id: '' }), 'create');
+    expect(out.ok && 'project_id' in out.body).toBe(false);
   });
   it('drops a non-numeric max_cost_usd', () => {
     const out = buildWatchBody(fd({ source_mode: 'playbook', playbook_id: 'p1', knowledge_base_id: 'kb1', max_cost_usd: 'abc' }), 'create');

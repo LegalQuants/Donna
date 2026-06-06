@@ -41,7 +41,7 @@ describe('WatchForm', () => {
     expect((container.querySelector('input[name="enabled"]') as HTMLInputElement).value).toBe('true');
   });
 
-  it('edit mode: KB + matter read-only, source/cost editable, "Save changes" label', () => {
+  it('edit mode: KB read-only, matter + source/cost editable, "Save changes" label', () => {
     const { container } = render(WatchForm, {
       props: {
         ...base,
@@ -53,11 +53,41 @@ describe('WatchForm', () => {
     expect(screen.getByRole('button', { name: /save changes/i })).not.toBeDisabled(); // seeded source + KB → savable
     expect(screen.getByRole('radio', { name: /skill/i })).toHaveAttribute('aria-checked', 'true'); // mode seeded from skill_ref
     expect(screen.getByText(/Watching: Contracts KB/i)).toBeInTheDocument(); // KB read-only
-    expect(screen.getByText(/set at creation/i)).toBeInTheDocument(); // matter read-only
+    // Matter is editable in edit mode (fc832ca); seeded selection shows on the trigger.
+    expect(screen.getByRole('button', { name: /choose matter/i })).toBeInTheDocument();
+    expect(screen.queryByText(/set at creation/i)).toBeNull();
+    expect((container.querySelector('input[name="project_id"]') as HTMLInputElement).value).toBe('m1'); // seeded matter emitted
     expect(screen.queryByRole('button', { name: /choose a knowledge base/i })).toBeNull(); // no KB picker
     expect((container.querySelector('input[name="skill_ref"]') as HTMLInputElement).value).toBe('comms');
     expect((container.querySelector('input[name="knowledge_base_id"]') as HTMLInputElement).value).toBe('kb1');
     expect((container.querySelector('input[name="max_cost_usd"]') as HTMLInputElement).value).toBe('2.50');
+  });
+
+  it('edit mode emits an empty project_id when the seeded matter is cleared', async () => {
+    const { container } = render(WatchForm, {
+      props: {
+        ...base,
+        initial: { playbook_id: 'p1', skill_ref: null, knowledge_base_id: 'kb1', project_id: 'm1', max_cost_usd: null, enabled: true }
+      }
+    });
+    await fireEvent.click(screen.getByRole('button', { name: /choose matter/i }));
+    await fireEvent.click(screen.getByRole('button', { name: /no matter/i }));
+    expect((container.querySelector('input[name="project_id"]') as HTMLInputElement).value).toBe('');
+  });
+
+  it('edit mode with no seeded matter still emits an empty project_id', () => {
+    const { container } = render(WatchForm, {
+      props: {
+        ...base,
+        initial: { playbook_id: 'p1', skill_ref: null, knowledge_base_id: 'kb1', project_id: null, max_cost_usd: null, enabled: true }
+      }
+    });
+    expect((container.querySelector('input[name="project_id"]') as HTMLInputElement).value).toBe('');
+  });
+
+  it('create mode omits the project_id hidden input until a matter is picked', () => {
+    const { container } = render(WatchForm, { props: base });
+    expect(container.querySelector('input[name="project_id"]')).toBeNull();
   });
 
   it('puts a typed cost cap into the hidden max_cost_usd input (string)', async () => {

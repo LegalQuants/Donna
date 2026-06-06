@@ -54,12 +54,10 @@
 
   const items = $derived(mode === 'playbook' ? playbookItems : skillItems);
   const kbName = $derived(kbs.find((k) => k.id === kbId)?.name ?? null);
-  const matterName = $derived(matters.find((m) => m.id === projectId)?.name ?? null);
   const canSave = $derived(sourceValue !== null && looksValid(cronExpr));
 
-  // A schedule's matter is fixed at creation: AutonomousScheduleUpdate has no
-  // project_id, so the backend ignores it on PATCH. Show it read-only in edit mode
-  // rather than an editable control that silently does nothing.
+  // Edit mode: the form always emits project_id (empty = cleared) so the update
+  // action can send an explicit null (unassign) vs omit (untouched, create mode).
   const editing = $derived(initial !== null);
 
   function setMode(next: SourceMode) {
@@ -114,11 +112,7 @@
 
   <div>
     <div class="mb-1 text-xs font-medium text-mlq-muted">Matter (optional)</div>
-    {#if editing}
-      <p class="text-xs text-mlq-muted">{matterName ?? 'None'} <span class="text-mlq-muted/70">· set at creation</span></p>
-    {:else}
-      <MatterPicker {matters} bind:selectedId={projectId} placement="down" />
-    {/if}
+    <MatterPicker {matters} bind:selectedId={projectId} placement="down" />
   </div>
 
   <div>
@@ -141,7 +135,7 @@
   <input type="hidden" name="cron_expr" value={cronExpr} />
   <input type="hidden" name="name" value={name.trim()} />
   {#if kbId}<input type="hidden" name="target_kb_id" value={kbId} />{/if}
-  {#if projectId}<input type="hidden" name="project_id" value={projectId} />{/if}
+  {#if projectId}<input type="hidden" name="project_id" value={projectId} />{:else if editing}<input type="hidden" name="project_id" value="" />{/if}
   {#if maxCost.trim()}<input type="hidden" name="max_cost_usd" value={maxCost.trim()} />{/if}
   <input type="hidden" name="enabled" value={enabled ? 'true' : 'false'} />
 
