@@ -81,8 +81,9 @@ Card replaces the placeholder section on `/settings/models/+page.svelte`:
 
 ### 3. Server — `src/routes/(app)/settings/models/+page.server.ts`
 
-- `load`: when `isAdmin`, also fetch `GET /api/v1/admin/provider-keys` (in parallel with the models
-  fetch) → `providerKeys: ProviderKeyRow[] | null` (null = failed) + the existing payload.
+- `load`: when `isAdmin`, also fetch `GET /api/v1/admin/provider-keys` (in parallel with the
+  admin-aliases fetch — the models fetch stays first since its failure early-returns the page) →
+  `providerKeys: ProviderKeyRow[] | null` (null = failed) + the existing payload.
   Non-admin: `providerKeys: null`, no fetch (UI distinguishes via `isAdmin`).
 - `?/setKey` action: reads `provider` + `api_key` from the form; empty either → `fail(400)` with no
   upstream call. `POST /api/v1/admin/provider-keys`. Mapping (reuses `errorDetail` from
