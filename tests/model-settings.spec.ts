@@ -31,6 +31,6 @@ test('settings → models: renders inference categories with their backings + lo
   // The installed-local-models card renders (list or empty state).
   await expect(page.getByRole('heading', { name: /installed local models/i })).toBeVisible();
 
-  // The provider-keys env note is present (pin-gated management not yet built).
-  await expect(page.getByText(/provider api keys are set via your deployment/i)).toBeVisible();
+  // The provider-keys card replaced the env note (details covered in byok-provider-keys.spec.ts).
+  await expect(page.getByRole('heading', { name: /provider keys/i })).toBeVisible();
 });
