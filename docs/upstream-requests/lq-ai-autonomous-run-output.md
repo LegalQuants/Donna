@@ -1,5 +1,14 @@
 # LQ-AI ask — expose an autonomous run's findings (work-product) for display
 
+> **✅ RESOLVED upstream — lq-ai #135, pin `0097b01` (2026-06-05).** Ask #1 shipped as the
+> `autonomous_findings` table + paginated `GET /api/v1/autonomous/sessions/{id}/findings`
+> (owner-gated, `created_at` ASC, limit clamped [1,200]; `severity` free-text). Ask #2 shipped
+> **scoped to memories** (`?source_session_id=` on `GET /memory`); precedents were flagged
+> recurrence-aggregated (one precedent ↔ many runs) and deliberately deferred — re-scope upstream
+> if "precedents this run touched" is ever needed. No backfill: pre-#135 sessions return zero
+> findings. Consumed by the Donna "Results" receipt section
+> (`docs/superpowers/specs/2026-06-05-automations-run-results-design.md`).
+
 **Filed:** 2026-06-05 · **From:** Donna (consumer) · **For:** the next Automations slice ("run output surfacing"). The LQ-AI session works in `/Users/kevinkeller/Code/lq-ai` (absolute paths below; it can't see Donna branches).
 
 ## Why
