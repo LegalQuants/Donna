@@ -25,6 +25,8 @@ describe('SessionDetail', () => {
     const results = screen.getByRole('region', { name: 'Results' });
     const timelineText = screen.getByText('Receipt unavailable');
     expect(results.compareDocumentPosition(timelineText) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Activity heading always renders inside the timeline section
+    expect(screen.getByRole('heading', { name: 'Activity' })).toBeInTheDocument();
   });
   it('terminal session with no findings shows the recorded-none state', () => {
     render(SessionDetail, {
