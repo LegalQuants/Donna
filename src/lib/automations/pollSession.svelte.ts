@@ -1,4 +1,5 @@
 import { parseReceipt, parseSessionSummary, type SessionReceipt, type SessionSummary } from './types';
+import type { FindingItem, RunMemoryItem } from './findings';
 
 const TERMINAL = new Set(['completed', 'halted', 'failed']);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -19,6 +20,9 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
   const pollMs = opts.pollMs ?? 2000;
   let session = $state<SessionSummary | null>(null);
   let receipt = $state<SessionReceipt | null>(null);
+  let findings = $state<FindingItem[] | null>(null);
+  let findingsTotal = $state<number | null>(null);
+  let memories = $state<RunMemoryItem[] | null>(null);
   let done = $state(false);
   let error = $state<string | null>(null);
   let running = false;
@@ -30,7 +34,10 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
       error = 'Lost contact with the session.';
       return true;
     }
-    const body = (await res.json()) as { session?: unknown; receipt?: unknown };
+    const body = (await res.json()) as {
+      session?: unknown; receipt?: unknown;
+      findings?: unknown; findings_total?: unknown; memories?: unknown;
+    };
     const parsed = parseSessionSummary(body.session);
     if (!parsed) {
       error = 'Received a malformed session response.';
@@ -38,6 +45,9 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
     }
     session = parsed;
     receipt = parseReceipt(body.receipt);
+    findings = Array.isArray(body.findings) ? (body.findings as FindingItem[]) : null;
+    findingsTotal = typeof body.findings_total === 'number' ? body.findings_total : null;
+    memories = Array.isArray(body.memories) ? (body.memories as RunMemoryItem[]) : null;
     return TERMINAL.has(parsed.status);
   }
 
@@ -64,6 +74,9 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
   return {
     get session() { return session; },
     get receipt() { return receipt; },
+    get findings() { return findings; },
+    get findingsTotal() { return findingsTotal; },
+    get memories() { return memories; },
     get done() { return done; },
     get error() { return error; },
     start,
