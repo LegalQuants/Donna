@@ -7947,6 +7947,13 @@ export interface paths {
                     };
                     content?: never;
                 };
+                /** @description Referenced project not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
                 /** @description Invalid cron expression */
                 422: {
                     headers: {
@@ -8055,7 +8062,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description Schedule not found */
+                /** @description Schedule or referenced project not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -8155,7 +8162,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description Target knowledge base not found */
+                /** @description Target knowledge base or referenced project not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -8263,7 +8270,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description Watch not found */
+                /** @description Watch or referenced project not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -8436,6 +8443,13 @@ export interface paths {
                 };
                 /** @description Autonomous layer not enabled for this user */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Referenced project not found */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -9200,7 +9214,9 @@ export interface components {
         /**
          * @description Request body for ``PATCH /autonomous/schedules/{id}``.  All fields
          *     optional.  Changing ``cron_expr`` re-validates (422) and recomputes
-         *     ``next_run_at``.
+         *     ``next_run_at``.  The matter (``project_id``) may be reassigned; an
+         *     explicit ``null`` unassigns it, and a non-null ``project_id`` the
+         *     caller does not own returns 404 (id-probing-safe).
          */
         AutonomousScheduleUpdate: {
             name?: string | null;
@@ -9211,6 +9227,8 @@ export interface components {
             skill_ref?: string | null;
             /** Format: uuid */
             target_kb_id?: string | null;
+            /** Format: uuid */
+            project_id?: string | null;
             max_cost_usd?: string | null;
         };
         /**
@@ -9284,13 +9302,18 @@ export interface components {
         /**
          * @description Request body for ``PATCH /autonomous/watches/{id}``.  All fields
          *     optional.  The watch's ``knowledge_base_id`` is immutable (not
-         *     present here) — a watch is bound to its KB.
+         *     present here) — a watch is bound to its KB.  The matter
+         *     (``project_id``) may be reassigned; an explicit ``null`` unassigns
+         *     it, and a non-null ``project_id`` the caller does not own returns
+         *     404 (id-probing-safe).
          */
         AutonomousWatchUpdate: {
             enabled?: boolean | null;
             /** Format: uuid */
             playbook_id?: string | null;
             skill_ref?: string | null;
+            /** Format: uuid */
+            project_id?: string | null;
             max_cost_usd?: string | null;
         };
         /** @description Paginated list of autonomous watches (newest first). */

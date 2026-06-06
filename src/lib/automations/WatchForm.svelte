@@ -44,10 +44,10 @@
 
   const items = $derived(mode === 'playbook' ? playbookItems : skillItems);
   const kbName = $derived(kbs.find((k) => k.id === kbId)?.name ?? null);
-  const matterName = $derived(matters.find((m) => m.id === projectId)?.name ?? null);
   const canSave = $derived(sourceValue !== null && kbId !== null);
-  // A watch's KB and matter are fixed at creation (AutonomousWatchUpdate has neither),
-  // so edit mode shows them read-only.
+  // A watch's KB is fixed at creation (immutable upstream) → read-only in edit mode.
+  // Matter IS editable (fc832ca): edit mode always emits project_id (empty = cleared)
+  // so the update action can send an explicit null (unassign) vs omit (create mode).
   const editing = $derived(initial !== null);
 
   function setMode(next: SourceMode) {
@@ -98,11 +98,7 @@
 
   <div>
     <div class="mb-1 text-xs font-medium text-mlq-muted">Matter (optional)</div>
-    {#if editing}
-      <p class="text-xs text-mlq-muted">{matterName ?? 'None'} <span class="text-mlq-muted/70">· set at creation</span></p>
-    {:else}
-      <MatterPicker {matters} bind:selectedId={projectId} placement="down" />
-    {/if}
+    <MatterPicker {matters} bind:selectedId={projectId} placement="down" />
   </div>
 
   <!-- Cost cap is the safety control for a watch: it fires on every new document, so each run is capped. -->
@@ -125,7 +121,7 @@
   {#if mode === 'playbook' && sourceValue}<input type="hidden" name="playbook_id" value={sourceValue} />{/if}
   {#if mode === 'skill' && sourceValue}<input type="hidden" name="skill_ref" value={sourceValue} />{/if}
   {#if kbId}<input type="hidden" name="knowledge_base_id" value={kbId} />{/if}
-  {#if projectId}<input type="hidden" name="project_id" value={projectId} />{/if}
+  {#if projectId}<input type="hidden" name="project_id" value={projectId} />{:else if editing}<input type="hidden" name="project_id" value="" />{/if}
   {#if maxCost.trim()}<input type="hidden" name="max_cost_usd" value={maxCost.trim()} />{/if}
   <input type="hidden" name="enabled" value={enabled ? 'true' : 'false'} />
 

@@ -2,11 +2,28 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `541bd6f` (bumped 2026-06-03 from `c22360a`)
+- Pinned SHA: `fc832ca` (bumped 2026-06-05 from `35c8bb6`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+- `35c8bb6` → `fc832ca` (2026-06-05): lq-ai **#133** — `project_id` added to
+  `AutonomousScheduleUpdate` AND `AutonomousWatchUpdate`, so a schedule's/watch's **matter is
+  reassignable via PATCH** (value → reassign · explicit `null` → unassign · omit → unchanged).
+  Caller-owns-the-project now validated (404 `{"detail": "project not found"}`, id-probing-safe via
+  `_load_owned_project`) on POST `/schedules`, POST `/watches`, POST `/run-now`, and both PATCHes.
+  `npm run gen:api` → ~28-line diff (new 404 responses on POST `/schedules`/`/run-now`, updated PATCH 404 descriptions, and the two Update-schema `project_id` fields). **Unblocks** the
+  editable-matter slice (this bump ships with it): editable `MatterPicker` in
+  `ScheduleForm`/`WatchForm` edit mode + 404→"matter not found" mapping.
+- `541bd6f` → `35c8bb6` (2026-06-04, **recorded retroactively** — bumps shipped mid-slice-F in
+  PR #60, in two steps):
+  - `541bd6f` → `69a0d35`: lq-ai **#129** — `max_cost_usd` OpenAPI schema-drift fix
+    (`AutonomousScheduleCreate/Update/Read` now correctly typed); also includes lq-ai **#128** =
+    the **BYOK provider-keys backend** (`/api/v1/admin/provider-keys` CRUD), making the Donna
+    BYOK frontend buildable in-pin. (Donna commit `a66f982`)
+  - `69a0d35` → `35c8bb6`: lq-ai **#130** — all autonomous session/schedule/watch cost fields
+    (`max_cost_usd`, `cost_total_usd`) uniformly typed `string` on the wire to match runtime;
+    Donna's defensive `num()` parser already accepted string. (Donna commit `0ea7f9c`)
 - `c22360a` → `541bd6f` (2026-06-03): lq-ai **#127** (Donna ask **#6**) — **per-column
   `ensemble_verification` for tabular**. `ColumnSpec` gains `ensemble_verification?: boolean | null`
   (true → routes that column's cells through Stage 4 of the Citation Engine cascade). The cost-preview
