@@ -11,7 +11,10 @@ function mockFetchSequence(statuses: string[]) {
     i++;
     return new Response(JSON.stringify({
       session: { id: 's1', status, trigger_kind: 'manual', current_phase: 'analysis', cost_total_usd: '0.1', created_at: 'x' },
-      receipt: { session_id: 's1', trigger_kind: 'manual', status, phase_transitions: [], tool_calls: [] }
+      receipt: { session_id: 's1', trigger_kind: 'manual', status, phase_transitions: [], tool_calls: [] },
+      findings: [{ id: 'f1', severity: 'info', title: 'T', content: 'C', created_at: 'x' }],
+      findings_total: 1,
+      memories: []
     }), { status: 200 });
   }));
 }
@@ -45,5 +48,16 @@ describe('createSessionPoll', () => {
     expect(poll.session?.status).toBe('running');
     expect(poll.done).toBe(false);
     expect(poll.error).toBeNull();
+  });
+
+  it('exposes findings, findingsTotal, and memories from the widened payload', async () => {
+    mockFetchSequence(['completed']);
+    const poll = createSessionPoll('s1', { pollMs: 1000 });
+    poll.start();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(poll.findings).toHaveLength(1);
+    expect(poll.findings?.[0].id).toBe('f1');
+    expect(poll.findingsTotal).toBe(1);
+    expect(poll.memories).toEqual([]);
   });
 });
