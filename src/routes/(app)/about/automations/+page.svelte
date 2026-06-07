@@ -29,7 +29,7 @@
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   Press <strong>Run now</strong> to start a one-off session. Choose what to run — a
-  <strong>playbook</strong> or a <strong>skill</strong> — then pick the <strong>knowledge base</strong>
+  <strong>playbook</strong> or a <strong>skill</strong> — then pick the <strong>target knowledge base</strong>
   the run works against (required), optionally link a <strong>matter</strong>, and optionally set a
   <strong>cost cap</strong> in USD. Donna starts immediately and takes you to the live receipt.
 </p>
