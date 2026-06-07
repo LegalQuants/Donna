@@ -51,4 +51,14 @@ describe('ProviderKeyRowItem', () => {
     render(ProviderKeyRowItem, { props: { row: row(), error: 'Unknown provider.' } });
     expect(screen.getByRole('alert')).toHaveTextContent('Unknown provider.');
   });
+
+  it('env-defined but empty: shows "Not set" + empty-variable note, not "No key"/managed-by-env', () => {
+    render(ProviderKeyRowItem, { props: { row: row({ configured: false, last4: null, source: 'env' }) } });
+    expect(screen.getByText('Not set')).toBeInTheDocument();
+    expect(screen.queryByText('No key')).toBeNull();
+    expect(screen.getByText(/variable is empty/)).toBeInTheDocument();
+    expect(screen.queryByText(/managed by your deployment's environment/)).toBeNull();
+    // takeover hint stays — saving a runtime key is the escape hatch
+    expect(screen.getByText(/takes over management from the environment/)).toBeInTheDocument();
+  });
 });
