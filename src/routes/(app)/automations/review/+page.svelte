@@ -42,6 +42,10 @@
 	{#if !data.autonomousEnabled}
 		<AutomationsGate />
 	{:else}
+		{#if form?.error && !(form && 'id' in form && form.id)}
+			<p role="alert" class="mb-3 text-sm text-mlq-error">{form.error}</p>
+		{/if}
+
 		<h2 class="mb-3 text-base font-medium text-mlq-text">Memory</h2>
 
 		<div class="mb-4">

@@ -1,8 +1,14 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import SessionDetail from './SessionDetail.svelte';
 import type { SessionSummary } from './types';
+
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => {
+	vi.useRealTimers();
+	vi.restoreAllMocks();
+});
 
 const session: SessionSummary = {
 	id: 's1',
@@ -72,5 +78,63 @@ describe('SessionDetail', () => {
 			}
 		});
 		expect(screen.getByText(/\+9 more/)).toBeInTheDocument();
+	});
+
+	it('SSR data stays visible when the first live tick arrives with null findings/memories', async () => {
+		// Mock fetch to return a degraded first tick: session is valid but
+		// findings/memories/totals are null (backend sub-requests degraded).
+		// The real createSessionPoll is used so Svelte rune reactivity applies.
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(
+				async () =>
+					new Response(
+						JSON.stringify({
+							session: {
+								id: 's1',
+								status: 'running',
+								trigger_kind: 'manual',
+								current_phase: 'analysis',
+								cost_total_usd: '0.1',
+								created_at: 'x'
+							},
+							receipt: null,
+							findings: null,
+							findings_total: null,
+							memories: null,
+							memories_total: null
+						}),
+						{ status: 200 }
+					)
+			)
+		);
+
+		render(SessionDetail, {
+			props: {
+				initialSession: { ...session, status: 'running' },
+				initialReceipt: null,
+				initialFindings: [
+					{ id: 'f1', severity: 'critical', title: 'SSR finding', content: 'C', created_at: 'x' }
+				],
+				initialFindingsTotal: 1,
+				initialMemories: [
+					{ id: 'm1', state: 'proposed', category: 'pref', content: 'SSR memory', created_at: 'x' }
+				],
+				initialMemoriesTotal: 1
+			}
+		});
+
+		// SSR data visible before any tick.
+		expect(screen.getByText('SSR finding')).toBeInTheDocument();
+		expect(screen.getByText('SSR memory')).toBeInTheDocument();
+
+		// Advance time so the poll's first tick fires and completes.
+		await vi.advanceTimersByTimeAsync(100);
+
+		// After the degraded tick, `live.session` is non-null but `live.findings` and
+		// `live.memories` are null. The fixed deriveds fall back to initialFindings /
+		// initialMemories; the unfixed ones would blank the section.
+		expect(screen.getByText('SSR finding')).toBeInTheDocument();
+		expect(screen.getByText('SSR memory')).toBeInTheDocument();
 	});
 });
