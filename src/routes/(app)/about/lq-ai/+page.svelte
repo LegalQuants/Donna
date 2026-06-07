@@ -13,13 +13,7 @@
   Donna) work, from a request to a verified, cited answer.
 </p>
 
-<div class="mt-8">
-  {#each lqLearnSections as section (section.number)}
-    <LqLearnSection {section} />
-  {/each}
-</div>
-
-<section class="mt-12 border-t border-mlq-subtle pt-8">
+<section class="mt-8 border-t border-mlq-subtle py-8">
   <h2 class="mb-3 text-lg font-medium text-mlq-strong">Build &amp; learn with LQ-AI</h2>
   <p class="mb-5 max-w-prose text-sm leading-relaxed text-mlq-text">
     Donna is one application built on LQ-AI. Because the whole stack is open source, here is some of
@@ -94,3 +88,9 @@
     <a href="https://github.com/LegalQuants/lq-ai" target="_blank" rel="noopener noreferrer" class="font-medium text-mlq-strong underline">LegalQuants / lq-ai on GitHub</a>.
   </p>
 </section>
+
+<div class="mt-8">
+  {#each lqLearnSections as section (section.number)}
+    <LqLearnSection {section} />
+  {/each}
+</div>
