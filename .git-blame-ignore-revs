@@ -2,4 +2,4 @@
 # Use: git config blame.ignoreRevsFile .git-blame-ignore-revs
 6a9dbe07c55019d7d2f26e59a3f2fcb2e7a1cb10
 # Format 32 svelte files deferred from the one-time prettier pass (docs-polish PR 2).
-f699a29
+f699a29a493fe45f8b2a54f77e734a4ff541e2b3
