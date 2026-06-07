@@ -82,7 +82,7 @@
 									<input type="hidden" name="id" value={memory.id} />
 									<button
 										type="submit"
-										class="text-mlq-action hover:bg-mlq-hover rounded px-1.5 py-0.5 text-xs"
+										class="rounded px-1.5 py-0.5 text-xs font-medium text-mlq-success hover:underline"
 										>Keep</button
 									>
 								</form>
@@ -90,7 +90,7 @@
 									<input type="hidden" name="id" value={memory.id} />
 									<button
 										type="submit"
-										class="hover:bg-mlq-hover rounded px-1.5 py-0.5 text-xs text-mlq-muted"
+										class="rounded px-1.5 py-0.5 text-xs text-mlq-muted hover:text-mlq-text"
 										>Dismiss</button
 									>
 								</form>
@@ -102,7 +102,7 @@
 			{#if memoriesOverflow > 0}
 				<p class="mt-1 text-xs text-mlq-muted">
 					+{memoriesOverflow} more — review all in
-					<a href="/automations/review" class="text-mlq-action underline-offset-2 hover:underline"
+					<a href="/automations/review" class="text-mlq-workflow underline-offset-2 hover:underline"
 						>Automations → Review</a
 					>
 				</p>

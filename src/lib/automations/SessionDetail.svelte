@@ -26,16 +26,23 @@
 	// Live-poll a running session to terminal; swap in fresh data as it arrives.
 	// untrack the id read so the initial-prop access isn't a reactive dependency.
 	const live = createSessionPoll(untrack(() => initialSession.id));
+
+	// After the poll reaches a clean terminal (done && !error), prefer the
+	// server-refreshed initial props (e.g. after a Keep/Dismiss invalidateAll)
+	// over the now-frozen live state. While polling is still in progress,
+	// prefer live data and fall back to initial props for last-known-good retention.
+	function pick<T>(liveVal: T | null, initialVal: T | null): T | null {
+		if (!live.session) return initialVal;
+		if (live.done && !live.error) return initialVal ?? liveVal;
+		return liveVal ?? initialVal;
+	}
+
 	const session = $derived(live.session ?? initialSession);
 	const receipt = $derived(live.session ? live.receipt : initialReceipt);
-	const findings = $derived(live.session ? (live.findings ?? initialFindings) : initialFindings);
-	const findingsTotal = $derived(
-		live.session ? (live.findingsTotal ?? initialFindingsTotal) : initialFindingsTotal
-	);
-	const memories = $derived(live.session ? (live.memories ?? initialMemories) : initialMemories);
-	const memoriesTotal = $derived(
-		live.session ? (live.memoriesTotal ?? initialMemoriesTotal) : initialMemoriesTotal
-	);
+	const findings = $derived(pick(live.findings, initialFindings));
+	const findingsTotal = $derived(pick(live.findingsTotal, initialFindingsTotal));
+	const memories = $derived(pick(live.memories, initialMemories));
+	const memoriesTotal = $derived(pick(live.memoriesTotal, initialMemoriesTotal));
 
 	$effect(() => {
 		if (initialSession.status === 'running') {
