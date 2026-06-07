@@ -6,6 +6,7 @@
     { href: '/about/assistant', label: 'Assistant' },
     { href: '/about/projects', label: 'Projects' },
     { href: '/about/workflows', label: 'Workflows' },
+    { href: '/about/automations', label: 'Automations' },
     { href: '/about/tabular', label: 'Tabular' },
     { href: '/about/knowledge', label: 'Knowledge' },
     { href: '/about/models', label: 'Models' },
