@@ -26,8 +26,8 @@ support wasn't confirmed) — loosely typed (DE-330), so hand-typed in `parseTab
   `validColumns()`).
 - `src/lib/tabular/ColumnBuilder.svelte`: a checkbox beside the `Min. model tier` select —
   `checked={col.ensemble_verification ?? false}`, `onchange` → `builder.setColumn(col.id, {
-  ensemble_verification: e.currentTarget.checked || null })`, `aria-label="Ensemble verification for
-  {col.name || 'this column'}"`, label "Ensemble verification". Default off. (Skill mode is unaffected —
+ensemble_verification: e.currentTarget.checked || null })`, `aria-label="Ensemble verification for
+{col.name || 'this column'}"`, label "Ensemble verification". Default off. (Skill mode is unaffected —
   the toggle is per ad-hoc column; ensemble for skill-defined columns is the skill's own setting.)
 
 ## Part 2 — Cost premium in the preview
@@ -55,6 +55,7 @@ convey trust via the grid's confidence dot, not verification). Never show a misl
 cell that was never ensemble-checked.
 
 Two coordinated changes:
+
 1. **Treat the ensemble methods as verified (green).** In `src/lib/citations/types.ts`, add
    `ensemble_strict` and `ensemble_majority` to the GREEN verification-method set used by `citeState`,
    so a citation whose `verification_method` is one of those resolves to `'verified'`. This is safe for
@@ -63,21 +64,22 @@ Two coordinated changes:
 2. **Suppress the chip when verification doesn't apply.** The doc panel
    (`src/lib/docpanel/DocumentPanel.svelte`) currently renders the verification chip unconditionally
    from `tab.cite`. Add an explicit suppression signal so a tabular non-ensemble citation renders no
-   chip — **do NOT infer from "no verification fields"**, because chat *unverified* citations also lack a
+   chip — **do NOT infer from "no verification fields"**, because chat _unverified_ citations also lack a
    positive signal and must keep their red "Unverified" chip. Mechanism: the tabular `openCitation`
    (`src/routes/(app)/tabular/[executionId]/+page.svelte`) builds the `Citation` cast and:
    - when `c.verification_method` is set → include `verified: true` + `verification_method` (→ green
      "✓ Verified" via change #1);
    - when `c.verification_method` is null → set an explicit "verification not applicable" marker that the
      doc panel honors to skip the chip.
-   The marker should be carried on the opened citation/tab in the least-invasive way (e.g. an optional
-   `verificationApplicable?: boolean` on the doc-panel `Citation`/open path, defaulting to applicable so
-   all chat citations are unchanged; tabular non-ensemble sets it `false`). The plan finalizes the exact
-   field after reading `docpanel/docPanel.svelte.ts` + `DocumentPanel.svelte` + `citations/types.ts`.
+     The marker should be carried on the opened citation/tab in the least-invasive way (e.g. an optional
+     `verificationApplicable?: boolean` on the doc-panel `Citation`/open path, defaulting to applicable so
+     all chat citations are unchanged; tabular non-ensemble sets it `false`). The plan finalizes the exact
+     field after reading `docpanel/docPanel.svelte.ts` + `DocumentPanel.svelte` + `citations/types.ts`.
 
 ## Testing
 
 **Unit:**
+
 - `tabularBuilder.svelte.test.ts`: `validColumns()` includes `ensemble_verification: true` when set,
   omits it when false/unset (parallel to the existing `minimum_inference_tier` test).
 - `ColumnBuilder.svelte.test.ts`: toggling the checkbox calls `setColumn` with `ensemble_verification`.
@@ -105,6 +107,7 @@ content varies); gate on the chip + premium, not exact text. Use a PDF fixture (
 4. `npm run check` = 0/0; no new lint; `npx vitest run` green; live e2e passes against the 541bd6f backend.
 
 ## Out of scope
+
 - Surfacing `verification_method` inside the grid/`CellDetail` text (the doc-panel chip is the trust
   signal; the grid keeps its confidence dot). Optional `TabularCell.verification_method` may be parsed
   but need not be displayed in the grid.

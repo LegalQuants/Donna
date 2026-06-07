@@ -23,11 +23,12 @@ historical context; the scope doc is the current source of truth.
 
 ### When it lands — start with the brainstorming skill (fresh feature)
 
-This is the consumer-side checklist to confirm against the *new* contract before brainstorming the
+This is the consumer-side checklist to confirm against the _new_ contract before brainstorming the
 surface. Our closest analog is how Donna consumed **playbooks** (list → detail → `execute` → poll
 `executions/{id}` → typed `results`), so mirror that shape unless the contract differs.
 
 Contract requirements to verify (`npm run gen:api` then check the generated types):
+
 1. **Discover** — list + detail endpoints for available autonomous workflows (built-in vs user-owned
    distinguishable, like skills/playbooks `created_by IS NULL`).
 2. **Trigger** — a `run`/`execute` endpoint; what does a run operate on? a matter? a document
@@ -38,7 +39,7 @@ Contract requirements to verify (`npm run gen:api` then check the generated type
 4. **Status model** — explicit enum (e.g. `pending`/`running`/`needs_input`/`completed`/`failed`/
    `cancelled`) on a pollable execution resource, **or** an SSE stream. (Polling matches existing
    patterns; SSE is nicer for live agent progress.)
-5. **Step-level transparency** *(core to Donna's product thesis)* — expose the run's steps/actions:
+5. **Step-level transparency** _(core to Donna's product thesis)_ — expose the run's steps/actions:
    which tool/skill each step invoked, an input/output summary, citations (`cited_chunk_ids` so we can
    wire doc-panel citations like playbooks), timestamps. A flat final answer undersells it.
 6. **Human-in-the-loop** — does a run pause for approval/input mid-flight? If so we need a
@@ -65,7 +66,7 @@ Build via the usual loop: brainstorm → spec → plan → subagent-driven execu
   `/Users/kevinkeller/Code/Donna/docs/upstream-requests/lq-ai-chat-message-file-attach.md`.
 - **P7 profile editing (display_name / email)** — upstream-blocked: no `PATCH /api/v1/users/me`.
   Request: `/Users/kevinkeller/Code/Donna/docs/upstream-requests/lq-ai-patch-users-me-profile.md`. The
-  *rest* of P7 (profile view, preferences, password, export, deletion, Trust/tier page) is buildable
+  _rest_ of P7 (profile view, preferences, password, export, deletion, Trust/tier page) is buildable
   now without any backend change.
 - **P7 plan/subscription display** — N/A: no billing concept in lq-ai (self-hosted).
 - **P7 anonymization-config visibility** — no user-facing privacy-posture endpoint today; possible

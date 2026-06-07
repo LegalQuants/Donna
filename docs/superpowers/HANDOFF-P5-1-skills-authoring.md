@@ -6,17 +6,17 @@
 
 ## 1. What Donna is
 
-Standalone MikeOSS-inspired **SvelteKit (Svelte 5 runes)** frontend for the **lq-ai** legal-AI backend. Browser talks only to Donna's SvelteKit server (a **BFF**) which holds the lq-ai JWT in httpOnly cookies and proxies to the lq-ai `api`. lq-ai is vendored at `vendor/lq-ai` (pinned submodule), brought up by this repo's `docker-compose.yml`. Visual language: document-forward, serif, restrained grays. **Product thesis (important — see memory `donna-product-direction`):** Donna exposes the lq-ai backend's power through a **friendly, minimal-chrome, plain-language UX** — the *opposite* of the LQ_AI developer frontend's menu-dense, capability-showcase style. When porting an LQ_AI capability, re-imagine it the Donna way.
+Standalone MikeOSS-inspired **SvelteKit (Svelte 5 runes)** frontend for the **lq-ai** legal-AI backend. Browser talks only to Donna's SvelteKit server (a **BFF**) which holds the lq-ai JWT in httpOnly cookies and proxies to the lq-ai `api`. lq-ai is vendored at `vendor/lq-ai` (pinned submodule), brought up by this repo's `docker-compose.yml`. Visual language: document-forward, serif, restrained grays. **Product thesis (important — see memory `donna-product-direction`):** Donna exposes the lq-ai backend's power through a **friendly, minimal-chrome, plain-language UX** — the _opposite_ of the LQ_AI developer frontend's menu-dense, capability-showcase style. When porting an LQ_AI capability, re-imagine it the Donna way.
 
 ## 2. Phase status
 
-| Phase | Status |
-|---|---|
-| P0–P2c-B | ✅ merged (#1–#8) |
-| P3 — Document panel + highlighting | ✅ P3-1 (#9), P3-2 (#10), P3-3 (#12), polish-auto-scroll (#16) |
-| **P4 — Projects / Matters** | ✅ **COMPLETE** · P4-1 (#13), P4-2 (#15), P4-3a (#17), P4-3b (#19) |
-| **P5 — Workflows (skills authoring + playbooks)** | **P5-1 ⬅️ NEXT** |
-| P6 Tabular · P7 Settings/Trust · P8 Redline | pending |
+| Phase                                             | Status                                                             |
+| ------------------------------------------------- | ------------------------------------------------------------------ |
+| P0–P2c-B                                          | ✅ merged (#1–#8)                                                  |
+| P3 — Document panel + highlighting                | ✅ P3-1 (#9), P3-2 (#10), P3-3 (#12), polish-auto-scroll (#16)     |
+| **P4 — Projects / Matters**                       | ✅ **COMPLETE** · P4-1 (#13), P4-2 (#15), P4-3a (#17), P4-3b (#19) |
+| **P5 — Workflows (skills authoring + playbooks)** | **P5-1 ⬅️ NEXT**                                                   |
+| P6 Tabular · P7 Settings/Trust · P8 Redline       | pending                                                            |
 
 **P4-3b shipped (#19, 2026-05-28):** Cohesive KB management surface. Dedicated `/knowledge/[id]` route (KbHeader + KbFilesSection + HybridAlphaControl) + top-level `/knowledge` index. KB create from the matter Knowledge section's KbPicker via `CreateKbForm.svelte` — single-call create-and-link by passing `project_id` in the `POST /knowledge-bases` body. **Client-side polling + auto-attach** the novel piece: `KbFileRow.svelte` polls `/files/[id]` every 2 s (visibility-paused), watches `ingestion_status` transition pending → processing → ready, fires a hidden `?/attachFile` form exactly once on `ready` (double-attach guard via `attaching` boolean + 409-idempotent backend). 5-min stuck threshold → "Refresh to check"; failed status surfaces `ingestion_error` inline. Rename modal mirrors ReceiptsDrawer a11y. Hybrid α slider debounces 400 ms. KnowledgeSection rows linkify + add Manage link. **While-here bug fix:** `FileRow.svelte` download URL `/api/v1/files/{id}/content` → `/files/{id}/content` (no `/api/v1` route group in Donna; the old URL silently 404'd). **Three bugs flushed by the live e2e author:** `CreateKbForm` `{onsubmit}` shadowed `use:enhance` (fixed: moved into the success callback); `/knowledge/[id]/+page.svelte` had self-referential `$effect` cycles that silently blocked `pendingUploads` updates (fixed: `untrack(() => pendingUploads)` in both effects); the spec used a per-tick `performance.now()` for the stuck timeout but that exhausted the fake-timer test budget (implementer switched to a `setTimeout` cleared in the effect cleanup — semantically identical). 423/423 unit + green live e2e (`tests/kb-management.spec.ts`).
 
@@ -44,7 +44,7 @@ npm run check && npx vitest run && npx playwright test
 The two top items on the post-P4-3b capability backlog (memory `donna-product-direction`) were:
 
 1. **Chat-level file upload** in the composer — UPSTREAM-BLOCKED. Verified 2026-05-28 against `src/lib/api/backend.d.ts` at pin `438198c`: `MessageCreate` has `content` / `model` / `stream` / `skills?` / `skill_inputs?` only — there is no `file_ids` field. There is no `POST /api/v1/chats/{id}/files` either. Implementing chat-level attach requires a backend change first (write a `docs/upstream-requests/<name>.md`, hand to the user to relay, bump the pin once merged — see §7). When that lands, this becomes the natural next slice.
-2. **Skills authoring** — backend is READY. `POST /api/v1/user-skills` with `UserSkillCreate`, `PATCH /api/v1/user-skills/{slug}` with `UserSkillUpdate`, `POST /api/v1/skills/{slug}/fork`, `GET /api/v1/user-skills?scope=user|team|all`, `GET /api/v1/skills/{slug}` for the full body. Today the user can *attach* a skill via `SkillAttach` (P2c-B2) but must use the LQ_AI dev frontend to *create* one — exactly the kind of "friendly frontend exposing backend power" gap the product thesis flags. This is the smallest meaningful next slice that doesn't need backend work.
+2. **Skills authoring** — backend is READY. `POST /api/v1/user-skills` with `UserSkillCreate`, `PATCH /api/v1/user-skills/{slug}` with `UserSkillUpdate`, `POST /api/v1/skills/{slug}/fork`, `GET /api/v1/user-skills?scope=user|team|all`, `GET /api/v1/skills/{slug}` for the full body. Today the user can _attach_ a skill via `SkillAttach` (P2c-B2) but must use the LQ*AI dev frontend to \_create* one — exactly the kind of "friendly frontend exposing backend power" gap the product thesis flags. This is the smallest meaningful next slice that doesn't need backend work.
 
 ## 6. Next slice — P5-1 (skills authoring: list + create + edit)
 
@@ -57,17 +57,17 @@ The skill management surface mirrors `/matters` and `/knowledge`. Open scope dec
 
 ### Backend contract (verified 2026-05-28 against `src/lib/api/backend.d.ts` at pin `438198c`)
 
-| Surface | Endpoint | Notes |
-|---|---|---|
-| List picker skills | `GET /api/v1/skills?scope=builtin\|user\|team\|all&tag=<tag>` | `SkillSummary[]`. Used by `SkillAttach` today; P5-1 does not change this. |
-| Full skill (frontmatter + body) | `GET /api/v1/skills/{slug}` | `Skill`. 404 if unknown / cross-user. |
-| Full skill (inspector) | `GET /api/v1/skills/{slug}/contents` | Same payload as the base GET. Drives the "view this skill" affordance. |
-| Declared inputs (form schema) | `GET /api/v1/skills/{slug}/inputs` | `SkillInputs`. Used by the playbook wizard (deferred). |
-| List the caller's editable skills | `GET /api/v1/user-skills?scope=user\|team\|all` | `UserSkill[]`. Drives the P5-1 `/skills` index. |
-| Create a user/team skill | `POST /api/v1/user-skills` body `UserSkillCreate` | `{ slug, display_name, description, body, version=1.0.0, tags?, frontmatter_extra?, scope='user'\|'team', owner_team_id?, slash_alias?, forked_from? }`. 201 → `UserSkill`. 409 on slug collision within scope. 422 on bad scope/team combination. |
-| Update a user/team skill | `PATCH /api/v1/user-skills/{slug}` body `UserSkillUpdate` | All fields optional; `display_name`, `description`, `body`, `version`, `tags`, `frontmatter_extra`, `slash_alias`. 422 on slash_alias collision. |
-| Fork a built-in into user scope | `POST /api/v1/skills/{slug}/fork` body `{ new_name?, scope='user' }` | Copies the built-in's frontmatter + body into a new user-scope row. 201 → `Skill`. 409 if a same-slug user row exists. `scope='team'` is reserved (returns 400). |
-| Delete a user/team skill | (verify — likely `DELETE /api/v1/user-skills/{slug}`) | Spike the live endpoint in brainstorm; the picker treats archived skills as removed from the user surface. |
+| Surface                           | Endpoint                                                             | Notes                                                                                                                                                                                                                                              |
+| --------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| List picker skills                | `GET /api/v1/skills?scope=builtin\|user\|team\|all&tag=<tag>`        | `SkillSummary[]`. Used by `SkillAttach` today; P5-1 does not change this.                                                                                                                                                                          |
+| Full skill (frontmatter + body)   | `GET /api/v1/skills/{slug}`                                          | `Skill`. 404 if unknown / cross-user.                                                                                                                                                                                                              |
+| Full skill (inspector)            | `GET /api/v1/skills/{slug}/contents`                                 | Same payload as the base GET. Drives the "view this skill" affordance.                                                                                                                                                                             |
+| Declared inputs (form schema)     | `GET /api/v1/skills/{slug}/inputs`                                   | `SkillInputs`. Used by the playbook wizard (deferred).                                                                                                                                                                                             |
+| List the caller's editable skills | `GET /api/v1/user-skills?scope=user\|team\|all`                      | `UserSkill[]`. Drives the P5-1 `/skills` index.                                                                                                                                                                                                    |
+| Create a user/team skill          | `POST /api/v1/user-skills` body `UserSkillCreate`                    | `{ slug, display_name, description, body, version=1.0.0, tags?, frontmatter_extra?, scope='user'\|'team', owner_team_id?, slash_alias?, forked_from? }`. 201 → `UserSkill`. 409 on slug collision within scope. 422 on bad scope/team combination. |
+| Update a user/team skill          | `PATCH /api/v1/user-skills/{slug}` body `UserSkillUpdate`            | All fields optional; `display_name`, `description`, `body`, `version`, `tags`, `frontmatter_extra`, `slash_alias`. 422 on slash_alias collision.                                                                                                   |
+| Fork a built-in into user scope   | `POST /api/v1/skills/{slug}/fork` body `{ new_name?, scope='user' }` | Copies the built-in's frontmatter + body into a new user-scope row. 201 → `Skill`. 409 if a same-slug user row exists. `scope='team'` is reserved (returns 400).                                                                                   |
+| Delete a user/team skill          | (verify — likely `DELETE /api/v1/user-skills/{slug}`)                | Spike the live endpoint in brainstorm; the picker treats archived skills as removed from the user surface.                                                                                                                                         |
 
 The `UserSkillCreate` / `UserSkillUpdate` schemas are at `src/lib/api/backend.d.ts` lines 8187 and 8226 respectively.
 

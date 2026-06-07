@@ -48,7 +48,11 @@ export async function renderPdf(container: HTMLElement, bytes: ArrayBuffer): Pro
 			// v5 API: pass canvas as primary parameter (canvasContext is for legacy use)
 			await page.render({ canvas, viewport }).promise;
 			const textContent = await page.getTextContent();
-			const textLayer = new TextLayer({ textContentSource: textContent, container: textLayerEl, viewport });
+			const textLayer = new TextLayer({
+				textContentSource: textContent,
+				container: textLayerEl,
+				viewport
+			});
 			await textLayer.render();
 		}
 		return { numPages: doc.numPages };

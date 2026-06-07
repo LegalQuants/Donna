@@ -13,6 +13,7 @@
 ### Task 1: Relax `createEnhance` chatId to `string | null`
 
 **Files:**
+
 - Modify: `src/lib/enhance/enhance.svelte.ts:3`
 - Test: `src/lib/enhance/enhance.svelte.test.ts`
 
@@ -29,24 +30,24 @@ the mocked `fetch` — they pass a fake `fetchFn` into `run`; reuse that pattern
 
 ```ts
 it('sends chat_id: null when constructed with a null chatId (standalone landing enhance)', async () => {
-  let capturedBody: unknown;
-  const fetchFn = (async (_url: string, init: RequestInit) => {
-    capturedBody = JSON.parse(init.body as string);
-    return new Response(
-      JSON.stringify({ expansion_applied: true, expanded_prompt: 'better', interaction_id: 'i1' }),
-      { status: 200, headers: { 'content-type': 'application/json' } }
-    );
-  }) as unknown as typeof fetch;
+	let capturedBody: unknown;
+	const fetchFn = (async (_url: string, init: RequestInit) => {
+		capturedBody = JSON.parse(init.body as string);
+		return new Response(
+			JSON.stringify({ expansion_applied: true, expanded_prompt: 'better', interaction_id: 'i1' }),
+			{ status: 200, headers: { 'content-type': 'application/json' } }
+		);
+	}) as unknown as typeof fetch;
 
-  const e = createEnhance(null, () => ['nda-review']);
-  await e.run('draft a clause', fetchFn);
+	const e = createEnhance(null, () => ['nda-review']);
+	await e.run('draft a clause', fetchFn);
 
-  expect(capturedBody).toEqual({
-    raw_input: 'draft a clause',
-    chat_id: null,
-    attached_skills: [{ name: 'nda-review' }]
-  });
-  expect(e.status).toBe('preview');
+	expect(capturedBody).toEqual({
+		raw_input: 'draft a clause',
+		chat_id: null,
+		attached_skills: [{ name: 'nda-review' }]
+	});
+	expect(e.status).toBe('preview');
 });
 ```
 
@@ -89,6 +90,7 @@ git commit -m "feat(enhance): allow createEnhance without a chat (chatId: string
 ### Task 2: Wire enhance into the landing composer
 
 **Files:**
+
 - Modify: `src/routes/(app)/+page.svelte`
 
 Mirror the in-chat page, which does
@@ -102,7 +104,7 @@ In `src/routes/(app)/+page.svelte`, add the import alongside the other `$lib` im
 `createSkillAttach` import on line 5):
 
 ```svelte
-  import { createEnhance } from '$lib/enhance/enhance.svelte';
+import {createEnhance} from '$lib/enhance/enhance.svelte';
 ```
 
 - [ ] **Step 2: Construct the controller**
@@ -110,7 +112,7 @@ In `src/routes/(app)/+page.svelte`, add the import alongside the other `$lib` im
 After `const skillAttach = createSkillAttach();` (line 14), add:
 
 ```svelte
-  const enhance = createEnhance(null, () => skillAttach.names);
+const enhance = createEnhance(null, () => skillAttach.names);
 ```
 
 - [ ] **Step 3: Pass it to `<Composer>`**
@@ -118,7 +120,16 @@ After `const skillAttach = createSkillAttach();` (line 14), add:
 On the `<Composer … />` call (line 33), add the `{enhance}` prop. Resulting tag:
 
 ```svelte
-    <Composer bind:value={message} matters={data.matters} bind:selectedMatterId {skillAttach} {fileAttach} {enhance} {promptLibrary} onsubmit={() => formEl?.requestSubmit()} />
+<Composer
+	bind:value={message}
+	matters={data.matters}
+	bind:selectedMatterId
+	{skillAttach}
+	{fileAttach}
+	{enhance}
+	{promptLibrary}
+	onsubmit={() => formEl?.requestSubmit()}
+/>
 ```
 
 - [ ] **Step 4: Run the gate + tests**

@@ -4,7 +4,7 @@
 
 ## 1. Goal
 
-Roadmap deliverable: *"Tabbed resizable PDF.js/DOCX viewer."* P3-1/P3-2 delivered a single-doc
+Roadmap deliverable: _"Tabbed resizable PDF.js/DOCX viewer."_ P3-1/P3-2 delivered a single-doc
 resizable viewer with citation highlight. P3-3 completes P3 by adding:
 
 1. A **multi-tab strip** so several cited documents can be open at once — switch between them, close
@@ -73,7 +73,7 @@ opened (P4 territory).
 response headers alongside the existing `content-type` and `x-content-type-options: nosniff`.
 
 Rationale: the PDF viewer fetches bytes via `fetch().arrayBuffer()`, so disposition does not affect
-rendering. The only consumer that *navigates* to this URL is the fallback card's download link.
+rendering. The only consumer that _navigates_ to this URL is the fallback card's download link.
 Forcing `attachment` is defense-in-depth: a non-PDF such as `text/html` or SVG cannot render inline in
 Donna's own origin. Covered by a server unit test asserting the header.
 
@@ -97,17 +97,17 @@ Both small fixes are in scope for this slice.
 
 ## 7. Files touched
 
-| File | Change |
-|---|---|
-| `src/routes/(app)/files/[id]/content/+server.ts` | add `content-disposition: attachment` (first commit) |
-| `src/lib/docpanel/docPanel.svelte.ts` | `close()` clears highlight when it empties the panel |
-| `src/lib/docpanel/DocumentPanel.svelte` | tab strip (layout A); page# into cited bar; non-PDF branch → `UnsupportedFileCard`; `$effect` clears highlight when active tab not a renderable PDF |
-| `src/lib/docpanel/UnsupportedFileCard.svelte` | **new** presentational card |
-| `src/lib/docpanel/DocumentPanel.svelte.test.ts` | tab-strip + branch-routing tests |
-| `src/lib/docpanel/UnsupportedFileCard.svelte.test.ts` | **new** card unit tests |
-| `src/lib/docpanel/docPanel.svelte.test.ts` | `close()`-clears-highlight assertion |
-| `src/routes/(app)/files/[id]/content/server.test.ts` | assert `content-disposition` header |
-| `tests/multi-tab.spec.ts` | **new** live multi-tab e2e |
+| File                                                  | Change                                                                                                                                              |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/routes/(app)/files/[id]/content/+server.ts`      | add `content-disposition: attachment` (first commit)                                                                                                |
+| `src/lib/docpanel/docPanel.svelte.ts`                 | `close()` clears highlight when it empties the panel                                                                                                |
+| `src/lib/docpanel/DocumentPanel.svelte`               | tab strip (layout A); page# into cited bar; non-PDF branch → `UnsupportedFileCard`; `$effect` clears highlight when active tab not a renderable PDF |
+| `src/lib/docpanel/UnsupportedFileCard.svelte`         | **new** presentational card                                                                                                                         |
+| `src/lib/docpanel/DocumentPanel.svelte.test.ts`       | tab-strip + branch-routing tests                                                                                                                    |
+| `src/lib/docpanel/UnsupportedFileCard.svelte.test.ts` | **new** card unit tests                                                                                                                             |
+| `src/lib/docpanel/docPanel.svelte.test.ts`            | `close()`-clears-highlight assertion                                                                                                                |
+| `src/routes/(app)/files/[id]/content/server.test.ts`  | assert `content-disposition` header                                                                                                                 |
+| `tests/multi-tab.spec.ts`                             | **new** live multi-tab e2e                                                                                                                          |
 
 ## 8. Testing
 
@@ -138,6 +138,7 @@ project + KB with both PDFs, wait for ingestion + embeddings, create a project-b
 files).
 
 In the UI:
+
 1. Click pill 1 → panel opens, tab for file A active, `CSS.highlights.get('cite').size > 0`.
 2. Click pill 2 → a second tab appears and becomes active; highlight re-registers (size > 0).
 3. Assert **two** tabs present.

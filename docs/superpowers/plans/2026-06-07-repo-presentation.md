@@ -11,6 +11,7 @@
 **Spec:** `docs/superpowers/specs/2026-06-06-docs-polish-design.md` (PR 2 half) + user decision 2026-06-07: prettier = fix path AND one-time `--write` commit + `.git-blame-ignore-revs`. Branch: `docs/repo-presentation`. Commit + push per task.
 
 **Facts verified at plan time:**
+
 - `.prettierrc` `tailwindStylesheet` points at nonexistent `./src/routes/layout.css`; the real Tailwind entry is **`./src/app.css`** (`@import 'tailwindcss'`). With the path fixed, `npx prettier --check .` reports **691 files** (prettier has never successfully run).
 - `.prettierignore` already excludes `/vendor/`, `/static/`, `/src/lib/api/`, lockfiles.
 - The two root scope docs (`mikeossfrontendscope.md`, `mikeossuxbreakdown.md`) are referenced ONLY by dated historical docs (`docs/superpowers/HANDOFF-P2b.md`, `docs/superpowers/specs/2026-05-24-donna-foundation-auth-design.md`) — those are point-in-time records and must NOT be edited.
@@ -22,6 +23,7 @@
 ### Task 1: Root cleanup — move the MikeOSS research docs
 
 **Files:**
+
 - Move: `mikeossfrontendscope.md` → `docs/research/mikeossfrontendscope.md`
 - Move: `mikeossuxbreakdown.md` → `docs/research/mikeossuxbreakdown.md`
 
@@ -50,6 +52,7 @@ git push
 ### Task 2: LICENSE (Apache 2.0) + package.json license field
 
 **Files:**
+
 - Create: `LICENSE`
 - Modify: `package.json` (top-level fields)
 
@@ -95,6 +98,7 @@ git push
 ### Task 3: Fix prettier config + one-time repo format
 
 **Files:**
+
 - Modify: `.prettierrc` (tailwindStylesheet path)
 - Modify: ~691 files (mechanical `prettier --write`)
 - Create: `.git-blame-ignore-revs`
@@ -106,7 +110,9 @@ git push
 ```json
 "tailwindStylesheet": "./src/routes/layout.css",
 ```
+
 to:
+
 ```json
 "tailwindStylesheet": "./src/app.css",
 ```
@@ -168,6 +174,7 @@ git push
 ### Task 4: Hero screenshot
 
 **Files:**
+
 - Create: `docs/images/donna-hero.png`
 
 The hero should show Donna's signature view: **a chat with character-verified citation pills, ideally with the document panel open**. The dev DB persists prior e2e artifacts, so an existing chat with citations may already be available — prefer that over seeding a new one.
@@ -185,7 +192,10 @@ docker compose up -d --build postgres redis minio gateway api donna-web ingest-w
 import { chromium } from '@playwright/test';
 const BASE = process.env.DONNA_BASE_URL || 'http://localhost:13002';
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+const page = await browser.newPage({
+	viewport: { width: 1440, height: 900 },
+	deviceScaleFactor: 2
+});
 await page.goto(`${BASE}/login`);
 await page.fill('input[name="email"]', process.env.DONNA_E2E_EMAIL);
 await page.fill('input[name="password"]', process.env.DONNA_E2E_PASSWORD);
@@ -203,6 +213,7 @@ await browser.close();
 ```
 
 This script is a SKELETON — you must adapt the chat-finding logic by reading the actual sidebar markup (`src/lib/components/Sidebar.svelte` / the chats list component) and `tests/citation-live.spec.ts` for the seeding fallback. Requirements for the final image:
+
 - Shows an assistant answer with **citation pills** visible; document panel open beside it if achievable.
 - No half-rendered/streaming state (wait for completion), no error toasts visible.
 - 1440×900 @2x (2880×1800 px file), PNG, saved to `docs/images/donna-hero.png`.
@@ -223,6 +234,7 @@ git push
 ### Task 5: README rewrite
 
 **Files:**
+
 - Rewrite: `README.md`
 
 Replace the whole file with the draft below, THEN fact-check every command and path against the repo (the draft was written from the current README's verified setup steps — re-verify nothing drifted), THEN `npx prettier --write README.md` before committing.
@@ -367,6 +379,7 @@ Apache License 2.0 — see [LICENSE](LICENSE). Copyright 2026 LegalQuants.
 npx prettier --write README.md
 npx prettier --check README.md
 ```
+
 Expected: clean.
 
 - [ ] **Step 4: Commit**
@@ -393,7 +406,9 @@ set -a; . ./.env; set +a
 docker compose up -d --build donna-web
 npx playwright test tests/about.spec.ts tests/auth-and-landing.spec.ts tests/skills-authoring.spec.ts
 ```
+
 Expected: all pass.
+
 - [ ] **Step 5: Commit any fixes; push.**
 
 ---

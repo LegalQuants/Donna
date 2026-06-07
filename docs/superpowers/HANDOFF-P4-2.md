@@ -6,18 +6,18 @@
 
 ## 1. What Donna is
 
-Standalone MikeOSS-inspired **SvelteKit (Svelte 5 runes)** frontend for the **lq-ai** legal-AI backend. Browser talks only to Donna's SvelteKit server (a **BFF**) which holds the lq-ai JWT in httpOnly cookies and proxies to the lq-ai `api`. lq-ai is vendored at `vendor/lq-ai` (pinned submodule), brought up by this repo's `docker-compose.yml`. Visual language: document-forward, serif, restrained grays. **Product thesis (important — see memory `donna-product-direction`):** Donna exposes the lq-ai backend's power through a **friendly, minimal-chrome, plain-language UX** — the *opposite* of the LQ_AI developer frontend's menu-dense, capability-showcase style. When porting an LQ_AI capability, re-imagine it the Donna way.
+Standalone MikeOSS-inspired **SvelteKit (Svelte 5 runes)** frontend for the **lq-ai** legal-AI backend. Browser talks only to Donna's SvelteKit server (a **BFF**) which holds the lq-ai JWT in httpOnly cookies and proxies to the lq-ai `api`. lq-ai is vendored at `vendor/lq-ai` (pinned submodule), brought up by this repo's `docker-compose.yml`. Visual language: document-forward, serif, restrained grays. **Product thesis (important — see memory `donna-product-direction`):** Donna exposes the lq-ai backend's power through a **friendly, minimal-chrome, plain-language UX** — the _opposite_ of the LQ_AI developer frontend's menu-dense, capability-showcase style. When porting an LQ_AI capability, re-imagine it the Donna way.
 
 ## 2. Phase status
 
-| Phase | Status |
-|---|---|
-| P0–P2c-B | ✅ merged (#1–#8) |
-| P3 — Document panel + highlighting | ✅ P3-1 (#9), P3-2 (#10), P3-3 (#12) |
-| **P4 — Projects / Matters** | **P4-1 ✅ (#13)** · **P4-2 ⬅️ NEXT (recommended)** · P4-3 after |
-| P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending |
+| Phase                                                      | Status                                                          |
+| ---------------------------------------------------------- | --------------------------------------------------------------- |
+| P0–P2c-B                                                   | ✅ merged (#1–#8)                                               |
+| P3 — Document panel + highlighting                         | ✅ P3-1 (#9), P3-2 (#10), P3-3 (#12)                            |
+| **P4 — Projects / Matters**                                | **P4-1 ✅ (#13)** · **P4-2 ⬅️ NEXT (recommended)** · P4-3 after |
+| P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending                                                         |
 
-**P4-1 shipped (#13):** a first-class **Matters** surface + chat scoping. `/matters` (row list + create modal), `/matters/[id]` (detail: chats list, "New chat in this matter", rename, archive), a **composer matter-picker** (landing/new-chat only — a chat's `project_id` is fixed at creation), and a read-only **matter badge** in the chat header. Scoping a chat to a matter that has a KB lights up RAG/citations for *normal* UI chats (the e2e proves it). Code lives in `src/lib/matters/` + `src/routes/(app)/matters/`.
+**P4-1 shipped (#13):** a first-class **Matters** surface + chat scoping. `/matters` (row list + create modal), `/matters/[id]` (detail: chats list, "New chat in this matter", rename, archive), a **composer matter-picker** (landing/new-chat only — a chat's `project_id` is fixed at creation), and a read-only **matter badge** in the chat header. Scoping a chat to a matter that has a KB lights up RAG/citations for _normal_ UI chats (the e2e proves it). Code lives in `src/lib/matters/` + `src/routes/(app)/matters/`.
 
 ## 3. How to build a slice (the established loop — follow it)
 
@@ -43,20 +43,25 @@ npm run check && npx vitest run && npx playwright test
 P4-1 deliberately deferred the rest of P4. Backend reality verified 2026-05-27 against the generated types Donna consumes:
 
 ### P4-2 — Privilege & tier-floor (recommended next; small, backend-READY)
+
 Matches the LQ_AI "New matter" modal (privileged checkbox + minimum-tier select). Add to the **create + rename** forms (`src/lib/matters/MatterForm.svelte`):
+
 - **`Project.privileged`** (boolean) + **`Project.minimum_inference_tier`** (1–5 | null). Both settable on `POST /projects` (ProjectCreate) and `PATCH /projects/{id}` (ProjectUpdate).
 - **Coupled rule (server-enforced):** `privileged=true` **requires** `minimum_inference_tier` set — POST returns **422**, PATCH returns **400** otherwise. The form must enforce/surface this (disable submit or show the error). Re-checked on PATCH against merged state.
 - Effect: every chat in a privileged project is flagged `privilege_marked` in the audit log; the gateway enforces the tier-floor via the forwarded header `lq_ai_project_minimum_inference_tier`.
 - **UI:** a reserved high-contrast **privileged** visual token was defined back in P0 (check `app.css`/tailwind config + the foundation spec) — use it for a privileged badge on the matter list row + detail header. Surface the tier-floor near the model picker when a chat is in a tier-floored matter (the model picker's tier data is in `src/lib/models/`; see memory note on `routed_inference_tier` reality). Also: there's a deployment-level `admin/tier-policy` (global floors) — out of scope unless asked.
 
 ### P4-3 — Matter documents, KBs & skills (higher user value; backend-READY)
+
 The document UX the user cares about (see `donna-product-direction`). As **sections in the single-column matter detail** (Donna's friendlier take on LQ_AI's matter rail):
+
 - **Files:** attach files to a matter (`POST /projects/{id}/files`; `Project.attached_file_ids`), list them, remove.
 - **Knowledge:** link a KB to a matter (`POST /projects/{id}/knowledge-bases`) and — bigger — **upload documents into a KB** with ingestion-status feedback (`POST /files` → `POST /knowledge-bases/{kid}/files`; poll `ingestion_status`). Donna has NO KB-upload UI today.
-- **Skills:** attach skills to a matter (`Project.attached_skill_names`). (Skill *authoring* — create/update — is P5.)
+- **Skills:** attach skills to a matter (`Project.attached_skill_names`). (Skill _authoring_ — create/update — is P5.)
 - **Context:** edit `Project.context_md` (matter context Markdown, ≤100 KiB).
 
 ### Broader backlog (memory `donna-product-direction`)
+
 Chat-level **file upload** in the composer (skill-attach already exists from P2c-B2); **skills authoring** + **playbooks** (create incl. "generate from prior agreements", apply in workflow/chat) → **P5 Workflows**. **Upstream-blocked** (need an lq-ai request first): folder tree for matter files, file versions, project sharing/ACL.
 
 **Which next?** P4-2 is the quick, self-contained completion of the matter create/detail surface and is visually validated by the LQ_AI Image-1 modal. P4-3 delivers the document-attach UX the user emphasized but is larger (decompose it — e.g. matter-files first, KB-upload second). Decide at the next session's brainstorm/decompose step.
@@ -83,7 +88,7 @@ The user runs a separate Claude Code on `LegalQuants/lq-ai`. If a slice needs a 
 - **Form-action server tests (P4-1 pattern):** mock `lqFetch`, build a `Request` with a `URLSearchParams` body so `event.request.formData()` parses it; `redirect()` throws `{status, location}` (assert with `.rejects.toMatchObject`), `fail()` returns `{status, data}`. The `PageServerLoad` return union includes `void` — cast the `await load(...)` result in tests (don't weaken assertions). See `src/routes/(app)/matters/page.server.test.ts`.
 - **`ChatUpdate` can't change `project_id`** — a chat's matter is fixed at creation; the picker is new-chat-only; existing chats only display the badge.
 - Svelte-check: `state_referenced_locally` when seeding `$state` from a prop → wrap the init read in `untrack(() => prop)` (codebase idiom). In-app `<a href>` trips `svelte/no-navigation-without-resolve` → single-line `eslint-disable-next-line` directly above `<a>` (keep `<a` and `href` on the same line so it can't drift).
-- **Pre-existing lint debt:** `eslint .` (the `npm run lint` script) is red repo-wide — ~35 `no-explicit-any` in test files (`as any` event stubs), unrelated to recent work. The real gate is `npm run check` (svelte-check) at 0/0 + eslint clean on *touched* files. Don't try to fix the whole test suite's `as any`.
+- **Pre-existing lint debt:** `eslint .` (the `npm run lint` script) is red repo-wide — ~35 `no-explicit-any` in test files (`as any` event stubs), unrelated to recent work. The real gate is `npm run check` (svelte-check) at 0/0 + eslint clean on _touched_ files. Don't try to fix the whole test suite's `as any`.
 - Icons `@lucide/svelte` (`<Icon size={n} />`). Route state via `$app/state`'s `page`. `vendor/` excluded from svelte-check/ESLint/Prettier; regen API types with `npm run gen:api`. Vitest jsdom; component tests use `@testing-library/svelte` + `userEvent`/`fireEvent`; `expect: { requireAssertions: true }`; mock `$app/forms` (`enhance`) for form-component unit tests.
 - Live e2e: rebuild `donna-web` first; assert on unique controls / exact names; clean up seeded data.
 

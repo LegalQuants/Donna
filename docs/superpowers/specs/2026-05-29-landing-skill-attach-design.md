@@ -4,9 +4,9 @@
 
 ## 1. Goal & motivation
 
-Let a user **attach a skill to their first message from the landing/Assistant page**. Today the skill-attach control (`⊕ Skill`, P2c-B2) renders only in the **in-chat** composer — the landing composer is passed only the model + matter pickers. Because the landing flow sends the first message *before* the user ever reaches the in-chat composer, **a skill can't be applied to the opening question** at all. This is real friction: a user who wants "review this with the contract-QA skill" must send a throwaway message first, then attach on the second turn.
+Let a user **attach a skill to their first message from the landing/Assistant page**. Today the skill-attach control (`⊕ Skill`, P2c-B2) renders only in the **in-chat** composer — the landing composer is passed only the model + matter pickers. Because the landing flow sends the first message _before_ the user ever reaches the in-chat composer, **a skill can't be applied to the opening question** at all. This is real friction: a user who wants "review this with the contract-QA skill" must send a throwaway message first, then attach on the second turn.
 
-Skill *application* already works end-to-end (the composer threads `MessageCreate.skills`; the gateway assembles each skill into the prompt). This slice only closes the **discoverability/first-message** gap by surfacing the existing control on landing and threading the chosen skills through the landing → new-chat → first-send hop.
+Skill _application_ already works end-to-end (the composer threads `MessageCreate.skills`; the gateway assembles each skill into the prompt). This slice only closes the **discoverability/first-message** gap by surfacing the existing control on landing and threading the chosen skills through the landing → new-chat → first-send hop.
 
 ## 2. Current flow (verified)
 
@@ -18,9 +18,9 @@ Skill *application* already works end-to-end (the composer threads `MessageCreat
 
 ## 3. Scope decision: Skill only (not Enhance)
 
-Surface **only** the skill-attach control on landing. **Enhance is excluded** because it is constructed as `createEnhance(chatId, …)` and calls a *per-chat* backend endpoint — it cannot run before a chat exists. Skill-attach collects slugs client-side and needs no chat context, so it ports cleanly. Enhance stays in-chat.
+Surface **only** the skill-attach control on landing. **Enhance is excluded** because it is constructed as `createEnhance(chatId, …)` and calls a _per-chat_ backend endpoint — it cannot run before a chat exists. Skill-attach collects slugs client-side and needs no chat context, so it ports cleanly. Enhance stays in-chat.
 
-**Also out of scope:** skill *inputs* (`MessageCreate.skill_inputs` / `GET /skills/{slug}/inputs` — a separate, larger slice), and an applied-skills confirmation UI (`applied_skills` is returned but not surfaced; separate).
+**Also out of scope:** skill _inputs_ (`MessageCreate.skill_inputs` / `GET /skills/{slug}/inputs` — a separate, larger slice), and an applied-skills confirmation UI (`applied_skills` is returned but not surfaced; separate).
 
 ## 4. Design — mirror the one-shot draft cookie
 
@@ -32,27 +32,42 @@ The skills ride the same one-shot mechanism as the draft message.
    ```
 2. **`?/start` action** (`(app)/+page.server.ts`): `const skills = data.getAll('skills').map(String).filter(Boolean);` After creating the chat and before redirect, if `message` is set keep the existing `donna_draft` write; additionally, if `skills.length`, set a sibling one-shot cookie:
    ```ts
-   event.cookies.set('donna_draft_skills', JSON.stringify(skills), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
+   event.cookies.set('donna_draft_skills', JSON.stringify(skills), {
+   	path: '/',
+   	httpOnly: true,
+   	sameSite: 'lax',
+   	maxAge: 120
+   });
    ```
 3. **Chat `[id]` `load`** (`chats/[id]/+page.server.ts`): read + delete `donna_draft_skills`, parse defensively to `string[]`, return as `draftSkills`:
    ```ts
    const rawSkills = event.cookies.get('donna_draft_skills');
    if (rawSkills) event.cookies.delete('donna_draft_skills', { path: '/' });
    let draftSkills: string[] = [];
-   if (rawSkills) { try { const p = JSON.parse(rawSkills); if (Array.isArray(p)) draftSkills = p.filter((x): x is string => typeof x === 'string'); } catch { /* ignore malformed */ } }
+   if (rawSkills) {
+   	try {
+   		const p = JSON.parse(rawSkills);
+   		if (Array.isArray(p)) draftSkills = p.filter((x): x is string => typeof x === 'string');
+   	} catch {
+   		/* ignore malformed */
+   	}
+   }
    // …return { …, draft, draftSkills, … }
    ```
 4. **Chat `[id]` `onMount`** (`chats/[id]/+page.svelte`): thread the skills into the first send:
    ```ts
-   if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel, data.draftSkills ?? []);
+   if (data.draft && data.messages.length === 0)
+   	submit(data.draft, modelStore.selectedModel, data.draftSkills ?? []);
    ```
 
 **Data flow:** landing `skillAttach.names` → hidden `skills[]` form fields → `?/start` → `donna_draft_skills` cookie → chat `load` → `data.draftSkills` → first `chat.send(content, model, skills)` → `MessageCreate.skills` → gateway. The picker fetches from the existing `/skills/autocomplete` BFF route, which is authed and works on landing.
 
 ### Why a cookie, not localStorage
-Skills are per-chat-creation and one-shot: the cookie is consumed and deleted on the first chat `load`, exactly like `donna_draft`. localStorage (how the *model* persists globally) would leak the selection into later chats. The cookie keeps the selection scoped to this one chat start.
+
+Skills are per-chat-creation and one-shot: the cookie is consumed and deleted on the first chat `load`, exactly like `donna_draft`. localStorage (how the _model_ persists globally) would leak the selection into later chats. The cookie keeps the selection scoped to this one chat start.
 
 ### Components touched (no new components)
+
 - `(app)/+page.svelte` — add `skillAttach` controller + hidden inputs (uses existing `createSkillAttach`, `Composer`).
 - `(app)/+page.server.ts` — `?/start` reads `skills`, sets `donna_draft_skills`.
 - `(app)/chats/[id]/+page.server.ts` — `load` reads/deletes/parses `donna_draft_skills` → `draftSkills`.
@@ -81,6 +96,7 @@ Quality bar: `npm run check` = **0 errors / 0 warnings**; eslint clean on touche
 ## 7. Implementation order (for the plan)
 
 Small slice; bite-sized TDD tasks:
+
 1. Chat `[id]` `load`: read/delete/parse `donna_draft_skills` → `draftSkills` (+ server test).
 2. Landing `?/start`: read `skills`, set `donna_draft_skills` cookie (+ server test).
 3. Landing page: wire `createSkillAttach` + hidden inputs (+ page test).
@@ -88,6 +104,7 @@ Small slice; bite-sized TDD tasks:
 5. Live e2e + verify + PR.
 
 ## 8. Follow-ups (not in this slice)
+
 - **Skill inputs** application (`skill_inputs` + `/skills/{slug}/inputs`) — the deeper "apply properly" slice.
 - **Applied-skills confirmation** in the message UI (`applied_skills` is returned, unused).
 - **Enhance on landing** — would require creating the chat before enhancing; deferred.

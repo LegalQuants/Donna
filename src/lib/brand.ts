@@ -5,5 +5,5 @@
 // only, never to emails (the address `admin@lq.ai` is a real credential, not a
 // brand label).
 export function rebrandName(name: string | null | undefined): string {
-  return name ? name.replace(/LQ\.?\s*AI/gi, 'Donna') : '';
+	return name ? name.replace(/LQ\.?\s*AI/gi, 'Donna') : '';
 }

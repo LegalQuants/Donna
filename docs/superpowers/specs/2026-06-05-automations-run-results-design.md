@@ -26,7 +26,7 @@ are persisted and readable, and memories are filterable per run.
   `{ entries: [AutonomousMemoryRead], total_count, limit, offset }` (note: **`entries`**, not
   `memories`). Non-deleted only, **`created_at` DESC**, user-scoped, all states unless `?state=`
   also passed. `AutonomousMemoryRead = { id, user_id, state: proposed|kept|dismissed, category,
-  content, source_session_id?, kept_at?, deleted_at?, created_at, updated_at }`.
+content, source_session_id?, kept_at?, deleted_at?, created_at, updated_at }`.
 - **Precedents are NOT session-filterable** (recurrence-aggregated across sessions) — deliberately
   out of this slice and out of this design.
 - No backfill: pre-#135 sessions return zero findings (expected). Findings cascade-delete with
@@ -118,13 +118,13 @@ between `<SessionReceiptHeader>` and `<SessionTimeline>`.
 
 ## Error handling summary
 
-| Failure | Behavior |
-|---|---|
-| Session fetch fails | unchanged (404 page / 502) |
-| Findings fetch fails | `findings: null` → "Results unavailable right now." |
-| Memories fetch fails | `memories: null` → sub-section hidden |
-| Unknown severity / state | neutral badge / outline chip with raw text |
-| Malformed finding/memory row | dropped by parser |
+| Failure                      | Behavior                                            |
+| ---------------------------- | --------------------------------------------------- |
+| Session fetch fails          | unchanged (404 page / 502)                          |
+| Findings fetch fails         | `findings: null` → "Results unavailable right now." |
+| Memories fetch fails         | `memories: null` → sub-section hidden               |
+| Unknown severity / state     | neutral badge / outline chip with raw text          |
+| Malformed finding/memory row | dropped by parser                                   |
 
 ## Testing
 

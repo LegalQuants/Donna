@@ -1,6 +1,6 @@
 # MikeOSS UX Breakdown — Reference for the Mike-LQ Frontend Build
 
-> **Purpose:** A full reconstruction of the MikeOSS user experience, screen by screen and workflow by workflow, written for the Claude Code agent that will build a MikeOSS-styled frontend on the LQ.AI backend. Every section pairs "what MikeOSS does" with "what LQ.AI adds" (verified citations, anonymization, tier awareness, audit, skill transparency) so the agent can replicate the *feel* of Mike while delivering the *substance* of LQ.AI.
+> **Purpose:** A full reconstruction of the MikeOSS user experience, screen by screen and workflow by workflow, written for the Claude Code agent that will build a MikeOSS-styled frontend on the LQ.AI backend. Every section pairs "what MikeOSS does" with "what LQ.AI adds" (verified citations, anonymization, tier awareness, audit, skill transparency) so the agent can replicate the _feel_ of Mike while delivering the _substance_ of LQ.AI.
 >
 > **Companion docs:** [`mikeoss-frontend-scope.md`](mikeoss-frontend-scope.md) (the workstream/task breakdown), [`HONEST-STATE.md`](HONEST-STATE.md) (what the backend actually ships), [`PRD.md`](PRD.md).
 
@@ -15,7 +15,7 @@ Two things I could **not** access and which a human should verify against:
 - **`mikeoss.com`** — blocked by this environment's network allowlist. The marketing site likely shows a more polished/curated version than the OSS source.
 - **The video walkthrough** — I cannot review video. Anything about motion, timing, or narrated workflow beyond what the code reveals should be checked against the video by a human.
 
-That said, the source is the better reference for a *replication* task: it's the ground truth of what the app actually does, including exact component names, button labels, placeholder text, and state machines. Where I quote a label in "double quotes," it is verbatim from the source. Where I describe layout, it is read from the JSX/Tailwind classes.
+That said, the source is the better reference for a _replication_ task: it's the ground truth of what the app actually does, including exact component names, button labels, placeholder text, and state machines. Where I quote a label in "double quotes," it is verbatim from the source. Where I describe layout, it is read from the JSX/Tailwind classes.
 
 **Pin the reference commit.** Before building, capture the MikeOSS `main` HEAD SHA so this breakdown and the build target the same version; MikeOSS evolves.
 
@@ -23,22 +23,22 @@ That said, the source is the better reference for a *replication* task: it's the
 
 ## 1. Stack + architecture (what you're replicating, and what you're NOT)
 
-| Layer | MikeOSS | Mike-LQ target |
-|---|---|---|
-| Framework | Next.js 16 (App Router) + React 19 | **SvelteKit** (keep the OpenWebUI fork; do not port to Next.js — see [`mikeoss-frontend-scope.md` Decision MLQ-1](mikeoss-frontend-scope.md)) |
-| Styling | Tailwind v4 + `class-variance-authority` + `tailwind-merge` | Tailwind (already in `web/`) + a new LQ.AI token layer |
-| Primitives | Radix UI (`@radix-ui/react-dropdown-menu`, `-slot`, `-icons`) | bits-ui / melt-ui (Svelte Radix-equivalents) |
-| Icons | `lucide-react` | `lucide-svelte` |
-| Markdown | `react-markdown` + `remark-gfm` + `remark-math` + `rehype-katex` + `rehype-raw` | OpenWebUI's existing markdown+KaTeX pipeline |
-| Rich text / redline | TipTap (`@tiptap/react`, `-starter-kit`, `tiptap-markdown`) | TipTap core wrapped in Svelte (scope doc W2) |
-| PDF | `pdfjs-dist` 4.x (canvas + text layer) | `pdfjs-dist` (or OpenWebUI's existing viewer) |
-| DOCX | `mammoth` (parse), `docx` + `docx-preview` (render/generate) | Document Pipeline already parses DOCX server-side |
-| XLSX | `exceljs` (client-side export) | M3-C4 ships server-side export |
-| Charts | `recharts` | optional |
-| Auth/DB | Supabase (auth-helpers, auth-js, supabase-js) | **LQ.AI backend-owned auth** (`api/app/api/auth.py`); no Supabase |
-| Storage | Cloudflare R2 / S3 (presigned) | MinIO/local today |
-| Model access | OpenRouter SDK, **per-user BYO keys** | **Gateway holds keys** (security boundary; no per-user keys — Decision MLQ-2) |
-| License | AGPL-3.0-only | (LQ.AI's own license; do not copy MikeOSS code verbatim — replicate behavior, not source) |
+| Layer               | MikeOSS                                                                         | Mike-LQ target                                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework           | Next.js 16 (App Router) + React 19                                              | **SvelteKit** (keep the OpenWebUI fork; do not port to Next.js — see [`mikeoss-frontend-scope.md` Decision MLQ-1](mikeoss-frontend-scope.md)) |
+| Styling             | Tailwind v4 + `class-variance-authority` + `tailwind-merge`                     | Tailwind (already in `web/`) + a new LQ.AI token layer                                                                                        |
+| Primitives          | Radix UI (`@radix-ui/react-dropdown-menu`, `-slot`, `-icons`)                   | bits-ui / melt-ui (Svelte Radix-equivalents)                                                                                                  |
+| Icons               | `lucide-react`                                                                  | `lucide-svelte`                                                                                                                               |
+| Markdown            | `react-markdown` + `remark-gfm` + `remark-math` + `rehype-katex` + `rehype-raw` | OpenWebUI's existing markdown+KaTeX pipeline                                                                                                  |
+| Rich text / redline | TipTap (`@tiptap/react`, `-starter-kit`, `tiptap-markdown`)                     | TipTap core wrapped in Svelte (scope doc W2)                                                                                                  |
+| PDF                 | `pdfjs-dist` 4.x (canvas + text layer)                                          | `pdfjs-dist` (or OpenWebUI's existing viewer)                                                                                                 |
+| DOCX                | `mammoth` (parse), `docx` + `docx-preview` (render/generate)                    | Document Pipeline already parses DOCX server-side                                                                                             |
+| XLSX                | `exceljs` (client-side export)                                                  | M3-C4 ships server-side export                                                                                                                |
+| Charts              | `recharts`                                                                      | optional                                                                                                                                      |
+| Auth/DB             | Supabase (auth-helpers, auth-js, supabase-js)                                   | **LQ.AI backend-owned auth** (`api/app/api/auth.py`); no Supabase                                                                             |
+| Storage             | Cloudflare R2 / S3 (presigned)                                                  | MinIO/local today                                                                                                                             |
+| Model access        | OpenRouter SDK, **per-user BYO keys**                                           | **Gateway holds keys** (security boundary; no per-user keys — Decision MLQ-2)                                                                 |
+| License             | AGPL-3.0-only                                                                   | (LQ.AI's own license; do not copy MikeOSS code verbatim — replicate behavior, not source)                                                     |
 
 **The single most important architectural divergence:** MikeOSS routes inference through per-user API keys stored in Supabase; LQ.AI routes through the gateway, which is the only key-holder. Everywhere MikeOSS shows "add your API key," Mike-LQ shows "your request routed to {model} at Tier {N}" instead. This is an upgrade, not a port.
 
@@ -53,17 +53,17 @@ That said, the source is the better reference for a *replication* task: it's the
 - **Mobile header** — appears only `< 768px`; a `PanelLeft` (Lucide) icon toggles the sidebar.
 - Wrapped in two context providers: `ChatHistoryProvider` (recent chats for the sidebar) and `SidebarContext` (open/closed state).
 
-**Sidebar contents** (top → bottom, from `AppSidebar.tsx` + `SidebarChatItem.tsx`): logo, primary nav (Assistant / Projects / Tabular Reviews / Workflows), a recent-chats list rendered as `SidebarChatItem`s, and an account/footer entry. *(Exact ordering and labels should be confirmed against `AppSidebar.tsx`; the nav destinations map 1:1 to the `(pages)` routes in §3.)*
+**Sidebar contents** (top → bottom, from `AppSidebar.tsx` + `SidebarChatItem.tsx`): logo, primary nav (Assistant / Projects / Tabular Reviews / Workflows), a recent-chats list rendered as `SidebarChatItem`s, and an account/footer entry. _(Exact ordering and labels should be confirmed against `AppSidebar.tsx`; the nav destinations map 1:1 to the `(pages)` routes in §3.)_
 
 **Mike-LQ mapping:** OpenWebUI already has a collapsible left sidebar with chat history. The work is restyling it to Mike's IA and renaming destinations:
 
-| Mike nav | Mike-LQ route (exists today) |
-|---|---|
-| Assistant | `/lq-ai/chats` |
-| Projects | `/lq-ai/matters` |
-| Tabular Reviews | `/lq-ai/tabular` (M3-C) |
-| Workflows | `/lq-ai/playbooks` + `/lq-ai/skills` |
-| Account | `/lq-ai/settings` |
+| Mike nav        | Mike-LQ route (exists today)         |
+| --------------- | ------------------------------------ |
+| Assistant       | `/lq-ai/chats`                       |
+| Projects        | `/lq-ai/matters`                     |
+| Tabular Reviews | `/lq-ai/tabular` (M3-C)              |
+| Workflows       | `/lq-ai/playbooks` + `/lq-ai/skills` |
+| Account         | `/lq-ai/settings`                    |
 
 ---
 
@@ -103,7 +103,7 @@ The first thing a user sees on the Assistant tab with no active conversation:
 
 Submitting the first message calls `handleInitialSubmit` → creates a chat session → navigates to `/assistant/chat/{chatId}`.
 
-**Mike-LQ:** trivial to replicate. Add LQ.AI's value signals *without clutter* — the tier badge can live as a small chip near the composer; the disclaimer stays. Consider keeping it equally minimal; the restraint is part of the appeal.
+**Mike-LQ:** trivial to replicate. Add LQ.AI's value signals _without clutter_ — the tier badge can live as a small chip near the composer; the disclaimer stays. Consider keeping it equally minimal; the restraint is part of the appeal.
 
 ---
 
@@ -137,6 +137,7 @@ This is the heart of MikeOSS. Layout (`ChatView.tsx`):
 - **Three modals:** document selection, workflow/skill selection, API-key-missing.
 
 **The MikeOSS chat workflow, end to end:**
+
 1. User lands on Assistant (greeting + composer) or opens a project and clicks "New Chat."
 2. Optionally attaches documents (from project or upload) and/or selects a workflow — these appear as chips.
 3. Picks a model (or uses the default).
@@ -146,7 +147,8 @@ This is the heart of MikeOSS. Layout (`ChatView.tsx`):
 7. If the workflow produced redlines, user reviews Accept/Reject tracked changes and downloads the edited DOCX.
 
 **Mike-LQ upgrade path — this is where LQ.AI is materially better:**
-- The citation pill in Mike shows a *model-asserted* page + quote. **In Mike-LQ the same pill is backed by the Citation Engine's 4-stage verification** — the pill carries a verification state (verified / tolerant / paraphrase / unverified / system-error) and a *character-verified* offset, not just whatever the model claimed. Failed citations render as "unverified" (red) instead of confident-looking wrong text. This is the flagship differentiator; make the verification state visible in the pill, not buried.
+
+- The citation pill in Mike shows a _model-asserted_ page + quote. **In Mike-LQ the same pill is backed by the Citation Engine's 4-stage verification** — the pill carries a verification state (verified / tolerant / paraphrase / unverified / system-error) and a _character-verified_ offset, not just whatever the model claimed. Failed citations render as "unverified" (red) instead of confident-looking wrong text. This is the flagship differentiator; make the verification state visible in the pill, not buried.
 - The composer's model picker is replaced by tier-aware routing: instead of "pick your model + supply your key," the user sees which **Inference Tier** their request will run at, with privileged-matter and tier-floor enforcement.
 - Add the **Receipts drawer** (LQ.AI-only) as a right-rail panel — per-message provenance the Mike UI has no equivalent for.
 - Anonymization: a small "Anonymized" indicator when the gateway pseudonymized entities before the request left for the provider.
@@ -163,13 +165,14 @@ A **tabbed, resizable** panel (min 300px, left-edge drag handle) that mounts to 
 - **Scroll state** preserved per inactive tab.
 
 **Document viewer** (`DocView.tsx`, PDF.js):
+
 - Renders pages as canvas + overlaid text layer (selectable text).
 - **Citation highlight:** highlights the quote on its hinted page; if not found there, scans all pages; then **scrolls to center the first highlight vertically**. Quote-finding logic in `highlightQuote.ts` (PDF) and `highlightDocxQuote.ts` (DOCX).
 - **Zoom:** Ctrl+wheel / pinch / buttons, 0.5×–3.0×, 0.25× steps; persists across re-render.
 - **Page tracking:** "current/total" bottom-left, zoom % bottom-right.
 - DOCX rendered via `DocxView.tsx`.
 
-**Mike-LQ upgrade:** LQ.AI's Document Pipeline already produces **character-level offsets** (Docling + PyMuPDF, [ADR 0006](adr/0006-document-pipeline-architecture.md)), so the highlight is *exact* rather than a best-effort text scan — no "quote not found, scanning all pages" fallback needed. The citation tab becomes the natural home for the Citation Engine's verification-method chip and (for ensemble runs) the tier-envelope audit field.
+**Mike-LQ upgrade:** LQ.AI's Document Pipeline already produces **character-level offsets** (Docling + PyMuPDF, [ADR 0006](adr/0006-document-pipeline-architecture.md)), so the highlight is _exact_ rather than a best-effort text scan — no "quote not found, scanning all pages" fallback needed. The citation tab becomes the natural home for the Citation Engine's verification-method chip and (for ensemble runs) the tier-envelope audit field.
 
 ---
 
@@ -196,6 +199,7 @@ Header: project name + optional `(CM number)`; **People** button (Users icon →
 **Three tabs** (`ToolbarTabs`): **"Documents"** (default) · **"Assistant"** (chats) · **"Tabular Reviews"**.
 
 **Documents tab:**
+
 - **Folder tree** (`renderLevel()`): expandable folders (Chevron icons), alphabetical sort, documents nested or at root.
 - Document rows: name + file icon · type · size · **version count** (click to expand version history) · created · updated · row menu.
 - Toolbar: **"Add Subfolder"** (FolderPlus) · **"Add Documents"** (Upload → `AddDocumentsModal`) · **"Actions"** dropdown when selected: "Download" / "Remove from subfolder" / "Delete".
@@ -248,7 +252,7 @@ The differentiator surface — a **document × column matrix**:
 
 **Workflow:** create review → pick documents (rows) → add columns (questions) → cells auto-generate → click a cell to inspect value + citation in the side panel → regenerate any cell → export to Excel.
 
-**Mike-LQ mapping:** this is **M3-C** (Tabular / Multi-Document Review), in flight on `main`. The LQ.AI version runs each cell as a **Citation-Engine-verified extraction** — cells that can't be answered render as "not found" with a verify affordance, *never* as confident wrong text (per [M3-C2](M3-IMPLEMENTATION-PLAN.md)). Export ships server-side (M3-C4, openpyxl) with citation links in cell comments. The Mike-LQ branch rebases onto M3-C when it lands; the grid UX above is the visual target.
+**Mike-LQ mapping:** this is **M3-C** (Tabular / Multi-Document Review), in flight on `main`. The LQ.AI version runs each cell as a **Citation-Engine-verified extraction** — cells that can't be answered render as "not found" with a verify affordance, _never_ as confident wrong text (per [M3-C2](M3-IMPLEMENTATION-PLAN.md)). Export ships server-side (M3-C4, openpyxl) with citation links in cell comments. The Mike-LQ branch rebases onto M3-C when it lands; the grid UX above is the visual target.
 
 ---
 
@@ -271,6 +275,7 @@ Workflow object: `id, title, type (assistant|tabular), practice?, is_system, use
 Breadcrumb: **"Workflows › {Title}"**. Inline-editable title (read-only for system workflows; **"Read-only"** badge).
 
 **Two types:**
+
 - **Assistant workflow** → `WorkflowPromptEditor`, a **WYSIWYG/rich-text** prompt editor, **auto-saved** (800ms debounce; **"Saving…"/"Saved"** indicator).
 - **Tabular workflow** → column table: **"Column Title" / "Format" / "Prompt"**. Empty: **"Add columns to define what this tabular review workflow extracts from each document."** "Add Column" (Plus); per-column edit (click row) / delete (X); multi-select + "Actions" → "Delete".
 
@@ -279,6 +284,7 @@ Sharing: **People** button (Users icon → `ShareWorkflowModal`) for non-read-on
 **What a "workflow" IS in Mike:** a reusable, named prompt (assistant type) or a reusable set of extraction columns (tabular type), optionally tagged by practice area, shareable to teammates, with built-in ones authored by "Mike."
 
 **Mike-LQ mapping — this is the richest equivalence:**
+
 - Mike "assistant workflow" (a saved prompt) ≈ LQ.AI **Skill** + **Saved Prompt**. LQ.AI skills are far deeper: versioned, audited, forkable, with a try-it sandbox and provenance pill, authored as readable work product ([PRD §7.1](PRD.md)). Mike's "Built-in / Custom / Shared" maps to LQ.AI's built-in vs community vs team skills.
 - Mike "tabular workflow" (saved columns) ≈ LQ.AI **`output_format: table` skill** (M3-C1).
 - Mike "practice area" tag ≈ skill category/frontmatter.
@@ -323,16 +329,16 @@ MikeOSS's citation model is **model-asserted**: the LLM emits `[N]` with a page 
 
 LQ.AI's entire reason for existing is that this gap is unacceptable for legal work. The Mike-LQ frontend should **surface** the following everywhere Mike would simply show a citation pill:
 
-| Mike-LQ surface | Backing | Where it shows |
-|---|---|---|
-| Citation **verification state** (verified/tolerant/paraphrase/unverified/error) | Citation Engine 4-stage cascade ([`api/app/citation/verification.py`](../api/app/citation/verification.py)) | the citation pill itself + the citation tab |
-| **Character-exact** highlight (no "scanning all pages") | Document Pipeline offsets ([ADR 0006](adr/0006-document-pipeline-architecture.md)) | document side panel |
-| **Inference Tier** badge | gateway tier routing ([PRD §3.13](PRD.md#313-inference-tier-awareness)) | composer + message + redline pane |
-| **Anonymization** indicator | gateway middleware ([`gateway/app/anonymization/middleware.py`](../gateway/app/anonymization/middleware.py)) | message metadata |
-| **Receipts** (per-event provenance) | `api/app/api/chat_receipts.py` | right-rail drawer (no Mike equivalent) |
-| **Privileged matter** carve-out | `Project.privileged` + tier floor | matter header (unmistakable badge) |
-| **Skill version + audit + try-it** | DB-backed user skills ([ADR 0012](adr/0012-db-backed-user-skills.md)) | workflow/skill detail |
-| **Audit log** of sensitive actions | `api/app/audit.py` | admin |
+| Mike-LQ surface                                                                 | Backing                                                                                                      | Where it shows                              |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| Citation **verification state** (verified/tolerant/paraphrase/unverified/error) | Citation Engine 4-stage cascade ([`api/app/citation/verification.py`](../api/app/citation/verification.py))  | the citation pill itself + the citation tab |
+| **Character-exact** highlight (no "scanning all pages")                         | Document Pipeline offsets ([ADR 0006](adr/0006-document-pipeline-architecture.md))                           | document side panel                         |
+| **Inference Tier** badge                                                        | gateway tier routing ([PRD §3.13](PRD.md#313-inference-tier-awareness))                                      | composer + message + redline pane           |
+| **Anonymization** indicator                                                     | gateway middleware ([`gateway/app/anonymization/middleware.py`](../gateway/app/anonymization/middleware.py)) | message metadata                            |
+| **Receipts** (per-event provenance)                                             | `api/app/api/chat_receipts.py`                                                                               | right-rail drawer (no Mike equivalent)      |
+| **Privileged matter** carve-out                                                 | `Project.privileged` + tier floor                                                                            | matter header (unmistakable badge)          |
+| **Skill version + audit + try-it**                                              | DB-backed user skills ([ADR 0012](adr/0012-db-backed-user-skills.md))                                        | workflow/skill detail                       |
+| **Audit log** of sensitive actions                                              | `api/app/audit.py`                                                                                           | admin                                       |
 
 The design principle: **Mike hides the model's fallibility; Mike-LQ shows it honestly.** A red "unverified" pill is a feature, not a regression — it is the difference between a tool a lawyer can rely on and one they cannot.
 
@@ -341,7 +347,7 @@ The design principle: **Mike hides the model's fallibility; Mike-LQ shows it hon
 ## 7. Build guidance for the implementing agent
 
 1. **Start from the existing `/lq-ai/*` SvelteKit routes**, not a blank slate. Every Mike screen has an LQ.AI counterpart that already talks to the backend. The job is reskin + IA alignment + the redline pane, per [`mikeoss-frontend-scope.md`](mikeoss-frontend-scope.md) W1–W3.
-2. **Do not copy MikeOSS source** — it is AGPL-3.0. Replicate *behavior and visual language* from this breakdown; write original Svelte.
+2. **Do not copy MikeOSS source** — it is AGPL-3.0. Replicate _behavior and visual language_ from this breakdown; write original Svelte.
 3. **Token layer first** (scope doc W1-1): serif headings + body, gray palette, generous rounding, the semantic accent colors (blue workflow / red PDF+error / green success). Everything else inherits from it.
 4. **Replicate the ten cross-cutting patterns (§5) once**, as shared components, before doing per-screen work — they're 70% of the feel.
 5. **Swap the BYO-key model for tier-awareness** everywhere it appears (§4.7, §4.12). This is the one place a literal port would actively harm the product.
@@ -361,4 +367,4 @@ The design principle: **Mike hides the model's fallibility; Mike-LQ shows it hon
 
 ---
 
-*Reconstructed from `github.com/willchen96/mike@main` source. Pin the reference SHA before building. Pairs with [`mikeoss-frontend-scope.md`](mikeoss-frontend-scope.md).*
+_Reconstructed from `github.com/willchen96/mike@main` source. Pin the reference SHA before building. Pairs with [`mikeoss-frontend-scope.md`](mikeoss-frontend-scope.md)._

@@ -13,9 +13,9 @@ LICENSE, acknowledgements).
 
 ## Shape: two sequential loops, two PRs
 
-| | Branch | Contents | Verification |
-|---|---|---|---|
-| **PR 1** | `feat/about-refresh` | About guide brought current + new Automations page + two copy nits | `npm run check` 0/0 · vitest · rebuilt `donna-web` + live pass over every About page |
+|          | Branch                   | Contents                                                                 | Verification                                                                           |
+| -------- | ------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| **PR 1** | `feat/about-refresh`     | About guide brought current + new Automations page + two copy nits       | `npm run check` 0/0 · vitest · rebuilt `donna-web` + live pass over every About page   |
 | **PR 2** | `docs/repo-presentation` | README rewrite, LICENSE, acknowledgements, root cleanup, hero screenshot | every README command re-run verbatim · all relative links checked · screenshot renders |
 
 PR 2 branches off `main` **after** PR 1 merges so the README can reference the finished About guide.
@@ -81,6 +81,7 @@ caught real defects only via systematic fact-checking; ten pages × every surfac
 ### README rewrite (product-forward)
 
 Structure:
+
 1. **Hero** — what Donna is (friendly legal-AI frontend), powered-by-LQ-AI framing, MikeOSS
    inspiration nod, **hero screenshot** (captured from the live stack via Playwright, stored in
    `docs/images/` so it doesn't ship in the app bundle).

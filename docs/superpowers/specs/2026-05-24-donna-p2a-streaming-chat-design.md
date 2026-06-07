@@ -9,9 +9,10 @@
 
 ## 1. Context
 
-P2 is the chat hero — the surface that proves Donna's thesis. P2a delivers the *functional* conversation: it replaces the P1 placeholder at `/chats/[id]` with a real, streaming chat against the lq-ai backend, in the document-forward MikeOSS visual language. P2b then layers the verified citation pills on top.
+P2 is the chat hero — the surface that proves Donna's thesis. P2a delivers the _functional_ conversation: it replaces the P1 placeholder at `/chats/[id]` with a real, streaming chat against the lq-ai backend, in the document-forward MikeOSS visual language. P2b then layers the verified citation pills on top.
 
 **Visual direction (decided via mockups):**
+
 - **Document-forward layout** — assistant answers render as full-width **serif prose** (like a legal memo), user turns are a quiet right-aligned chip. No bright chat bubbles.
 - **Streaming** — a small **pulsing mark** appears immediately, then tokens stream in with a blinking caret; the **Inference Tier** chip reads "Tier…" until the gateway resolves it, then locks to the number. **Shimmer skeletons** are used only when loading existing history.
 - **Complete** state shows a **Copy** action; **error** state shows an inline **Retry**.
@@ -51,18 +52,19 @@ Composer ──POST /chats/[id]/messages (SvelteKit +server)──▶ lqStream �
 
 ## 3. Components (small, focused, testable)
 
-| File | Responsibility |
-|---|---|
-| `src/routes/(app)/chats/[id]/+page.server.ts` | `load`: fetch history via `lqFetch(GET /messages)`; read+clear `donna_draft` cookie → `autoSend` string |
-| `src/routes/(app)/chats/[id]/messages/+server.ts` | `POST` BFF SSE proxy (via `lqStream`) |
-| `src/lib/chat/sse.ts` | Pure SSE frame parser: bytes/string chunks → typed frames; handles frames split across chunks and `[DONE]` |
-| `src/lib/chat/chatStream.svelte.ts` | Client streaming state machine (runes): `messages` state, `send(content)`, `stop()` (AbortController), `status` (idle/streaming/error), tier |
-| `src/lib/components/Message.svelte` | One message: user chip vs assistant serif prose, tier chip, Copy action, streaming caret |
-| `src/lib/components/Markdown.svelte` | Serif markdown renderer (GFM + math), sanitized |
-| `src/lib/components/Composer.svelte` *(modify)* | Add a send↔stop toggle driven by streaming status |
-| `src/routes/(app)/chats/[id]/+page.svelte` *(replace placeholder)* | Message list (scroll, auto-scroll-to-latest), shimmer on history load, composer, wires `chatStream` |
+| File                                                               | Responsibility                                                                                                                               |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/routes/(app)/chats/[id]/+page.server.ts`                      | `load`: fetch history via `lqFetch(GET /messages)`; read+clear `donna_draft` cookie → `autoSend` string                                      |
+| `src/routes/(app)/chats/[id]/messages/+server.ts`                  | `POST` BFF SSE proxy (via `lqStream`)                                                                                                        |
+| `src/lib/chat/sse.ts`                                              | Pure SSE frame parser: bytes/string chunks → typed frames; handles frames split across chunks and `[DONE]`                                   |
+| `src/lib/chat/chatStream.svelte.ts`                                | Client streaming state machine (runes): `messages` state, `send(content)`, `stop()` (AbortController), `status` (idle/streaming/error), tier |
+| `src/lib/components/Message.svelte`                                | One message: user chip vs assistant serif prose, tier chip, Copy action, streaming caret                                                     |
+| `src/lib/components/Markdown.svelte`                               | Serif markdown renderer (GFM + math), sanitized                                                                                              |
+| `src/lib/components/Composer.svelte` _(modify)_                    | Add a send↔stop toggle driven by streaming status                                                                                            |
+| `src/routes/(app)/chats/[id]/+page.svelte` _(replace placeholder)_ | Message list (scroll, auto-scroll-to-latest), shimmer on history load, composer, wires `chatStream`                                          |
 
 ### 3.1 Markdown rendering
+
 Use **`svelte-exmarkdown`** with `remark-gfm`, `remark-math`, `rehype-katex`, and **`rehype-sanitize`** (model output is untrusted — sanitize). Serif styling via the existing tokens (`font-serif`, prose-like spacing). KaTeX CSS imported once. (Library is overridable — `markdown-it` + `DOMPurify` + `katex` is an acceptable substitute if `svelte-exmarkdown` fights Svelte 5; the sanitize requirement is not.)
 
 ---
@@ -89,14 +91,17 @@ Use **`svelte-exmarkdown`** with `remark-gfm`, `remark-math`, `rehype-katex`, an
 ## 6. Testing
 
 **Unit (Vitest):**
+
 - `sse.ts`: parses `start`/`delta`/`complete`; an `Error` frame; `[DONE]` termination; a single JSON frame **split across two chunks**; multiple frames in one chunk.
 - `chatStream.svelte.ts`: `send` appends an optimistic user msg + a streaming assistant msg; deltas accumulate; `complete` finalizes content + tier; `stop()` aborts and leaves partial text; an `Error` frame sets error status.
 
 **Component (Vitest + @testing-library/svelte):**
+
 - `Message.svelte`: renders a user chip vs assistant prose; tier chip shows "Tier 3"; streaming caret present iff streaming; Copy action present on complete.
 - `Markdown.svelte`: renders GFM (a table/list); **strips a `<script>`** (sanitization assertion).
 
 **E2E (Playwright, against the live stack):**
+
 - **Provider:** **Anthropic**. `ANTHROPIC_API_KEY` is set in `.env` (gitignored — never committed) and the gateway's alias config maps `smart` → an Anthropic model. (Dependency to confirm at execution: the seeded `gateway.yaml` maps `smart` → a Claude model.)
 - Send a message → assert assistant tokens appear (content grows) → the tier chip resolves to "Tier N" → on reload the assistant message persists (history `load`).
 - Click **Stop** during a stream → streaming halts, partial text remains.
@@ -107,7 +112,7 @@ Use **`svelte-exmarkdown`** with `remark-gfm`, `remark-math`, `rehype-katex`, an
 ## 7. Out of scope (P2a)
 
 - Interactive **citation pills** + hover/click (P2b) — markers render as plain text here; `citations` from `complete` are stored but not rendered.
-- **Receipts** drawer, **anonymization** indicator, **composer power features** (skill-attach, Enhance Prompt, model/tier *picker*) — P2c. P2a hardcodes `model: "smart"`.
+- **Receipts** drawer, **anonymization** indicator, **composer power features** (skill-attach, Enhance Prompt, model/tier _picker_) — P2c. P2a hardcodes `model: "smart"`.
 - **Document side panel** + citation highlighting — P3.
 - Chat list/sidebar recents population, rename, archive — later.
 
@@ -115,15 +120,15 @@ Use **`svelte-exmarkdown`** with `remark-gfm`, `remark-math`, `rehype-katex`, an
 
 ## 8. Decisions log
 
-| # | Decision | Rationale |
-|---|---|---|
-| D2a-1 | Document-forward message layout (serif prose, no assistant bubbles) | Mockup choice; the legal-memo feel is Donna's identity |
-| D2a-2 | Streaming = live tokens + pulsing mark; shimmer only for history load | Mockup choice; immediate feedback |
-| D2a-3 | Stream via `fetch`+reader through a SvelteKit `+server` BFF proxy (not `EventSource`) | POST body required; keeps JWT server-side; no CORS |
-| D2a-4 | No token refresh mid-stream; rely on the preceding `load` | Can't mutate cookies after stream headers sent; acceptable for P2a |
-| D2a-5 | `svelte-exmarkdown` + GFM/math + **rehype-sanitize** | Svelte-native; model output must be sanitized |
-| D2a-6 | Markers render as plain text in P2a; pills are P2b | Keep P2a focused on the streaming spine |
-| D2a-7 | E2E uses a real **Anthropic** key in gitignored `.env` (gateway alias `smart` → Claude) | User choice; lightest path to verify real streaming |
+| #     | Decision                                                                                | Rationale                                                          |
+| ----- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| D2a-1 | Document-forward message layout (serif prose, no assistant bubbles)                     | Mockup choice; the legal-memo feel is Donna's identity             |
+| D2a-2 | Streaming = live tokens + pulsing mark; shimmer only for history load                   | Mockup choice; immediate feedback                                  |
+| D2a-3 | Stream via `fetch`+reader through a SvelteKit `+server` BFF proxy (not `EventSource`)   | POST body required; keeps JWT server-side; no CORS                 |
+| D2a-4 | No token refresh mid-stream; rely on the preceding `load`                               | Can't mutate cookies after stream headers sent; acceptable for P2a |
+| D2a-5 | `svelte-exmarkdown` + GFM/math + **rehype-sanitize**                                    | Svelte-native; model output must be sanitized                      |
+| D2a-6 | Markers render as plain text in P2a; pills are P2b                                      | Keep P2a focused on the streaming spine                            |
+| D2a-7 | E2E uses a real **Anthropic** key in gitignored `.env` (gateway alias `smart` → Claude) | User choice; lightest path to verify real streaming                |
 
 ---
 

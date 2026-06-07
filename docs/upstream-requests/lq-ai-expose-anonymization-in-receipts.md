@@ -46,15 +46,18 @@ The receipts endpoint's event `detail` is typed `additionalProperties: true` (fr
 ## Tests
 
 In the receipts test suite (the integration test covering `GET /chats/{chat_id}/receipts`), add/extend a case asserting that a chat which ran an inference produces an `inference` event whose `detail` contains:
+
 - `anonymization_applied` as a boolean, and
 - `message_id` equal to the assistant message's id (and `None`/absent only when the log row has no `message_id`).
 
 A regression test that the field is present (not silently dropped) is the key guard.
 
 ## Conventions reminder (from lq-ai CLAUDE.md)
+
 - Imperative commit message, DCO sign-off (`git commit -s`), reference this as the motivation.
 - Coverage must not decrease; the added test covers the new keys.
 - This touches `api/` (not `gateway/`), so it's not in the security-review CODEOWNERS path — a normal review.
 
 ## When it's done
+
 Report back with the merged SHA. Donna will bump the `vendor/lq-ai` submodule pin (deliberate, one-PR-per-bump per `docs/decisions/lq-ai-pin.md`), regenerate API types (`npm run gen:api`), and then build the anonymization indicator on top of the receipts data (it will already be flowing through the Receipts drawer we're building now).

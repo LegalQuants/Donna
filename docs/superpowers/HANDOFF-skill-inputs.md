@@ -8,10 +8,10 @@
 
 `main` HEAD is `f54e356` (the #20 docs merge). **Three things are open and should land before (or be coordinated with) this slice:**
 
-| PR / branch | What | Action |
-|---|---|---|
-| **#21** `p5-1-skills-authoring` | Skills authoring (`/skills` create/edit/fork/archive) + **built-in catalog** | Review + merge to `main` |
-| **#22** `landing-skill-attach` | `⊕ Skill` on the **landing** composer (apply a skill to the first message) | Review + merge to `main` |
+| PR / branch                                              | What                                                                         | Action                                                                  |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **#21** `p5-1-skills-authoring`                          | Skills authoring (`/skills` create/edit/fork/archive) + **built-in catalog** | Review + merge to `main`                                                |
+| **#22** `landing-skill-attach`                           | `⊕ Skill` on the **landing** composer (apply a skill to the first message)   | Review + merge to `main`                                                |
 | `docs/upstream-chat-file-attach` (pushed, may need a PR) | Upstream request: `docs/upstream-requests/lq-ai-chat-message-file-attach.md` | **Relay to the lq-ai Claude Code session**; bump the pin when it merges |
 
 **Start the skill-inputs slice off an up-to-date `main` that includes #21 + #22.** The slice extends the in-chat skill-attach surface (P2c-B2, already on `main`) and is adjacent to #22; building before those merge risks conflicts in `Composer.svelte` / the chat page. `vendor/lq-ai` pin is **`438198c`** (unchanged; this slice needs **no backend change**).
@@ -22,7 +22,7 @@ Standalone MikeOSS-inspired **SvelteKit (Svelte 5 runes)** frontend for the **lq
 
 ## 3. Why this slice — "apply skills properly"
 
-Skill *application* already works: attaching a skill in the composer threads `MessageCreate.skills` (slugs) → the gateway assembles each skill into the prompt. After #22 you can do this from the first message too. **But two gaps remain (verified 2026-05-29):**
+Skill _application_ already works: attaching a skill in the composer threads `MessageCreate.skills` (slugs) → the gateway assembles each skill into the prompt. After #22 you can do this from the first message too. **But two gaps remain (verified 2026-05-29):**
 
 1. **Skill inputs are never collected.** Many skills declare **inputs** (a form schema) the model should be given — e.g. a jurisdiction, a counterparty name, a target document. The contract supports binding them (`MessageCreate.skill_inputs`) and fetching the schema (`GET /api/v1/skills/{slug}/inputs`), but **`skill_inputs` is referenced NOWHERE in app code** (only in the generated `backend.d.ts` / `gateway.d.ts`). So a skill that needs inputs runs without them.
 2. **No "applied" confirmation.** The streamed response / message carries `applied_skills`, surfaced in `src/lib/chat/sse.ts` as a field but **rendered by no component** — the user gets no feedback about which skills actually ran.
@@ -31,12 +31,12 @@ This is the bridge to **playbooks** (a playbook = chain skills + collect their i
 
 ## 4. Backend contract (verified 2026-05-29 at pin `438198c`)
 
-| Surface | Endpoint / schema | Notes |
-|---|---|---|
-| Declared inputs for a skill | `GET /api/v1/skills/{skill_name}/inputs` → `SkillInputs` | `{ name, required: SkillInputDef[], optional: SkillInputDef[] }`. Returns a **name-only stub** (empty `required`/`optional`) when the skill declares no inputs. `{skill_name}` = the slug (`SkillSummary.name`). |
-| One input's schema | `SkillInputDef` | `{ name: string; type?: string\|null; required: boolean; description?: string\|null; enum?: string[]\|null; default?: unknown }`. `type` is **free-form** per the corpus: `text`, `enum`, `boolean`, `integer`, `structured`, `file`, … |
-| Send bindings on a message | `MessageCreate.skill_inputs?` | `{ [skillName: string]: { [inputName: string]: unknown } }` — per-skill map of input-name → value. Sent alongside `skills: string[]`. |
-| Applied confirmation | `applied_skills` on the SSE complete frame + the message row | Already in `src/lib/chat/sse.ts`; not rendered anywhere yet. |
+| Surface                     | Endpoint / schema                                            | Notes                                                                                                                                                                                                                                   |
+| --------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Declared inputs for a skill | `GET /api/v1/skills/{skill_name}/inputs` → `SkillInputs`     | `{ name, required: SkillInputDef[], optional: SkillInputDef[] }`. Returns a **name-only stub** (empty `required`/`optional`) when the skill declares no inputs. `{skill_name}` = the slug (`SkillSummary.name`).                        |
+| One input's schema          | `SkillInputDef`                                              | `{ name: string; type?: string\|null; required: boolean; description?: string\|null; enum?: string[]\|null; default?: unknown }`. `type` is **free-form** per the corpus: `text`, `enum`, `boolean`, `integer`, `structured`, `file`, … |
+| Send bindings on a message  | `MessageCreate.skill_inputs?`                                | `{ [skillName: string]: { [inputName: string]: unknown } }` — per-skill map of input-name → value. Sent alongside `skills: string[]`.                                                                                                   |
+| Applied confirmation        | `applied_skills` on the SSE complete frame + the message row | Already in `src/lib/chat/sse.ts`; not rendered anywhere yet.                                                                                                                                                                            |
 
 `backend.d.ts`: `SkillInputs` and `SkillInputDef` are defined near lines 7858–7872; `MessageCreate.skill_inputs` is in the `MessageCreate` schema (~7671).
 
@@ -51,6 +51,7 @@ This is the bridge to **playbooks** (a playbook = chain skills + collect their i
 ## 6. Recommended slice scope (confirm at brainstorm)
 
 **Skill-inputs application (in-chat first):**
+
 - When a skill is attached, fetch its inputs schema. If it declares inputs, expose a small **input form** (per attached skill) so the user can fill required + optional values before sending.
 - Thread the collected values into `MessageCreate.skill_inputs[skillName] = { … }` in `chatStream.runStream` (only when non-empty).
 - **Widget by `type`:** `text`→input, `enum`→select (use `enum[]`), `boolean`→checkbox, `integer`→number; `default` pre-fills; `required` gates send (disable until required inputs filled, like the create-skill modal's `canCreate`). `description` as helper text.
@@ -58,6 +59,7 @@ This is the bridge to **playbooks** (a playbook = chain skills + collect their i
 - **Applied-skills confirmation:** render `applied_skills` on the assistant turn (small, friendly).
 
 **Open scope questions for the brainstorm:**
+
 - **Where does the input form live?** Inline under the composer (expands when an attached skill has inputs) vs a small popover/drawer per chip vs a modal on send. The product thesis leans inline + minimal.
 - **Required-input gating:** block send until required inputs are filled (recommended) vs send-anyway with a warning.
 - **Landing parity:** do inputs need to work from the landing composer too (post-#22)? That means threading `skill_inputs` through the `donna_draft_skills` cookie mechanism as well — likely a follow-up, not this slice. **Default: in-chat only for v1.**
@@ -78,6 +80,7 @@ docker compose up -d --build postgres redis minio gateway api donna-web ingest-w
 docker compose up -d --build donna-web   # after editing src/ (REQUIRED before live e2e)
 npm run check && npx vitest run && npx playwright test
 ```
+
 **Spike helper** (inspect a skill's declared inputs against the live backend) — log in for a token, then `GET /api/v1/skills/{slug}/inputs`. The admin account is shared; **self-clean any e2e-created chats/skills by captured id** in `try/finally` (the P5-1 / landing-skill-attach specs are the pattern — see §9).
 
 ## 9. Gotchas (carried forward)

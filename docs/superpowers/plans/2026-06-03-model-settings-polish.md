@@ -15,6 +15,7 @@
 **Fix:** Render a leading, `disabled` placeholder `<option>` whose value equals `category.currentTargetId ?? ''` whenever the current backing isn't a known target, so the select honestly reflects the stale/empty state. Admins can still pick a real target to fix it.
 
 **Files:**
+
 - Modify: `src/lib/inference/CategoryRow.svelte`
 - Test: `src/lib/inference/CategoryRow.svelte.test.ts`
 
@@ -22,13 +23,21 @@
 
 ```ts
 it('admin: shows a disabled placeholder when the backing is not among the targets (stale)', () => {
-  const stale: CategoryView = { name: 'smart', backingLabel: 'Retired Model', currentTargetId: 'gone-prod/retired-1', tier: 4, group: 'cloud' };
-  render(CategoryRow, { props: { category: stale, targets, isAdmin: true } as never });
-  const select = screen.getByRole('combobox', { name: /model for smart/i }) as HTMLSelectElement;
-  // The select honestly reflects the stale backing rather than silently selecting the first real option.
-  expect(select.value).toBe('gone-prod/retired-1');
-  const placeholder = screen.getByRole('option', { name: /Retired Model \(unavailable\)/i }) as HTMLOptionElement;
-  expect(placeholder.disabled).toBe(true);
+	const stale: CategoryView = {
+		name: 'smart',
+		backingLabel: 'Retired Model',
+		currentTargetId: 'gone-prod/retired-1',
+		tier: 4,
+		group: 'cloud'
+	};
+	render(CategoryRow, { props: { category: stale, targets, isAdmin: true } as never });
+	const select = screen.getByRole('combobox', { name: /model for smart/i }) as HTMLSelectElement;
+	// The select honestly reflects the stale backing rather than silently selecting the first real option.
+	expect(select.value).toBe('gone-prod/retired-1');
+	const placeholder = screen.getByRole('option', {
+		name: /Retired Model \(unavailable\)/i
+	}) as HTMLOptionElement;
+	expect(placeholder.disabled).toBe(true);
 });
 ```
 
@@ -37,21 +46,20 @@ Run: `npx vitest run src/lib/inference/CategoryRow.svelte.test.ts` → expect FA
 - [ ] **Step 2 (implement):** in `CategoryRow.svelte`, add a derived `knownTarget` and the placeholder option. After the existing `const local = …` line:
 
 ```svelte
-  const knownTarget = $derived(
-    category.currentTargetId != null &&
-      category.currentTargetId !== '' &&
-      targets.some((t) => t.id === category.currentTargetId)
-  );
+const knownTarget = $derived( category.currentTargetId != null && category.currentTargetId !== '' &&
+targets.some((t) => t.id === category.currentTargetId) );
 ```
 
 Then inside `<select …>`, immediately before the `{#if cloud.length}` block:
 
 ```svelte
-        {#if !knownTarget}
-          <option value={category.currentTargetId ?? ''} disabled>
-            {category.currentTargetId ? `${category.backingLabel || category.currentTargetId} (unavailable)` : 'Select a model…'}
-          </option>
-        {/if}
+{#if !knownTarget}
+	<option value={category.currentTargetId ?? ''} disabled>
+		{category.currentTargetId
+			? `${category.backingLabel || category.currentTargetId} (unavailable)`
+			: 'Select a model…'}
+	</option>
+{/if}
 ```
 
 - [ ] **Step 3:** `npx vitest run src/lib/inference/CategoryRow.svelte.test.ts` → PASS (new + 2 existing). The first existing test still asserts `select.value === 'anthropic-prod/claude-opus-4-7'` (a known target → no placeholder), confirming no regression.
@@ -87,20 +95,23 @@ The action (`src/routes/(app)/settings/models/+page.server.ts:41,47`) returns `f
 - [ ] **Step 1:** Add two cases to the `describe('/settings/models ?/reassign', …)` block (the `form()`, `lqFetch`, `modelsBody`, `actions` helpers already exist in the file):
 
 ```ts
-  it('fails 400 when required fields are missing (no fetch)', async () => {
-    const res = (await actions.reassign(form({}))) as { status: number; data: { message: string } };
-    expect(res.status).toBe(400);
-    expect(res.data.message).toMatch(/missing/i);
-    expect(lqFetch).not.toHaveBeenCalled();
-  });
+it('fails 400 when required fields are missing (no fetch)', async () => {
+	const res = (await actions.reassign(form({}))) as { status: number; data: { message: string } };
+	expect(res.status).toBe(400);
+	expect(res.data.message).toMatch(/missing/i);
+	expect(lqFetch).not.toHaveBeenCalled();
+});
 
-  it('fails 400 when the target_id is not an available model', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }));
-    const res = (await actions.reassign(form({ name: 'smart', target_id: 'nope/not-real' }))) as { status: number; data: { message: string } };
-    expect(res.status).toBe(400);
-    expect(res.data.message).toMatch(/unknown model/i);
-    expect(lqFetch).toHaveBeenCalledTimes(1); // only the models lookup; no alias GET/PATCH
-  });
+it('fails 400 when the target_id is not an available model', async () => {
+	lqFetch.mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }));
+	const res = (await actions.reassign(form({ name: 'smart', target_id: 'nope/not-real' }))) as {
+		status: number;
+		data: { message: string };
+	};
+	expect(res.status).toBe(400);
+	expect(res.data.message).toMatch(/unknown model/i);
+	expect(lqFetch).toHaveBeenCalledTimes(1); // only the models lookup; no alias GET/PATCH
+});
 ```
 
 - [ ] **Step 2:** `npx vitest run "src/routes/(app)/settings/models/page.server.test.ts"` → PASS (existing 6 + 2 new).
@@ -110,5 +121,6 @@ The action (`src/routes/(app)/settings/models/+page.server.ts:41,47`) returns `f
 ---
 
 ## Notes
+
 - All three are independent; order doesn't matter. No backend/vendor change.
 - After all tasks: full `npx vitest run` green, whole-branch review, then `finishing-a-development-branch` → PR.

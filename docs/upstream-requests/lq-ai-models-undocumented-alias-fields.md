@@ -22,7 +22,7 @@
 Two discrepancies vs. the OpenAPI `ModelEntry` schema:
 
 1. **`lq_ai_resolves_to` (string) and `lq_ai_fallback_count` (integer) are undocumented.** They appear on alias rows in the live response but are absent from `ModelEntry`. `lq_ai_resolves_to` is genuinely useful to clients (it's how a picker can label `smart` as "Opus 4.7"); `lq_ai_fallback_count` communicates fallback depth.
-2. **`routed_inference_tier` is present on aliases**, but the schema says it is *omitted* on aliases.
+2. **`routed_inference_tier` is present on aliases**, but the schema says it is _omitted_ on aliases.
 
 ## Root cause (documentation, in the OpenAPI sketches)
 
@@ -30,6 +30,7 @@ Two discrepancies vs. the OpenAPI `ModelEntry` schema:
 
 - `properties` (ends ~line 921) declares only `id, object, created, owned_by, lq_ai_kind, routed_inference_tier, provider_type`. It does **not** declare `lq_ai_resolves_to` or `lq_ai_fallback_count`.
 - `routed_inference_tier` description (lines ~907–914) says:
+
   > "Present on `provider_native` rows; omitted on aliases (the alias may resolve to different providers via fallback, so the tier is settled per-request, not per-alias)."
 
   The live gateway returns `routed_inference_tier` on alias rows too (every cloud alias = 4, local = 1). **The live behavior is the correct, richer one — keep it.** Only the description is stale: update it to say the field is also present on aliases (the tier the alias's primary resolution would land at). This is a description edit, **not** a behavior change — do not make the handler stop emitting the tier on aliases.
@@ -43,30 +44,31 @@ Two discrepancies vs. the OpenAPI `ModelEntry` schema:
 In `ModelEntry` (gateway-openapi.yaml ~921, after `provider_type`), add:
 
 ```yaml
-        lq_ai_resolves_to:
-          type: string
-          description: |
-            For ``alias`` rows: the concrete ``<provider_name>/<native_model>``
-            the alias currently resolves to (e.g. ``anthropic-prod/claude-opus-4-7``).
-            Lets clients show the real model behind an alias. Absent on
-            ``provider_native`` rows (the id already is the native name).
-        lq_ai_fallback_count:
-          type: integer
-          description: |
-            For ``alias`` rows: how many fallback providers are configured
-            after the primary (0 when the alias has no fallbacks). Absent on
-            ``provider_native`` rows.
+lq_ai_resolves_to:
+  type: string
+  description: |
+    For ``alias`` rows: the concrete ``<provider_name>/<native_model>``
+    the alias currently resolves to (e.g. ``anthropic-prod/claude-opus-4-7``).
+    Lets clients show the real model behind an alias. Absent on
+    ``provider_native`` rows (the id already is the native name).
+lq_ai_fallback_count:
+  type: integer
+  description: |
+    For ``alias`` rows: how many fallback providers are configured
+    after the primary (0 when the alias has no fallbacks). Absent on
+    ``provider_native`` rows.
 ```
 
 Then update the `routed_inference_tier` description to say it is also present on aliases (the tier of the alias's primary resolution). **Description edit only — leave the handler's output unchanged.** Mirror the same field additions into the inline item schema in `backend-openapi.yaml` (~1614–1630) so the two stay single-sourced. This is purely a doc-catches-up-to-code change.
 
 ## Test
 
-Extend the `/v1/models` schema-conformance test to assert that an **alias** row validates against the updated `ModelEntry` *including* `lq_ai_resolves_to` (and `lq_ai_fallback_count` when fallbacks are configured), and that `routed_inference_tier` is present on alias rows. This just pins the doc to the existing live output so they can't drift again — no need to introduce `additionalProperties: false` or otherwise tighten validation in a way that could reject other valid runtime fields.
+Extend the `/v1/models` schema-conformance test to assert that an **alias** row validates against the updated `ModelEntry` _including_ `lq_ai_resolves_to` (and `lq_ai_fallback_count` when fallbacks are configured), and that `routed_inference_tier` is present on alias rows. This just pins the doc to the existing live output so they can't drift again — no need to introduce `additionalProperties: false` or otherwise tighten validation in a way that could reject other valid runtime fields.
 
 ## Why it matters to Donna (P2c-B1)
 
 The composer model picker labels each alias with its resolved model (`smart · Opus 4.7`) using `lq_ai_resolves_to`. Because the field isn't in the spec, `npm run gen:api` doesn't emit it, so Donna currently hand-types a local `RawModelEntry` extension (`src/lib/models/types.ts`) to read it. Once `ModelEntry` declares both fields, Donna can drop the local extension and consume the generated type directly. No behavioral change on either side — purely contract hygiene.
 
 ## When it's done
+
 Report the merged SHA. Donna will bump the `vendor/lq-ai` pin, run `npm run gen:api`, and remove the local type extension in `src/lib/models/types.ts` (the picker keeps working unchanged).
