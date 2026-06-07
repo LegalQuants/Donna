@@ -16,12 +16,13 @@ const loadEvent = (params: Record<string, string> = {}) =>
 		url: new URL('http://x?' + new URLSearchParams(params).toString())
 	}) as never;
 
-// Helper: set up lqFetch for isAutonomousEnabled → true, then return the memory list response
+// Helper: set up lqFetch for isAutonomousEnabled → true, then unreadCount, then memory list
 const withOptedIn = (memoryRes: Response) => {
 	lqFetch
 		.mockResolvedValueOnce(
 			new Response(JSON.stringify({ autonomous_enabled: true }), { status: 200 })
 		) // isAutonomousEnabled
+		.mockResolvedValueOnce(new Response(JSON.stringify({ total_count: 0 }), { status: 200 })) // unreadCount (notifications)
 		.mockResolvedValueOnce(memoryRes); // memory fetch
 };
 
@@ -64,6 +65,7 @@ describe('/automations/review load', () => {
 			.mockResolvedValueOnce(
 				new Response(JSON.stringify({ autonomous_enabled: true }), { status: 200 })
 			) // isAutonomousEnabled
+			.mockResolvedValueOnce(new Response(JSON.stringify({ total_count: 0 }), { status: 200 })) // unreadCount
 			.mockResolvedValueOnce(new Response('boom', { status: 500 })); // memory fetch
 		const out = (await load(loadEvent())) as {
 			error: boolean;
@@ -104,7 +106,8 @@ describe('/automations/review load', () => {
 	it('passes correct query params to the memory fetch (state, limit=50, offset)', async () => {
 		withOptedIn(memoryListRes());
 		await load(loadEvent({ state: 'kept', offset: '100' }));
-		const url: string = lqFetch.mock.calls[1][1];
+		// calls: [0]=isAutonomousEnabled, [1]=unreadCount, [2]=memory fetch
+		const url: string = lqFetch.mock.calls[2][1];
 		expect(url).toContain('state=kept');
 		expect(url).toContain('limit=50');
 		expect(url).toContain('offset=100');

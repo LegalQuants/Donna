@@ -1,14 +1,15 @@
 <!-- src/lib/automations/AutomationsNav.svelte -->
 <script lang="ts">
 	import UnreadBadge from './UnreadBadge.svelte';
-	type View = 'sessions' | 'schedules' | 'watches' | 'notifications';
+	type View = 'sessions' | 'schedules' | 'watches' | 'notifications' | 'review';
 	let { active, unread = 0 }: { active: View; unread?: number } = $props();
 
 	const tabs: { id: View; label: string; href: string }[] = [
 		{ id: 'sessions', label: 'Sessions', href: '/automations' },
 		{ id: 'schedules', label: 'Schedules', href: '/automations/schedules' },
 		{ id: 'watches', label: 'Watches', href: '/automations/watches' },
-		{ id: 'notifications', label: 'Notifications', href: '/automations/notifications' }
+		{ id: 'notifications', label: 'Notifications', href: '/automations/notifications' },
+		{ id: 'review', label: 'Review', href: '/automations/review' }
 	];
 </script>
 

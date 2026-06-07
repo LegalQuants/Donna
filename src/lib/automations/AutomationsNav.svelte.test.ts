@@ -33,4 +33,10 @@ describe('AutomationsNav', () => {
 		expect(link).toHaveAttribute('href', '/automations/watches');
 		expect(link).toHaveAttribute('aria-current', 'page');
 	});
+	it('renders a Review tab linking to /automations/review, current when active', () => {
+		render(AutomationsNav, { props: { active: 'review' } });
+		const link = screen.getByRole('link', { name: /review/i });
+		expect(link).toHaveAttribute('href', '/automations/review');
+		expect(link).toHaveAttribute('aria-current', 'page');
+	});
 });
