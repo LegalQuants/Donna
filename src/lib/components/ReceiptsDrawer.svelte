@@ -55,8 +55,6 @@
 </script>
 
 {#if open}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div class="scrim" onclick={onclose} role="presentation"></div>
 	<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
 	<aside class="drawer" role="dialog" aria-modal="true" aria-label="Receipts">

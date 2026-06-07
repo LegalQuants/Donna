@@ -23,7 +23,7 @@
 	} = $props();
 
 	let tab = $state<'matter' | 'upload'>('matter');
-	// eslint-disable-next-line svelte/no-reactive-reassignment
+	// eslint-disable-next-line svelte/prefer-writable-derived -- intentionally initialises once from SSR prop; page owns subsequent updates via onmatter callback; writable-derived would re-sync on every prop change, breaking the local-state pattern
 	let matterId = $state<string | null>(null);
 	// Initialise once from the SSR-provided prop; the page owns subsequent updates via onmatter.
 	$effect.pre(() => {
