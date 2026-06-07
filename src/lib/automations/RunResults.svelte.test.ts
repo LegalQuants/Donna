@@ -22,6 +22,7 @@ const base = {
 	findings: [] as FindingItem[] | null,
 	findingsTotal: 0 as number | null,
 	memories: [] as RunMemoryItem[] | null,
+	memoriesTotal: null as number | null,
 	running: false
 };
 
@@ -70,5 +71,53 @@ describe('RunResults', () => {
 	it('hides the memories sub-section when memories is null (fetch failed)', () => {
 		render(RunResults, { props: { ...base, memories: null } });
 		expect(screen.queryByText('Memories this run proposed')).toBeNull();
+	});
+	it('shows memories overflow note when memoriesTotal exceeds fetched count', () => {
+		render(RunResults, {
+			props: {
+				...base,
+				memories: [m('m1', 'proposed')],
+				memoriesTotal: 5
+			}
+		});
+		expect(screen.getByText(/\+4 more/)).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: /Automations → Review/i })).toHaveAttribute(
+			'href',
+			'/automations/review'
+		);
+	});
+	it('hides memories overflow note when memoriesTotal equals memories length', () => {
+		render(RunResults, {
+			props: {
+				...base,
+				memories: [m('m1', 'proposed')],
+				memoriesTotal: 1
+			}
+		});
+		expect(screen.queryByText(/more — review all/)).toBeNull();
+	});
+	it('hides memories overflow note when memoriesTotal is null', () => {
+		render(RunResults, {
+			props: {
+				...base,
+				memories: [m('m1', 'proposed')],
+				memoriesTotal: null
+			}
+		});
+		expect(screen.queryByText(/more — review all/)).toBeNull();
+	});
+	it('proposed memory rows show Keep and Dismiss buttons', () => {
+		render(RunResults, {
+			props: { ...base, memories: [m('m1', 'proposed')] }
+		});
+		expect(screen.getByRole('button', { name: 'Keep' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
+	});
+	it('kept memory rows show no Keep/Dismiss buttons', () => {
+		render(RunResults, {
+			props: { ...base, memories: [m('m1', 'kept')] }
+		});
+		expect(screen.queryByRole('button', { name: 'Keep' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
 	});
 });

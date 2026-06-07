@@ -1,8 +1,9 @@
 <!-- src/lib/automations/RunResults.svelte -->
 <!-- The run's work-product: findings in emission order (created_at ASC — the
      run's output sequence, intentionally not severity-grouped) + the memories
-     it proposed (read-only; keep/dismiss is a future slice). -->
+     it proposed (inline keep/dismiss for proposed; overflow note to Review). -->
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import FindingCard from './FindingCard.svelte';
 	import { severitySummary, type FindingItem, type RunMemoryItem } from './findings';
 	import { stateChipClass } from './display';
@@ -11,11 +12,13 @@
 		findings,
 		findingsTotal,
 		memories,
+		memoriesTotal = null,
 		running
 	}: {
 		findings: FindingItem[] | null;
 		findingsTotal: number | null;
 		memories: RunMemoryItem[] | null;
+		memoriesTotal?: number | null;
 		running: boolean;
 	} = $props();
 
@@ -23,6 +26,11 @@
 	const overflow = $derived(
 		findings !== null && findingsTotal !== null && findingsTotal > findings.length
 			? findingsTotal - findings.length
+			: 0
+	);
+	const memoriesOverflow = $derived(
+		memoriesTotal !== null && memories !== null && memoriesTotal > memories.length
+			? memoriesTotal - memories.length
 			: 0
 	);
 </script>
@@ -64,13 +72,41 @@
 								memory.state
 							)}">{memory.state}</span
 						>
-						<div class="min-w-0">
+						<div class="min-w-0 flex-1">
 							<span class="text-xs text-mlq-muted">{memory.category}</span>
 							<p class="text-sm text-mlq-text">{memory.content}</p>
 						</div>
+						{#if memory.state === 'proposed'}
+							<div class="flex shrink-0 gap-1">
+								<form method="POST" action="?/keepMemory" use:enhance>
+									<input type="hidden" name="id" value={memory.id} />
+									<button
+										type="submit"
+										class="text-mlq-action hover:bg-mlq-hover rounded px-1.5 py-0.5 text-xs"
+										>Keep</button
+									>
+								</form>
+								<form method="POST" action="?/dismissMemory" use:enhance>
+									<input type="hidden" name="id" value={memory.id} />
+									<button
+										type="submit"
+										class="hover:bg-mlq-hover rounded px-1.5 py-0.5 text-xs text-mlq-muted"
+										>Dismiss</button
+									>
+								</form>
+							</div>
+						{/if}
 					</li>
 				{/each}
 			</ul>
+			{#if memoriesOverflow > 0}
+				<p class="mt-1 text-xs text-mlq-muted">
+					+{memoriesOverflow} more — review all in
+					<a href="/automations/review" class="text-mlq-action underline-offset-2 hover:underline"
+						>Automations → Review</a
+					>
+				</p>
+			{/if}
 		</div>
 	{/if}
 </section>

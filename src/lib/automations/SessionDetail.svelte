@@ -12,13 +12,15 @@
 		initialReceipt,
 		initialFindings,
 		initialFindingsTotal,
-		initialMemories
+		initialMemories,
+		initialMemoriesTotal = null
 	}: {
 		initialSession: SessionSummary;
 		initialReceipt: SessionReceipt | null;
 		initialFindings: FindingItem[] | null;
 		initialFindingsTotal: number | null;
 		initialMemories: RunMemoryItem[] | null;
+		initialMemoriesTotal?: number | null;
 	} = $props();
 
 	// Live-poll a running session to terminal; swap in fresh data as it arrives.
@@ -29,6 +31,7 @@
 	const findings = $derived(live.session ? live.findings : initialFindings);
 	const findingsTotal = $derived(live.session ? live.findingsTotal : initialFindingsTotal);
 	const memories = $derived(live.session ? live.memories : initialMemories);
+	const memoriesTotal = $derived(live.session ? live.memoriesTotal : initialMemoriesTotal);
 
 	$effect(() => {
 		if (initialSession.status === 'running') {
@@ -43,6 +46,12 @@
 	{#if session.status === 'running'}
 		<p class="text-xs text-mlq-workflow">Running — live updating…</p>
 	{/if}
-	<RunResults {findings} {findingsTotal} {memories} running={session.status === 'running'} />
+	<RunResults
+		{findings}
+		{findingsTotal}
+		{memories}
+		{memoriesTotal}
+		running={session.status === 'running'}
+	/>
 	<SessionTimeline {receipt} />
 </div>

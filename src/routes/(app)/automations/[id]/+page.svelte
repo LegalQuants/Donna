@@ -20,6 +20,7 @@
 			initialFindings={data.findings}
 			initialFindingsTotal={data.findings_total}
 			initialMemories={data.memories}
+			initialMemoriesTotal={data.memories_total}
 		/>
 	{/key}
 </div>

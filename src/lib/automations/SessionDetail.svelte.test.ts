@@ -29,7 +29,8 @@ describe('SessionDetail', () => {
 					{ id: 'f1', severity: 'critical', title: 'Indemnity gap', content: 'C', created_at: 'x' }
 				],
 				initialFindingsTotal: 1,
-				initialMemories: []
+				initialMemories: [],
+				initialMemoriesTotal: null
 			}
 		});
 		expect(screen.getByText('Indemnity gap')).toBeInTheDocument();
@@ -50,9 +51,26 @@ describe('SessionDetail', () => {
 				initialReceipt: null,
 				initialFindings: [],
 				initialFindingsTotal: 0,
-				initialMemories: []
+				initialMemories: [],
+				initialMemoriesTotal: null
 			}
 		});
 		expect(screen.getByText('This run recorded no findings.')).toBeInTheDocument();
+	});
+
+	it('threads memoriesTotal overflow note through to RunResults', () => {
+		render(SessionDetail, {
+			props: {
+				initialSession: session,
+				initialReceipt: null,
+				initialFindings: [],
+				initialFindingsTotal: 0,
+				initialMemories: [
+					{ id: 'm1', state: 'proposed', category: 'pref', content: 'M', created_at: 'x' }
+				],
+				initialMemoriesTotal: 10
+			}
+		});
+		expect(screen.getByText(/\+9 more/)).toBeInTheDocument();
 	});
 });
