@@ -3,7 +3,6 @@
 	let { skill }: { skill: UserSkill } = $props();
 </script>
 
-<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app skill link -->
 <a href="/skills/{skill.id}" class="flex items-center gap-3 px-3 py-2 hover:bg-mlq-subtle/50">
 	<span class="min-w-0 flex-1">
 		<span class="block truncate text-sm text-mlq-text">{skill.display_name}</span>

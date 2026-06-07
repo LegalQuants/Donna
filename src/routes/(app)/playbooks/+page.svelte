@@ -29,9 +29,7 @@
       {#if menuOpen}
         <div role="presentation" class="fixed inset-0 z-30" onclick={() => (menuOpen = false)}></div>
         <div class="absolute right-0 z-40 mt-1 w-56 rounded-mlq-control border border-mlq-subtle bg-mlq-surface p-1 shadow-xl">
-          <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app generate link -->
           <a href="/playbooks/new" class="block rounded-mlq-control px-2.5 py-1.5 text-sm text-mlq-text hover:bg-mlq-subtle">Generate from documents</a>
-          <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app manual link -->
           <a href="/playbooks/new/manual" class="block rounded-mlq-control px-2.5 py-1.5 text-sm text-mlq-text hover:bg-mlq-subtle">Start from scratch</a>
         </div>
       {/if}

@@ -68,7 +68,6 @@
       <p class="text-mlq-text">Your export is ready.</p>
       <p class="mb-3 mt-0.5 text-xs text-mlq-muted">The download link is valid for 24 hours.</p>
       <div class="flex items-center gap-3">
-        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external presigned download URL -->
         <a href={downloadUrl} download class="rounded-mlq-control bg-mlq-workflow px-2.5 py-1 text-xs text-white">Download archive</a>
         <button type="button" onclick={reset} class="text-xs text-mlq-workflow hover:underline">Start a new export</button>
       </div>

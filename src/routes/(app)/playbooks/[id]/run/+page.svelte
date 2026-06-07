@@ -18,7 +18,6 @@
 			onExecutionStarted: (id) => {
 				const url = new URL(page.url);
 				url.searchParams.set('execution', id);
-				// eslint-disable-next-line svelte/no-navigation-without-resolve -- push ?execution= param, no resolve needed
 				replaceState(`${url.pathname}${url.search}`, {});
 			}
 		}
@@ -40,7 +39,6 @@
 <svelte:head><title>Run {data.playbook.name} — Donna</title></svelte:head>
 
 <div class="mx-auto max-w-3xl px-4 py-6">
-	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app back link -->
 	<a href="/playbooks/{data.playbook.id}" class="text-xs text-mlq-muted hover:underline"
 		>← {data.playbook.name}</a
 	>

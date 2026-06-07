@@ -22,7 +22,6 @@
       <span class={`${toneClass}`}>{badge.label}</span>
     </div>
   </div>
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- BFF download proxy -->
   <a href="/files/{file.id}/content" target="_blank" rel="noopener" class="shrink-0 text-xs text-mlq-workflow hover:underline">Download</a>
   <form
     method="POST"

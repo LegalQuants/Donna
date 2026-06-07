@@ -35,7 +35,6 @@
     </button>
   </form>
 
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- edit schedule link -->
   <a href="/automations/schedules/{schedule.id}" class="shrink-0 text-xs text-mlq-workflow hover:underline">Edit</a>
 
   {#if confirmingDelete}

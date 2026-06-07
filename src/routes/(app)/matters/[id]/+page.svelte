@@ -28,7 +28,6 @@
 
 <div class="mx-auto max-w-3xl px-6 py-8">
   <nav class="mb-3 text-xs text-mlq-muted">
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app link -->
     <a href="/matters" class="text-mlq-workflow hover:underline">Matters</a> › {data.matter.name}
   </nav>
 
@@ -59,7 +58,6 @@
     <ul class="divide-y divide-mlq-subtle rounded-mlq-control border border-mlq-subtle">
       {#each data.chats as c (c.id)}
         <li>
-          <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app chat link -->
           <a href="/chats/{c.id}" class="flex items-center gap-3 px-4 py-3 text-sm hover:bg-mlq-surface-alt">
             <MessageSquare size={14} class="text-mlq-muted" />
             <span class="min-w-0 truncate text-mlq-text">{c.title}</span>

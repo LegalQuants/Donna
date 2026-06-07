@@ -108,7 +108,6 @@
 
     {#if isAttached(row) && status === 'ready'}
       <!-- KB files download via the BFF proxy (/files/{id}/content), same pattern as matter files. -->
-      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- BFF download proxy -->
       <a href="/files/{fileId}/content" target="_blank" rel="noopener" class="shrink-0 text-xs text-mlq-workflow hover:underline">Download</a>
     {/if}
 

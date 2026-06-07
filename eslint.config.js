@@ -41,6 +41,16 @@ export default defineConfig(
 	{
 		// Override or add rule settings here, such as:
 		// 'svelte/button-has-type': 'error'
-		rules: {}
+		rules: {
+			// Never adopted: suppressed ad-hoc since scaffold (inline disables / baseline errors).
+			// Formally disabled in docs-polish PR 2.
+			'svelte/no-navigation-without-resolve': 'off',
+			'svelte/prefer-svelte-reactivity': 'off'
+		}
+	},
+	{
+		// Tests routinely cast mocks/fixtures; `any` is acceptable there.
+		files: ['**/*.test.ts', '**/*.spec.ts', 'tests/**'],
+		rules: { '@typescript-eslint/no-explicit-any': 'off' }
 	}
 );

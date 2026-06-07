@@ -12,7 +12,6 @@
 <div class="space-y-6">
   <div>
     <h1 class="text-xl font-medium text-mlq-text">Models</h1>
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app settings link -->
     <p class="mt-1 text-sm text-mlq-muted">Choose which model backs each inference category. See <a class="underline" href="/settings/trust">Trust</a> for where your data goes.</p>
   </div>
 

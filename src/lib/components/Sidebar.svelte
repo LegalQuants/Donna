@@ -32,7 +32,6 @@
 
   <nav class="flex-1 space-y-1 px-2">
     {#each nav as item (item.href)}
-      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sidebar nav link -->
       <a href={item.href}
          aria-current={isActive(item) ? 'page' : undefined}
          class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
@@ -44,7 +43,6 @@
   </nav>
 
   <div class="space-y-1 border-t border-mlq-subtle p-2">
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- about link -->
     <a href="/about"
        aria-current={page.url.pathname.startsWith('/about') ? 'page' : undefined}
        class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
@@ -52,7 +50,6 @@
       <Info size={18} />
       {#if open}<span>About</span>{/if}
     </a>
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- settings link -->
     <a href="/settings"
        aria-current={page.url.pathname.startsWith('/settings') ? 'page' : undefined}
        class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle

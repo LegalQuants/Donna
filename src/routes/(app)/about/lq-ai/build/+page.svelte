@@ -1,6 +1,5 @@
 <svelte:head><title>How to Build — Powered by LQ-AI — About Donna</title></svelte:head>
 
-<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- back to how-it-works -->
 <a href="/about/lq-ai" class="mb-4 inline-block text-sm text-mlq-strong hover:underline">← How it works</a>
 
 <h1 class="mb-4 text-xl font-medium text-mlq-text">Powered by LQ-AI — How to Build</h1>
@@ -70,7 +69,6 @@
   class="mt-1 h-[900px] w-full rounded-mlq-control border border-mlq-subtle"
 ></iframe>
 <div class="mt-2 text-xs text-mlq-muted">
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external static playground -->
   <a href="/learn/playgrounds/skill-format.html" target="_blank" rel="noopener noreferrer" class="text-mlq-strong hover:underline">Open full-screen ↗</a>
 </div>
 
@@ -93,10 +91,8 @@
   through the system.
 </p>
 <p class="mb-2 max-w-prose text-sm leading-relaxed text-mlq-text">
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external static playground -->
   <a href="/learn/playgrounds/test-landscape.html" target="_blank" rel="noopener noreferrer" class="text-mlq-strong hover:underline">Test landscape: what must pass ↗</a>
   ·
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external static playground -->
   <a href="/learn/playgrounds/otel-eval.html" target="_blank" rel="noopener noreferrer" class="text-mlq-strong hover:underline">Observability trace explorer ↗</a>
 </p>
 
@@ -132,7 +128,6 @@
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   <a href="https://github.com/LegalQuants/lq-ai/blob/main/docs/LQVern/agentic-flow-alignment-guide.md" target="_blank" rel="noopener noreferrer" class="text-mlq-strong hover:underline">Building aligned agentic flows — the contributor guide ↗</a>
   ·
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external static playground -->
   <a href="/learn/playgrounds/autonomous-flow.html" target="_blank" rel="noopener noreferrer" class="text-mlq-strong hover:underline">Autonomous flow playground ↗</a>
 </p>
 

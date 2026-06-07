@@ -12,7 +12,6 @@
 
 <nav aria-label="Workflows sections" class="mb-4 inline-flex gap-1 rounded-mlq-control border border-mlq-subtle p-1">
   {#each segments as seg (seg.id)}
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- workflows sub-nav link -->
     <a href={seg.href}
        aria-current={active === seg.id ? 'page' : undefined}
        class="rounded-mlq-control px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow

@@ -51,7 +51,6 @@
 		const url = new URL(page.url);
 		if (id) url.searchParams.set('matter', id);
 		else url.searchParams.delete('matter');
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- reactive ?matter sync, no anchor
 		goto(`${url.pathname}${url.search}`, { keepFocus: true, noScroll: true });
 	}
 	$effect(() => {

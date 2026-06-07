@@ -19,7 +19,6 @@
   <AutomationsNav active="sessions" unread={unread.count} />
   {#if data.autonomousEnabled}
     <div class="mb-3">
-      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- run-now entry -->
       <a href="/automations/new" class="inline-block rounded-mlq-control bg-mlq-workflow px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow">Run now</a>
     </div>
     <SessionList sessions={data.sessions} />

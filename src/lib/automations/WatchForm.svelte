@@ -112,7 +112,6 @@
 		{:else if kbs.length === 0}
 			<p class="text-xs text-mlq-muted">
 				No knowledge bases yet.
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- create a KB first -->
 				<a href="/knowledge" class="text-mlq-workflow hover:underline">Create one first.</a>
 			</p>
 		{:else}

@@ -35,7 +35,6 @@
 
 <div class="mx-auto max-w-3xl px-4 py-6">
 	<nav class="mb-4 text-sm text-mlq-muted">
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app skills link -->
 		<a href="/skills" class="hover:text-mlq-text">Skills</a> › {data.skill.display_name}
 	</nav>
 

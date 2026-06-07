@@ -18,7 +18,6 @@
   <p class="text-xs text-mlq-muted">
     Preview isn't available for this file type{mime ? ` (${mime})` : ''}.
   </p>
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- download link, not SvelteKit navigation -->
   <a href="/files/{fileId}/content"
     download={filename || undefined}
     class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-xs text-mlq-text hover:bg-mlq-surface-alt"
