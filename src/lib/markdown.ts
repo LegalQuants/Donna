@@ -8,5 +8,5 @@ const md = new MarkdownIt({ html: true, linkify: true, breaks: true }).use(katex
 
 /** Render markdown to sanitized HTML. */
 export function renderMarkdown(content: string = ''): string {
-  return DOMPurify.sanitize(md.render(content ?? ''));
+	return DOMPurify.sanitize(md.render(content ?? ''));
 }

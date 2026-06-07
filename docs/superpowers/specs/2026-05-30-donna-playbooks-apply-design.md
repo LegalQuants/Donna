@@ -11,6 +11,7 @@ Slice A (PR #25, merged) shipped the read-only Playbooks library. Slice B is the
 3. **Poll** `GET /api/v1/playbook-executions/{id}` until `status` is `completed`/`error` (~20–40 s — a 4-node LLM graph).
 
 **`results` shape (schema `m3-a2-v1`, hand-typed locally — the generated contract types it loosely as `{[k]: unknown}`):**
+
 - `summary: { matches_standard: number; matches_fallback: number; deviates: number; missing: number }` — verdict counts.
 - `positions: PositionResult[]`, one per playbook position:
   - `issue: string`, `position_id: string (uuid)`, `severity_if_missing: 'critical'|'high'|'medium'|'low'`
@@ -23,6 +24,7 @@ Slice A (PR #25, merged) shipped the read-only Playbooks library. Slice B is the
   - `cited_chunk_ids: string[]` — source chunks (not surfaced in this slice)
 
 **Constraints (verified):**
+
 - **Execute requires admin OR playbook ownership.** Non-admins get `404` on built-ins. Only built-ins exist until slices C/D, so **execution is effectively admin-only in v1.** Donna's session exposes `user.is_admin` (the full `User` schema via `(app)/+layout.server.ts`).
 - **No list-files endpoint** (`GET /api/v1/files` → 405). A target document must come from an upload or from a matter's `attached_file_ids` (a `Project` carries `attached_file_ids`; each is fetched via `GET /files/{id}` — the matter detail already does this).
 
@@ -58,8 +60,9 @@ From a playbook's detail page, an admin runs the playbook against a contract —
   - **Existing** `GET /files/[id]` (P3) — reused for ingestion polling.
 
 **Client orchestration — `src/lib/playbooks/runFlow.svelte.ts`** (a rune controller; mirrors the P4-3b client-polling pattern; plain `fetch` to the JSON proxies — fully mockable in tests):
-- *Upload path:* `POST /files` (FormData) → `id` → poll `GET /files/{id}` every 2 s until `ready` (→ `document_id`) or `failed` → `POST /playbooks/{id}/execute` with `document_id`. (Visibility-aware pausing was descoped — a single short-lived in-flight poll over a ~20–40 s run doesn't warrant it; revisit if runs get long.)
-- *Pick path:* user selects an ingested matter file → `POST /playbooks/{id}/execute` with its `document_id` (skips upload/ingest steps).
+
+- _Upload path:_ `POST /files` (FormData) → `id` → poll `GET /files/{id}` every 2 s until `ready` (→ `document_id`) or `failed` → `POST /playbooks/{id}/execute` with `document_id`. (Visibility-aware pausing was descoped — a single short-lived in-flight poll over a ~20–40 s run doesn't warrant it; revisit if runs get long.)
+- _Pick path:_ user selects an ingested matter file → `POST /playbooks/{id}/execute` with its `document_id` (skips upload/ingest steps).
 - On execute → `execution.id`; push `?execution=<id>` to the URL (`replaceState`) for reload-safety, then poll `GET /playbook-executions/{id}` every 2 s until `completed`/`error`. A 5-min stuck threshold surfaces a "still running — refresh" affordance (P4-3b precedent). Render results on completion; render the backend `error` on failure. On load with `data.execution` present, resume from its current status.
 - State machine: `idle → uploading → ingesting → executing → analysing → done | error`.
 
@@ -67,18 +70,18 @@ From a playbook's detail page, an admin runs the playbook against a contract —
 
 ## 5. Components (`src/lib/playbooks/`) — reuse slice A where possible
 
-| Unit | Responsibility | Notes / reuse |
-|---|---|---|
-| `types.ts` (extend) | Add `PlaybookExecution` (from contract) + hand-typed `ExecutionResults`, `PositionResult`, `Redline`, `ResultSummary` for the `m3-a2-v1` shape | contract types `results` loosely |
-| `verdict.ts` | Pure: `VERDICTS` (ordered worst-first), `verdictMeta(v) → { label, badgeClass }`, `compareByVerdict`, summary helpers | unit-tested |
-| `VerdictBadge.svelte` | verdict → colored chip (standard green / fallback blue / deviates amber / missing red) | sibling to `SeverityBadge` |
-| `ResultSummary.svelte` | The scorecard — verdict count chips | takes `ResultSummary` |
-| `RedlineBlocks.svelte` | `redline` → struck-through `old_text` block + green `new_text` block + optional justification | the chosen stacked treatment |
-| `ResultCard.svelte` | One `PositionResult`: `VerdictBadge` + issue + `SeverityBadge` (reused) + confidence + matched_text clause + justification + `RedlineBlocks` when `redline` present | reuses A's `SeverityBadge` |
-| `ExecutionResults.svelte` | `ResultSummary` + worst-first `ResultCard` list | composition |
-| `DocumentChooser.svelte` | Tabs: **Upload** (reuse `matters/files/Dropzone`) \| **Choose from a matter** (reuse `MatterPicker` → `?matter=` → ingested file list; non-ingested greyed out, unselectable) | reuses P4-1/P4-3a |
-| `RunProgress.svelte` | Stepper: Uploaded → Ingested → Analysing → Results (upload/ingest steps skipped on the pick path) | pure presentational |
-| `runFlow.svelte.ts` | The async state-machine controller (above) | new |
+| Unit                      | Responsibility                                                                                                                                                                | Notes / reuse                    |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `types.ts` (extend)       | Add `PlaybookExecution` (from contract) + hand-typed `ExecutionResults`, `PositionResult`, `Redline`, `ResultSummary` for the `m3-a2-v1` shape                                | contract types `results` loosely |
+| `verdict.ts`              | Pure: `VERDICTS` (ordered worst-first), `verdictMeta(v) → { label, badgeClass }`, `compareByVerdict`, summary helpers                                                         | unit-tested                      |
+| `VerdictBadge.svelte`     | verdict → colored chip (standard green / fallback blue / deviates amber / missing red)                                                                                        | sibling to `SeverityBadge`       |
+| `ResultSummary.svelte`    | The scorecard — verdict count chips                                                                                                                                           | takes `ResultSummary`            |
+| `RedlineBlocks.svelte`    | `redline` → struck-through `old_text` block + green `new_text` block + optional justification                                                                                 | the chosen stacked treatment     |
+| `ResultCard.svelte`       | One `PositionResult`: `VerdictBadge` + issue + `SeverityBadge` (reused) + confidence + matched_text clause + justification + `RedlineBlocks` when `redline` present           | reuses A's `SeverityBadge`       |
+| `ExecutionResults.svelte` | `ResultSummary` + worst-first `ResultCard` list                                                                                                                               | composition                      |
+| `DocumentChooser.svelte`  | Tabs: **Upload** (reuse `matters/files/Dropzone`) \| **Choose from a matter** (reuse `MatterPicker` → `?matter=` → ingested file list; non-ingested greyed out, unselectable) | reuses P4-1/P4-3a                |
+| `RunProgress.svelte`      | Stepper: Uploaded → Ingested → Analysing → Results (upload/ingest steps skipped on the pick path)                                                                             | pure presentational              |
+| `runFlow.svelte.ts`       | The async state-machine controller (above)                                                                                                                                    | new                              |
 
 ## 6. Visual language
 
@@ -96,6 +99,7 @@ Donna serif/gray. Run page: playbook header, then the chooser (Step 1), then the
 ## 8. Testing
 
 **Unit (vitest)**
+
 - `verdict.ts` — worst-first ordering, labels, badge classes, summary totals.
 - `VerdictBadge`, `ResultSummary`, `RedlineBlocks` (old/new/justification; absent when null), `ResultCard` (verdict + matched_text + justification + redline-when-present + severity), `ExecutionResults` (worst-first order; summary).
 - `DocumentChooser` — tab switch; only ingested matter files selectable; emits the right `document_id`; upload hands a file to the flow.

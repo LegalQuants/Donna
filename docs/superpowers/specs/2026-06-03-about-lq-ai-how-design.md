@@ -10,11 +10,12 @@ Replace the `/about/lq-ai` **stub** (shipped in 2a) with a real **"Powered by LQ
 design, and (2) closes with a **Donna-authored "Build & Learn with LQ-AI"** section that suggests
 what people could build on / extend / teach with the open-source LQ-AI backend.
 
-This is the **inspire** surface: Donna showcases *one* subset of LQ-AI; this page shows the rest of
+This is the **inspire** surface: Donna showcases _one_ subset of LQ-AI; this page shows the rest of
 the iceberg and invites builders, students, professors, and access-to-justice orgs to do more with it.
 See [[donna-about-page]], [[donna-product-direction]].
 
 ## Decisions (locked in brainstorm, 2026-06-03)
+
 - **Re-skin natively** in Donna's `mlq-*` design (do NOT import LQ-AI's `lq-*` stylesheet).
 - **Sub-sliced:** this is 2b-i = **How It Works** only. "How to Build" + its 2 playgrounds = **2b-ii**
   (a later slice; this slice adds no link to it → no dead link).
@@ -22,6 +23,7 @@ See [[donna-about-page]], [[donna-product-direction]].
   audiences**: law students, law professors, developers/legal-tech builders, legal-aid/access-to-justice.
 
 ## Source material
+
 - LQ-AI page (port from): `vendor/lq-ai/web/src/routes/lq-ai/learn/how/+page.svelte` (957 lines).
 - Playgrounds (copy verbatim): `vendor/lq-ai/web/static/learn/playgrounds/*.html` — **zero-dependency,
   self-contained HTML, no external/CDN/fetch** (confirmed). The 16 used by How It Works (in order):
@@ -59,8 +61,8 @@ See [[donna-about-page]], [[donna-product-direction]].
      the hood (citation verification, anonymization, RAG over contracts), and build a skill/playbook
      for a contract type as a course project; the playgrounds above are interactive explainers. The
      **tier/refusal system** is a concrete AI-governance case study. Professors: use the open codebase
-     + playgrounds as teaching material for legal-AI / law-&-technology courses, set build-a-playbook
-     assignments, or run a clinic customizing Donna for a real workflow.
+     - playgrounds as teaching material for legal-AI / law-&-technology courses, set build-a-playbook
+       assignments, or run a clinic customizing Donna for a real workflow.
    - **Access to justice / legal aid** — adapt the open-source stack for pro-bono and
      access-to-justice workflows where commercial tools are out of reach.
    - Close with a link to the LQ-AI GitHub repo (the project), and (later, in 2b-ii) a pointer to the
@@ -104,5 +106,6 @@ playgrounds are intentionally NOT copied in this slice.)
 4. `npm run check` = 0/0; no new lint errors; `npx vitest run` green; the About e2e passes live.
 
 ## Out of scope (→ 2b-ii)
+
 - The "How to Build" page (`vendor/.../learn/build/+page.svelte`) + its 2 playgrounds
   (`skill-format`, `test-landscape`) + the cross-link from this page to it.

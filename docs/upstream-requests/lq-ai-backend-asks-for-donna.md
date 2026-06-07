@@ -10,7 +10,7 @@
 > `/Users/kevinkeller/Code/Donna/docs/decisions/lq-ai-pin.md`.
 
 **Status (2026-06-01): P1.1–P1.4 all landed** and Donna is pinned at `945ad31` —
-see *Already landed* below. **No open asks remain.** The P1.1–P1.4 sections are kept below for
+see _Already landed_ below. **No open asks remain.** The P1.1–P1.4 sections are kept below for
 reference. (The bigger "autonomous workflows" item is **not** here — Donna tracks it in its own future
 roadmap: `/Users/kevinkeller/Code/Donna/docs/roadmap/donna-future-roadmap.md`. You're building that
 backend; the consumer-side requirements Donna will need are captured there for later.)
@@ -26,7 +26,7 @@ backend; the consumer-side requirements Donna will need are captured there for l
 - **Gist:** `MessageCreate.skill_inputs` is accepted + forwarded as `lq_ai_skill_inputs`, but the assembler only
   substitutes `{{placeholder}}` tokens and silently drops unreferenced inputs. No built-in `SKILL.md` is templated,
   so collected inputs vanish for every built-in. **Recommended fix (Option A):** after interpolation, append any
-  *unreferenced* bound inputs as a short labelled context block, so every skill benefits with no corpus edits.
+  _unreferenced_ bound inputs as a short labelled context block, so every skill benefits with no corpus edits.
 - **Unblocks (Donna):** the deferred composer skill-input form.
 
 ## P1.2 — Add `MessageCreate.file_ids` (per-message chat file attachment)
@@ -50,7 +50,7 @@ backend; the consumer-side requirements Donna will need are captured there for l
   - `/Users/kevinkeller/Code/lq-ai/api/app/schemas/` (a `UserProfileUpdate` model)
 - **Gist:** `GET /users/me` exposes `display_name`/`email` and `PATCH /users/me/preferences` exists, but there's no
   `PATCH /users/me` to edit the profile fields — `/users/me` has `patch?: never`. `display_name`-only is enough to
-  unblock; email self-service is your call. This is the *only* thing blocking the editable-profile part of Donna's
+  unblock; email self-service is your call. This is the _only_ thing blocking the editable-profile part of Donna's
   upcoming **Settings** page — everything else that page needs already exists.
 - **Unblocks (Donna):** the profile-edit form in P7 Settings (the rest of P7 ships without it).
 

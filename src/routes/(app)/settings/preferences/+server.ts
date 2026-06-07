@@ -7,18 +7,19 @@ import { json, error } from '@sveltejs/kit';
 const ALLOWED = new Set(['trust_pills', 'provenance_pills', 'autonomous_enabled']);
 
 export const PATCH: RequestHandler = async (event) => {
-  const body = (await event.request.json().catch(() => null)) as Record<string, unknown> | null;
-  const keys = body ? Object.keys(body) : [];
-  if (!body || keys.length === 0 || keys.some((k) => !ALLOWED.has(k))) {
-    throw error(400, 'Unknown preference field.');
-  }
-  const res = await lqFetch(event, '/api/v1/users/me/preferences', {
-    method: 'PATCH',
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) {
-    const status = res.status === 404 || res.status === 503 || res.status === 504 ? res.status : 502;
-    throw error(status, 'Could not save preferences.');
-  }
-  return json(await res.json());
+	const body = (await event.request.json().catch(() => null)) as Record<string, unknown> | null;
+	const keys = body ? Object.keys(body) : [];
+	if (!body || keys.length === 0 || keys.some((k) => !ALLOWED.has(k))) {
+		throw error(400, 'Unknown preference field.');
+	}
+	const res = await lqFetch(event, '/api/v1/users/me/preferences', {
+		method: 'PATCH',
+		body: JSON.stringify(body)
+	});
+	if (!res.ok) {
+		const status =
+			res.status === 404 || res.status === 503 || res.status === 504 ? res.status : 502;
+		throw error(status, 'Could not save preferences.');
+	}
+	return json(await res.json());
 };

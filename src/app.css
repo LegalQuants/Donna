@@ -2,81 +2,171 @@
 @import 'katex/dist/katex.min.css';
 
 @theme {
-  /* Typography — serif headings AND body is the signature MikeOSS trait. */
-  --font-serif: ui-serif, Georgia, 'Times New Roman', serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	/* Typography — serif headings AND body is the signature MikeOSS trait. */
+	--font-serif: ui-serif, Georgia, 'Times New Roman', serif;
+	--font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Restrained gray palette */
-  --color-mlq-surface: #ffffff;
-  --color-mlq-surface-alt: #f7f7f8;     /* gray-50/100 */
-  --color-mlq-subtle: #e5e7eb;          /* border */
-  --color-mlq-muted: #9ca3af;           /* gray-400, disclaimers/labels */
-  --color-mlq-text: #374151;            /* gray-700 body */
-  --color-mlq-strong: #111827;          /* near-black headings */
+	/* Restrained gray palette */
+	--color-mlq-surface: #ffffff;
+	--color-mlq-surface-alt: #f7f7f8; /* gray-50/100 */
+	--color-mlq-subtle: #e5e7eb; /* border */
+	--color-mlq-muted: #9ca3af; /* gray-400, disclaimers/labels */
+	--color-mlq-text: #374151; /* gray-700 body */
+	--color-mlq-strong: #111827; /* near-black headings */
 
-  /* Semantic accents */
-  --color-mlq-workflow: #2563eb;        /* blue */
-  --color-mlq-error: #dc2626;           /* red — PDF/error/alert */
-  --color-mlq-success: #16a34a;         /* green */
-  --color-mlq-doc: #111827;             /* black document chips */
-  --color-mlq-privileged: #7f1d1d;      /* reserved for P4 (high-contrast) */
+	/* Semantic accents */
+	--color-mlq-workflow: #2563eb; /* blue */
+	--color-mlq-error: #dc2626; /* red — PDF/error/alert */
+	--color-mlq-success: #16a34a; /* green */
+	--color-mlq-doc: #111827; /* black document chips */
+	--color-mlq-privileged: #7f1d1d; /* reserved for P4 (high-contrast) */
 
-  /* Citation pill states (P2b) */
-  --color-mlq-verified: #16a34a;        /* green */
-  --color-mlq-caveats: #c9a227;         /* amber — verified with caveats */
-  --color-mlq-unverified: #dc2626;      /* red */
+	/* Citation pill states (P2b) */
+	--color-mlq-verified: #16a34a; /* green */
+	--color-mlq-caveats: #c9a227; /* amber — verified with caveats */
+	--color-mlq-unverified: #dc2626; /* red */
 
-  /* Radii */
-  --radius-mlq-composer: 20px;
-  --radius-mlq-control: 0.5rem;         /* rounded-lg */
+	/* Radii */
+	--radius-mlq-composer: 20px;
+	--radius-mlq-control: 0.5rem; /* rounded-lg */
 }
 
 @layer base {
-  html { font-family: var(--font-serif); color: var(--color-mlq-text); background: var(--color-mlq-surface); }
+	html {
+		font-family: var(--font-serif);
+		color: var(--color-mlq-text);
+		background: var(--color-mlq-surface);
+	}
 }
 
 /* Motion */
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-@keyframes mlq-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.mlq-rise { animation: mlq-rise 600ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.mlq-rise-delay { animation: mlq-rise 600ms cubic-bezier(0.22, 1, 0.36, 1) 300ms both; }
+@keyframes shimmer {
+	0% {
+		background-position: -200% 0;
+	}
+	100% {
+		background-position: 200% 0;
+	}
+}
+@keyframes mlq-rise {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.mlq-rise {
+	animation: mlq-rise 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.mlq-rise-delay {
+	animation: mlq-rise 600ms cubic-bezier(0.22, 1, 0.36, 1) 300ms both;
+}
 
 /* KaTeX styles for math in chat answers */
 /* (katex import moved to top with other @imports per Tailwind v4 requirement) */
 
 /* Serif "legal memo" prose for assistant markdown */
-.prose-mlq { font-family: var(--font-serif); color: var(--color-mlq-text); line-height: 1.65; }
-.prose-mlq p { margin: 0 0 0.75rem; }
-.prose-mlq h1, .prose-mlq h2, .prose-mlq h3 { color: var(--color-mlq-strong); font-weight: 500; margin: 1rem 0 0.5rem; }
-.prose-mlq ul, .prose-mlq ol { margin: 0 0 0.75rem 1.25rem; }
-.prose-mlq li { margin: 0.15rem 0; }
-.prose-mlq a { color: var(--color-mlq-workflow); text-decoration: underline; }
-.prose-mlq table { border-collapse: collapse; margin: 0.5rem 0; font-size: 0.9em; }
-.prose-mlq th, .prose-mlq td { border: 1px solid var(--color-mlq-subtle); padding: 4px 8px; }
-.prose-mlq blockquote { border-left: 3px solid var(--color-mlq-subtle); margin: 0 0 0.75rem; padding-left: 0.75rem; color: var(--color-mlq-muted); }
-.prose-mlq code { background: var(--color-mlq-surface-alt); padding: 1px 4px; border-radius: 4px; font-size: 0.9em; }
+.prose-mlq {
+	font-family: var(--font-serif);
+	color: var(--color-mlq-text);
+	line-height: 1.65;
+}
+.prose-mlq p {
+	margin: 0 0 0.75rem;
+}
+.prose-mlq h1,
+.prose-mlq h2,
+.prose-mlq h3 {
+	color: var(--color-mlq-strong);
+	font-weight: 500;
+	margin: 1rem 0 0.5rem;
+}
+.prose-mlq ul,
+.prose-mlq ol {
+	margin: 0 0 0.75rem 1.25rem;
+}
+.prose-mlq li {
+	margin: 0.15rem 0;
+}
+.prose-mlq a {
+	color: var(--color-mlq-workflow);
+	text-decoration: underline;
+}
+.prose-mlq table {
+	border-collapse: collapse;
+	margin: 0.5rem 0;
+	font-size: 0.9em;
+}
+.prose-mlq th,
+.prose-mlq td {
+	border: 1px solid var(--color-mlq-subtle);
+	padding: 4px 8px;
+}
+.prose-mlq blockquote {
+	border-left: 3px solid var(--color-mlq-subtle);
+	margin: 0 0 0.75rem;
+	padding-left: 0.75rem;
+	color: var(--color-mlq-muted);
+}
+.prose-mlq code {
+	background: var(--color-mlq-surface-alt);
+	padding: 1px 4px;
+	border-radius: 4px;
+	font-size: 0.9em;
+}
 
 /* Verified citation pills (P2b) — rendered inside sanitized {@html}, so global. */
-.cite-quote { border-bottom: 2px solid; padding-bottom: 1px; }
-.cite-quote.cite-verified { border-color: var(--color-mlq-verified); }
-.cite-quote.cite-caveats { border-color: var(--color-mlq-caveats); }
-.cite-quote.cite-unverified { border-color: var(--color-mlq-unverified); border-bottom-style: dashed; }
+.cite-quote {
+	border-bottom: 2px solid;
+	padding-bottom: 1px;
+}
+.cite-quote.cite-verified {
+	border-color: var(--color-mlq-verified);
+}
+.cite-quote.cite-caveats {
+	border-color: var(--color-mlq-caveats);
+}
+.cite-quote.cite-unverified {
+	border-color: var(--color-mlq-unverified);
+	border-bottom-style: dashed;
+}
 
 .cite-tab {
-  font-family: var(--font-sans); font-size: 0.7em; font-weight: 600; line-height: 1;
-  padding: 0.1em 0.4em; border-radius: 4px; margin-left: 2px;
-  position: relative; top: -0.35em; color: #fff; cursor: pointer; user-select: none;
+	font-family: var(--font-sans);
+	font-size: 0.7em;
+	font-weight: 600;
+	line-height: 1;
+	padding: 0.1em 0.4em;
+	border-radius: 4px;
+	margin-left: 2px;
+	position: relative;
+	top: -0.35em;
+	color: #fff;
+	cursor: pointer;
+	user-select: none;
 }
-.cite-tab.cite-verified { background: var(--color-mlq-verified); }
-.cite-tab.cite-caveats { background: var(--color-mlq-caveats); }
-.cite-tab.cite-unverified { background: var(--color-mlq-unverified); }
-.cite-tab:focus-visible { outline: 2px solid var(--color-mlq-strong); outline-offset: 1px; }
+.cite-tab.cite-verified {
+	background: var(--color-mlq-verified);
+}
+.cite-tab.cite-caveats {
+	background: var(--color-mlq-caveats);
+}
+.cite-tab.cite-unverified {
+	background: var(--color-mlq-unverified);
+}
+.cite-tab:focus-visible {
+	outline: 2px solid var(--color-mlq-strong);
+	outline-offset: 1px;
+}
 
 /* P3-2 — citation highlight (CSS Custom Highlight API). Must be a global rule;
    ::highlight() cannot be targeted from component-scoped styles. The PDF.js text
    layer renders transparent glyphs over the canvas, so this paints a yellow box
    behind the cited words. */
 ::highlight(cite) {
-  background-color: #fff2a8;
-  color: inherit;
+	background-color: #fff2a8;
+	color: inherit;
 }

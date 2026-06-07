@@ -12,14 +12,14 @@ Orient with: `README.md`, the specs in `docs/superpowers/specs/` (foundation+roa
 
 ## 2. Phase status
 
-| Phase | Status |
-|---|---|
-| P0 Foundation, P1 Auth+Landing | ✅ merged (#1) |
-| P2a Core streaming chat | ✅ merged (#2) |
-| P2b Verified citation pills | ✅ merged (#3) |
-| **P2c Slice A — Provenance** (Receipts drawer + anonymization indicator) | ✅ merged (#4) |
-| **P2c Slice B — Composer power** | ⬅️ **NEXT** |
-| P3 Document panel + highlighting · P4 Projects/Matters · P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending |
+| Phase                                                                                                               | Status         |
+| ------------------------------------------------------------------------------------------------------------------- | -------------- |
+| P0 Foundation, P1 Auth+Landing                                                                                      | ✅ merged (#1) |
+| P2a Core streaming chat                                                                                             | ✅ merged (#2) |
+| P2b Verified citation pills                                                                                         | ✅ merged (#3) |
+| **P2c Slice A — Provenance** (Receipts drawer + anonymization indicator)                                            | ✅ merged (#4) |
+| **P2c Slice B — Composer power**                                                                                    | ⬅️ **NEXT**    |
+| P3 Document panel + highlighting · P4 Projects/Matters · P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending        |
 
 P2c was split into **Slice A (provenance, done)** and **Slice B (composer)** during brainstorming. Continue the pattern: decompose a large phase into PR-sized slices.
 
@@ -48,9 +48,9 @@ npm run check && npx vitest run && npx playwright test
 
 Three pre-send composer features. All have real backend contracts (verify each before building; spike anything ambiguous early, the way P2b/P2c-A did). Likely **sub-decomposition / sequencing** — brainstorm whether to do them as one slice or split further:
 
-- **Model / inference-tier picker.** `GET /api/v1/models` lists available model aliases/tiers; `MessageCreate.model` selects one (Donna currently **hardcodes `'smart'`** in the SSE BFF — `src/routes/(app)/chats/[id]/messages/+server.ts`). Add a composer control to pick model/tier; thread the choice through the BFF. Tie into the existing tier badge. *Verify:* the `/models` response shape + how tier maps to a model alias; whether tier is user-selectable or derived.
-- **Skill-attach.** `GET /api/v1/skills` + `/api/v1/skills/autocomplete`; `MessageCreate.skills` (names) + `skill_inputs` (per-skill input bindings; a missing required input → 400 `skill_input_missing`). Add a composer affordance to search/attach skills and supply inputs. *Verify:* the skill list/summary shape (`SkillSummary`), how `skill_inputs` are declared (a skill's required inputs), and how applied skills surface (they already appear as `skill` events in the receipts drawer + in the SSE `applied_skills`).
-- **Enhance Prompt.** `POST /api/v1/enhance-prompt` (+ `GET /enhance-prompt/{interaction_id}`). A composer action that rewrites/improves the draft before sending. *Verify:* request/response shape, whether it streams, and the intended UX (replace draft? show a diff/accept?).
+- **Model / inference-tier picker.** `GET /api/v1/models` lists available model aliases/tiers; `MessageCreate.model` selects one (Donna currently **hardcodes `'smart'`** in the SSE BFF — `src/routes/(app)/chats/[id]/messages/+server.ts`). Add a composer control to pick model/tier; thread the choice through the BFF. Tie into the existing tier badge. _Verify:_ the `/models` response shape + how tier maps to a model alias; whether tier is user-selectable or derived.
+- **Skill-attach.** `GET /api/v1/skills` + `/api/v1/skills/autocomplete`; `MessageCreate.skills` (names) + `skill_inputs` (per-skill input bindings; a missing required input → 400 `skill_input_missing`). Add a composer affordance to search/attach skills and supply inputs. _Verify:_ the skill list/summary shape (`SkillSummary`), how `skill_inputs` are declared (a skill's required inputs), and how applied skills surface (they already appear as `skill` events in the receipts drawer + in the SSE `applied_skills`).
+- **Enhance Prompt.** `POST /api/v1/enhance-prompt` (+ `GET /enhance-prompt/{interaction_id}`). A composer action that rewrites/improves the draft before sending. _Verify:_ request/response shape, whether it streams, and the intended UX (replace draft? show a diff/accept?).
 
 **This is composer-UI-heavy → use the visual companion** (picker dropdown, skill chips/autocomplete, Enhance affordance). Key surface: `src/lib/components/Composer.svelte` (the composer; currently value + submit + streaming/stop), and the SSE BFF `src/routes/(app)/chats/[id]/messages/+server.ts` (hardcodes `model:'smart'`, no skills) — both change here.
 

@@ -60,7 +60,7 @@ export const actions: Actions = {
 		} catch {
 			return fail(400, { error: 'Could not read the draft.' });
 		}
-		if (!draft.name?.trim() || !draft.contract_type?.trim() || !(draft.positions?.length)) {
+		if (!draft.name?.trim() || !draft.contract_type?.trim() || !draft.positions?.length) {
 			return fail(400, { error: 'A name, contract type, and at least one position are required.' });
 		}
 		const res = await lqFetch(event, '/api/v1/playbooks', {
@@ -68,7 +68,9 @@ export const actions: Actions = {
 			body: JSON.stringify(draft)
 		});
 		if (res.status === 422)
-			return fail(422, { error: 'The backend rejected the playbook. Check the fields and try again.' });
+			return fail(422, {
+				error: 'The backend rejected the playbook. Check the fields and try again.'
+			});
 		if (!res.ok) return fail(502, { error: 'Could not save the playbook.' });
 		const created = (await res.json()) as { id: string };
 		throw redirect(303, `/playbooks/${created.id}`);

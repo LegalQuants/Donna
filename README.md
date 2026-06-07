@@ -1,8 +1,25 @@
 # Donna
 
-Donna is a standalone, [MikeOSS](https://github.com/willchen96/mike)-inspired frontend for the **[LQ.AI](https://github.com/LegalQuants/lq-ai)** legal-AI backend: conversational chat with **character-verified citations**, anonymization, inference-tier awareness, audit, and skill transparency — under a clean, document-forward interface. Donna is a fresh **SvelteKit** app that talks to the lq-ai backend only through its published API, and it vendors that backend (as a git submodule) so the whole product runs together.
+**A friendly, document-forward frontend for the [LQ.AI](https://github.com/LegalQuants/lq-ai) legal-AI backend** — conversational legal work with character-verified citations, transparent receipts, and autonomous runs, under a clean reading-first interface inspired by [MikeOSS](https://github.com/willchen96/mike).
 
-This repository currently implements **Phase P0 + P1**: project foundation, the BFF auth/session layer, the global app shell, login (+ MFA + first-run password change), and the assistant landing that creates a chat. See the design spec at [`docs/superpowers/specs/2026-05-24-donna-foundation-auth-design.md`](docs/superpowers/specs/2026-05-24-donna-foundation-auth-design.md) and the roadmap therein for later phases.
+![Donna — chat with character-verified citations and the document panel](docs/images/donna-hero.png)
+
+Donna is a standalone SvelteKit app that talks to the lq-ai backend only through its published API, and vendors that backend (as a pinned git submodule) so the whole product runs together with one compose file.
+
+## What's inside
+
+- **Assistant chat** with streaming answers and **character-verified citation pills** — hover for the source quote, click to open the document panel jumped to the exact cited passage. A per-turn **receipts drawer** shows every retrieval, inference, and skill event behind an answer, including whether anonymization was applied.
+- **Matters (projects)** — scope chats to a matter with files, linked knowledge bases, attached skills, and free-form context; privileged matters enforce a minimum inference tier in the composer.
+- **Knowledge bases** — create, link, upload; documents auto-ingest for retrieval (RAG) with live status, hybrid-search tuning, and per-file download.
+- **Workflows hub** — four kinds of reuse:
+  - **Skills**: reusable instruction blocks with typed inputs; author your own or fork built-ins, attach them per-message (slash aliases supported).
+  - **Playbooks**: negotiation positions applied to a contract → verdict scorecard + consolidated redline view; generate a draft playbook from your own documents.
+  - **Prompts**: saved snippets inserted at the cursor.
+  - **Automations**: runs Donna executes on its own — run-now, cron schedules, and KB-arrival watches — each leaving a transparency receipt (phases, tool calls, cost, terminal reason) plus its results (findings and proposed memories), with a notifications inbox.
+- **Tabular review** — the same questions across many documents → a cited, confidence-scored grid; per-column model-tier floors and ensemble verification; Excel/CSV export.
+- **Redlines** — consolidated change-set view of a playbook run with severity-ordered margin notes.
+- **Settings** — account & security, data export / scheduled deletion, preferences (incl. ambient trust pills), a read-only trust matrix, and model management: per-category routing, installed local (Ollama) models, and **bring-your-own provider keys** (admin, hot-applied, write-only).
+- **Prompt enhance** on every composer, **file attach** in chat, and an in-app guide at **/about** — including interactive playgrounds explaining how the LQ-AI engine works.
 
 ## Architecture (one paragraph)
 
@@ -35,19 +52,19 @@ cp .env.example .env
 #    so Donna can run ALONGSIDE a separate lq-ai dev stack on the default ports.
 ```
 
-## Run the full stack (Donna web + bundled lq-ai backend)
+## Run the full stack
 
-Donna runs as its own compose project (`donna`) on **shifted host ports**, so it won't collide with a separate lq-ai dev stack running on the defaults. Bring up only the services the app needs (this deliberately omits lq-ai's own `web`, the ingest/arq workers, and inference services):
+Donna runs as its own compose project (`donna`) on **shifted host ports**, so it won't collide with a separate lq-ai dev stack running on the defaults:
 
 ```bash
-docker compose up -d --build postgres redis minio gateway api donna-web
+docker compose up -d --build postgres redis minio gateway api donna-web ingest-worker arq-worker
 ```
 
-With the default `.env`, Donna is then at **http://localhost:13002** (the lq-ai `api` is at `http://localhost:18000`).
+With the default `.env`, Donna is then at **http://localhost:13002** (the lq-ai `api` is at `http://localhost:18000`). The `ingest-worker` powers document ingestion/RAG and data export; the `arq-worker` powers tabular runs, playbook generation, and automations.
 
 > **Deploying beyond localhost:** the production build sets session cookies with the `Secure` flag, which browsers only store over HTTPS (with a `localhost` exemption). Any non-`localhost` deployment must terminate TLS in front of `donna-web`, or login will silently fail (cookies dropped).
 
-> **Why not `docker compose up` (everything)?** Compose v2 `include:` won't let us override lq-ai's `web` service, so it still exists in the merged spec. Starting the explicit service list above avoids building/running it. (lq-ai's `web` host port is also shifted to `WEB_HOST_PORT=13000` in `.env` as a backstop.)
+> **Why not `docker compose up` (everything)?** Compose v2 `include:` won't let us override lq-ai's `web` service, so it still exists in the merged spec. Starting the explicit service list above avoids building/running it.
 
 ### First-run admin (login-ready fixture)
 
@@ -63,7 +80,8 @@ Then sign in at http://localhost:13002 with `admin@lq.ai` / `DonnaE2ePassw0rd!`.
 ## Verify
 
 ```bash
-npm run check        # svelte-check — 0 errors
+npm run check        # svelte-check — 0 errors, 0 warnings
+npm run lint         # prettier + eslint
 npx vitest run       # unit/component tests
 npx playwright test  # e2e — requires the stack up + the admin fixture above
 ```
@@ -73,8 +91,6 @@ The e2e reads `DONNA_BASE_URL`, `DONNA_E2E_EMAIL`, `DONNA_E2E_PASSWORD` from `.e
 > Running `npm run check` prints a harmless `ERR_MODULE_NOT_FOUND` referencing `vendor/lq-ai/...`; svelte-check recovers and the run still reports `0 ERRORS` and exits 0. The vendored backend is excluded from svelte-check/ESLint/Prettier.
 
 ## Development (without Docker for the frontend)
-
-You can run the SvelteKit dev server on the host against the compose-hosted api:
 
 ```bash
 LQ_API_INTERNAL_URL=http://localhost:18000 npm run dev
@@ -87,6 +103,22 @@ src/                  SvelteKit app (routes, lib, BFF server code, hooks)
 src/lib/server/       server-only: session cookies, authed lqClient, auth wrappers
 src/lib/api/          generated OpenAPI types (npm run gen:api)
 vendor/lq-ai/         pinned lq-ai backend (git submodule)
-docs/                 design spec, implementation plan, decisions
+docs/                 specs, plans, decisions, upstream requests, research notes
 tests/                Playwright e2e
+static/learn/         interactive playgrounds served by the /about guide
 ```
+
+Design specs and implementation plans for every shipped phase live under `docs/superpowers/`; the lq-ai submodule pin log is `docs/decisions/lq-ai-pin.md`. The richest documentation, though, is in the app itself: sign in and open **/about**.
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE). Copyright 2026 LegalQuants.
+
+## Acknowledgements
+
+- **[LQ.AI](https://github.com/LegalQuants/lq-ai)** — the legal-AI engine Donna fronts: retrieval, the character-verified citation engine, anonymization, skills/playbooks, tabular review, and the autonomous runtime.
+- **[MikeOSS](https://github.com/willchen96/mike)** — the design inspiration for Donna's reading-first, document-forward interface.
+- Built with [SvelteKit](https://kit.svelte.dev), [Tailwind CSS](https://tailwindcss.com), and [Claude Code](https://claude.com/claude-code).
+
+> Donna and LQ.AI were initially authored by Kevin Keller and contributed to LegalQuants.
+> Comments, corrections, and contributions welcomed via GitHub.

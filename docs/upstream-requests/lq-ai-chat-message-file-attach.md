@@ -4,6 +4,7 @@
 **Status:** BLOCKED — needs a backend change before Donna can implement chat-level file upload.
 
 > **File locations (absolute):**
+>
 > - This request doc lives in the **Donna** repo: `/Users/kevinkeller/Code/Donna/docs/upstream-requests/lq-ai-chat-message-file-attach.md`
 > - The work happens in the **lq-ai** repo rooted at `/Users/kevinkeller/Code/lq-ai`. Files to change:
 >   - `MessageCreate` schema: `/Users/kevinkeller/Code/lq-ai/api/app/schemas/chats.py` (add optional `file_ids`)
@@ -12,7 +13,7 @@
 
 ## What Donna wants to build
 
-Let a user attach one or more **ad-hoc files to a single chat message** (drag-drop / file picker in the composer), so the model — and any attached skills — can see those documents for that turn. This is distinct from **knowledge-base** attachment (persistent, embedded/retrieved corpus): chat-level attach is ephemeral, per-message, "look at *this* doc right now."
+Let a user attach one or more **ad-hoc files to a single chat message** (drag-drop / file picker in the composer), so the model — and any attached skills — can see those documents for that turn. This is distinct from **knowledge-base** attachment (persistent, embedded/retrieved corpus): chat-level attach is ephemeral, per-message, "look at _this_ doc right now."
 
 Files can already be uploaded today via `POST /api/v1/files` (Donna does this for matter/KB files), so the client can obtain `file_id`s. The gap is purely in **associating uploaded files with a chat message at send time** and forwarding them to the gateway/model.
 
@@ -32,15 +33,16 @@ Add an optional `file_ids?: string[]` (UUIDs of already-uploaded `files` rows ow
 ```jsonc
 // MessageCreate
 {
-  "content": "Summarize the indemnity in this draft.",
-  "model": "smart",
-  "skills": ["contract-qa"],
-  "skill_inputs": { "...": {} },
-  "file_ids": ["<uuid>", "<uuid>"]   // NEW — ad-hoc per-turn attachments
+	"content": "Summarize the indemnity in this draft.",
+	"model": "smart",
+	"skills": ["contract-qa"],
+	"skill_inputs": { "...": {} },
+	"file_ids": ["<uuid>", "<uuid>"] // NEW — ad-hoc per-turn attachments
 }
 ```
 
 Backend behavior we'd need:
+
 - **Validate ownership/existence** of each `file_id` (caller-scoped; 404/422 on bad/foreign id, id-probing-safe — mirror the user-skills pattern).
 - **Forward to the gateway** alongside `lq_ai_skills` (e.g. as `lq_ai_file_ids` / document context), so the model and skills receive the file content/text for that turn. (Whether the gateway ingests raw bytes vs. extracted text is the backend's call — Donna just needs the association + forwarding.)
 - **Echo on the message / SSE complete frame** which files were applied (e.g. `messages.attached_file_ids` or an `attached_files` summary), the same way `applied_skills` is echoed — so the UI can confirm what the turn actually saw.

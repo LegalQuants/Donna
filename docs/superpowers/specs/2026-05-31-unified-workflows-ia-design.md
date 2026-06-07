@@ -14,7 +14,7 @@ without relocating any merged, tested routes.
 
 1. **Hub model (IA option A).** One "Workflows" sidebar entry. `/workflows` becomes a real hub.
    The three tools keep their current top-level routes (`/skills`, `/playbooks`, `/prompts`) — they
-   are *reached through* the area, not relocated. Chosen over a light-touch index (barely unifies)
+   are _reached through_ the area, not relocated. Chosen over a light-touch index (barely unifies)
    and full `/workflows/*` consolidation (high churn: redirects + every in-app link + tests, against
    Donna's restraint thesis).
 2. **Segmented sub-nav (navigation option B).** A small "Skills · Playbooks · Prompts" segmented
@@ -42,7 +42,7 @@ One PR-sized slice. **In scope:**
 - Relocating routes under `/workflows/*` or any redirects.
 - The sub-nav on deep sub-pages (skill editor, playbook `new`/`run`, prompt modal flows) — those
   keep their existing navigation untouched.
-- Any change to Skills / Playbooks / Prompts *functionality* (lists, "+ New" buttons, modals,
+- Any change to Skills / Playbooks / Prompts _functionality_ (lists, "+ New" buttons, modals,
   controllers, BFF proxies all stay exactly as they are).
 
 ## Components
@@ -67,7 +67,7 @@ Shared, purely presentational segmented control — no `load`, no I/O.
 
 - `max-w-3xl px-4 py-6` container (matches the three index pages for visual continuity).
 - `<h1>` "Workflows" styled to match the three sibling index pages (`text-xl font-medium
-  text-mlq-text`), not the old stub's serif — so the hub and its tools read as one cohesive area.
+text-mlq-text`), not the old stub's serif — so the hub and its tools read as one cohesive area.
 - `<WorkflowsNav active={null} />`.
 - Three cards (a simple responsive grid; `flex`/`grid` of equal cards), each: a Lucide icon
   (Skills = `ScrollText`, Playbooks = `Library`, Prompts = `BookMarked` — the icons already used in
@@ -136,7 +136,7 @@ Live e2e (`tests/workflows-ia.spec.ts`, against the running stack, read-only/sel
 - Click each sub-nav segment → lands on `/skills`, `/playbooks`, `/prompts` with that segment
   `aria-current="page"`.
 - The sidebar **Workflows** entry stays highlighted across all four paths.
-- The three removed sidebar entries (Skills/Playbooks/Prompts as *top-level* sidebar links) are
+- The three removed sidebar entries (Skills/Playbooks/Prompts as _top-level_ sidebar links) are
   absent. (Scope the selector to the sidebar `<nav>` so the sub-nav links don't false-match.)
 
 ## Quality bar
@@ -148,7 +148,7 @@ review (spec compliance, then code quality), commit per task, whole-branch revie
 
 ## Future work (fast-follow, not this slice)
 
-- **Autonomous workflows surface.** The LQ_AI backend is expected to land *autonomous workflows*
+- **Autonomous workflows surface.** The LQ*AI backend is expected to land \_autonomous workflows*
   (multi-step agentic flows) soon. The unified Workflows area built here is the natural home for a
   future surface that exposes them — likely a fourth tool/segment ("Workflows" proper, or
   "Automations") once the backend contract exists. Confirm endpoints at slice time via the upstream

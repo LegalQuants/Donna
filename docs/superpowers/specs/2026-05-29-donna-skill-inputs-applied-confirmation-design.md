@@ -9,7 +9,7 @@ The roadmap's next "apply skills properly" slice was scoped (in `HANDOFF-skill-i
 1. **`skill_inputs` only interpolates into `{{placeholder}}`-templated skill bodies.** Proven live: a user-skill whose body was `"…haiku about {{topic}} in the style of {{style}}…"` with `{topic, style}` bound produced a real haiku; the same skill with no binding replied "I need a topic and style." The gateway assembler (`gateway/app/skills/assembler.py`) substitutes only `{{name}}` placeholders and **silently drops any bound input the body doesn't reference** (its own docstring: "surplus inputs the body never references are tolerated").
 2. **None of the 14 built-in skills are templated** — they're written as conversational prose ("paste it in"). So binding inputs to any current built-in is a no-op. Proven live: `comms-improver` with `text`+`audience` bound still replied "I don't see any text to rewrite."
 3. **Required inputs are not enforced server-side** for built-ins — `contract-qa` sent with zero inputs returned `200`; the model just asks conversationally. So client-side required-gating would be a UX nicety, not a correctness gate.
-4. **Live input-type taxonomy is only `text`, `document`, `structured`** — zero `enum`/`boolean`/`integer`/`file`, zero defaults. The "one of a/b/c" choices live in *description prose*, not machine-readable `enum[]`. `document` is RAG/file-resolved (binding it as text had no effect); `structured` is system-populated (only on `enhance-prompt`).
+4. **Live input-type taxonomy is only `text`, `document`, `structured`** — zero `enum`/`boolean`/`integer`/`file`, zero defaults. The "one of a/b/c" choices live in _description prose_, not machine-readable `enum[]`. `document` is RAG/file-resolved (binding it as text had no effect); `structured` is system-populated (only on `enhance-prompt`).
 
 Conclusion (confirmed with the user): a composer input form built today would collect values that silently vanish — a UX lie. Meanwhile `applied_skills` confirmation is real, working, and on-thesis. **This slice ships the confirmation and files an upstream request to make `skill_inputs` meaningful for the corpus. The composer input form is deferred until that lands.**
 
@@ -72,7 +72,7 @@ No change to the user-message branch or the streaming/error branches. The line a
 Documents the verified problem and proposes the fix so the deferred composer input form becomes worthwhile. Contents:
 
 - **Problem:** `skill_inputs` is accepted, anonymized, and forwarded as `lq_ai_skill_inputs`, but the gateway assembler only interpolates `{{placeholder}}`s and silently drops unreferenced bound inputs; no built-in skill body uses placeholders, so collected inputs never reach the model. Required inputs declared in frontmatter are not enforced for built-ins. (Cite `gateway/app/skills/assembler.py` `interpolate` + `assemble_skill_prompt`; the no-op repro: bind `comms-improver` `text`/`audience` → ignored.)
-- **Proposed fix, option (a) — recommended:** after interpolation, append any *bound-but-unreferenced* inputs for each skill to the assembled prompt as a labelled context block (e.g. `### Inputs for {skill}: \n- {name}: {value}`), so any skill — templated or not — benefits from collected inputs. Smallest corpus impact; backward compatible.
+- **Proposed fix, option (a) — recommended:** after interpolation, append any _bound-but-unreferenced_ inputs for each skill to the assembled prompt as a labelled context block (e.g. `### Inputs for {skill}: \n- {name}: {value}`), so any skill — templated or not — benefits from collected inputs. Smallest corpus impact; backward compatible.
 - **Proposed fix, option (b):** template the built-in corpus bodies with `{{}}` placeholders matching their declared inputs. Larger; touches every SKILL.md.
 - **Exact files / lines**, a minimal failing test sketch (assert bound inputs surface in the assembled prompt for a non-templated skill), and the relay/pin-bump workflow note.
 
@@ -98,14 +98,14 @@ Hand to the user to relay to the lq-ai Claude Code session. **Not a blocker** �
 
 ## 9. Components & boundaries
 
-| Unit | Responsibility | Depends on |
-|---|---|---|
-| `skillLabel.ts` `prettifySkillSlug` | slug → friendly display title | nothing (pure) |
-| `chatStream.svelte.ts` | capture/clear `applied_skills` on the message | `sse.ts` frame types |
-| `sse.ts` | type `applied_skills` on delta (exists) + complete.message (add) | — |
-| `+page.server.ts` history map | seed `applied_skills` from history rows | API row shape |
-| `Message.svelte` footer | render the quiet linked confirmation | `prettifySkillSlug` |
-| upstream-requests doc | unblock the deferred input form | — (handed to user) |
+| Unit                                | Responsibility                                                   | Depends on           |
+| ----------------------------------- | ---------------------------------------------------------------- | -------------------- |
+| `skillLabel.ts` `prettifySkillSlug` | slug → friendly display title                                    | nothing (pure)       |
+| `chatStream.svelte.ts`              | capture/clear `applied_skills` on the message                    | `sse.ts` frame types |
+| `sse.ts`                            | type `applied_skills` on delta (exists) + complete.message (add) | —                    |
+| `+page.server.ts` history map       | seed `applied_skills` from history rows                          | API row shape        |
+| `Message.svelte` footer             | render the quiet linked confirmation                             | `prettifySkillSlug`  |
+| upstream-requests doc               | unblock the deferred input form                                  | — (handed to user)   |
 
 ## 10. Follow-ups after this slice
 

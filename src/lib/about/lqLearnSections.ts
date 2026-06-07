@@ -32,7 +32,7 @@ export const lqLearnSections: LqLearnSection[] = [
 		number: 3,
 		title: 'The tier system: when the Gateway says no',
 		paragraphs: [
-			'The Gateway enforces five data-sensitivity tiers (Tier 1 = local / air-gapped, most secure; Tier 5 = consumer, least secure). When a request arrives, the Gateway compares the requested provider\'s tier against the matter\'s configured floor. A floor of Tier N means "require Tier N or stronger" — if the provider\'s tier is weaker (higher-numbered) than the floor, the request is refused with a structured error, not a generic 500. This playground lets you set a matter context and a model alias and see whether the request would pass or be refused — the same logic the Gateway runs at gateway/app/tier_floor.py.'
+			"The Gateway enforces five data-sensitivity tiers (Tier 1 = local / air-gapped, most secure; Tier 5 = consumer, least secure). When a request arrives, the Gateway compares the requested provider's tier against the matter's configured floor. A floor of Tier N means \"require Tier N or stronger\" — if the provider's tier is weaker (higher-numbered) than the floor, the request is refused with a structured error, not a generic 500. This playground lets you set a matter context and a model alias and see whether the request would pass or be refused — the same logic the Gateway runs at gateway/app/tier_floor.py."
 		],
 		playground: 'tier-system',
 		sourceLabel: 'gateway/app/tier_floor.py',

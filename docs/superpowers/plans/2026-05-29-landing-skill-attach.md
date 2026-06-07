@@ -11,6 +11,7 @@
 **Spec:** `docs/superpowers/specs/2026-05-29-landing-skill-attach-design.md`
 
 **Conventions:**
+
 - After code steps: `npm run check` = exit 0 + "0 errors and 0 warnings" (the vendor `ERR_MODULE_NOT_FOUND` stderr is harmless); `npx eslint <touched files>` clean (no `any`).
 - Run a single unit file with `npx vitest run <path>`. Exact-string Testing-Library queries.
 - Commit per task with trailer `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
@@ -19,11 +20,13 @@
 ## File Structure
 
 **Create:**
+
 - `src/routes/(app)/chats/[id]/draftSkills.ts` — `parseDraftSkills(raw)` pure helper (mirrors the route-local `matter.ts` pattern).
 - `src/routes/(app)/chats/[id]/draftSkills.test.ts` — its unit test.
 - `tests/landing-skill-attach.spec.ts` — live e2e.
 
 **Modify:**
+
 - `src/routes/(app)/chats/[id]/+page.server.ts` — `load` reads/deletes/parses the `donna_draft_skills` cookie → `draftSkills`.
 - `src/routes/(app)/+page.server.ts` — `?/start` reads `skills`, sets the `donna_draft_skills` cookie.
 - `src/routes/(app)/page.server.test.ts` — add start-action skills tests.
@@ -32,13 +35,14 @@
 
 **Unchanged (reused):** `Composer.svelte`, `SkillAttach.svelte`, `src/lib/skills/attach.svelte.ts` (`createSkillAttach`) — already gate the control on the `skillAttach` prop and were unit-tested in P2c-B2.
 
-**Test strategy note:** the cookie *contract* (parse + set) is unit-tested (Tasks 1–2). The two thin wiring changes (landing passes the controller + hidden inputs, Task 3; chat `onMount` threads the slugs, Task 4) are intentionally covered by the **live e2e** (Task 5) rather than brittle full-page component renders — the components they compose are already unit-tested, and the e2e asserts the slugs reach the message POST end-to-end. The chat `load` has no existing unit test (mirrors the codebase's current coverage of that loader); its 3-line cookie wiring is e2e-covered, while the parse logic is unit-tested in isolation.
+**Test strategy note:** the cookie _contract_ (parse + set) is unit-tested (Tasks 1–2). The two thin wiring changes (landing passes the controller + hidden inputs, Task 3; chat `onMount` threads the slugs, Task 4) are intentionally covered by the **live e2e** (Task 5) rather than brittle full-page component renders — the components they compose are already unit-tested, and the e2e asserts the slugs reach the message POST end-to-end. The chat `load` has no existing unit test (mirrors the codebase's current coverage of that loader); its 3-line cookie wiring is e2e-covered, while the parse logic is unit-tested in isolation.
 
 ---
 
 ## Task 1: `parseDraftSkills` helper + wire into chat load
 
 **Files:**
+
 - Create: `src/routes/(app)/chats/[id]/draftSkills.ts`
 - Test: `src/routes/(app)/chats/[id]/draftSkills.test.ts`
 - Modify: `src/routes/(app)/chats/[id]/+page.server.ts`
@@ -50,22 +54,22 @@ import { describe, it, expect } from 'vitest';
 import { parseDraftSkills } from './draftSkills';
 
 describe('parseDraftSkills', () => {
-  it('parses a JSON array of slugs', () => {
-    expect(parseDraftSkills('["contract-qa","nda-review"]')).toEqual(['contract-qa', 'nda-review']);
-  });
-  it('returns [] for null/undefined', () => {
-    expect(parseDraftSkills(null)).toEqual([]);
-    expect(parseDraftSkills(undefined)).toEqual([]);
-  });
-  it('returns [] for malformed JSON', () => {
-    expect(parseDraftSkills('not json')).toEqual([]);
-  });
-  it('drops non-string entries', () => {
-    expect(parseDraftSkills('["a",1,null,"b"]')).toEqual(['a', 'b']);
-  });
-  it('returns [] when the JSON is not an array', () => {
-    expect(parseDraftSkills('{"a":1}')).toEqual([]);
-  });
+	it('parses a JSON array of slugs', () => {
+		expect(parseDraftSkills('["contract-qa","nda-review"]')).toEqual(['contract-qa', 'nda-review']);
+	});
+	it('returns [] for null/undefined', () => {
+		expect(parseDraftSkills(null)).toEqual([]);
+		expect(parseDraftSkills(undefined)).toEqual([]);
+	});
+	it('returns [] for malformed JSON', () => {
+		expect(parseDraftSkills('not json')).toEqual([]);
+	});
+	it('drops non-string entries', () => {
+		expect(parseDraftSkills('["a",1,null,"b"]')).toEqual(['a', 'b']);
+	});
+	it('returns [] when the JSON is not an array', () => {
+		expect(parseDraftSkills('{"a":1}')).toEqual([]);
+	});
 });
 ```
 
@@ -83,14 +87,14 @@ Expected: FAIL — cannot find `./draftSkills`.
  * missing or malformed cookie by returning an empty list.
  */
 export function parseDraftSkills(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is string => typeof x === 'string');
-  } catch {
-    return [];
-  }
+	if (!raw) return [];
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter((x): x is string => typeof x === 'string');
+	} catch {
+		return [];
+	}
 }
 ```
 
@@ -110,30 +114,30 @@ import { parseDraftSkills } from './draftSkills';
 Replace the opening two lines of `load` (the `donna_draft` block):
 
 ```ts
-  const draft = event.cookies.get('donna_draft') ?? null;
-  if (draft) event.cookies.delete('donna_draft', { path: '/' });
+const draft = event.cookies.get('donna_draft') ?? null;
+if (draft) event.cookies.delete('donna_draft', { path: '/' });
 ```
 
 with:
 
 ```ts
-  const draft = event.cookies.get('donna_draft') ?? null;
-  if (draft) event.cookies.delete('donna_draft', { path: '/' });
-  const rawDraftSkills = event.cookies.get('donna_draft_skills');
-  if (rawDraftSkills) event.cookies.delete('donna_draft_skills', { path: '/' });
-  const draftSkills = parseDraftSkills(rawDraftSkills);
+const draft = event.cookies.get('donna_draft') ?? null;
+if (draft) event.cookies.delete('donna_draft', { path: '/' });
+const rawDraftSkills = event.cookies.get('donna_draft_skills');
+if (rawDraftSkills) event.cookies.delete('donna_draft_skills', { path: '/' });
+const draftSkills = parseDraftSkills(rawDraftSkills);
 ```
 
 Change the final return of `load` from:
 
 ```ts
-  return { chatId: event.params.id, messages, draft, matter };
+return { chatId: event.params.id, messages, draft, matter };
 ```
 
 to:
 
 ```ts
-  return { chatId: event.params.id, messages, draft, draftSkills, matter };
+return { chatId: event.params.id, messages, draft, draftSkills, matter };
 ```
 
 - [ ] **Step 6: Verify**
@@ -155,34 +159,41 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 2: Landing `?/start` stashes attached skills
 
 **Files:**
+
 - Modify: `src/routes/(app)/+page.server.ts`
 - Test: `src/routes/(app)/page.server.test.ts`
 
 - [ ] **Step 1: Write the failing tests** — add to `src/routes/(app)/page.server.test.ts`, inside the existing `describe('landing start action', …)` block:
 
 ```ts
-  it('stashes attached skills in the donna_draft_skills cookie', async () => {
-    lqFetch.mockResolvedValue(new Response(JSON.stringify({ id: 'chat3' }), { status: 201 }));
-    const c = cookies();
-    const body = new URLSearchParams();
-    body.append('message', 'hi');
-    body.append('project_id', '');
-    body.append('skills', 'contract-qa');
-    body.append('skills', 'nda-review');
-    const ev = { request: new Request('http://x', { method: 'POST', body }), cookies: c } as never;
-    await expect(actions.start(ev)).rejects.toMatchObject({ status: 303, location: '/chats/chat3' });
-    const call = c.set.mock.calls.find((x: unknown[]) => x[0] === 'donna_draft_skills');
-    expect(call).toBeTruthy();
-    expect(JSON.parse(call![1] as string)).toEqual(['contract-qa', 'nda-review']);
-  });
+it('stashes attached skills in the donna_draft_skills cookie', async () => {
+	lqFetch.mockResolvedValue(new Response(JSON.stringify({ id: 'chat3' }), { status: 201 }));
+	const c = cookies();
+	const body = new URLSearchParams();
+	body.append('message', 'hi');
+	body.append('project_id', '');
+	body.append('skills', 'contract-qa');
+	body.append('skills', 'nda-review');
+	const ev = { request: new Request('http://x', { method: 'POST', body }), cookies: c } as never;
+	await expect(actions.start(ev)).rejects.toMatchObject({ status: 303, location: '/chats/chat3' });
+	const call = c.set.mock.calls.find((x: unknown[]) => x[0] === 'donna_draft_skills');
+	expect(call).toBeTruthy();
+	expect(JSON.parse(call![1] as string)).toEqual(['contract-qa', 'nda-review']);
+});
 
-  it('sets no donna_draft_skills cookie when no skills are attached', async () => {
-    lqFetch.mockResolvedValue(new Response(JSON.stringify({ id: 'chat4' }), { status: 201 }));
-    const c = cookies();
-    const ev = { request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ message: 'hi', project_id: '' }) }), cookies: c } as never;
-    await expect(actions.start(ev)).rejects.toMatchObject({ status: 303 });
-    expect(c.set.mock.calls.find((x: unknown[]) => x[0] === 'donna_draft_skills')).toBeFalsy();
-  });
+it('sets no donna_draft_skills cookie when no skills are attached', async () => {
+	lqFetch.mockResolvedValue(new Response(JSON.stringify({ id: 'chat4' }), { status: 201 }));
+	const c = cookies();
+	const ev = {
+		request: new Request('http://x', {
+			method: 'POST',
+			body: new URLSearchParams({ message: 'hi', project_id: '' })
+		}),
+		cookies: c
+	} as never;
+	await expect(actions.start(ev)).rejects.toMatchObject({ status: 303 });
+	expect(c.set.mock.calls.find((x: unknown[]) => x[0] === 'donna_draft_skills')).toBeFalsy();
+});
 ```
 
 (The file already defines `const cookies = () => ({ get: vi.fn(), set: vi.fn(), delete: vi.fn() });` and imports `actions` — reuse them.)
@@ -197,23 +208,33 @@ Expected: FAIL — no `donna_draft_skills` cookie is set yet (the `.find(...)` i
 After `const projectId = String(data.get('project_id') ?? '').trim();`, add:
 
 ```ts
-    const skills = data.getAll('skills').map(String).filter(Boolean);
+const skills = data.getAll('skills').map(String).filter(Boolean);
 ```
 
 Then, after the existing `donna_draft` cookie block:
 
 ```ts
-    if (message) {
-      event.cookies.set('donna_draft', message, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
-    }
+if (message) {
+	event.cookies.set('donna_draft', message, {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		maxAge: 120
+	});
+}
 ```
 
 add:
 
 ```ts
-    if (skills.length) {
-      event.cookies.set('donna_draft_skills', JSON.stringify(skills), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
-    }
+if (skills.length) {
+	event.cookies.set('donna_draft_skills', JSON.stringify(skills), {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		maxAge: 120
+	});
+}
 ```
 
 - [ ] **Step 4: Run to verify they pass**
@@ -240,6 +261,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 3: Surface skill-attach on the landing composer
 
 **Files:**
+
 - Modify: `src/routes/(app)/+page.svelte`
 
 > Wiring change; verified by `npm run check` + the live e2e (Task 5). No unit test — the landing page instantiates its `skillAttach` internally (not injectable), so attached-state can't be seeded in a component test; the e2e exercises the real attach → hidden-inputs → cookie path.
@@ -249,36 +271,47 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Add the import after `import Composer from '$lib/components/Composer.svelte';`:
 
 ```svelte
-  import { createSkillAttach } from '$lib/skills/attach.svelte';
+import {createSkillAttach} from '$lib/skills/attach.svelte';
 ```
 
 In the `<script>`, after `let formEl = $state<HTMLFormElement>();`, add:
 
 ```svelte
-  const skillAttach = createSkillAttach();
+const skillAttach = createSkillAttach();
 ```
 
 In the form, add hidden skill inputs and pass the controller to `<Composer>`. Change the form body from:
 
 ```svelte
-  <form method="POST" action="?/start" bind:this={formEl} use:enhance class="mlq-rise-delay">
-    <input type="hidden" name="message" value={message} />
-    <input type="hidden" name="project_id" value={selectedMatterId ?? ''} />
-    <Composer bind:value={message} matters={data.matters} bind:selectedMatterId onsubmit={() => formEl?.requestSubmit()} />
-  </form>
+<form method="POST" action="?/start" bind:this={formEl} use:enhance class="mlq-rise-delay">
+	<input type="hidden" name="message" value={message} />
+	<input type="hidden" name="project_id" value={selectedMatterId ?? ''} />
+	<Composer
+		bind:value={message}
+		matters={data.matters}
+		bind:selectedMatterId
+		onsubmit={() => formEl?.requestSubmit()}
+	/>
+</form>
 ```
 
 to:
 
 ```svelte
-  <form method="POST" action="?/start" bind:this={formEl} use:enhance class="mlq-rise-delay">
-    <input type="hidden" name="message" value={message} />
-    <input type="hidden" name="project_id" value={selectedMatterId ?? ''} />
-    {#each skillAttach.names as s (s)}
-      <input type="hidden" name="skills" value={s} />
-    {/each}
-    <Composer bind:value={message} matters={data.matters} bind:selectedMatterId {skillAttach} onsubmit={() => formEl?.requestSubmit()} />
-  </form>
+<form method="POST" action="?/start" bind:this={formEl} use:enhance class="mlq-rise-delay">
+	<input type="hidden" name="message" value={message} />
+	<input type="hidden" name="project_id" value={selectedMatterId ?? ''} />
+	{#each skillAttach.names as s (s)}
+		<input type="hidden" name="skills" value={s} />
+	{/each}
+	<Composer
+		bind:value={message}
+		matters={data.matters}
+		bind:selectedMatterId
+		{skillAttach}
+		onsubmit={() => formEl?.requestSubmit()}
+	/>
+</form>
 ```
 
 - [ ] **Step 2: Verify**
@@ -301,6 +334,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 4: Thread draft skills into the first auto-send
 
 **Files:**
+
 - Modify: `src/routes/(app)/chats/[id]/+page.svelte`
 
 > One-line wiring; verified by `npm run check` + the live e2e (Task 5).
@@ -310,17 +344,18 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Change:
 
 ```ts
-  onMount(() => {
-    if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel);
-  });
+onMount(() => {
+	if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel);
+});
 ```
 
 to:
 
 ```ts
-  onMount(() => {
-    if (data.draft && data.messages.length === 0) submit(data.draft, modelStore.selectedModel, data.draftSkills ?? []);
-  });
+onMount(() => {
+	if (data.draft && data.messages.length === 0)
+		submit(data.draft, modelStore.selectedModel, data.draftSkills ?? []);
+});
 ```
 
 (`submit(text, model, skills)` already accepts a third `skills` arg and forwards it to `chat.send`.)
@@ -344,6 +379,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Task 5: Live e2e + verify + PR
 
 **Files:**
+
 - Create: `tests/landing-skill-attach.spec.ts`
 
 - [ ] **Step 1: Rebuild `donna-web`** (the container serves a built image)
@@ -352,6 +388,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 set -a; . ./.env; set +a
 docker compose up -d --build donna-web
 ```
+
 Wait until `docker compose ps donna-web` is healthy.
 
 - [ ] **Step 2: Find the message-send endpoint** the browser POSTs to, so the e2e can assert the skill slug rides in the body. Read `src/lib/chat/chatStream.svelte.ts` (the `runStream` function) to get the exact BFF path it `fetch`es and the body shape (it includes `skills` only when non-empty). Use that path in `page.waitForRequest`.
@@ -376,6 +413,7 @@ Prefer exact-name locators; use `{ exact: true }` where names collide. Prefer SP
 set -a; . ./.env; set +a
 npx playwright test tests/landing-skill-attach.spec.ts
 ```
+
 Iterate on selectors only until green. Do NOT change app code to make the test pass; if a genuine app bug surfaces, STOP and report it.
 
 - [ ] **Step 5: Full local gate**
@@ -403,6 +441,7 @@ Dispatch the two-stage review (spec-compliance then code-quality) over the branc
 ## Self-Review (against the spec)
 
 **Spec coverage:**
+
 - §3 Skill-only scope (no Enhance) → Tasks 3 only passes `skillAttach`, never `enhance`. ✓
 - §4.1 landing wiring (controller + hidden inputs) → Task 3. ✓
 - §4.2 `?/start` sets `donna_draft_skills` → Task 2. ✓

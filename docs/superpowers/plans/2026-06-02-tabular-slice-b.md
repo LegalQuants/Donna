@@ -14,25 +14,25 @@
 
 ## File structure
 
-| File | Responsibility | Task |
-|------|----------------|------|
-| `src/routes/(app)/tabular/new/+page.server.ts` | Builder SSR load (moved) | 1 |
-| `src/routes/(app)/tabular/new/+page.svelte` | Builder UI (moved) | 1, 4 |
-| `src/routes/(app)/tabular/new/page.server.test.ts` | Builder load test (moved) | 1 |
-| `src/routes/(app)/tabular/+page.server.ts` | History list SSR load (new) | 2 |
-| `src/routes/(app)/tabular/+page.svelte` | History index UI (new) | 2 |
-| `src/routes/(app)/tabular/page.server.test.ts` | History load test (new) | 2 |
-| `src/routes/(app)/tabular/page.svelte.test.ts` | History empty-state/list test (new) | 2 |
-| `src/lib/tabular/TabularExecutionRow.svelte` | One history-list row (new) | 2 |
-| `src/lib/tabular/TabularExecutionRow.svelte.test.ts` | Row render test (new) | 2 |
-| `src/lib/tabular/types.ts` | `TabularExecutionSummary` export + `parseTabularResults` fallback arg | 2, 3 |
-| `src/lib/tabular/types.test.ts` | Fallback-map unit tests (extend) | 3 |
-| `src/routes/(app)/tabular/[executionId]/+page.svelte` | Build + pass the name map | 3 |
-| `src/routes/(app)/tabular/preview-cost/+server.ts` | 404/422→400 specific error | 4 |
-| `src/routes/(app)/tabular/execute/+server.ts` | 404/422→400 specific error | 4 |
-| `src/routes/(app)/tabular/preview-cost/server.test.ts` | Error-map test (extend) | 4 |
-| `src/routes/(app)/tabular/execute/server.test.ts` | Error-map test (extend) | 4 |
-| `src/lib/tabular/CellDetail.svelte` | Clickable citations (pin-gated) | 5 |
+| File                                                   | Responsibility                                                        | Task |
+| ------------------------------------------------------ | --------------------------------------------------------------------- | ---- |
+| `src/routes/(app)/tabular/new/+page.server.ts`         | Builder SSR load (moved)                                              | 1    |
+| `src/routes/(app)/tabular/new/+page.svelte`            | Builder UI (moved)                                                    | 1, 4 |
+| `src/routes/(app)/tabular/new/page.server.test.ts`     | Builder load test (moved)                                             | 1    |
+| `src/routes/(app)/tabular/+page.server.ts`             | History list SSR load (new)                                           | 2    |
+| `src/routes/(app)/tabular/+page.svelte`                | History index UI (new)                                                | 2    |
+| `src/routes/(app)/tabular/page.server.test.ts`         | History load test (new)                                               | 2    |
+| `src/routes/(app)/tabular/page.svelte.test.ts`         | History empty-state/list test (new)                                   | 2    |
+| `src/lib/tabular/TabularExecutionRow.svelte`           | One history-list row (new)                                            | 2    |
+| `src/lib/tabular/TabularExecutionRow.svelte.test.ts`   | Row render test (new)                                                 | 2    |
+| `src/lib/tabular/types.ts`                             | `TabularExecutionSummary` export + `parseTabularResults` fallback arg | 2, 3 |
+| `src/lib/tabular/types.test.ts`                        | Fallback-map unit tests (extend)                                      | 3    |
+| `src/routes/(app)/tabular/[executionId]/+page.svelte`  | Build + pass the name map                                             | 3    |
+| `src/routes/(app)/tabular/preview-cost/+server.ts`     | 404/422→400 specific error                                            | 4    |
+| `src/routes/(app)/tabular/execute/+server.ts`          | 404/422→400 specific error                                            | 4    |
+| `src/routes/(app)/tabular/preview-cost/server.test.ts` | Error-map test (extend)                                               | 4    |
+| `src/routes/(app)/tabular/execute/server.test.ts`      | Error-map test (extend)                                               | 4    |
+| `src/lib/tabular/CellDetail.svelte`                    | Clickable citations (pin-gated)                                       | 5    |
 
 **Note on the gate (every task):** `npm run check` must report **0 errors and 0 warnings** (the vendor `ERR_MODULE_NOT_FOUND` stderr line is harmless). Run targeted vitest per task; a full `npx vitest run` (~873+ green) before the PR. No `any`, no non-null `!`.
 
@@ -43,6 +43,7 @@
 Moves the three builder files into a `new/` subdir and updates the two internal route strings, freeing `/tabular` for the history index. Behaviour is unchanged — this is a pure relocation.
 
 **Files:**
+
 - Move: `src/routes/(app)/tabular/+page.server.ts` → `src/routes/(app)/tabular/new/+page.server.ts`
 - Move: `src/routes/(app)/tabular/+page.svelte` → `src/routes/(app)/tabular/new/+page.svelte`
 - Move: `src/routes/(app)/tabular/page.server.test.ts` → `src/routes/(app)/tabular/new/page.server.test.ts`
@@ -73,7 +74,7 @@ In `src/routes/(app)/tabular/new/page.server.test.ts`, update the `ev` helper's 
 
 ```ts
 const ev = (matter?: string) =>
-  ({ url: new URL(`http://x/tabular/new${matter ? `?matter=${matter}` : ''}`) }) as never;
+	({ url: new URL(`http://x/tabular/new${matter ? `?matter=${matter}` : ''}`) }) as never;
 ```
 
 - [ ] **Step 4: Run the moved test + typecheck**
@@ -100,6 +101,7 @@ internal route-string updates; behaviour unchanged."
 Builds the new landing page: SSR-load the summaries, render a "New review" CTA + a list of rows, with an empty state. Mirrors the Matters list row idiom and the Playbooks list page.
 
 **Files:**
+
 - Modify: `src/lib/tabular/types.ts` (add the summary type export)
 - Create: `src/lib/tabular/TabularExecutionRow.svelte`
 - Create: `src/lib/tabular/TabularExecutionRow.svelte.test.ts`
@@ -128,30 +130,32 @@ import TabularExecutionRow from './TabularExecutionRow.svelte';
 import type { TabularExecutionSummary } from './types';
 
 const summary: TabularExecutionSummary = {
-  id: 'ex-1',
-  status: 'completed',
-  document_count: 3,
-  column_count: 2,
-  cost_estimate_usd: '0.12',
-  created_at: '2026-05-01T10:00:00Z'
+	id: 'ex-1',
+	status: 'completed',
+	document_count: 3,
+	column_count: 2,
+	cost_estimate_usd: '0.12',
+	created_at: '2026-05-01T10:00:00Z'
 };
 
 describe('TabularExecutionRow', () => {
-  it('links to the run page and shows status, counts and estimate', () => {
-    render(TabularExecutionRow, { props: { summary } as never });
-    const link = screen.getByRole('link');
-    expect(link.getAttribute('href')).toBe('/tabular/ex-1');
-    expect(screen.getByText('completed')).toBeInTheDocument();
-    expect(screen.getByText(/3 docs · 2 cols/i)).toBeInTheDocument();
-    expect(screen.getByText(/\$0\.12/)).toBeInTheDocument();
-  });
+	it('links to the run page and shows status, counts and estimate', () => {
+		render(TabularExecutionRow, { props: { summary } as never });
+		const link = screen.getByRole('link');
+		expect(link.getAttribute('href')).toBe('/tabular/ex-1');
+		expect(screen.getByText('completed')).toBeInTheDocument();
+		expect(screen.getByText(/3 docs · 2 cols/i)).toBeInTheDocument();
+		expect(screen.getByText(/\$0\.12/)).toBeInTheDocument();
+	});
 
-  it('handles singular counts and a missing estimate', () => {
-    render(TabularExecutionRow, {
-      props: { summary: { ...summary, document_count: 1, column_count: 1, cost_estimate_usd: null } } as never
-    });
-    expect(screen.getByText(/1 doc · 1 col/i)).toBeInTheDocument();
-  });
+	it('handles singular counts and a missing estimate', () => {
+		render(TabularExecutionRow, {
+			props: {
+				summary: { ...summary, document_count: 1, column_count: 1, cost_estimate_usd: null }
+			} as never
+		});
+		expect(screen.getByText(/1 doc · 1 col/i)).toBeInTheDocument();
+	});
 });
 ```
 
@@ -166,35 +170,37 @@ Create `src/lib/tabular/TabularExecutionRow.svelte`:
 
 ```svelte
 <script lang="ts">
-  import type { TabularExecutionSummary, ExecutionStatus } from './types';
+	import type { TabularExecutionSummary, ExecutionStatus } from './types';
 
-  let { summary }: { summary: TabularExecutionSummary } = $props();
+	let { summary }: { summary: TabularExecutionSummary } = $props();
 
-  const badge: Record<ExecutionStatus, string> = {
-    completed: 'bg-mlq-success',
-    failed: 'bg-mlq-error',
-    cancelled: 'bg-mlq-muted',
-    running: 'bg-mlq-workflow',
-    pending: 'bg-mlq-workflow'
-  };
+	const badge: Record<ExecutionStatus, string> = {
+		completed: 'bg-mlq-success',
+		failed: 'bg-mlq-error',
+		cancelled: 'bg-mlq-muted',
+		running: 'bg-mlq-workflow',
+		pending: 'bg-mlq-workflow'
+	};
 
-  const docCols = $derived(
-    `${summary.document_count} doc${summary.document_count === 1 ? '' : 's'} · ` +
-      `${summary.column_count} col${summary.column_count === 1 ? '' : 's'}`
-  );
+	const docCols = $derived(
+		`${summary.document_count} doc${summary.document_count === 1 ? '' : 's'} · ` +
+			`${summary.column_count} col${summary.column_count === 1 ? '' : 's'}`
+	);
 </script>
 
 <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app execution link -->
 <a href="/tabular/{summary.id}" class="flex items-center gap-3 px-4 py-3 hover:bg-mlq-surface-alt">
-  <span class="inline-flex shrink-0 items-center gap-1.5 text-xs text-mlq-muted">
-    <span class="inline-block h-2 w-2 rounded-full {badge[summary.status]}"></span>
-    {summary.status}
-  </span>
-  <span class="min-w-0 truncate text-sm text-mlq-text">{docCols}</span>
-  {#if summary.cost_estimate_usd}
-    <span class="shrink-0 text-xs text-mlq-muted">est. ${summary.cost_estimate_usd}</span>
-  {/if}
-  <span class="ml-auto shrink-0 text-xs text-mlq-muted">{new Date(summary.created_at).toLocaleDateString()}</span>
+	<span class="inline-flex shrink-0 items-center gap-1.5 text-xs text-mlq-muted">
+		<span class="inline-block h-2 w-2 rounded-full {badge[summary.status]}"></span>
+		{summary.status}
+	</span>
+	<span class="min-w-0 truncate text-sm text-mlq-text">{docCols}</span>
+	{#if summary.cost_estimate_usd}
+		<span class="shrink-0 text-xs text-mlq-muted">est. ${summary.cost_estimate_usd}</span>
+	{/if}
+	<span class="ml-auto shrink-0 text-xs text-mlq-muted"
+		>{new Date(summary.created_at).toLocaleDateString()}</span
+	>
 </a>
 ```
 
@@ -219,20 +225,31 @@ const event = {} as never;
 beforeEach(() => lqFetch.mockReset());
 
 describe('/tabular history load', () => {
-  it('requests the executions list and returns the summaries', async () => {
-    lqFetch.mockResolvedValue(
-      new Response(JSON.stringify([{ id: 'ex1', status: 'completed', document_count: 2, column_count: 1, created_at: '2026-05-01T00:00:00Z' }]), { status: 200 })
-    );
-    const out = (await load(event)) as { executions: { id: string }[] };
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/tabular/executions?limit=50');
-    expect(out.executions).toHaveLength(1);
-    expect(out.executions[0].id).toBe('ex1');
-  });
+	it('requests the executions list and returns the summaries', async () => {
+		lqFetch.mockResolvedValue(
+			new Response(
+				JSON.stringify([
+					{
+						id: 'ex1',
+						status: 'completed',
+						document_count: 2,
+						column_count: 1,
+						created_at: '2026-05-01T00:00:00Z'
+					}
+				]),
+				{ status: 200 }
+			)
+		);
+		const out = (await load(event)) as { executions: { id: string }[] };
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/tabular/executions?limit=50');
+		expect(out.executions).toHaveLength(1);
+		expect(out.executions[0].id).toBe('ex1');
+	});
 
-  it('throws 502 when the backend list call fails', async () => {
-    lqFetch.mockResolvedValue(new Response('nope', { status: 500 }));
-    await expect(load(event)).rejects.toMatchObject({ status: 502 });
-  });
+	it('throws 502 when the backend list call fails', async () => {
+		lqFetch.mockResolvedValue(new Response('nope', { status: 500 }));
+		await expect(load(event)).rejects.toMatchObject({ status: 502 });
+	});
 });
 ```
 
@@ -252,10 +269,10 @@ import type { PageServerLoad } from './$types';
 import type { TabularExecutionSummary } from '$lib/tabular/types';
 
 export const load: PageServerLoad = async (event) => {
-  const res = await lqFetch(event, '/api/v1/tabular/executions?limit=50');
-  if (!res.ok) throw error(502, 'Could not load your tabular reviews.');
-  const executions = (await res.json()) as TabularExecutionSummary[];
-  return { executions };
+	const res = await lqFetch(event, '/api/v1/tabular/executions?limit=50');
+	if (!res.ok) throw error(502, 'Could not load your tabular reviews.');
+	const executions = (await res.json()) as TabularExecutionSummary[];
+	return { executions };
 };
 ```
 
@@ -275,22 +292,26 @@ import Page from './+page.svelte';
 import type { TabularExecutionSummary } from '$lib/tabular/types';
 
 const summary: TabularExecutionSummary = {
-  id: 'ex-1', status: 'completed', document_count: 3, column_count: 2,
-  cost_estimate_usd: '0.12', created_at: '2026-05-01T10:00:00Z'
+	id: 'ex-1',
+	status: 'completed',
+	document_count: 3,
+	column_count: 2,
+	cost_estimate_usd: '0.12',
+	created_at: '2026-05-01T10:00:00Z'
 };
 
 describe('/tabular history page', () => {
-  it('shows the empty state and a New review link when there are no executions', () => {
-    render(Page, { props: { data: { executions: [] } } as never });
-    expect(screen.getByText(/no tabular reviews yet/i)).toBeInTheDocument();
-    const link = screen.getAllByRole('link').find((a) => a.getAttribute('href') === '/tabular/new');
-    expect(link).toBeTruthy();
-  });
+	it('shows the empty state and a New review link when there are no executions', () => {
+		render(Page, { props: { data: { executions: [] } } as never });
+		expect(screen.getByText(/no tabular reviews yet/i)).toBeInTheDocument();
+		const link = screen.getAllByRole('link').find((a) => a.getAttribute('href') === '/tabular/new');
+		expect(link).toBeTruthy();
+	});
 
-  it('renders a row per execution', () => {
-    render(Page, { props: { data: { executions: [summary] } } as never });
-    expect(screen.getByText(/3 docs · 2 cols/i)).toBeInTheDocument();
-  });
+	it('renders a row per execution', () => {
+		render(Page, { props: { data: { executions: [summary] } } as never });
+		expect(screen.getByText(/3 docs · 2 cols/i)).toBeInTheDocument();
+	});
 });
 ```
 
@@ -305,35 +326,45 @@ Create `src/routes/(app)/tabular/+page.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { Plus } from '@lucide/svelte';
-  import TabularExecutionRow from '$lib/tabular/TabularExecutionRow.svelte';
-  import type { PageProps } from './$types';
+	import { Plus } from '@lucide/svelte';
+	import TabularExecutionRow from '$lib/tabular/TabularExecutionRow.svelte';
+	import type { PageProps } from './$types';
 
-  let { data }: PageProps = $props();
+	let { data }: PageProps = $props();
 </script>
 
 <svelte:head><title>Tabular reviews — Donna</title></svelte:head>
 
 <div class="mx-auto max-w-3xl px-4 py-6">
-  <div class="mb-4 flex items-center justify-between">
-    <h1 class="text-xl font-medium text-mlq-text">Tabular reviews</h1>
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app new-review link -->
-    <a href="/tabular/new" class="inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"><Plus size={13} /> New review</a>
-  </div>
+	<div class="mb-4 flex items-center justify-between">
+		<h1 class="text-xl font-medium text-mlq-text">Tabular reviews</h1>
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app new-review link -->
+		<a
+			href="/tabular/new"
+			class="inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"
+			><Plus size={13} /> New review</a
+		>
+	</div>
 
-  {#if data.executions.length === 0}
-    <div class="rounded-mlq-control border border-dashed border-mlq-subtle p-10 text-center">
-      <p class="text-sm text-mlq-muted">No tabular reviews yet — start one to ask the same questions across many documents.</p>
-      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app new-review link -->
-      <a href="/tabular/new" class="mt-3 inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"><Plus size={13} /> New review</a>
-    </div>
-  {:else}
-    <ul class="divide-y divide-mlq-subtle rounded-mlq-control border border-mlq-subtle">
-      {#each data.executions as execution (execution.id)}
-        <li><TabularExecutionRow summary={execution} /></li>
-      {/each}
-    </ul>
-  {/if}
+	{#if data.executions.length === 0}
+		<div class="rounded-mlq-control border border-dashed border-mlq-subtle p-10 text-center">
+			<p class="text-sm text-mlq-muted">
+				No tabular reviews yet — start one to ask the same questions across many documents.
+			</p>
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app new-review link -->
+			<a
+				href="/tabular/new"
+				class="mt-3 inline-flex items-center gap-1 rounded-mlq-control bg-mlq-text px-2.5 py-1 text-xs text-mlq-surface"
+				><Plus size={13} /> New review</a
+			>
+		</div>
+	{:else}
+		<ul class="divide-y divide-mlq-subtle rounded-mlq-control border border-mlq-subtle">
+			{#each data.executions as execution (execution.id)}
+				<li><TabularExecutionRow summary={execution} /></li>
+			{/each}
+		</ul>
+	{/if}
 </div>
 ```
 
@@ -363,6 +394,7 @@ links to /tabular/[id], which already polls/renders by id."
 `parseTabularResults` currently leaks a raw `document_id` UUID as the row label when the `m3-c2-v1` payload omits a per-row name. The execution detail carries `document_names[]` parallel to `document_ids[]`; thread that in as an optional lookup so the parser prefers the real name → the parallel name → the UUID.
 
 **Files:**
+
 - Modify: `src/lib/tabular/types.ts` (`parseTabularResults` signature + fallback)
 - Modify: `src/lib/tabular/types.test.ts` (new cases)
 - Modify: `src/routes/(app)/tabular/[executionId]/+page.svelte` (build + pass the map)
@@ -372,22 +404,27 @@ links to /tabular/[id], which already polls/renders by id."
 Add to `src/lib/tabular/types.test.ts` inside the `describe('parseTabularResults', …)` block:
 
 ```ts
-  it('falls back to the parallel document_names map when a row name is missing', () => {
-    const out = parseTabularResults(
-      { rows: [{ document_id: 'd2', cells: {} }] },
-      { d2: 'contract.pdf' }
-    );
-    expect(out?.rows[0].document_name).toBe('contract.pdf');
-  });
+it('falls back to the parallel document_names map when a row name is missing', () => {
+	const out = parseTabularResults(
+		{ rows: [{ document_id: 'd2', cells: {} }] },
+		{ d2: 'contract.pdf' }
+	);
+	expect(out?.rows[0].document_name).toBe('contract.pdf');
+});
 
-  it('prefers the row name over the map, and the id when neither is present', () => {
-    const out = parseTabularResults(
-      { rows: [{ document_id: 'd1', document_name: 'real.pdf', cells: {} }, { document_id: 'd3', cells: {} }] },
-      { d1: 'ignored.pdf' }
-    );
-    expect(out?.rows[0].document_name).toBe('real.pdf');
-    expect(out?.rows[1].document_name).toBe('d3');
-  });
+it('prefers the row name over the map, and the id when neither is present', () => {
+	const out = parseTabularResults(
+		{
+			rows: [
+				{ document_id: 'd1', document_name: 'real.pdf', cells: {} },
+				{ document_id: 'd3', cells: {} }
+			]
+		},
+		{ d1: 'ignored.pdf' }
+	);
+	expect(out?.rows[0].document_name).toBe('real.pdf');
+	expect(out?.rows[1].document_name).toBe('d3');
+});
 ```
 
 - [ ] **Step 2: Run them to confirm they fail**
@@ -425,10 +462,9 @@ Expected: PASS (all cases, including the pre-existing "defaults document_name to
 In `src/routes/(app)/tabular/[executionId]/+page.svelte`, replace the `results` derivation (line ~16) so it builds a name map from the execution's parallel arrays and passes it:
 
 ```svelte
-  const documentNamesById = $derived(
-    Object.fromEntries(current.document_ids.map((id, i) => [id, current.document_names[i]]))
-  );
-  const results = $derived(parseTabularResults(current.results, documentNamesById));
+const documentNamesById = $derived( Object.fromEntries(current.document_ids.map((id, i) => [id,
+current.document_names[i]])) ); const results = $derived(parseTabularResults(current.results,
+documentNamesById));
 ```
 
 - [ ] **Step 6: Typecheck + run the run-page test**
@@ -456,6 +492,7 @@ longer leaks a raw UUID."
 The `preview-cost` and `execute` proxies map a backend 404/422 (invalid or not-owned `document_id`) to a generic 502. Remap 404/422 to a 400 with a document-specific message, and have the builder surface the server's message instead of its hard-coded string.
 
 **Files:**
+
 - Modify: `src/routes/(app)/tabular/preview-cost/+server.ts`
 - Modify: `src/routes/(app)/tabular/execute/+server.ts`
 - Modify: `src/routes/(app)/tabular/preview-cost/server.test.ts`
@@ -467,23 +504,29 @@ The `preview-cost` and `execute` proxies map a backend 404/422 (invalid or not-o
 Add to `src/routes/(app)/tabular/execute/server.test.ts` inside the `describe('POST /tabular/execute', …)` block:
 
 ```ts
-  it('maps a backend 404/422 (bad document) to a 400 with a document-specific message', async () => {
-    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
-    await expect(POST(event({}))).rejects.toMatchObject({ status: 400, body: { message: expect.stringMatching(/document/i) } });
-    lqFetch.mockResolvedValue(new Response('unprocessable', { status: 422 }));
-    await expect(POST(event({}))).rejects.toMatchObject({ status: 400 });
-  });
+it('maps a backend 404/422 (bad document) to a 400 with a document-specific message', async () => {
+	lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+	await expect(POST(event({}))).rejects.toMatchObject({
+		status: 400,
+		body: { message: expect.stringMatching(/document/i) }
+	});
+	lqFetch.mockResolvedValue(new Response('unprocessable', { status: 422 }));
+	await expect(POST(event({}))).rejects.toMatchObject({ status: 400 });
+});
 ```
 
 Add the analogous case to `src/routes/(app)/tabular/preview-cost/server.test.ts` (it already has the `POST` import and an `event(body)` helper — just add the case inside its `describe` block):
 
 ```ts
-  it('maps a backend 404/422 (bad document) to a 400 with a document-specific message', async () => {
-    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
-    await expect(POST(event({}))).rejects.toMatchObject({ status: 400, body: { message: expect.stringMatching(/document/i) } });
-    lqFetch.mockResolvedValue(new Response('unprocessable', { status: 422 }));
-    await expect(POST(event({}))).rejects.toMatchObject({ status: 400 });
-  });
+it('maps a backend 404/422 (bad document) to a 400 with a document-specific message', async () => {
+	lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+	await expect(POST(event({}))).rejects.toMatchObject({
+		status: 400,
+		body: { message: expect.stringMatching(/document/i) }
+	});
+	lqFetch.mockResolvedValue(new Response('unprocessable', { status: 422 }));
+	await expect(POST(event({}))).rejects.toMatchObject({ status: 400 });
+});
 ```
 
 - [ ] **Step 2: Run them to confirm they fail**
@@ -496,11 +539,17 @@ Expected: FAIL (currently 404/422 → 502).
 Replace the `if (!res.ok)` line in `src/routes/(app)/tabular/execute/+server.ts`:
 
 ```ts
-  if (!res.ok) {
-    if (res.status === 404 || res.status === 422)
-      throw error(400, 'One or more selected documents could not be found or is not accessible. Re-check your document selection.');
-    throw error(res.status === 503 || res.status === 504 ? res.status : 502, 'Could not start the review.');
-  }
+if (!res.ok) {
+	if (res.status === 404 || res.status === 422)
+		throw error(
+			400,
+			'One or more selected documents could not be found or is not accessible. Re-check your document selection.'
+		);
+	throw error(
+		res.status === 503 || res.status === 504 ? res.status : 502,
+		'Could not start the review.'
+	);
+}
 ```
 
 - [ ] **Step 4: Remap 404/422 in the preview-cost proxy**
@@ -508,11 +557,17 @@ Replace the `if (!res.ok)` line in `src/routes/(app)/tabular/execute/+server.ts`
 Replace the `if (!res.ok)` line in `src/routes/(app)/tabular/preview-cost/+server.ts`:
 
 ```ts
-  if (!res.ok) {
-    if (res.status === 404 || res.status === 422)
-      throw error(400, 'One or more selected documents could not be found or is not accessible. Re-check your document selection.');
-    throw error(res.status === 503 || res.status === 504 ? res.status : 502, 'Could not estimate the review cost.');
-  }
+if (!res.ok) {
+	if (res.status === 404 || res.status === 422)
+		throw error(
+			400,
+			'One or more selected documents could not be found or is not accessible. Re-check your document selection.'
+		);
+	throw error(
+		res.status === 503 || res.status === 504 ? res.status : 502,
+		'Could not estimate the review cost.'
+	);
+}
 ```
 
 - [ ] **Step 5: Run the proxy tests — expect PASS**
@@ -588,6 +643,7 @@ pointing at a real `files.id`, `source_page`, `source_text` = full chunk content
 existing executions are navigable with no backfill).
 
 **Files:**
+
 - Modify: `vendor/lq-ai` pin + `src/lib/api/backend.d.ts`, `src/lib/api/gateway.d.ts` (regenerate)
 - Modify: `src/lib/tabular/types.ts` (hand-typed `TabularCitation` + parse `cell.citations`)
 - Modify: `src/lib/tabular/types.test.ts` (citation-parse cases)
@@ -615,11 +671,11 @@ Add to `src/lib/tabular/types.ts` a hand-typed citation and extend `TabularCell`
 ```ts
 /** Read-time-resolved navigable citation on a tabular cell (DE-330: not yet in the generated schema). */
 export interface TabularCitation {
-  source_file_id: string;
-  source_page: number | null;
-  source_text: string;
-  document_id?: string;
-  chunk_id?: string;
+	source_file_id: string;
+	source_page: number | null;
+	source_text: string;
+	document_id?: string;
+	chunk_id?: string;
 }
 ```
 
@@ -627,16 +683,41 @@ Add `citations: TabularCitation[];` to the `TabularCell` interface. Then add a f
 `src/lib/tabular/types.test.ts` inside the `parseTabularResults` describe:
 
 ```ts
-  it('narrows navigable citations off a cell', () => {
-    const out = parseTabularResults({
-      rows: [{ document_id: 'd1', cells: { Term: { value: 'x', confidence: 'high',
-        cited_chunk_ids: ['c1'],
-        citations: [{ source_file_id: 'file-1', source_page: 4, source_text: 'the clause', chunk_id: 'c1' },
-                    { source_file_id: null, source_page: null, source_text: '' }] } } }]
-    });
-    const cits = out?.rows[0].cells.Term.citations;
-    expect(cits).toEqual([{ source_file_id: 'file-1', source_page: 4, source_text: 'the clause', chunk_id: 'c1', document_id: undefined }]);
-  });
+it('narrows navigable citations off a cell', () => {
+	const out = parseTabularResults({
+		rows: [
+			{
+				document_id: 'd1',
+				cells: {
+					Term: {
+						value: 'x',
+						confidence: 'high',
+						cited_chunk_ids: ['c1'],
+						citations: [
+							{
+								source_file_id: 'file-1',
+								source_page: 4,
+								source_text: 'the clause',
+								chunk_id: 'c1'
+							},
+							{ source_file_id: null, source_page: null, source_text: '' }
+						]
+					}
+				}
+			}
+		]
+	});
+	const cits = out?.rows[0].cells.Term.citations;
+	expect(cits).toEqual([
+		{
+			source_file_id: 'file-1',
+			source_page: 4,
+			source_text: 'the clause',
+			chunk_id: 'c1',
+			document_id: undefined
+		}
+	]);
+});
 ```
 
 (The malformed second citation — null `source_file_id` — is dropped: a citation with no file can't navigate.)
@@ -685,17 +766,22 @@ import CellDetail from './CellDetail.svelte';
 import type { TabularCell } from './types';
 
 const cell: TabularCell = {
-  value: 'Delaware', confidence: 'high', error: null, cited_chunk_ids: ['c1'],
-  citations: [{ source_file_id: 'file-1', source_page: 4, source_text: 'governed by Delaware law' }]
+	value: 'Delaware',
+	confidence: 'high',
+	error: null,
+	cited_chunk_ids: ['c1'],
+	citations: [{ source_file_id: 'file-1', source_page: 4, source_text: 'governed by Delaware law' }]
 };
 
 describe('CellDetail citations', () => {
-  it('calls onactivatecitation with the citation when a source is clicked', async () => {
-    const onactivatecitation = vi.fn();
-    render(CellDetail, { props: { column: 'Governing law', cell, onclose: () => {}, onactivatecitation } as never });
-    await fireEvent.click(screen.getByRole('button', { name: /source|p\.?\s?4|citation/i }));
-    expect(onactivatecitation).toHaveBeenCalledWith(cell.citations[0]);
-  });
+	it('calls onactivatecitation with the citation when a source is clicked', async () => {
+		const onactivatecitation = vi.fn();
+		render(CellDetail, {
+			props: { column: 'Governing law', cell, onclose: () => {}, onactivatecitation } as never
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /source|p\.?\s?4|citation/i }));
+		expect(onactivatecitation).toHaveBeenCalledWith(cell.citations[0]);
+	});
 });
 ```
 
@@ -768,7 +854,10 @@ as chat."
 - [ ] **Typecheck/lint gate:** `npm run check` → `0 errors and 0 warnings`; `npx eslint .` clean.
 - [ ] **Rebuild for live e2e:** `set -a; . ./.env; set +a; docker compose up -d --build donna-web`.
 - [ ] **Live e2e (`.pdf` fixture):** visit `http://localhost:13002/tabular` → history list shows a prior
-  run → click a row → run page renders the grid (or status) → "New review" → `/tabular/new` builder loads
-  and can start a run. (Reuse a `/tmp/spike*.pdf`; if none, `cupsfilter /etc/hosts > /tmp/x.pdf`.)
+      run → click a row → run page renders the grid (or status) → "New review" → `/tabular/new` builder loads
+      and can start a run. (Reuse a `/tmp/spike*.pdf`; if none, `cupsfilter /etc/hosts > /tmp/x.pdf`.)
 - [ ] Then proceed to `superpowers:finishing-a-development-branch` → PR into `main`.
+
+```
+
 ```

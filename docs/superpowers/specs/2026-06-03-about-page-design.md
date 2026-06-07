@@ -18,6 +18,7 @@ and gives users a real onboarding/education surface. See [[donna-about-page]],
 ## Scope
 
 **In scope (slice 2a):**
+
 - Sidebar "About" entry above Settings.
 - `/about` route group: layout + rail + redirect + 8 topic pages.
 - The "Powered by LQ-AI" callout banner + a minimal `/about/lq-ai` stub page.
@@ -33,19 +34,19 @@ Mirror the existing `/settings` pattern (`+layout.svelte` + a rail component + a
 
 ### Routes (all under `src/routes/(app)/about/`)
 
-| File | Responsibility |
-| --- | --- |
-| `+page.server.ts` | `redirect(307, '/about/overview')` — `/about` has no page of its own (mirrors `settings/+page.server.ts`). |
-| `+layout.svelte` | Two-column shell in a `max-w-3xl` container: the "Powered by LQ-AI" callout banner at the top, then `<AboutRail />` + `{@render children()}`. Mirrors `settings/+layout.svelte`. |
-| `overview/+page.svelte` | "What Donna is" — friendly frontend over LQ-AI; orientation + how the guide is organized. |
-| `assistant/+page.svelte` | The Assistant/landing + in-chat composer: sending messages, prompt-enhance (✦), attaching skills & files, model picker, citations/receipts at a glance. |
-| `projects/+page.svelte` | Projects (matters): creating a matter, privilege/anonymization, attaching files, scoping chats to a matter. |
-| `workflows/+page.svelte` | Workflows hub: skills (authoring/forking, inputs), playbooks (browse/apply/author), saved prompts. |
-| `tabular/+page.svelte` | Tabular review: building a table over documents, columns/tiers, running, cell → source citation navigation, history/resume. |
-| `knowledge/+page.svelte` | Knowledge bases: creating a KB, uploading documents (note: `.pdf` ingests; some types unsupported), how RAG retrieval is used in answers. |
-| `models/+page.svelte` | Models: the in-composer model picker and `/settings/models` per-category routing + installed local models. |
-| `trust/+page.svelte` | Trust & citations: anonymization, the receipts drawer / citation pills, "answers are not legal advice." |
-| `lq-ai/+page.svelte` | **Stub** (this slice): the intro paragraph + a prominent link to the LQ-AI open-source repo/site. Replaced in slice 2b. |
+| File                     | Responsibility                                                                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `+page.server.ts`        | `redirect(307, '/about/overview')` — `/about` has no page of its own (mirrors `settings/+page.server.ts`).                                                                       |
+| `+layout.svelte`         | Two-column shell in a `max-w-3xl` container: the "Powered by LQ-AI" callout banner at the top, then `<AboutRail />` + `{@render children()}`. Mirrors `settings/+layout.svelte`. |
+| `overview/+page.svelte`  | "What Donna is" — friendly frontend over LQ-AI; orientation + how the guide is organized.                                                                                        |
+| `assistant/+page.svelte` | The Assistant/landing + in-chat composer: sending messages, prompt-enhance (✦), attaching skills & files, model picker, citations/receipts at a glance.                          |
+| `projects/+page.svelte`  | Projects (matters): creating a matter, privilege/anonymization, attaching files, scoping chats to a matter.                                                                      |
+| `workflows/+page.svelte` | Workflows hub: skills (authoring/forking, inputs), playbooks (browse/apply/author), saved prompts.                                                                               |
+| `tabular/+page.svelte`   | Tabular review: building a table over documents, columns/tiers, running, cell → source citation navigation, history/resume.                                                      |
+| `knowledge/+page.svelte` | Knowledge bases: creating a KB, uploading documents (note: `.pdf` ingests; some types unsupported), how RAG retrieval is used in answers.                                        |
+| `models/+page.svelte`    | Models: the in-composer model picker and `/settings/models` per-category routing + installed local models.                                                                       |
+| `trust/+page.svelte`     | Trust & citations: anonymization, the receipts drawer / citation pills, "answers are not legal advice."                                                                          |
+| `lq-ai/+page.svelte`     | **Stub** (this slice): the intro paragraph + a prominent link to the LQ-AI open-source repo/site. Replaced in slice 2b.                                                          |
 
 ### Components
 
@@ -88,6 +89,7 @@ settings pages (e.g. `Assistant — About Donna`).
 
 A Playwright spec `tests/about.spec.ts` (follow the repo's e2e conventions — see
 `tests/model-settings.spec.ts`, the `login()` helper, `DONNA_BASE_URL`):
+
 1. After login, the sidebar shows an **About** link, positioned **above** Settings.
 2. Clicking About lands on `/about/overview` (the `/about` redirect resolves).
 3. The rail navigates: clicking another topic (e.g. Tabular) routes to `/about/tabular` and marks it

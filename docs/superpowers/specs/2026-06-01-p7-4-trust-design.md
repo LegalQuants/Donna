@@ -28,27 +28,31 @@ A read-only `/settings/trust` page that discloses how Donna routes a user's data
 ## Architecture
 
 ### Route & shell
+
 - **`SettingsRail.svelte`** — append `{ href: '/settings/trust', label: 'Trust' }` (4th entry; completes the rail).
 - **`src/routes/(app)/settings/trust/+page.server.ts`** — SSR `load` (read-only disclosure; no actions).
 - **`src/routes/(app)/settings/trust/+page.svelte`** — renders the four blocks.
 
 ### Pure helper
+
 - **`src/lib/trust/trust.ts`**:
   ```ts
   export interface TrustRow {
-    id: string;
-    label: string;          // prettified model, or the id if label is ''
-    where: 'Local' | 'Cloud';
-    tone: 'local' | 'cloud';
-    tier: number | null;
-    meaning: string;        // local → "Never leaves your environment"; cloud → "Anonymized before leaving"
+  	id: string;
+  	label: string; // prettified model, or the id if label is ''
+  	where: 'Local' | 'Cloud';
+  	tone: 'local' | 'cloud';
+  	tier: number | null;
+  	meaning: string; // local → "Never leaves your environment"; cloud → "Anonymized before leaving"
   }
   export function toTrustRows(options: ChatModelOption[]): TrustRow[];
   ```
   Pure mapping from normalized model options; `label` falls back to `id` when the prettified label is empty. Unit-tested.
 
 ### SSR load (data flow)
+
 `+page.server.ts` `load`:
+
 1. `const modelsRes = await lqFetch(event, '/api/v1/models')` → on ok, `toTrustRows(toChatOptions((await modelsRes.json()).data ?? []))`; on failure, `rows = []` and `modelsError = true`.
 2. `const cfgRes = await lqFetch(event, '/api/v1/inference/tier-config')` → on ok, the `TierConfigResponse`; on failure, `tierConfig = null`.
 3. Returns `{ rows, modelsError, tierConfig }`.
@@ -56,6 +60,7 @@ A read-only `/settings/trust` page that discloses how Donna routes a user's data
 Both fetches are independent; one failing doesn't block the other. No client state, no polling.
 
 ### Page blocks (`+page.svelte`)
+
 1. **Intro prose** — static: local = on-device/never leaves; cloud = anonymized before leaving; privileged matters enforce a minimum tier.
 2. **Per-model matrix** — a table from `data.rows`: columns Model · Where it runs (colored dot: green `tone==='local'` / amber `tone==='cloud'`) · Tier (`tier ?? '—'`) · What it means. If `data.modelsError` or `rows.length === 0`, show an inline "Couldn't load the model list." note instead of the table.
 3. **Tier policy** — from `data.tierConfig` (when non-null): "Normal chats — minimum tier" = `default_minimum_tier`; "Privileged matters — minimum tier" = `privileged_minimum_tier`; "Allowed tiers" = `allowed_tiers_global.join(', ')`. When `tierConfig` is null, omit the whole block.

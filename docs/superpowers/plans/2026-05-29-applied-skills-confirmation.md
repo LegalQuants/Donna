@@ -16,24 +16,25 @@
 
 ## File Structure
 
-| File | Create/Modify | Responsibility |
-|---|---|---|
-| `src/lib/skills/skillLabel.ts` | Create | Pure `prettifySkillSlug(slug)` → friendly title |
-| `src/lib/skills/skillLabel.test.ts` | Create | Unit tests for the helper |
-| `src/lib/chat/sse.ts` | Modify | Add `applied_skills?` to the `complete` frame's `message` |
-| `src/lib/chat/chatStream.svelte.ts` | Modify | `ChatMessage.applied_skills` field; capture in `applyFrame`; clear in `retry` |
-| `src/lib/chat/chatStream.svelte.test.ts` | Modify | Tests: delta capture, complete capture, retry clears |
-| `src/lib/components/Message.svelte` | Modify | Render the quiet linked footer confirmation |
-| `src/lib/components/Message.svelte.test.ts` | Modify | Tests: footer renders / absent-when-empty |
-| `src/routes/(app)/chats/[id]/+page.server.ts` | Modify | Pass `applied_skills` through the history map |
-| `docs/upstream-requests/lq-ai-skill-inputs-corpus.md` | Create | Upstream request (second deliverable) |
-| `tests/applied-skills.spec.ts` | Create | Live e2e (attach → send → footer → persists) |
+| File                                                  | Create/Modify | Responsibility                                                                |
+| ----------------------------------------------------- | ------------- | ----------------------------------------------------------------------------- |
+| `src/lib/skills/skillLabel.ts`                        | Create        | Pure `prettifySkillSlug(slug)` → friendly title                               |
+| `src/lib/skills/skillLabel.test.ts`                   | Create        | Unit tests for the helper                                                     |
+| `src/lib/chat/sse.ts`                                 | Modify        | Add `applied_skills?` to the `complete` frame's `message`                     |
+| `src/lib/chat/chatStream.svelte.ts`                   | Modify        | `ChatMessage.applied_skills` field; capture in `applyFrame`; clear in `retry` |
+| `src/lib/chat/chatStream.svelte.test.ts`              | Modify        | Tests: delta capture, complete capture, retry clears                          |
+| `src/lib/components/Message.svelte`                   | Modify        | Render the quiet linked footer confirmation                                   |
+| `src/lib/components/Message.svelte.test.ts`           | Modify        | Tests: footer renders / absent-when-empty                                     |
+| `src/routes/(app)/chats/[id]/+page.server.ts`         | Modify        | Pass `applied_skills` through the history map                                 |
+| `docs/upstream-requests/lq-ai-skill-inputs-corpus.md` | Create        | Upstream request (second deliverable)                                         |
+| `tests/applied-skills.spec.ts`                        | Create        | Live e2e (attach → send → footer → persists)                                  |
 
 ---
 
 ## Task 1: `prettifySkillSlug` helper
 
 **Files:**
+
 - Create: `src/lib/skills/skillLabel.ts`
 - Test: `src/lib/skills/skillLabel.test.ts`
 
@@ -46,26 +47,26 @@ import { describe, it, expect } from 'vitest';
 import { prettifySkillSlug } from './skillLabel';
 
 describe('prettifySkillSlug', () => {
-  it('title-cases a simple slug', () => {
-    expect(prettifySkillSlug('comms-improver')).toBe('Comms Improver');
-  });
-  it('upper-cases known acronyms', () => {
-    expect(prettifySkillSlug('contract-qa')).toBe('Contract QA');
-    expect(prettifySkillSlug('nda-review')).toBe('NDA Review');
-    expect(prettifySkillSlug('dpa-checklist-review')).toBe('DPA Checklist Review');
-  });
-  it('handles a multi-acronym slug with mixed-case display form', () => {
-    expect(prettifySkillSlug('msa-review-saas')).toBe('MSA Review SaaS');
-  });
-  it('handles a single word with no hyphen', () => {
-    expect(prettifySkillSlug('enhance')).toBe('Enhance');
-  });
-  it('returns empty string for empty input', () => {
-    expect(prettifySkillSlug('')).toBe('');
-  });
-  it('collapses empty segments from stray dashes', () => {
-    expect(prettifySkillSlug('nda--review-')).toBe('NDA Review');
-  });
+	it('title-cases a simple slug', () => {
+		expect(prettifySkillSlug('comms-improver')).toBe('Comms Improver');
+	});
+	it('upper-cases known acronyms', () => {
+		expect(prettifySkillSlug('contract-qa')).toBe('Contract QA');
+		expect(prettifySkillSlug('nda-review')).toBe('NDA Review');
+		expect(prettifySkillSlug('dpa-checklist-review')).toBe('DPA Checklist Review');
+	});
+	it('handles a multi-acronym slug with mixed-case display form', () => {
+		expect(prettifySkillSlug('msa-review-saas')).toBe('MSA Review SaaS');
+	});
+	it('handles a single word with no hyphen', () => {
+		expect(prettifySkillSlug('enhance')).toBe('Enhance');
+	});
+	it('returns empty string for empty input', () => {
+		expect(prettifySkillSlug('')).toBe('');
+	});
+	it('collapses empty segments from stray dashes', () => {
+		expect(prettifySkillSlug('nda--review-')).toBe('NDA Review');
+	});
 });
 ```
 
@@ -90,22 +91,22 @@ Create `src/lib/skills/skillLabel.ts`:
  * close and plain-language, which suits a low-stakes footer label.
  */
 const ACRONYMS: Record<string, string> = {
-  msa: 'MSA',
-  nda: 'NDA',
-  dpa: 'DPA',
-  qa: 'QA',
-  saas: 'SaaS',
-  sow: 'SOW',
-  baa: 'BAA',
-  gdpr: 'GDPR'
+	msa: 'MSA',
+	nda: 'NDA',
+	dpa: 'DPA',
+	qa: 'QA',
+	saas: 'SaaS',
+	sow: 'SOW',
+	baa: 'BAA',
+	gdpr: 'GDPR'
 };
 
 export function prettifySkillSlug(slug: string): string {
-  return slug
-    .split('-')
-    .filter((word) => word.length > 0)
-    .map((word) => ACRONYMS[word.toLowerCase()] ?? word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+	return slug
+		.split('-')
+		.filter((word) => word.length > 0)
+		.map((word) => ACRONYMS[word.toLowerCase()] ?? word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
 }
 ```
 
@@ -126,6 +127,7 @@ git commit -m "feat(applied-skills): prettifySkillSlug helper"
 ## Task 2: Capture `applied_skills` on the assistant message
 
 **Files:**
+
 - Modify: `src/lib/chat/sse.ts` (the `complete` frame type, ~lines 10-17)
 - Modify: `src/lib/chat/chatStream.svelte.ts` (`ChatMessage` ~line 7-20; `applyFrame` ~line 33-49; `retry` ~line 173-184)
 - Test: `src/lib/chat/chatStream.svelte.test.ts`
@@ -135,56 +137,74 @@ git commit -m "feat(applied-skills): prettifySkillSlug helper"
 Append these three tests inside the `describe('createChatStream', ...)` block in `src/lib/chat/chatStream.svelte.test.ts` (before its closing `});`):
 
 ```ts
-  it('captures applied_skills from delta frames', async () => {
-    vi.stubGlobal('fetch', vi.fn()
-      .mockResolvedValueOnce(streamResponse([
-        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-        'data: {"type":"delta","delta":"hi","lq_ai_message_id":"a1","applied_skills":["comms-improver"]}\n\n',
-        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi"}}\n\n',
-        'data: [DONE]\n\n'
-      ]))
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))); // loadAnonymization GET
-    const chat = createChatStream('c1');
-    await chat.send('hello', 'smart', ['comms-improver']);
-    expect(chat.messages[1].applied_skills).toEqual(['comms-improver']);
-  });
+it('captures applied_skills from delta frames', async () => {
+	vi.stubGlobal(
+		'fetch',
+		vi
+			.fn()
+			.mockResolvedValueOnce(
+				streamResponse([
+					'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+					'data: {"type":"delta","delta":"hi","lq_ai_message_id":"a1","applied_skills":["comms-improver"]}\n\n',
+					'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi"}}\n\n',
+					'data: [DONE]\n\n'
+				])
+			)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+	); // loadAnonymization GET
+	const chat = createChatStream('c1');
+	await chat.send('hello', 'smart', ['comms-improver']);
+	expect(chat.messages[1].applied_skills).toEqual(['comms-improver']);
+});
 
-  it('captures applied_skills from the complete frame message', async () => {
-    vi.stubGlobal('fetch', vi.fn()
-      .mockResolvedValueOnce(streamResponse([
-        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi","applied_skills":["nda-review"]}}\n\n',
-        'data: [DONE]\n\n'
-      ]))
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })));
-    const chat = createChatStream('c1');
-    await chat.send('hello', 'smart', ['nda-review']);
-    expect(chat.messages[1].applied_skills).toEqual(['nda-review']);
-  });
+it('captures applied_skills from the complete frame message', async () => {
+	vi.stubGlobal(
+		'fetch',
+		vi
+			.fn()
+			.mockResolvedValueOnce(
+				streamResponse([
+					'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+					'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"hi","applied_skills":["nda-review"]}}\n\n',
+					'data: [DONE]\n\n'
+				])
+			)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+	);
+	const chat = createChatStream('c1');
+	await chat.send('hello', 'smart', ['nda-review']);
+	expect(chat.messages[1].applied_skills).toEqual(['nda-review']);
+});
 
-  it('clears applied_skills on retry before re-streaming', async () => {
-    const withSkill = () => streamResponse([
-      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-      'data: {"type":"delta","delta":"x","lq_ai_message_id":"a1","applied_skills":["comms-improver"]}\n\n',
-      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"x"}}\n\n',
-      'data: [DONE]\n\n'
-    ]);
-    const noSkill = () => streamResponse([
-      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"y"}}\n\n',
-      'data: [DONE]\n\n'
-    ]);
-    vi.stubGlobal('fetch', vi.fn()
-      .mockResolvedValueOnce(withSkill())
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
-      .mockResolvedValueOnce(noSkill())
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })));
-    const chat = createChatStream('c1');
-    await chat.send('hi', 'smart', ['comms-improver']);
-    expect(chat.messages[1].applied_skills).toEqual(['comms-improver']);
-    await chat.retry();
-    expect(chat.messages[1].applied_skills).toBeUndefined();
-  });
+it('clears applied_skills on retry before re-streaming', async () => {
+	const withSkill = () =>
+		streamResponse([
+			'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+			'data: {"type":"delta","delta":"x","lq_ai_message_id":"a1","applied_skills":["comms-improver"]}\n\n',
+			'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"x"}}\n\n',
+			'data: [DONE]\n\n'
+		]);
+	const noSkill = () =>
+		streamResponse([
+			'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+			'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"y"}}\n\n',
+			'data: [DONE]\n\n'
+		]);
+	vi.stubGlobal(
+		'fetch',
+		vi
+			.fn()
+			.mockResolvedValueOnce(withSkill())
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+			.mockResolvedValueOnce(noSkill())
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+	);
+	const chat = createChatStream('c1');
+	await chat.send('hi', 'smart', ['comms-improver']);
+	expect(chat.messages[1].applied_skills).toEqual(['comms-improver']);
+	await chat.retry();
+	expect(chat.messages[1].applied_skills).toBeUndefined();
+});
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -235,9 +255,9 @@ In the same file, in `applyFrame`, capture it on both the `delta` and `complete`
 In the same file, in `retry`, clear it alongside the other per-turn fields (after the `anonymized` reset):
 
 ```ts
-    messages[idx].anonymized = undefined;
-    messages[idx].applied_skills = undefined;
-    messages[idx].status = 'streaming';
+messages[idx].anonymized = undefined;
+messages[idx].applied_skills = undefined;
+messages[idx].status = 'streaming';
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -257,6 +277,7 @@ git commit -m "feat(applied-skills): capture applied_skills on the assistant mes
 ## Task 3: Render the footer confirmation in `Message.svelte`
 
 **Files:**
+
 - Modify: `src/lib/components/Message.svelte` (import + the `status === 'done'` footer block, ~lines 1-6 and 55-59)
 - Test: `src/lib/components/Message.svelte.test.ts`
 
@@ -265,22 +286,41 @@ git commit -m "feat(applied-skills): capture applied_skills on the assistant mes
 Append these two tests inside the `describe('Message', ...)` block in `src/lib/components/Message.svelte.test.ts` (before its closing `});`):
 
 ```ts
-  it('shows the applied-skills footer with prettified, linked names', () => {
-    const { getByText, getByRole } = render(Message, {
-      props: { message: { key: 'a7', id: 'a7', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4, applied_skills: ['comms-improver', 'nda-review'] } }
-    });
-    expect(getByText(/Applied:/)).toBeInTheDocument();
-    const link = getByRole('link', { name: 'Comms Improver' });
-    expect(link).toHaveAttribute('href', '/skills');
-    expect(getByRole('link', { name: 'NDA Review' })).toHaveAttribute('href', '/skills');
-  });
+it('shows the applied-skills footer with prettified, linked names', () => {
+	const { getByText, getByRole } = render(Message, {
+		props: {
+			message: {
+				key: 'a7',
+				id: 'a7',
+				role: 'assistant',
+				status: 'done',
+				content: 'ok',
+				routed_inference_tier: 4,
+				applied_skills: ['comms-improver', 'nda-review']
+			}
+		}
+	});
+	expect(getByText(/Applied:/)).toBeInTheDocument();
+	const link = getByRole('link', { name: 'Comms Improver' });
+	expect(link).toHaveAttribute('href', '/skills');
+	expect(getByRole('link', { name: 'NDA Review' })).toHaveAttribute('href', '/skills');
+});
 
-  it('renders no applied-skills footer when none were applied', () => {
-    const { queryByText } = render(Message, {
-      props: { message: { key: 'a8', id: 'a8', role: 'assistant', status: 'done', content: 'ok', routed_inference_tier: 4 } }
-    });
-    expect(queryByText(/Applied:/)).toBeNull();
-  });
+it('renders no applied-skills footer when none were applied', () => {
+	const { queryByText } = render(Message, {
+		props: {
+			message: {
+				key: 'a8',
+				id: 'a8',
+				role: 'assistant',
+				status: 'done',
+				content: 'ok',
+				routed_inference_tier: 4
+			}
+		}
+	});
+	expect(queryByText(/Applied:/)).toBeNull();
+});
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -293,36 +333,47 @@ Expected: the first new test FAILS — no "Applied:" text / no link rendered. (T
 In `src/lib/components/Message.svelte`, add `ScrollText` to the lucide import and import the helper (top `<script>` block):
 
 ```svelte
-  import { ShieldCheck, ScrollText } from '@lucide/svelte';
-  import { prettifySkillSlug } from '$lib/skills/skillLabel';
+import {(ShieldCheck, ScrollText)} from '@lucide/svelte'; import {prettifySkillSlug} from '$lib/skills/skillLabel';
 ```
 
 Then replace the existing `status === 'done'` footer block:
 
 ```svelte
-      {#if message.status === 'done'}
-        <div class="mt-2 text-xs text-mlq-muted">
-          <button type="button" onclick={copy} class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5">{copied ? '✓ copied' : '⧉ Copy'}</button>
-        </div>
-      {/if}
+{#if message.status === 'done'}
+	<div class="mt-2 text-xs text-mlq-muted">
+		<button
+			type="button"
+			onclick={copy}
+			class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5"
+			>{copied ? '✓ copied' : '⧉ Copy'}</button
+		>
+	</div>
+{/if}
 ```
 
 with this (Copy button + the applied-skills line on the same quiet footer row):
 
 ```svelte
-      {#if message.status === 'done'}
-        <div class="mt-2 flex items-center gap-2 text-xs text-mlq-muted">
-          <button type="button" onclick={copy} class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5">{copied ? '✓ copied' : '⧉ Copy'}</button>
-          {#if message.applied_skills && message.applied_skills.length > 0}
-            {@const skills = message.applied_skills}
-            <span class="inline-flex items-center gap-1">
-              <ScrollText size={11} aria-hidden="true" />
-              <span>Applied:</span>
-              {#each skills as slug, i (slug)}<a href="/skills" class="hover:underline">{prettifySkillSlug(slug)}</a>{#if i < skills.length - 1}<span aria-hidden="true">,&nbsp;</span>{/if}{/each}
-            </span>
-          {/if}
-        </div>
-      {/if}
+{#if message.status === 'done'}
+	<div class="mt-2 flex items-center gap-2 text-xs text-mlq-muted">
+		<button
+			type="button"
+			onclick={copy}
+			class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5"
+			>{copied ? '✓ copied' : '⧉ Copy'}</button
+		>
+		{#if message.applied_skills && message.applied_skills.length > 0}
+			{@const skills = message.applied_skills}
+			<span class="inline-flex items-center gap-1">
+				<ScrollText size={11} aria-hidden="true" />
+				<span>Applied:</span>
+				{#each skills as slug, i (slug)}<a href="/skills" class="hover:underline"
+						>{prettifySkillSlug(slug)}</a
+					>{#if i < skills.length - 1}<span aria-hidden="true">,&nbsp;</span>{/if}{/each}
+			</span>
+		{/if}
+	</div>
+{/if}
 ```
 
 (The `{@const skills = message.applied_skills}` binding gives Svelte/TS a non-nullable reference inside the block — avoids a `state_referenced_locally`-style narrowing warning against the 0-warnings bar.)
@@ -344,6 +395,7 @@ git commit -m "feat(applied-skills): render the footer confirmation on assistant
 ## Task 4: Pass `applied_skills` through the history load
 
 **Files:**
+
 - Modify: `src/routes/(app)/chats/[id]/+page.server.ts` (the `page.items.map(...)` at ~line 23)
 
 This is a one-field passthrough so reloaded chats show the confirmation. It has no dedicated unit test (the `load` function would require mocking `lqFetch` + `resolveMatter` + `parseDraftSkills` + the receipts/citations fetches — disproportionate for a field passthrough); it is covered end-to-end by the reload assertion in the Task 6 live e2e.
@@ -353,15 +405,15 @@ This is a one-field passthrough so reloaded chats show the confirmation. It has 
 In `src/routes/(app)/chats/[id]/+page.server.ts`, in the `const messages: ChatMessage[] = page.items.map((m) => ({ ... }))` object, add `applied_skills` (the row carries it — verified live):
 
 ```ts
-  const messages: ChatMessage[] = page.items.map((m) => ({
-    key: m.id, // history rows have stable backend ids — safe as the list key
-    id: m.id,
-    role: m.role,
-    content: m.content,
-    routed_inference_tier: m.routed_inference_tier,
-    applied_skills: m.applied_skills,
-    status: 'done'
-  }));
+const messages: ChatMessage[] = page.items.map((m) => ({
+	key: m.id, // history rows have stable backend ids — safe as the list key
+	id: m.id,
+	role: m.role,
+	content: m.content,
+	routed_inference_tier: m.routed_inference_tier,
+	applied_skills: m.applied_skills,
+	status: 'done'
+}));
 ```
 
 - [ ] **Step 2: Type-check passes**
@@ -381,6 +433,7 @@ git commit -m "feat(applied-skills): surface applied_skills on reloaded history 
 ## Task 5: Upstream request — make `skill_inputs` meaningful for the corpus
 
 **Files:**
+
 - Create: `docs/upstream-requests/lq-ai-skill-inputs-corpus.md`
 
 This is the second deliverable: it documents the verified blocker and proposes the fix so the deferred composer input form becomes worthwhile. No code/test; it's handed to the user to relay to the lq-ai Claude Code session.
@@ -402,13 +455,13 @@ Create `docs/upstream-requests/lq-ai-skill-inputs-corpus.md` with this content:
 
 - `gateway/app/skills/assembler.py` → `interpolate(template, bindings)` substitutes only `{{name}}`; its docstring notes "surplus inputs the body never references are tolerated" — i.e. dropped. `assemble_skill_prompt` calls `_render_skill(skill, inputs=bindings)` which interpolates `content_md` and reference files, nothing more.
 - `grep -rl '{{' skills/*/SKILL.md` → no matches. No built-in body is templated.
-- Repro: attach `comms-improver` (declares required `text` + `audience`) and POST a message with `skill_inputs: {"comms-improver": {"text": "...", "audience": "a 10-year-old"}}`. The model replies "I don't see any text to rewrite" — the bound inputs were dropped. A user-skill whose body contains `{{topic}}`/`{{style}}` *does* interpolate correctly, confirming the mechanism works only for templated bodies.
+- Repro: attach `comms-improver` (declares required `text` + `audience`) and POST a message with `skill_inputs: {"comms-improver": {"text": "...", "audience": "a 10-year-old"}}`. The model replies "I don't see any text to rewrite" — the bound inputs were dropped. A user-skill whose body contains `{{topic}}`/`{{style}}` _does_ interpolate correctly, confirming the mechanism works only for templated bodies.
 - `extract_required_inputs` re-parses frontmatter for required-input names, but missing required inputs are **not enforced** for built-ins in practice: posting `contract-qa` with no `skill_inputs` returns `200` (the model asks conversationally) rather than raising `SkillInputMissing`.
 
 ## Proposed fix
 
 **Option A (recommended) — append unreferenced bound inputs as a labelled context block.**
-After interpolation in `_render_skill` / `assemble_skill_prompt`, for each skill take the bound inputs that were *not* consumed by a `{{placeholder}}` and append them to the assembled skill prompt as a short labelled block, e.g.:
+After interpolation in `_render_skill` / `assemble_skill_prompt`, for each skill take the bound inputs that were _not_ consumed by a `{{placeholder}}` and append them to the assembled skill prompt as a short labelled block, e.g.:
 
 ```
 ### Provided inputs for {skill_name}
@@ -443,6 +496,7 @@ git commit -m "docs(upstream): request to make skill_inputs reach non-templated 
 ## Task 6: Live end-to-end test
 
 **Files:**
+
 - Create: `tests/applied-skills.spec.ts`
 
 Mirrors `tests/skill-attach.spec.ts` (login → landing composer → start chat → attach skill → send). No chat teardown — matching the `skill-attach.spec.ts` precedent (there is no chat-delete BFF route; chat rows are bounded and harmless on the shared admin account).
@@ -453,6 +507,7 @@ Mirrors `tests/skill-attach.spec.ts` (login → landing composer → start chat 
 set -a; . ./.env; set +a
 docker compose up -d --build donna-web
 ```
+
 Expected: `donna-web` recreated and healthy. (The container serves a built image, not live `src/` — this is REQUIRED before any live e2e or the test runs against stale code.)
 
 - [ ] **Step 2: Write the e2e test**
@@ -466,47 +521,52 @@ const EMAIL = process.env.DONNA_E2E_EMAIL!;
 const PASSWORD = process.env.DONNA_E2E_PASSWORD!;
 
 async function login(page: any) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
-test('applied-skills confirmation appears on the assistant turn and persists across navigation', async ({ page }) => {
-  await login(page);
+test('applied-skills confirmation appears on the assistant turn and persists across navigation', async ({
+	page
+}) => {
+	await login(page);
 
-  // Start a chat from the landing composer (first turn has no skill attached).
-  await page.fill('textarea', 'In one short sentence, what is plain-language legal writing?');
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
-  const chatUrl = page.url();
-  await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
+	// Start a chat from the landing composer (first turn has no skill attached).
+	await page.fill('textarea', 'In one short sentence, what is plain-language legal writing?');
+	await page.keyboard.press('Enter');
+	await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
+	const chatUrl = page.url();
+	await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
 
-  // Attach comms-improver in the in-chat composer.
-  await page.getByTestId('skill-attach').click();
-  await page.getByTestId('skill-search').fill('comms');
-  await expect(page.getByTestId('skill-result-comms-improver')).toBeVisible({ timeout: 10000 });
-  await page.getByTestId('skill-result-comms-improver').click();
+	// Attach comms-improver in the in-chat composer.
+	await page.getByTestId('skill-attach').click();
+	await page.getByTestId('skill-search').fill('comms');
+	await expect(page.getByTestId('skill-result-comms-improver')).toBeVisible({ timeout: 10000 });
+	await page.getByTestId('skill-result-comms-improver').click();
 
-  // Send a second message that applies the skill.
-  await page.fill('textarea', 'Rewrite this for a 10-year-old: pursuant to the foregoing.');
-  await page.keyboard.press('Enter');
+	// Send a second message that applies the skill.
+	await page.fill('textarea', 'Rewrite this for a 10-year-old: pursuant to the foregoing.');
+	await page.keyboard.press('Enter');
 
-  // The new assistant turn shows the applied-skills confirmation: a link named
-  // "Comms Improver" pointing at /skills, next to an "Applied:" label.
-  const appliedLink = page.getByRole('link', { name: 'Comms Improver' });
-  await expect(appliedLink).toBeVisible({ timeout: 30000 });
-  await expect(appliedLink).toHaveAttribute('href', '/skills');
-  await expect(page.getByText('Applied:').last()).toBeVisible();
+	// The new assistant turn shows the applied-skills confirmation: a link named
+	// "Comms Improver" pointing at /skills, next to an "Applied:" label.
+	const appliedLink = page.getByRole('link', { name: 'Comms Improver' });
+	await expect(appliedLink).toBeVisible({ timeout: 30000 });
+	await expect(appliedLink).toHaveAttribute('href', '/skills');
+	await expect(page.getByText('Applied:').last()).toBeVisible();
 
-  // Persists from history: a fresh server-side load of the same chat (full
-  // navigation, not page.reload() — avoids the SvelteKit-2/Svelte-5 stale-data
-  // reload quirk) still renders the confirmation.
-  await page.goto('/');
-  await page.goto(chatUrl);
-  await expect(page.getByRole('link', { name: 'Comms Improver' })).toBeVisible({ timeout: 30000 });
-  await expect(page.getByRole('link', { name: 'Comms Improver' })).toHaveAttribute('href', '/skills');
+	// Persists from history: a fresh server-side load of the same chat (full
+	// navigation, not page.reload() — avoids the SvelteKit-2/Svelte-5 stale-data
+	// reload quirk) still renders the confirmation.
+	await page.goto('/');
+	await page.goto(chatUrl);
+	await expect(page.getByRole('link', { name: 'Comms Improver' })).toBeVisible({ timeout: 30000 });
+	await expect(page.getByRole('link', { name: 'Comms Improver' })).toHaveAttribute(
+		'href',
+		'/skills'
+	);
 });
 ```
 

@@ -31,7 +31,7 @@ Each input pre-fills from `def.default` when present.
 ## Contracts
 
 - `SkillInputDef`: `{ name: string; type?: string | null; required: boolean; description?: string
-  | null; enum?: string[] | null; default?: unknown }` (generated, `backend.d.ts`).
+| null; enum?: string[] | null; default?: unknown }` (generated, `backend.d.ts`).
 - `SkillInputs`: `{ name: string; required: SkillInputDef[]; optional: SkillInputDef[] }`.
 - `MessageCreate.skill_inputs`: `{ [skillSlug: string]: { [inputName: string]: unknown } }` —
   keyed by skill slug; only skills with at least one provided value appear; empty optional values
@@ -44,23 +44,25 @@ number (0 counts); boolean → always provided (true/false); enum → a non-empt
 ## File structure
 
 **New:**
+
 - `src/lib/skills/SkillInputForm.svelte` — renders **one** skill's inputs: required fields, then a
   collapsible "Optional (n)" group. Props: `{ skillTitle: string; required: SkillInputDef[];
-  optional: SkillInputDef[]; values: Record<string, unknown>; onchange: (name: string, value:
-  unknown) => void }`. Type→widget dispatch above; `file`-type defs are filtered out. Required
+optional: SkillInputDef[]; values: Record<string, unknown>; onchange: (name: string, value:
+unknown) => void }`. Type→widget dispatch above; `file`-type defs are filtered out. Required
   fields with no provided value get an `⚠ required` marker. Svelte 5 (runes) port of the vendor
   `SkillInputForm.svelte`.
 - `src/routes/(app)/skills/[id]/inputs/+server.ts` — BFF `GET` proxy → `/api/v1/skills/{id}/inputs`
   (param `id` carries the slug; mirrors `skills/autocomplete/+server.ts`: pass 503/504 through,
   else map to 502). Returns the `SkillInputs` JSON.
 - `src/routes/(app)/chats/[id]/draftSkillInputs.ts` — `parseDraftSkillInputs(raw): Record<string,
-  Record<string, unknown>>` (mirror of `parseDraftSkills`; tolerant of missing/malformed JSON,
+Record<string, unknown>>` (mirror of `parseDraftSkills`; tolerant of missing/malformed JSON,
   returns `{}` on failure, keeps only object-of-object entries).
 
 **Modified:**
+
 - `src/lib/skills/types.ts` — re-export `SkillInputDef`, `SkillInputs` from the generated types;
   extend `AttachedSkill` to `{ slug; title; inputsLoading: boolean; inputsError: boolean;
-  required: SkillInputDef[]; optional: SkillInputDef[]; values: Record<string, unknown> }`.
+required: SkillInputDef[]; optional: SkillInputDef[]; values: Record<string, unknown> }`.
 - `src/lib/skills/attach.svelte.ts` (`createSkillAttach`):
   - `attach(s, fetchFn = fetch)` becomes async — pushes the entry with `inputsLoading: true`,
     `required/optional: []`, `values: {}`, then fetches `/skills/{slug}/inputs`; on success fills
@@ -74,17 +76,17 @@ number (0 counts); boolean → always provided (true/false); enum → a non-empt
   - `.names` and `remove(slug)` unchanged in contract (`remove` drops the whole entry).
 - `src/lib/components/Composer.svelte`:
   - `onsubmit` signature → `(text, model, skills: string[], skillInputs: Record<string,
-    Record<string, unknown>>) => void`.
+Record<string, unknown>>) => void`.
   - Under the chips row, render a `SkillInputForm` for each attached skill with
     `required.length + optional.length > 0`, wired to `skillAttach.setInputValue`. Skills with
     unfilled required inputs render expanded; others collapsed. Show a small "Couldn't load
     inputs" note when `inputsError`.
   - Send button (and Enter-to-send) gated on `value.trim() && (skillAttach?.allRequiredFilled ??
-    true)`. `submit()` calls `onsubmit?.(text, model, skillAttach?.names ?? [], skillAttach?.
-    skillInputs ?? {})`.
+true)`. `submit()` calls `onsubmit?.(text, model, skillAttach?.names ?? [], skillAttach?.
+skillInputs ?? {})`.
 - `src/lib/chat/chatStream.svelte.ts`:
   - `send(content, model, skills, skillInputs = {})` and `runStream(idx, content, model, skills,
-    skillInputs)` add `skill_inputs` to the POST body when non-empty. `retry()` reuses a stored
+skillInputs)` add `skill_inputs` to the POST body when non-empty. `retry()` reuses a stored
     `lastSkillInputs`.
   - On a non-OK response, attempt to read the JSON error envelope; if it carries a
     `skill_input_missing` code / detail, surface that message via `setError` instead of the
@@ -93,11 +95,11 @@ number (0 counts); boolean → always provided (true/false); enum → a non-empt
   plain object of objects), include it in the upstream `MessageCreate` payload when non-empty.
 - `src/routes/(app)/chats/[id]/+page.svelte` — `submit(text, model, skills, skillInputs = {})` →
   `chat.send(text, model, skills, skillInputs)`; `onMount` replay passes `data.draftSkillInputs ??
-  {}`.
+{}`.
 - `src/routes/(app)/chats/[id]/+page.server.ts` — read + delete `donna_draft_skill_inputs`,
   parse via `parseDraftSkillInputs`, return `draftSkillInputs`.
 - `src/routes/(app)/+page.svelte` — add a hidden field `<input type="hidden" name="skill_inputs"
-  value={JSON.stringify(skillAttach.skillInputs)} />` inside the `?/start` form (the landing
+value={JSON.stringify(skillAttach.skillInputs)} />` inside the `?/start` form (the landing
   composer's `onsubmit` already just `requestSubmit()`s the form, reading controller state).
 - `src/routes/(app)/+page.server.ts` (`?/start`) — read the `skill_inputs` form field, parse it
   (reuse `parseDraftSkillInputs`), and when non-empty set the `donna_draft_skill_inputs` cookie
@@ -106,7 +108,7 @@ number (0 counts); boolean → always provided (true/false); enum → a non-empt
 ## Data flow
 
 - **Chat composer:** `Composer.onsubmit` → `submit` → `chat.send(text, model, skills,
-  skillInputs)` → `chatStream` body `skill_inputs` → BFF forwards in `MessageCreate` → backend.
+skillInputs)` → `chatStream` body `skill_inputs` → BFF forwards in `MessageCreate` → backend.
 - **Landing composer:** form `?/start` reads `skill_inputs` hidden field → sets
   `donna_draft_skill_inputs` cookie → chat `load` parses → `onMount` replay sends it on the first
   message.

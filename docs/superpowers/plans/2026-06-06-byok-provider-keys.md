@@ -15,6 +15,7 @@
 **⚠️ Submodule guard:** the local `vendor/lq-ai` checkout may sit at a NEWER sha than this branch's recorded pointer (parallel automations stack). NO pin bump in this slice — never `git add vendor/lq-ai`; keep commits to the exact file lists below.
 
 **Upstream contract (verified: generated `backend.d.ts` + `vendor/lq-ai` api/gateway source):**
+
 - `GET /api/v1/admin/provider-keys` (admin-only, non-admin 403) → `{ provider_keys: [{ provider, type: string|null, configured: boolean, last4: string|null, source: "env"|"runtime"|null }] }`. Full key never returned.
 - `POST /api/v1/admin/provider-keys { provider, api_key }` → set/REPLACE, hot-applied; on an env row the gateway clears `api_key_env` (runtime takes over). Returns the updated status.
 - `DELETE /api/v1/admin/provider-keys/{provider}` → 204; **409** when the key is env-provided; **404** unknown provider.
@@ -25,6 +26,7 @@
 ### Task 1: Data layer — `src/lib/inference/providerKeys.ts`
 
 **Files:**
+
 - Create: `src/lib/inference/providerKeys.ts`
 - Test: `src/lib/inference/providerKeys.test.ts`
 
@@ -38,40 +40,69 @@ import { describe, it, expect } from 'vitest';
 import { parseProviderKeys, sourceLabel, canRevoke, type ProviderKeyRow } from './providerKeys';
 
 const raw = (over: Record<string, unknown> = {}) => ({
-  provider: 'anthropic-prod', type: 'anthropic', configured: true, last4: 'a1b2', source: 'env', ...over
+	provider: 'anthropic-prod',
+	type: 'anthropic',
+	configured: true,
+	last4: 'a1b2',
+	source: 'env',
+	...over
 });
 
 describe('parseProviderKeys', () => {
-  it('parses the provider_keys envelope', () => {
-    const out = parseProviderKeys({ provider_keys: [raw(), raw({ provider: 'openai-prod', source: 'runtime' })] });
-    expect(out).toHaveLength(2);
-    expect(out[0]).toEqual({ provider: 'anthropic-prod', type: 'anthropic', configured: true, last4: 'a1b2', source: 'env' });
-    expect(out[1].source).toBe('runtime');
-  });
-  it('drops malformed rows and tolerates missing fields', () => {
-    const out = parseProviderKeys({ provider_keys: [{ nope: 1 }, raw({ type: null, configured: 'yes', last4: null, source: 'weird' })] });
-    expect(out).toHaveLength(1);
-    expect(out[0]).toEqual({ provider: 'anthropic-prod', type: null, configured: false, last4: null, source: null });
-  });
-  it('returns [] for a non-object / missing envelope', () => {
-    expect(parseProviderKeys(null)).toEqual([]);
-    expect(parseProviderKeys({ keys: [] })).toEqual([]);
-  });
+	it('parses the provider_keys envelope', () => {
+		const out = parseProviderKeys({
+			provider_keys: [raw(), raw({ provider: 'openai-prod', source: 'runtime' })]
+		});
+		expect(out).toHaveLength(2);
+		expect(out[0]).toEqual({
+			provider: 'anthropic-prod',
+			type: 'anthropic',
+			configured: true,
+			last4: 'a1b2',
+			source: 'env'
+		});
+		expect(out[1].source).toBe('runtime');
+	});
+	it('drops malformed rows and tolerates missing fields', () => {
+		const out = parseProviderKeys({
+			provider_keys: [
+				{ nope: 1 },
+				raw({ type: null, configured: 'yes', last4: null, source: 'weird' })
+			]
+		});
+		expect(out).toHaveLength(1);
+		expect(out[0]).toEqual({
+			provider: 'anthropic-prod',
+			type: null,
+			configured: false,
+			last4: null,
+			source: null
+		});
+	});
+	it('returns [] for a non-object / missing envelope', () => {
+		expect(parseProviderKeys(null)).toEqual([]);
+		expect(parseProviderKeys({ keys: [] })).toEqual([]);
+	});
 });
 
 describe('sourceLabel / canRevoke', () => {
-  const row = (source: ProviderKeyRow['source']): ProviderKeyRow =>
-    ({ provider: 'p', type: null, configured: source !== null, last4: null, source });
-  it('labels the three sources', () => {
-    expect(sourceLabel(row('runtime'))).toBe('runtime');
-    expect(sourceLabel(row('env'))).toBe('environment');
-    expect(sourceLabel(row(null))).toBe('no key');
-  });
-  it('only runtime rows are revocable', () => {
-    expect(canRevoke(row('runtime'))).toBe(true);
-    expect(canRevoke(row('env'))).toBe(false);
-    expect(canRevoke(row(null))).toBe(false);
-  });
+	const row = (source: ProviderKeyRow['source']): ProviderKeyRow => ({
+		provider: 'p',
+		type: null,
+		configured: source !== null,
+		last4: null,
+		source
+	});
+	it('labels the three sources', () => {
+		expect(sourceLabel(row('runtime'))).toBe('runtime');
+		expect(sourceLabel(row('env'))).toBe('environment');
+		expect(sourceLabel(row(null))).toBe('no key');
+	});
+	it('only runtime rows are revocable', () => {
+		expect(canRevoke(row('runtime'))).toBe(true);
+		expect(canRevoke(row('env'))).toBe(false);
+		expect(canRevoke(row(null))).toBe(false);
+	});
 });
 ```
 
@@ -90,46 +121,46 @@ Expected: FAIL — module `./providerKeys` not found.
 // of $lib/automations/types.ts.
 
 export interface ProviderKeyRow {
-  provider: string;
-  type: string | null;
-  configured: boolean;
-  last4: string | null;
-  source: 'env' | 'runtime' | null;
+	provider: string;
+	type: string | null;
+	configured: boolean;
+	last4: string | null;
+	source: 'env' | 'runtime' | null;
 }
 
 function str(v: unknown): string | null {
-  return typeof v === 'string' ? v : null;
+	return typeof v === 'string' ? v : null;
 }
 function obj(v: unknown): Record<string, unknown> {
-  return v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
+	return v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
 }
 
 export function parseProviderKeys(raw: unknown): ProviderKeyRow[] {
-  const arr = obj(raw).provider_keys;
-  if (!Array.isArray(arr)) return [];
-  return arr
-    .map((p) => {
-      const r = obj(p);
-      if (typeof r.provider !== 'string') return null;
-      return {
-        provider: r.provider,
-        type: str(r.type),
-        configured: r.configured === true,
-        last4: str(r.last4),
-        source: r.source === 'env' || r.source === 'runtime' ? r.source : null
-      };
-    })
-    .filter((p): p is ProviderKeyRow => p !== null);
+	const arr = obj(raw).provider_keys;
+	if (!Array.isArray(arr)) return [];
+	return arr
+		.map((p) => {
+			const r = obj(p);
+			if (typeof r.provider !== 'string') return null;
+			return {
+				provider: r.provider,
+				type: str(r.type),
+				configured: r.configured === true,
+				last4: str(r.last4),
+				source: r.source === 'env' || r.source === 'runtime' ? r.source : null
+			};
+		})
+		.filter((p): p is ProviderKeyRow => p !== null);
 }
 
 /** Display label for where a row's key comes from. */
 export function sourceLabel(row: ProviderKeyRow): string {
-  return row.source === 'runtime' ? 'runtime' : row.source === 'env' ? 'environment' : 'no key';
+	return row.source === 'runtime' ? 'runtime' : row.source === 'env' ? 'environment' : 'no key';
 }
 
 /** Only runtime-managed keys can be revoked via the API (env rows 409). */
 export function canRevoke(row: ProviderKeyRow): boolean {
-  return row.source === 'runtime';
+	return row.source === 'runtime';
 }
 ```
 
@@ -150,6 +181,7 @@ git commit -m "feat(settings): provider-key data layer (parse + source helpers)"
 ### Task 2: Server — load widening + `?/setKey` / `?/revokeKey` actions
 
 **Files:**
+
 - Modify: `src/routes/(app)/settings/models/+page.server.ts`
 - Test: `src/routes/(app)/settings/models/page.server.test.ts`
 
@@ -168,8 +200,8 @@ In `src/routes/(app)/settings/models/page.server.test.ts`:
 and after the existing assertions:
 
 ```ts
-    expect(lqFetch.mock.calls[2][1]).toBe('/api/v1/admin/provider-keys');
-    expect((out as { providerKeys: unknown[] | null }).providerKeys).toHaveLength(1);
+expect(lqFetch.mock.calls[2][1]).toBe('/api/v1/admin/provider-keys');
+expect((out as { providerKeys: unknown[] | null }).providerKeys).toHaveLength(1);
 ```
 
 - `'admin: when /admin/aliases fails, categories fall back...'`: add a provider-keys mock after the failing aliases mock:
@@ -181,98 +213,153 @@ and after the existing assertions:
 (b) New load tests in the same describe:
 
 ```ts
-  it('admin: degrades providerKeys to null when the provider-keys fetch fails', async () => {
-    lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ object: 'list', data: [] }), { status: 200 }))
-      .mockResolvedValueOnce(new Response('boom', { status: 500 }));
-    const out = (await load(ev(true))) as { providerKeys: unknown };
-    expect(out.providerKeys).toBeNull();
-  });
-  it('non-admin: providerKeys is null and no admin endpoints are called', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }));
-    const out = (await load(ev(false))) as { providerKeys: unknown };
-    expect(out.providerKeys).toBeNull();
-    expect(lqFetch).toHaveBeenCalledTimes(1);
-  });
+it('admin: degrades providerKeys to null when the provider-keys fetch fails', async () => {
+	lqFetch
+		.mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }))
+		.mockResolvedValueOnce(
+			new Response(JSON.stringify({ object: 'list', data: [] }), { status: 200 })
+		)
+		.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+	const out = (await load(ev(true))) as { providerKeys: unknown };
+	expect(out.providerKeys).toBeNull();
+});
+it('non-admin: providerKeys is null and no admin endpoints are called', async () => {
+	lqFetch.mockResolvedValueOnce(new Response(JSON.stringify(modelsBody), { status: 200 }));
+	const out = (await load(ev(false))) as { providerKeys: unknown };
+	expect(out.providerKeys).toBeNull();
+	expect(lqFetch).toHaveBeenCalledTimes(1);
+});
 ```
 
 (c) New action describes (the existing `form()` helper builds an admin event):
 
 ```ts
 describe('/settings/models ?/setKey', () => {
-  it('POSTs provider + api_key and succeeds with a provider echo', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ provider: 'openai-prod', type: 'openai', configured: true, last4: 'z9y8', source: 'runtime' }), { status: 200 }));
-    const res = await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-test-123' }));
-    expect(res).toMatchObject({ success: true, provider: 'openai-prod' });
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/admin/provider-keys');
-    const init = lqFetch.mock.calls[0][2] as RequestInit;
-    expect(init.method).toBe('POST');
-    expect(JSON.parse(init.body as string)).toEqual({ provider: 'openai-prod', api_key: 'sk-test-123' });
-  });
-  it('fails 400 with no upstream call when the key is empty', async () => {
-    const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: '   ' }))) as { status: number };
-    expect(res.status).toBe(400);
-    expect(lqFetch).not.toHaveBeenCalled();
-  });
-  it('maps a master-key 400 to the operator-actionable message (string detail)', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: 'runtime key storage requires a master key to be set' }), { status: 400 }));
-    const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-x' }))) as { status: number; data: { message: string; provider: string } };
-    expect(res.status).toBe(400);
-    expect(res.data.message).toMatch(/LQ_AI_GATEWAY_MASTER_KEY/);
-    expect(res.data.provider).toBe('openai-prod');
-  });
-  it('maps a master-key 400 with a structured error envelope too', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: { code: 'master_key_missing', message: 'runtime key storage requires a master key to be set' } }), { status: 400 }));
-    const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-x' }))) as { status: number; data: { message: string } };
-    expect(res.data.message).toMatch(/LQ_AI_GATEWAY_MASTER_KEY/);
-  });
-  it('maps other 400s to a generic failure', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ detail: 'bad request' }), { status: 400 }));
-    const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-x' }))) as { data: { message: string } };
-    expect(res.data.message).toBe('Could not save the key.');
-  });
-  it('maps 404 unknown provider and 403 admin-required', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('x', { status: 404 }));
-    let res = (await actions.setKey(form({ provider: 'ghost', api_key: 'sk-x' }))) as { status: number; data: { message: string } };
-    expect(res).toMatchObject({ status: 404, data: { message: 'Unknown provider.', provider: 'ghost' } });
-    lqFetch.mockResolvedValueOnce(new Response('x', { status: 403 }));
-    res = (await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-x' }))) as { status: number; data: { message: string } };
-    expect(res.status).toBe(403);
-    expect(res.data.message).toMatch(/admin account/);
-  });
-  it('never echoes the api_key in any payload', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('x', { status: 500 }));
-    const res = await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-SECRET' }));
-    expect(JSON.stringify(res)).not.toContain('sk-SECRET');
-  });
+	it('POSTs provider + api_key and succeeds with a provider echo', async () => {
+		lqFetch.mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({
+					provider: 'openai-prod',
+					type: 'openai',
+					configured: true,
+					last4: 'z9y8',
+					source: 'runtime'
+				}),
+				{ status: 200 }
+			)
+		);
+		const res = await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-test-123' }));
+		expect(res).toMatchObject({ success: true, provider: 'openai-prod' });
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/admin/provider-keys');
+		const init = lqFetch.mock.calls[0][2] as RequestInit;
+		expect(init.method).toBe('POST');
+		expect(JSON.parse(init.body as string)).toEqual({
+			provider: 'openai-prod',
+			api_key: 'sk-test-123'
+		});
+	});
+	it('fails 400 with no upstream call when the key is empty', async () => {
+		const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: '   ' }))) as {
+			status: number;
+		};
+		expect(res.status).toBe(400);
+		expect(lqFetch).not.toHaveBeenCalled();
+	});
+	it('maps a master-key 400 to the operator-actionable message (string detail)', async () => {
+		lqFetch.mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({ detail: 'runtime key storage requires a master key to be set' }),
+				{ status: 400 }
+			)
+		);
+		const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-x' }))) as {
+			status: number;
+			data: { message: string; provider: string };
+		};
+		expect(res.status).toBe(400);
+		expect(res.data.message).toMatch(/LQ_AI_GATEWAY_MASTER_KEY/);
+		expect(res.data.provider).toBe('openai-prod');
+	});
+	it('maps a master-key 400 with a structured error envelope too', async () => {
+		lqFetch.mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({
+					detail: {
+						code: 'master_key_missing',
+						message: 'runtime key storage requires a master key to be set'
+					}
+				}),
+				{ status: 400 }
+			)
+		);
+		const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-x' }))) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(res.data.message).toMatch(/LQ_AI_GATEWAY_MASTER_KEY/);
+	});
+	it('maps other 400s to a generic failure', async () => {
+		lqFetch.mockResolvedValueOnce(
+			new Response(JSON.stringify({ detail: 'bad request' }), { status: 400 })
+		);
+		const res = (await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-x' }))) as {
+			data: { message: string };
+		};
+		expect(res.data.message).toBe('Could not save the key.');
+	});
+	it('maps 404 unknown provider and 403 admin-required', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('x', { status: 404 }));
+		let res = (await actions.setKey(form({ provider: 'ghost', api_key: 'sk-x' }))) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(res).toMatchObject({
+			status: 404,
+			data: { message: 'Unknown provider.', provider: 'ghost' }
+		});
+		lqFetch.mockResolvedValueOnce(new Response('x', { status: 403 }));
+		res = (await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-x' }))) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(res.status).toBe(403);
+		expect(res.data.message).toMatch(/admin account/);
+	});
+	it('never echoes the api_key in any payload', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('x', { status: 500 }));
+		const res = await actions.setKey(form({ provider: 'openai-prod', api_key: 'sk-SECRET' }));
+		expect(JSON.stringify(res)).not.toContain('sk-SECRET');
+	});
 });
 
 describe('/settings/models ?/revokeKey', () => {
-  it('DELETEs the provider key and succeeds', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
-    const res = await actions.revokeKey(form({ provider: 'openai-prod' }));
-    expect(res).toMatchObject({ success: true, provider: 'openai-prod' });
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/admin/provider-keys/openai-prod');
-    expect((lqFetch.mock.calls[0][2] as RequestInit).method).toBe('DELETE');
-  });
-  it('treats 404 as success (already revoked)', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('x', { status: 404 }));
-    const res = await actions.revokeKey(form({ provider: 'openai-prod' }));
-    expect(res).toMatchObject({ success: true });
-  });
-  it('maps the env-key 409 to the env-managed message', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('x', { status: 409 }));
-    const res = (await actions.revokeKey(form({ provider: 'anthropic-prod' }))) as { status: number; data: { message: string; provider: string } };
-    expect(res.status).toBe(409);
-    expect(res.data.message).toMatch(/deployment environment/);
-    expect(res.data.provider).toBe('anthropic-prod');
-  });
-  it('fails 400 with no fetch when provider is missing', async () => {
-    const res = (await actions.revokeKey(form({}))) as { status: number };
-    expect(res.status).toBe(400);
-    expect(lqFetch).not.toHaveBeenCalled();
-  });
+	it('DELETEs the provider key and succeeds', async () => {
+		lqFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+		const res = await actions.revokeKey(form({ provider: 'openai-prod' }));
+		expect(res).toMatchObject({ success: true, provider: 'openai-prod' });
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/admin/provider-keys/openai-prod');
+		expect((lqFetch.mock.calls[0][2] as RequestInit).method).toBe('DELETE');
+	});
+	it('treats 404 as success (already revoked)', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('x', { status: 404 }));
+		const res = await actions.revokeKey(form({ provider: 'openai-prod' }));
+		expect(res).toMatchObject({ success: true });
+	});
+	it('maps the env-key 409 to the env-managed message', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('x', { status: 409 }));
+		const res = (await actions.revokeKey(form({ provider: 'anthropic-prod' }))) as {
+			status: number;
+			data: { message: string; provider: string };
+		};
+		expect(res.status).toBe(409);
+		expect(res.data.message).toMatch(/deployment environment/);
+		expect(res.data.provider).toBe('anthropic-prod');
+	});
+	it('fails 400 with no fetch when provider is missing', async () => {
+		const res = (await actions.revokeKey(form({}))) as { status: number };
+		expect(res.status).toBe(400);
+		expect(lqFetch).not.toHaveBeenCalled();
+	});
 });
 ```
 
@@ -292,37 +379,44 @@ import { parseProviderKeys, type ProviderKeyRow } from '$lib/inference/providerK
 In `load`, change the early-return (models fetch failed) to also carry the new key:
 
 ```ts
-    return { isAdmin, categories: [] as CategoryView[], targets: [] as ModelTarget[], localModels: [] as ModelTarget[], modelsError: true, providerKeys: null as ProviderKeyRow[] | null };
+return {
+	isAdmin,
+	categories: [] as CategoryView[],
+	targets: [] as ModelTarget[],
+	localModels: [] as ModelTarget[],
+	modelsError: true,
+	providerKeys: null as ProviderKeyRow[] | null
+};
 ```
 
 Replace the `if (isAdmin)` block so aliases + provider-keys fetch in parallel:
 
 ```ts
-  let categories: CategoryView[];
-  let providerKeys: ProviderKeyRow[] | null = null;
-  if (isAdmin) {
-    const [aRes, pkRes] = await Promise.all([
-      lqFetch(event, '/api/v1/admin/aliases'),
-      lqFetch(event, '/api/v1/admin/provider-keys')
-    ]);
-    const entries = aRes.ok ? (((await aRes.json()) as { data: AdminAliasEntry[] }).data ?? []) : [];
-    const byName = new Map(entries.map((e) => [e.name, e]));
-    categories = options.map((o) => {
-      const e = byName.get(o.id);
-      return e ? categoryFromEntry(e) : categoryFromOption(o);
-    });
-    if (pkRes.ok) {
-      try {
-        providerKeys = parseProviderKeys(await pkRes.json());
-      } catch {
-        providerKeys = null; // non-JSON body → degraded card
-      }
-    }
-  } else {
-    categories = options.map(categoryFromOption);
-  }
+let categories: CategoryView[];
+let providerKeys: ProviderKeyRow[] | null = null;
+if (isAdmin) {
+	const [aRes, pkRes] = await Promise.all([
+		lqFetch(event, '/api/v1/admin/aliases'),
+		lqFetch(event, '/api/v1/admin/provider-keys')
+	]);
+	const entries = aRes.ok ? (((await aRes.json()) as { data: AdminAliasEntry[] }).data ?? []) : [];
+	const byName = new Map(entries.map((e) => [e.name, e]));
+	categories = options.map((o) => {
+		const e = byName.get(o.id);
+		return e ? categoryFromEntry(e) : categoryFromOption(o);
+	});
+	if (pkRes.ok) {
+		try {
+			providerKeys = parseProviderKeys(await pkRes.json());
+		} catch {
+			providerKeys = null; // non-JSON body → degraded card
+		}
+	}
+} else {
+	categories = options.map(categoryFromOption);
+}
 
-  return { isAdmin, categories, targets, localModels: local, modelsError: false, providerKeys };
+return { isAdmin, categories, targets, localModels: local, modelsError: false, providerKeys };
 ```
 
 Add the two actions after `reassign` (inside the same `actions` object):
@@ -385,6 +479,7 @@ git commit -m "feat(settings): provider-keys load + setKey/revokeKey actions (ma
 ### Task 3: `ProviderKeyRowItem.svelte`
 
 **Files:**
+
 - Create: `src/lib/inference/ProviderKeyRowItem.svelte`
 - Test: `src/lib/inference/ProviderKeyRowItem.svelte.test.ts`
 
@@ -400,52 +495,62 @@ import { fireEvent } from '@testing-library/dom';
 import ProviderKeyRowItem from './ProviderKeyRowItem.svelte';
 import type { ProviderKeyRow } from './providerKeys';
 
-const row = (over: Partial<ProviderKeyRow> = {}): ProviderKeyRow =>
-  ({ provider: 'anthropic-prod', type: 'anthropic', configured: true, last4: 'a1b2', source: 'env', ...over });
+const row = (over: Partial<ProviderKeyRow> = {}): ProviderKeyRow => ({
+	provider: 'anthropic-prod',
+	type: 'anthropic',
+	configured: true,
+	last4: 'a1b2',
+	source: 'env',
+	...over
+});
 
 describe('ProviderKeyRowItem', () => {
-  it('unconfigured: shows "No key" and an Add key button, disabled until input', async () => {
-    render(ProviderKeyRowItem, { props: { row: row({ configured: false, last4: null, source: null }) } });
-    expect(screen.getByText('No key')).toBeInTheDocument();
-    const btn = screen.getByRole('button', { name: 'Add key' });
-    expect(btn).toBeDisabled();
-    await fireEvent.input(screen.getByLabelText(/API key for anthropic-prod/i), { target: { value: 'sk-x' } });
-    expect(btn).not.toBeDisabled();
-  });
+	it('unconfigured: shows "No key" and an Add key button, disabled until input', async () => {
+		render(ProviderKeyRowItem, {
+			props: { row: row({ configured: false, last4: null, source: null }) }
+		});
+		expect(screen.getByText('No key')).toBeInTheDocument();
+		const btn = screen.getByRole('button', { name: 'Add key' });
+		expect(btn).toBeDisabled();
+		await fireEvent.input(screen.getByLabelText(/API key for anthropic-prod/i), {
+			target: { value: 'sk-x' }
+		});
+		expect(btn).not.toBeDisabled();
+	});
 
-  it('runtime row: configured status with masked last4, Replace key label, and a two-step revoke', async () => {
-    render(ProviderKeyRowItem, { props: { row: row({ source: 'runtime' }) } });
-    expect(screen.getByText(/Configured · runtime · ••••a1b2/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Replace key' })).toBeInTheDocument();
-    // two-step revoke: Revoke → confirm UI
-    await fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
-    expect(screen.getByText('Revoke key?')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Confirm revoke' })).toBeInTheDocument();
-    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.queryByText('Revoke key?')).toBeNull();
-  });
+	it('runtime row: configured status with masked last4, Replace key label, and a two-step revoke', async () => {
+		render(ProviderKeyRowItem, { props: { row: row({ source: 'runtime' }) } });
+		expect(screen.getByText(/Configured · runtime · ••••a1b2/)).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Replace key' })).toBeInTheDocument();
+		// two-step revoke: Revoke → confirm UI
+		await fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+		expect(screen.getByText('Revoke key?')).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Confirm revoke' })).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		expect(screen.queryByText('Revoke key?')).toBeNull();
+	});
 
-  it('env row: environment label + managed-by-env hints, Replace key, NO revoke control', () => {
-    render(ProviderKeyRowItem, { props: { row: row() } });
-    expect(screen.getByText(/Configured · environment · ••••a1b2/)).toBeInTheDocument();
-    expect(screen.getByText(/managed by your deployment's environment/)).toBeInTheDocument();
-    expect(screen.getByText(/takes over management from the environment/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Replace key' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Revoke' })).toBeNull();
-  });
+	it('env row: environment label + managed-by-env hints, Replace key, NO revoke control', () => {
+		render(ProviderKeyRowItem, { props: { row: row() } });
+		expect(screen.getByText(/Configured · environment · ••••a1b2/)).toBeInTheDocument();
+		expect(screen.getByText(/managed by your deployment's environment/)).toBeInTheDocument();
+		expect(screen.getByText(/takes over management from the environment/)).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Replace key' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Revoke' })).toBeNull();
+	});
 
-  it('masked input is a password field; null last4 renders without a bullet suffix', () => {
-    render(ProviderKeyRowItem, { props: { row: row({ last4: null, source: 'runtime' }) } });
-    const input = screen.getByLabelText(/API key for anthropic-prod/i) as HTMLInputElement;
-    expect(input.type).toBe('password');
-    expect(input.autocomplete).toBe('new-password');
-    expect(screen.getByText(/Configured · runtime$/)).toBeInTheDocument();
-  });
+	it('masked input is a password field; null last4 renders without a bullet suffix', () => {
+		render(ProviderKeyRowItem, { props: { row: row({ last4: null, source: 'runtime' }) } });
+		const input = screen.getByLabelText(/API key for anthropic-prod/i) as HTMLInputElement;
+		expect(input.type).toBe('password');
+		expect(input.autocomplete).toBe('new-password');
+		expect(screen.getByText(/Configured · runtime$/)).toBeInTheDocument();
+	});
 
-  it('renders a row-scoped error message when given one', () => {
-    render(ProviderKeyRowItem, { props: { row: row(), error: 'Unknown provider.' } });
-    expect(screen.getByRole('alert')).toHaveTextContent('Unknown provider.');
-  });
+	it('renders a row-scoped error message when given one', () => {
+		render(ProviderKeyRowItem, { props: { row: row(), error: 'Unknown provider.' } });
+		expect(screen.getByRole('alert')).toHaveTextContent('Unknown provider.');
+	});
 });
 ```
 
@@ -462,93 +567,116 @@ Expected: FAIL — component not found.
      only) two-step revoke. The key value is write-only — the backend returns
      at most last4 and this component clears the input after a save. -->
 <script lang="ts">
-  import { enhance } from '$app/forms';
-  import type { SubmitFunction } from '@sveltejs/kit';
-  import { sourceLabel, canRevoke, type ProviderKeyRow } from './providerKeys';
+	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import { sourceLabel, canRevoke, type ProviderKeyRow } from './providerKeys';
 
-  let { row, error = null }: { row: ProviderKeyRow; error?: string | null } = $props();
+	let { row, error = null }: { row: ProviderKeyRow; error?: string | null } = $props();
 
-  let keyValue = $state('');
-  let status = $state<'idle' | 'saving' | 'saved'>('idle');
-  let confirmingRevoke = $state(false);
+	let keyValue = $state('');
+	let status = $state<'idle' | 'saving' | 'saved'>('idle');
+	let confirmingRevoke = $state(false);
 
-  const statusText = $derived(
-    row.configured
-      ? `✓ Configured · ${sourceLabel(row)}${row.last4 ? ` · ••••${row.last4}` : ''}`
-      : 'No key'
-  );
+	const statusText = $derived(
+		row.configured
+			? `✓ Configured · ${sourceLabel(row)}${row.last4 ? ` · ••••${row.last4}` : ''}`
+			: 'No key'
+	);
 
-  const submitKey: SubmitFunction = () => {
-    status = 'saving';
-    return async ({ result, update }) => {
-      if (result.type === 'success') {
-        status = 'saved';
-        keyValue = ''; // write-only: never keep the secret around
-      } else {
-        status = 'idle';
-      }
-      await update(); // refresh statuses (hot-applied) + surface failure payload
-    };
-  };
+	const submitKey: SubmitFunction = () => {
+		status = 'saving';
+		return async ({ result, update }) => {
+			if (result.type === 'success') {
+				status = 'saved';
+				keyValue = ''; // write-only: never keep the secret around
+			} else {
+				status = 'idle';
+			}
+			await update(); // refresh statuses (hot-applied) + surface failure payload
+		};
+	};
 
-  const submitRevoke: SubmitFunction = () => {
-    confirmingRevoke = false;
-    return async ({ update }) => {
-      await update();
-    };
-  };
+	const submitRevoke: SubmitFunction = () => {
+		confirmingRevoke = false;
+		return async ({ update }) => {
+			await update();
+		};
+	};
 </script>
 
 <div class="border-b border-mlq-subtle px-4 py-3 last:border-b-0">
-  <div class="flex items-center gap-2">
-    <span class="text-sm font-medium text-mlq-text">{row.provider}</span>
-    {#if row.type}<span class="rounded-full border border-mlq-subtle px-1.5 text-xs text-mlq-muted">{row.type}</span>{/if}
-    <span class="text-xs {row.configured ? 'text-mlq-success' : 'text-mlq-muted'}">{statusText}</span>
-  </div>
-  {#if row.source === 'env'}
-    <p class="mt-0.5 text-xs text-mlq-muted">This key is managed by your deployment's environment.</p>
-  {/if}
+	<div class="flex items-center gap-2">
+		<span class="text-sm font-medium text-mlq-text">{row.provider}</span>
+		{#if row.type}<span class="rounded-full border border-mlq-subtle px-1.5 text-xs text-mlq-muted"
+				>{row.type}</span
+			>{/if}
+		<span class="text-xs {row.configured ? 'text-mlq-success' : 'text-mlq-muted'}"
+			>{statusText}</span
+		>
+	</div>
+	{#if row.source === 'env'}
+		<p class="mt-0.5 text-xs text-mlq-muted">
+			This key is managed by your deployment's environment.
+		</p>
+	{/if}
 
-  <div class="mt-2 flex flex-wrap items-center gap-2">
-    <form method="POST" action="?/setKey" use:enhance={submitKey} class="flex items-center gap-2">
-      <input type="hidden" name="provider" value={row.provider} />
-      <input
-        type="password"
-        name="api_key"
-        autocomplete="new-password"
-        aria-label="API key for {row.provider}"
-        placeholder={row.configured ? 'New key' : 'Paste key'}
-        bind:value={keyValue}
-        class="w-56 rounded-mlq-control border border-mlq-subtle bg-transparent px-2 py-1 text-xs text-mlq-text outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow"
-      />
-      <button type="submit" disabled={!keyValue.trim()}
-        class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:bg-mlq-subtle/50 disabled:opacity-60">
-        {row.configured ? 'Replace key' : 'Add key'}
-      </button>
-      {#if status === 'saving'}<span class="text-xs text-mlq-muted">Saving…</span>
-      {:else if status === 'saved'}<span class="text-xs text-mlq-success">Saved</span>{/if}
-    </form>
+	<div class="mt-2 flex flex-wrap items-center gap-2">
+		<form method="POST" action="?/setKey" use:enhance={submitKey} class="flex items-center gap-2">
+			<input type="hidden" name="provider" value={row.provider} />
+			<input
+				type="password"
+				name="api_key"
+				autocomplete="new-password"
+				aria-label="API key for {row.provider}"
+				placeholder={row.configured ? 'New key' : 'Paste key'}
+				bind:value={keyValue}
+				class="w-56 rounded-mlq-control border border-mlq-subtle bg-transparent px-2 py-1 text-xs text-mlq-text outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow"
+			/>
+			<button
+				type="submit"
+				disabled={!keyValue.trim()}
+				class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:bg-mlq-subtle/50 disabled:opacity-60"
+			>
+				{row.configured ? 'Replace key' : 'Add key'}
+			</button>
+			{#if status === 'saving'}<span class="text-xs text-mlq-muted">Saving…</span>
+			{:else if status === 'saved'}<span class="text-xs text-mlq-success">Saved</span>{/if}
+		</form>
 
-    {#if canRevoke(row)}
-      {#if confirmingRevoke}
-        <span class="text-xs text-mlq-text">Revoke key?</span>
-        <form method="POST" action="?/revokeKey" use:enhance={submitRevoke} class="inline">
-          <input type="hidden" name="provider" value={row.provider} />
-          <button type="submit" class="rounded-mlq-control border border-mlq-error px-2.5 py-1 text-xs text-mlq-error hover:bg-mlq-error/10">Confirm revoke</button>
-        </form>
-        <button type="button" onclick={() => (confirmingRevoke = false)} class="text-xs text-mlq-muted hover:text-mlq-text">Cancel</button>
-      {:else}
-        <button type="button" onclick={() => (confirmingRevoke = true)} class="text-xs text-mlq-muted hover:text-mlq-error">Revoke</button>
-      {/if}
-    {/if}
-  </div>
+		{#if canRevoke(row)}
+			{#if confirmingRevoke}
+				<span class="text-xs text-mlq-text">Revoke key?</span>
+				<form method="POST" action="?/revokeKey" use:enhance={submitRevoke} class="inline">
+					<input type="hidden" name="provider" value={row.provider} />
+					<button
+						type="submit"
+						class="rounded-mlq-control border border-mlq-error px-2.5 py-1 text-xs text-mlq-error hover:bg-mlq-error/10"
+						>Confirm revoke</button
+					>
+				</form>
+				<button
+					type="button"
+					onclick={() => (confirmingRevoke = false)}
+					class="text-xs text-mlq-muted hover:text-mlq-text">Cancel</button
+				>
+			{:else}
+				<button
+					type="button"
+					onclick={() => (confirmingRevoke = true)}
+					class="text-xs text-mlq-muted hover:text-mlq-error">Revoke</button
+				>
+			{/if}
+		{/if}
+	</div>
 
-  {#if row.source === 'env'}
-    <p class="mt-1 text-xs text-mlq-muted/80">Saving a key here takes over management from the environment.</p>
-  {/if}
-  {#if error}
-    <p role="alert" class="mt-1 text-xs text-mlq-error">{error}</p>
-  {/if}
+	{#if row.source === 'env'}
+		<p class="mt-1 text-xs text-mlq-muted/80">
+			Saving a key here takes over management from the environment.
+		</p>
+	{/if}
+	{#if error}
+		<p role="alert" class="mt-1 text-xs text-mlq-error">{error}</p>
+	{/if}
 </div>
 ```
 
@@ -569,6 +697,7 @@ git commit -m "feat(settings): ProviderKeyRowItem (masked write-only input, env 
 ### Task 4: `ProviderKeysCard.svelte` + page mount
 
 **Files:**
+
 - Create: `src/lib/inference/ProviderKeysCard.svelte`
 - Test: `src/lib/inference/ProviderKeysCard.svelte.test.ts`
 - Modify: `src/routes/(app)/settings/models/+page.svelte`
@@ -585,37 +714,45 @@ import ProviderKeysCard from './ProviderKeysCard.svelte';
 import type { ProviderKeyRow } from './providerKeys';
 
 const rows: ProviderKeyRow[] = [
-  { provider: 'anthropic-prod', type: 'anthropic', configured: true, last4: 'a1b2', source: 'env' },
-  { provider: 'openai-prod', type: 'openai', configured: false, last4: null, source: null }
+	{ provider: 'anthropic-prod', type: 'anthropic', configured: true, last4: 'a1b2', source: 'env' },
+	{ provider: 'openai-prod', type: 'openai', configured: false, last4: null, source: null }
 ];
 
 describe('ProviderKeysCard', () => {
-  it('admin: renders one row per provider with the sub-copy', () => {
-    render(ProviderKeysCard, { props: { isAdmin: true, providerKeys: rows, form: null } });
-    expect(screen.getByRole('heading', { name: /provider keys/i })).toBeInTheDocument();
-    expect(screen.getByText(/encrypted at rest .* applied immediately/i)).toBeInTheDocument();
-    expect(screen.getByText('anthropic-prod')).toBeInTheDocument();
-    expect(screen.getByText('openai-prod')).toBeInTheDocument();
-  });
-  it('routes a row-scoped error to the matching row only', () => {
-    render(ProviderKeysCard, { props: { isAdmin: true, providerKeys: rows, form: { provider: 'openai-prod', message: 'Unknown provider.' } } });
-    const alerts = screen.getAllByRole('alert');
-    expect(alerts).toHaveLength(1);
-    expect(alerts[0]).toHaveTextContent('Unknown provider.');
-  });
-  it('admin: empty list → no-providers note', () => {
-    render(ProviderKeysCard, { props: { isAdmin: true, providerKeys: [], form: null } });
-    expect(screen.getByText('No providers are configured in the gateway.')).toBeInTheDocument();
-  });
-  it('admin: failed fetch (null) → degraded message', () => {
-    render(ProviderKeysCard, { props: { isAdmin: true, providerKeys: null, form: null } });
-    expect(screen.getByText('Could not load provider keys right now.')).toBeInTheDocument();
-  });
-  it('non-admin: managed-by-administrator note, no rows', () => {
-    render(ProviderKeysCard, { props: { isAdmin: false, providerKeys: null, form: null } });
-    expect(screen.getByText('Provider API keys are managed by your administrator.')).toBeInTheDocument();
-    expect(screen.queryByText('anthropic-prod')).toBeNull();
-  });
+	it('admin: renders one row per provider with the sub-copy', () => {
+		render(ProviderKeysCard, { props: { isAdmin: true, providerKeys: rows, form: null } });
+		expect(screen.getByRole('heading', { name: /provider keys/i })).toBeInTheDocument();
+		expect(screen.getByText(/encrypted at rest .* applied immediately/i)).toBeInTheDocument();
+		expect(screen.getByText('anthropic-prod')).toBeInTheDocument();
+		expect(screen.getByText('openai-prod')).toBeInTheDocument();
+	});
+	it('routes a row-scoped error to the matching row only', () => {
+		render(ProviderKeysCard, {
+			props: {
+				isAdmin: true,
+				providerKeys: rows,
+				form: { provider: 'openai-prod', message: 'Unknown provider.' }
+			}
+		});
+		const alerts = screen.getAllByRole('alert');
+		expect(alerts).toHaveLength(1);
+		expect(alerts[0]).toHaveTextContent('Unknown provider.');
+	});
+	it('admin: empty list → no-providers note', () => {
+		render(ProviderKeysCard, { props: { isAdmin: true, providerKeys: [], form: null } });
+		expect(screen.getByText('No providers are configured in the gateway.')).toBeInTheDocument();
+	});
+	it('admin: failed fetch (null) → degraded message', () => {
+		render(ProviderKeysCard, { props: { isAdmin: true, providerKeys: null, form: null } });
+		expect(screen.getByText('Could not load provider keys right now.')).toBeInTheDocument();
+	});
+	it('non-admin: managed-by-administrator note, no rows', () => {
+		render(ProviderKeysCard, { props: { isAdmin: false, providerKeys: null, form: null } });
+		expect(
+			screen.getByText('Provider API keys are managed by your administrator.')
+		).toBeInTheDocument();
+		expect(screen.queryByText('anthropic-prod')).toBeNull();
+	});
 });
 ```
 
@@ -632,38 +769,47 @@ Expected: FAIL — component not found.
      API itself is admin-only). `form` is the page's ActionData — failures
      carry { provider, message } so the error lands on the right row. -->
 <script lang="ts">
-  import ProviderKeyRowItem from './ProviderKeyRowItem.svelte';
-  import type { ProviderKeyRow } from './providerKeys';
+	import ProviderKeyRowItem from './ProviderKeyRowItem.svelte';
+	import type { ProviderKeyRow } from './providerKeys';
 
-  let { isAdmin, providerKeys, form }: {
-    isAdmin: boolean;
-    providerKeys: ProviderKeyRow[] | null;
-    form: { provider?: string; message?: string } | null | undefined;
-  } = $props();
+	let {
+		isAdmin,
+		providerKeys,
+		form
+	}: {
+		isAdmin: boolean;
+		providerKeys: ProviderKeyRow[] | null;
+		form: { provider?: string; message?: string } | null | undefined;
+	} = $props();
 
-  function rowError(provider: string): string | null {
-    return form?.message && form.provider === provider ? form.message : null;
-  }
+	function rowError(provider: string): string | null {
+		return form?.message && form.provider === provider ? form.message : null;
+	}
 </script>
 
 <section class="rounded-mlq-control border border-mlq-subtle">
-  <div class="border-b border-mlq-subtle px-4 py-2">
-    <h2 class="text-xs font-medium uppercase tracking-wide text-mlq-muted">Provider keys</h2>
-    {#if isAdmin}
-      <p class="mt-1 text-xs text-mlq-muted">Keys are encrypted at rest in the gateway and applied immediately — no restart. The full key is never shown again after saving.</p>
-    {/if}
-  </div>
-  {#if !isAdmin}
-    <p class="px-4 py-3 text-sm text-mlq-muted">Provider API keys are managed by your administrator.</p>
-  {:else if providerKeys === null}
-    <p class="px-4 py-3 text-sm text-mlq-muted">Could not load provider keys right now.</p>
-  {:else if providerKeys.length === 0}
-    <p class="px-4 py-3 text-sm text-mlq-muted">No providers are configured in the gateway.</p>
-  {:else}
-    {#each providerKeys as row (row.provider)}
-      <ProviderKeyRowItem {row} error={rowError(row.provider)} />
-    {/each}
-  {/if}
+	<div class="border-b border-mlq-subtle px-4 py-2">
+		<h2 class="text-xs font-medium tracking-wide text-mlq-muted uppercase">Provider keys</h2>
+		{#if isAdmin}
+			<p class="mt-1 text-xs text-mlq-muted">
+				Keys are encrypted at rest in the gateway and applied immediately — no restart. The full key
+				is never shown again after saving.
+			</p>
+		{/if}
+	</div>
+	{#if !isAdmin}
+		<p class="px-4 py-3 text-sm text-mlq-muted">
+			Provider API keys are managed by your administrator.
+		</p>
+	{:else if providerKeys === null}
+		<p class="px-4 py-3 text-sm text-mlq-muted">Could not load provider keys right now.</p>
+	{:else if providerKeys.length === 0}
+		<p class="px-4 py-3 text-sm text-mlq-muted">No providers are configured in the gateway.</p>
+	{:else}
+		{#each providerKeys as row (row.provider)}
+			<ProviderKeyRowItem {row} error={rowError(row.provider)} />
+		{/each}
+	{/if}
 </section>
 ```
 
@@ -675,19 +821,19 @@ Script: add the `form` prop and the import —
 
 ```svelte
 <script lang="ts">
-  import CategoryRow from '$lib/inference/CategoryRow.svelte';
-  import LocalModelsCard from '$lib/inference/LocalModelsCard.svelte';
-  import ProviderKeysCard from '$lib/inference/ProviderKeysCard.svelte';
-  import type { PageData, ActionData } from './$types';
+	import CategoryRow from '$lib/inference/CategoryRow.svelte';
+	import LocalModelsCard from '$lib/inference/LocalModelsCard.svelte';
+	import ProviderKeysCard from '$lib/inference/ProviderKeysCard.svelte';
+	import type { PageData, ActionData } from './$types';
 
-  let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 ```
 
 Replace the placeholder section (the `<section>` containing "In-app key management is coming.") with:
 
 ```svelte
-    <ProviderKeysCard isAdmin={data.isAdmin} providerKeys={data.providerKeys} {form} />
+<ProviderKeysCard isAdmin={data.isAdmin} providerKeys={data.providerKeys} {form} />
 ```
 
 (Note: `ActionData` is a union including `reassign`'s `{ message }`-only failures — `rowError` already guards on `form.provider === provider`, and `reassign` failures carry no `provider`, so they never land on a key row. The `form` prop typing in ProviderKeysCard is structural, so passing the page's `form` is type-compatible; if `npm run check` complains about the union, widen the card's prop type to match what check suggests, keeping the `provider`/`message` reads optional.)
@@ -709,6 +855,7 @@ git commit -m "feat(settings): ProviderKeysCard replaces the BYOK placeholder on
 ### Task 5: Non-destructive live e2e + full verification
 
 **Files:**
+
 - Create: `tests/byok-provider-keys.spec.ts`
 
 - [ ] **Step 1: Prep the dev stack**
@@ -731,37 +878,41 @@ const EMAIL = process.env.DONNA_E2E_EMAIL ?? 'admin@lq.ai';
 const PASSWORD = process.env.DONNA_E2E_PASSWORD!;
 
 async function login(page: Page) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
 // Read-only by design: setting/revoking a real key would mutate gateway.yaml
 // (and replacing an env key permanently converts it to runtime-managed), which
 // is not test-reversible. The write paths are unit-tested; this verifies the
 // live read path + env-row affordances.
-test('settings → models: provider-keys card renders live statuses (read-only)', async ({ page }) => {
-  await login(page);
-  await page.goto('/settings/models');
+test('settings → models: provider-keys card renders live statuses (read-only)', async ({
+	page
+}) => {
+	await login(page);
+	await page.goto('/settings/models');
 
-  const card = page.locator('section', { has: page.getByRole('heading', { name: /provider keys/i }) });
-  await expect(card).toBeVisible();
-  await expect(card.getByText(/never shown again after saving/i)).toBeVisible();
+	const card = page.locator('section', {
+		has: page.getByRole('heading', { name: /provider keys/i })
+	});
+	await expect(card).toBeVisible();
+	await expect(card.getByText(/never shown again after saving/i)).toBeVisible();
 
-  // The dev gateway config has at least one provider; each row exposes a masked input.
-  const inputs = card.locator('input[type="password"]');
-  expect(await inputs.count()).toBeGreaterThan(0);
+	// The dev gateway config has at least one provider; each row exposes a masked input.
+	const inputs = card.locator('input[type="password"]');
+	expect(await inputs.count()).toBeGreaterThan(0);
 
-  // Dev stack keys come from .env → expect an env-sourced row; it must show the
-  // env hints and NO revoke control. (Skip gracefully if this env has none.)
-  const envRow = card.locator('div', { hasText: /Configured · environment/ }).first();
-  if (await envRow.count()) {
-    await expect(envRow.getByText(/managed by your deployment's environment/)).toBeVisible();
-    await expect(envRow.getByRole('button', { name: 'Revoke' })).toHaveCount(0);
-    await expect(envRow.getByRole('button', { name: 'Replace key' })).toBeVisible();
-  }
+	// Dev stack keys come from .env → expect an env-sourced row; it must show the
+	// env hints and NO revoke control. (Skip gracefully if this env has none.)
+	const envRow = card.locator('div', { hasText: /Configured · environment/ }).first();
+	if (await envRow.count()) {
+		await expect(envRow.getByText(/managed by your deployment's environment/)).toBeVisible();
+		await expect(envRow.getByRole('button', { name: 'Revoke' })).toHaveCount(0);
+		await expect(envRow.getByRole('button', { name: 'Replace key' })).toBeVisible();
+	}
 });
 ```
 

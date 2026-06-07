@@ -3,6 +3,7 @@
 **To:** lq-ai backend session · **From:** Donna · **Date:** 2026-05-29 · **Pin observed:** `438198c`
 
 > **File locations (absolute):**
+>
 > - This request doc lives in the **Donna** repo: `/Users/kevinkeller/Code/Donna/docs/upstream-requests/lq-ai-skill-inputs-corpus.md`
 > - The work happens in the **lq-ai** repo rooted at `/Users/kevinkeller/Code/lq-ai`. Files to change:
 >   - `/Users/kevinkeller/Code/lq-ai/gateway/app/skills/assembler.py` (the `interpolate` / `_render_skill` / `assemble_skill_prompt` functions)
@@ -18,13 +19,13 @@
 
 - `gateway/app/skills/assembler.py` → `interpolate(template, bindings)` substitutes only `{{name}}`; its docstring notes "surplus inputs the body never references are tolerated" — i.e. dropped. `assemble_skill_prompt` calls `_render_skill(skill, inputs=bindings)` which interpolates `content_md` and reference files, nothing more.
 - `grep -rl '{{' skills/*/SKILL.md` → no matches. No built-in body is templated.
-- Repro: attach `comms-improver` (declares required `text` + `audience`) and POST a message with `skill_inputs: {"comms-improver": {"text": "...", "audience": "a 10-year-old"}}`. The model replies "I don't see any text to rewrite" — the bound inputs were dropped. A user-skill whose body contains `{{topic}}`/`{{style}}` *does* interpolate correctly, confirming the mechanism works only for templated bodies.
+- Repro: attach `comms-improver` (declares required `text` + `audience`) and POST a message with `skill_inputs: {"comms-improver": {"text": "...", "audience": "a 10-year-old"}}`. The model replies "I don't see any text to rewrite" — the bound inputs were dropped. A user-skill whose body contains `{{topic}}`/`{{style}}` _does_ interpolate correctly, confirming the mechanism works only for templated bodies.
 - `extract_required_inputs` re-parses frontmatter for required-input names, but missing required inputs are **not enforced** for built-ins in practice: posting `contract-qa` with no `skill_inputs` returns `200` (the model asks conversationally) rather than raising `SkillInputMissing`.
 
 ## Proposed fix
 
 **Option A (recommended) — append unreferenced bound inputs as a labelled context block.**
-After interpolation in `_render_skill` / `assemble_skill_prompt`, for each skill take the bound inputs that were *not* consumed by a `{{placeholder}}` and append them to the assembled skill prompt as a short labelled block, e.g.:
+After interpolation in `_render_skill` / `assemble_skill_prompt`, for each skill take the bound inputs that were _not_ consumed by a `{{placeholder}}` and append them to the assembled skill prompt as a short labelled block, e.g.:
 
 ```
 ### Provided inputs for {skill_name}

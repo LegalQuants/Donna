@@ -41,6 +41,7 @@ seam already exists). Expect minor docs updates too (About pages will have just 
 ## NEXT MILESTONE: docs-polish (the last open one — run it as its own loop)
 
 Per [[donna-docs-polish-milestone]], user-locked scope:
+
 1. **About refresh** — `/about` pages were authored before: Automations (sessions/receipts,
    run-now, schedules, watches, **Results**), editable matter, BYOK, ensemble verification ship.
    Fact-check each page against the live components (the 2a/2b loop caught real defects that way).
@@ -63,7 +64,7 @@ Per [[donna-docs-polish-milestone]], user-locked scope:
 ## Dev-stack + build-loop reminders (see [[donna-dev-stack]], [[donna-workflow]])
 
 - **Shifted ports.** Cold start: `set -a; . ./.env; set +a; docker compose up -d --build postgres
-  redis minio gateway api donna-web ingest-worker arq-worker`. App http://localhost:13002 · API
+redis minio gateway api donna-web ingest-worker arq-worker`. App http://localhost:13002 · API
   :18000 · admin `admin@lq.ai`/`$DONNA_E2E_PASSWORD`.
 - **Rebuild `donna-web` before any manual/e2e check** — stale container serves the old bundle.
   After a pin bump also rebuild `api` + `arq-worker` (migrations run on api boot).

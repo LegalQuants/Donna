@@ -9,20 +9,20 @@
  * close and plain-language, which suits a low-stakes footer label.
  */
 const ACRONYMS: Record<string, string> = {
-  msa: 'MSA',
-  nda: 'NDA',
-  dpa: 'DPA',
-  qa: 'QA',
-  saas: 'SaaS',
-  sow: 'SOW',
-  baa: 'BAA',
-  gdpr: 'GDPR'
+	msa: 'MSA',
+	nda: 'NDA',
+	dpa: 'DPA',
+	qa: 'QA',
+	saas: 'SaaS',
+	sow: 'SOW',
+	baa: 'BAA',
+	gdpr: 'GDPR'
 };
 
 export function prettifySkillSlug(slug: string): string {
-  return slug
-    .split('-')
-    .filter((word) => word.length > 0)
-    .map((word) => ACRONYMS[word.toLowerCase()] ?? word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+	return slug
+		.split('-')
+		.filter((word) => word.length > 0)
+		.map((word) => ACRONYMS[word.toLowerCase()] ?? word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
 }

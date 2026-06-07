@@ -30,17 +30,20 @@ Add a `/settings/data` "danger zone" to the existing P7-1 settings shell: **expo
 ## Architecture
 
 ### Route & shell
+
 - **`SettingsRail.svelte`** — append `{ href: '/settings/data', label: 'Data & privacy' }` to the `sections` array (built-as-you-go; rail already prefix-matches active state).
 - **`src/routes/(app)/settings/data/+page.svelte`** — the page UI (export card + danger zone).
 - **`src/routes/(app)/settings/data/+page.server.ts`** — SSR load (starts idle; nothing recoverable from `/users/me`) + form actions: `requestExport`, `requestDeletion`, `cancelDeletion`. All via `lqFetch`.
 - **`src/routes/(app)/settings/data/export/[job_id]/+server.ts`** — BFF GET proxy for the client poll → `lqFetch` to `GET /users/me/export/{job_id}`. (A proxy is needed because the poll is a client-side `fetch` on an interval; the POSTs use form actions.)
 
 ### Components
+
 - **Export card** (in `+page.svelte`, or a small `DataExportCard.svelte` if it earns its own file) — owns the export state machine and the poll controller.
 - **Export poll controller** — a rune-based `$state` controller mirroring `KbFileRow`'s P4-3b ingest poll: starts on a returned `job_id`, polls the proxy GET on an interval, transitions on `status`, **pauses on `document.visibilityState === "hidden"`** and resumes on `visible`, stops on terminal states (`completed`/`failed`).
 - **`DeleteAccountModal.svelte`** — type-`DELETE`-to-confirm modal; a11y mirrors `ReceiptsDrawer` (focus trap, `role="dialog"`, Esc to close, restore focus). Emits confirm only when the typed value matches.
 
 ### Data flow
+
 - **Export:** click → `requestExport` action → `{ job_id }` → controller polls proxy GET → `completed` renders the presigned `download_url` as a "Download archive" link (plain `<a download>` with the `svelte/no-navigation-without-resolve` disable comment if it's an in-app anchor; external presigned URL likely needs no resolve) → "Start a new export" resets to idle.
 - **Delete:** click "Delete my account" → open `DeleteAccountModal` → type `DELETE` → confirm → `requestDeletion` action → `{ scheduled_deletion_at, grace_period_days }` → render one-time confirmation → clear BFF session + `goto('/login?...')`.
 - **Cancel:** click "Cancel scheduled deletion" → `cancelDeletion` action → `204` "Scheduled deletion cancelled" / `400` "No deletion was pending". Inline status message; no redirect.

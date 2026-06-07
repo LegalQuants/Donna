@@ -31,7 +31,7 @@ The streamed assistant message persists fine (token counts land in `messages`), 
 
 The `await log_writer.write(...)` is **after** the `yield b"data: [DONE]\n\n"`. The api-side consumer (`GatewayClient.chat_completion_stream` → `_iter_sse_chunks`) stops iterating when it sees `[DONE]` and closes the `async with client.stream(...)` context, which cancels this async generator **before** the write executes. So the row is never persisted.
 
-Note the **failure path** in the same function (~line 1181) calls `_write_failure(...)` **before** its `yield b"data: [DONE]\n\n"` — which is why refused/error turns *do* log. Only the success path is affected.
+Note the **failure path** in the same function (~line 1181) calls `_write_failure(...)` **before** its `yield b"data: [DONE]\n\n"` — which is why refused/error turns _do_ log. Only the success path is affected.
 
 ## Fix
 
@@ -61,4 +61,5 @@ Add a gateway/api integration test asserting that a **streaming** chat completio
 The Receipts drawer's provenance timeline and the per-message anonymization indicator both read `inference_routing_log` (via `GET /chats/{id}/receipts`). Until this is fixed, those surfaces are blank for any chat created in the real (streaming) UI — the feature only demonstrably works on `stream:false`/API-seeded chats. No Donna change is needed once the row is written for streamed turns; the surfaces light up automatically.
 
 ## When it's done
+
 Report the merged SHA. Donna will bump the `vendor/lq-ai` pin, regen types (likely no type diff), and the drawer/indicator will populate for normal streamed chats.

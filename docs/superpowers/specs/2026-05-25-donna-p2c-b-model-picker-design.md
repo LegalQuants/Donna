@@ -6,7 +6,7 @@
 
 P2c Slice B ("composer power") covers three independent pre-send composer features. During brainstorming we split it into **three sub-slices, each its own PR**:
 
-1. **B1 — Model / inference-tier picker** ← *this spec*
+1. **B1 — Model / inference-tier picker** ← _this spec_
 2. **B2 — Skill-attach** (search/attach skills + per-skill inputs) — own spec later
 3. **B3 — Enhance Prompt** (rewrite draft before sending) — own spec later
 
@@ -23,15 +23,15 @@ Replace the hardcoded `model: 'smart'` in the chat SSE BFF with a composer contr
 - **135 are `lq_ai_kind: "provider_native"`** — the raw provider catalog (whisper, tts, embeddings, image, moderation, sora, dozens of dated GPT/Claude snapshots). Unsuitable for a picker.
 - **7 are `lq_ai_kind: "alias"`** — the curated set:
 
-  | alias | `routed_inference_tier` | `lq_ai_resolves_to` |
-  |---|---|---|
-  | `smart` | 4 | `anthropic-prod/claude-opus-4-7` |
-  | `fast` | 4 | `anthropic-prod/claude-sonnet-4-6` |
-  | `budget` | 4 | `anthropic-prod/claude-haiku-4-5` |
-  | `local` | 1 | `ollama-local/qwen3.5:9b` |
-  | `local-fast` | 1 | `ollama-local/qwen3.5:4b-nvfp4` |
-  | `local-thinking` | 1 | `ollama-local/qwen3.5:9b` |
-  | `embedding` | 4 | `openai-prod/text-embedding-3-small` |
+  | alias            | `routed_inference_tier` | `lq_ai_resolves_to`                  |
+  | ---------------- | ----------------------- | ------------------------------------ |
+  | `smart`          | 4                       | `anthropic-prod/claude-opus-4-7`     |
+  | `fast`           | 4                       | `anthropic-prod/claude-sonnet-4-6`   |
+  | `budget`         | 4                       | `anthropic-prod/claude-haiku-4-5`    |
+  | `local`          | 1                       | `ollama-local/qwen3.5:9b`            |
+  | `local-fast`     | 1                       | `ollama-local/qwen3.5:4b-nvfp4`      |
+  | `local-thinking` | 1                       | `ollama-local/qwen3.5:9b`            |
+  | `embedding`      | 4                       | `openai-prod/text-embedding-3-small` |
 
 **Key consequences:**
 
@@ -41,13 +41,13 @@ Replace the hardcoded `model: 'smart'` in the chat SSE BFF with a composer contr
 
 ## Decisions (from brainstorming)
 
-| Decision | Choice |
-|---|---|
+| Decision        | Choice                                                                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Picker contents | **All 6 chat aliases** (`smart`/`fast`/`budget` + `local`/`local-fast`/`local-thinking`), grouped **Cloud / Local**. Filter out `embedding` and all `provider_native`. |
-| Persistence | **Sticky + remembered** — selection synced to `localStorage['donna.model']`, survives reload and applies to new chats. Default `smart` on first use. |
-| Placement | **Control row beneath the textarea**, picker left-aligned, menu opens **upward**. Designed to also host B2/B3 controls. |
-| Trigger label | **Alias + resolved model**, e.g. `smart · Opus 4.7` (derived from `lq_ai_resolves_to`). |
-| Architecture | **Thin BFF proxy + client fetch + rune store** (Approach 1). |
+| Persistence     | **Sticky + remembered** — selection synced to `localStorage['donna.model']`, survives reload and applies to new chats. Default `smart` on first use.                   |
+| Placement       | **Control row beneath the textarea**, picker left-aligned, menu opens **upward**. Designed to also host B2/B3 controls.                                                |
+| Trigger label   | **Alias + resolved model**, e.g. `smart · Opus 4.7` (derived from `lq_ai_resolves_to`).                                                                                |
+| Architecture    | **Thin BFF proxy + client fetch + rune store** (Approach 1).                                                                                                           |
 
 ## Architecture & data flow
 

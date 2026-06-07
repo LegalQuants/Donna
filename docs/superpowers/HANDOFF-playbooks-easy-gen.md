@@ -5,10 +5,12 @@
 ## Where we are
 
 Slice C (the "generate a playbook from prior agreements" wizard) is **7 of 10 tasks done** via the usual subagent-driven loop (each task spec+quality reviewed; branch is green: `npm run check` 0/0, **584/584** unit tests). Plan + spec are committed on the branch:
+
 - Spec: `docs/superpowers/specs/2026-05-30-donna-playbooks-easy-gen-design.md`
 - Plan: `docs/superpowers/plans/2026-05-30-playbooks-easy-gen.md` (the 10 tasks)
 
 **Done (T1–T7), committed on the branch:**
+
 - T1 `41cb5fd` — types (`PlaybookCreate`/`PositionCreate`/`EasyPlaybookGeneration`/`DraftPlaybook`) + widened `PositionCard` to render a `PositionCreate`.
 - T2 `667591a` — BFF proxies `(app)/playbooks/easy/+server.ts` POST + `(app)/playbooks/easy/[generation_id]/+server.ts` GET.
 - T3 `d3f3da5`+`9985757` — `src/lib/playbooks/genFlow.svelte.ts` (prepare uploads→generate→poll→review; `stuck`; `resume`).
