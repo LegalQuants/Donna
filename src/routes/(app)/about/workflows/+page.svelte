@@ -4,8 +4,9 @@
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   The <strong>Workflows</strong> section is the single place in Donna where you save and organise reusable
-  building blocks. One sidebar entry opens a hub with three tabs — <strong>Skills</strong>,
-  <strong>Playbooks</strong>, and <strong>Prompts</strong> — each covering a different kind of reuse.
+  building blocks. One sidebar entry opens a hub with four tabs — <strong>Skills</strong>,
+  <strong>Playbooks</strong>, <strong>Prompts</strong>, and <strong>Automations</strong> — each
+  covering a different kind of reuse.
 </p>
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Skills</h2>
@@ -83,4 +84,14 @@
   to filter by name or tag, then click a result to insert its text at your cursor. You can also save
   whatever you have already typed as a new prompt directly from the picker — name it and press
   <strong>Save</strong> without leaving the chat.
+</p>
+
+<h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Automations</h2>
+
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+  The <strong>Automations</strong> tab is where Donna runs work on its own — one-off runs,
+  cron-style schedules, and watches that fire when new documents arrive in a knowledge base, each
+  with a full receipt of what the agent did and what it produced.
+  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+  See the dedicated <a href="/about/automations" class="font-medium text-mlq-strong hover:underline">Automations guide</a>.
 </p>
