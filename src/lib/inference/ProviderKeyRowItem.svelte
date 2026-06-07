@@ -16,7 +16,9 @@
   const statusText = $derived(
     row.configured
       ? `✓ Configured · ${sourceLabel(row)}${row.last4 ? ` · ••••${row.last4}` : ''}`
-      : 'No key'
+      : row.source === 'env'
+        ? 'Not set'
+        : 'No key'
   );
 
   const submitKey: SubmitFunction = () => {
@@ -47,7 +49,11 @@
     <span class="text-xs {row.configured ? 'text-mlq-success' : 'text-mlq-muted'}">{statusText}</span>
   </div>
   {#if row.source === 'env'}
-    <p class="mt-0.5 text-xs text-mlq-muted">This key is managed by your deployment's environment.</p>
+    <p class="mt-0.5 text-xs text-mlq-muted">
+      {row.configured
+        ? "This key is managed by your deployment's environment."
+        : "Defined by your deployment's environment, but the variable is empty — set it there, or add a runtime key here."}
+    </p>
   {/if}
 
   <div class="mt-2 flex flex-wrap items-center gap-2">

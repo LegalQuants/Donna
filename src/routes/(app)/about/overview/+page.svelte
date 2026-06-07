@@ -26,7 +26,7 @@
 <ul class="mb-3 ml-4 list-disc space-y-1 text-sm text-mlq-text">
   <li><strong>Assistant</strong> — the main chat interface; start a conversation, attach files, and apply skills or prompts from your library.</li>
   <li><strong>Projects</strong> — organise your work by matter; chats and documents can be scoped to a project so context stays together.</li>
-  <li><strong>Workflows</strong> — skills, playbooks, and saved prompts that automate or accelerate recurring tasks.</li>
+  <li><strong>Workflows</strong> — skills, playbooks, saved prompts, and automations that run or accelerate recurring tasks.</li>
   <li><strong>Tabular</strong> — structured document review; extract and compare fields across a set of files in a grid.</li>
   <li><strong>About</strong> — this guide.</li>
   <li><strong>Settings</strong> — account, model routing, and provider configuration.</li>
@@ -37,8 +37,8 @@
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   The rail on the left of this guide has one page per area of Donna. Start with the
   <strong>Assistant</strong> page — it covers the core chat loop that underlies everything else.
-  From there, work through <strong>Projects</strong>, <strong>Workflows</strong>, and
-  <strong>Tabular</strong> in any order that suits your workflow. The <strong>Knowledge</strong>,
+  From there, work through <strong>Projects</strong>, <strong>Workflows</strong>,
+  <strong>Automations</strong>, and <strong>Tabular</strong> in any order that suits your workflow. The <strong>Knowledge</strong>,
   <strong>Models</strong>, and <strong>Trust &amp; citations</strong> pages cover the infrastructure
   behind Donna's answers.
 </p>

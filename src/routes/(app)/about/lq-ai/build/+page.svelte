@@ -121,7 +121,7 @@
   </li>
   <li class="flex gap-3 text-sm text-mlq-text">
     <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mlq-subtle text-xs font-medium text-mlq-strong">3</span>
-    <span><strong>Observable + audited, counts only.</strong> Emit the <code>autonomous.execute</code> + <code>autonomous.tool_call</code> spans and closed-enum audit rows (phase_transition / tool_call / halted / cost_cap_reached / completed). Attributes carry counts, types, IDs, and costs only — never raw entity values, document text, prompt bodies, or model responses.</span>
+    <span><strong>Observable + audited, counts only.</strong> Emit the <code>autonomous.execute</code> + <code>autonomous.tool_call</code> spans and closed-enum audit rows (started / phase_transition / tool_call / halted / cost_cap_reached / completed). Attributes carry counts, types, IDs, and costs only — never raw entity values, document text, prompt bodies, or model responses.</span>
   </li>
   <li class="flex gap-3 text-sm text-mlq-text">
     <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mlq-subtle text-xs font-medium text-mlq-strong">4</span>
