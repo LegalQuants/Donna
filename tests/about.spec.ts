@@ -59,6 +59,11 @@ test('the Powered by LQ-AI page renders How-It-Works sections + Build & Learn', 
 
   // The authored closing section.
   await expect(page.getByRole('heading', { name: /Build & learn with LQ-AI/i, level: 2 })).toBeVisible();
+
+  // Build & Learn now sits ABOVE the numbered How-It-Works sections (user-specified order).
+  const buildLearnBox = await page.getByRole('heading', { name: /Build & learn with LQ-AI/i }).boundingBox();
+  const bigPictureBox = await page.getByRole('heading', { name: '1. The big picture: System Architecture', level: 2 }).boundingBox();
+  expect(buildLearnBox!.y).toBeLessThan(bigPictureBox!.y);
 });
 
 test('How It Works links to How to Build, which renders the Skill Format playground', async ({ page }) => {
