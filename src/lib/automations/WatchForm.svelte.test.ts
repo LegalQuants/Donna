@@ -54,7 +54,7 @@ describe('WatchForm', () => {
     expect(screen.getByRole('radio', { name: /skill/i })).toHaveAttribute('aria-checked', 'true'); // mode seeded from skill_ref
     expect(screen.getByText(/Watching: Contracts KB/i)).toBeInTheDocument(); // KB read-only
     // Matter is editable in edit mode (fc832ca); seeded selection shows on the trigger.
-    expect(screen.getByRole('button', { name: /choose matter/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Matter: Acme' })).toBeInTheDocument();
     expect(screen.queryByText(/set at creation/i)).toBeNull();
     expect((container.querySelector('input[name="project_id"]') as HTMLInputElement).value).toBe('m1'); // seeded matter emitted
     expect(screen.queryByRole('button', { name: /choose a knowledge base/i })).toBeNull(); // no KB picker
@@ -70,7 +70,7 @@ describe('WatchForm', () => {
         initial: { playbook_id: 'p1', skill_ref: null, knowledge_base_id: 'kb1', project_id: 'm1', max_cost_usd: null, enabled: true }
       }
     });
-    await fireEvent.click(screen.getByRole('button', { name: /choose matter/i }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Matter: Acme' }));
     await fireEvent.click(screen.getByRole('button', { name: /no matter/i }));
     expect((container.querySelector('input[name="project_id"]') as HTMLInputElement).value).toBe('');
   });
