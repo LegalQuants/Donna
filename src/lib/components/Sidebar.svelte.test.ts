@@ -38,7 +38,7 @@ describe('Sidebar', () => {
   });
 
   it('marks Workflows active on the hub and on each child route', () => {
-    for (const path of ['/workflows', '/skills', '/playbooks', '/prompts']) {
+    for (const path of ['/workflows', '/skills', '/playbooks', '/prompts', '/automations']) {
       h.pathname = path;
       const { unmount } = render(Sidebar, { props: { displayName: 'Admin' } });
       expect(screen.getByRole('link', { name: 'Workflows' })).toHaveAttribute('aria-current', 'page');

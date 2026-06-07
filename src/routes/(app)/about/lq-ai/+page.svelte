@@ -22,7 +22,7 @@
 
   <h3 class="mb-2 text-sm font-medium uppercase tracking-wide text-mlq-muted">Power new applications</h3>
   <p class="mb-2 max-w-prose text-sm leading-relaxed text-mlq-text">
-    The same backend that powers Donna's chat, playbooks, tabular review, and knowledge retrieval can
+    The same backend that powers Donna's chat, playbooks, tabular review, autonomous runs, and knowledge retrieval can
     front entirely different products. A clause-library browser could let transactional lawyers search,
     compare, and tag contract clauses against a RAG-indexed precedent bank, with the citation engine
     flagging each match as verified or caveated. A deposition-prep assistant could ingest case
