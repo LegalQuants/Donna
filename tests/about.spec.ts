@@ -83,5 +83,5 @@ test('the About rail includes Automations and the page renders', async ({ page }
   await rail.getByRole('link', { name: 'Automations' }).click();
   await expect(page).toHaveURL(/\/about\/automations$/);
   await expect(page.getByRole('heading', { name: 'Automations', level: 1 })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Results: what the run produced/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Results: what the run produced/i, level: 2 })).toBeVisible();
 });
