@@ -5,7 +5,9 @@
 	import AutomationsGate from '$lib/automations/AutomationsGate.svelte';
 	import SegmentedControl from '$lib/preferences/SegmentedControl.svelte';
 	import MemoryRow from '$lib/automations/MemoryRow.svelte';
-	import { MEMORY_STATES } from '$lib/automations/memory';
+	import PrecedentRow from '$lib/automations/PrecedentRow.svelte';
+	import ProposalRow from '$lib/automations/ProposalRow.svelte';
+	import { MEMORY_STATES, REVIEW_PAGE_SIZE } from '$lib/automations/memory';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -30,6 +32,8 @@
 		kept: 'Nothing kept yet.',
 		dismissed: 'Nothing dismissed.'
 	};
+
+	const matterName = (id: string) => data.matters.find((m) => m.id === id)?.name ?? null;
 </script>
 
 <svelte:head><title>Review — Donna</title></svelte:head>
@@ -70,21 +74,66 @@
 				{/each}
 			</div>
 
-			{#if total > 50}
+			{#if total > REVIEW_PAGE_SIZE}
 				<div class="mt-4 flex items-center gap-4 text-sm text-mlq-muted">
 					<span>Showing {offset + 1}–{offset + entries.length} of {total}</span>
 					{#if offset > 0}
-						<a href="?state={state}&offset={offset - 50}" class="text-mlq-workflow hover:underline"
-							>Prev</a
+						<a
+							href="?state={state}&offset={offset - REVIEW_PAGE_SIZE}"
+							class="text-mlq-workflow hover:underline">Prev</a
 						>
 					{/if}
 					{#if offset + entries.length < total}
-						<a href="?state={state}&offset={offset + 50}" class="text-mlq-workflow hover:underline"
-							>Next</a
+						<a
+							href="?state={state}&offset={offset + REVIEW_PAGE_SIZE}"
+							class="text-mlq-workflow hover:underline">Next</a
 						>
 					{/if}
 				</div>
 			{/if}
+		{/if}
+
+		<h2 class="mt-8 mb-3 text-base font-medium text-mlq-text">Precedents</h2>
+		{#if data.precedents === null}
+			<p role="alert" class="text-sm text-mlq-error">Couldn't load precedents — reload to retry.</p>
+		{:else if data.precedents.entries.length === 0}
+			<p class="text-sm text-mlq-muted">
+				No precedents yet. Recurring patterns across runs appear here.
+			</p>
+		{:else}
+			<div class="flex flex-col gap-3">
+				{#each data.precedents.entries as p (p.id)}
+					<PrecedentRow precedent={p} matters={data.matters} error={rowError(p.id)} />
+				{/each}
+			</div>
+		{/if}
+
+		<h2 class="mt-8 mb-3 text-base font-medium text-mlq-text">Proposals</h2>
+		{#if form && 'promoted' in form && form.promoted}
+			<p class="mb-2 text-sm text-mlq-success">Proposal created below.</p>
+		{/if}
+		{#if form && 'accepted' in form && form.accepted}
+			<p class="mb-2 text-sm text-mlq-success">
+				Added to the matter's context{#if 'projectId' in form && form.projectId}
+					— <a href="/matters/{form.projectId}" class="text-mlq-workflow hover:underline"
+						>view matter</a
+					>{/if}.
+			</p>
+		{/if}
+		{#if data.proposals === null}
+			<p role="alert" class="text-sm text-mlq-error">Couldn't load proposals — reload to retry.</p>
+		{:else if data.proposals.proposals.length === 0}
+			<p class="text-sm text-mlq-muted">No pending proposals. Promote a precedent to create one.</p>
+		{:else}
+			<div class="flex flex-col gap-3">
+				{#each data.proposals.proposals as pr (pr.id)}
+					<ProposalRow
+						proposal={pr}
+						matterName={matterName(pr.project_id)}
+						error={rowError(pr.id)}
+					/>
+				{/each}
+			</div>
 		{/if}
 	{/if}
 </div>
