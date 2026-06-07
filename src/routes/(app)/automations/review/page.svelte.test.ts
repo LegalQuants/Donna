@@ -324,6 +324,49 @@ describe('/automations/review page', () => {
 		expect(screen.getByText('Proposal created below.')).toBeInTheDocument();
 	});
 
+	it('accept-success note renders with matter link when form.accepted and projectId set', () => {
+		render(Page, {
+			props: {
+				data: {
+					autonomousEnabled: true,
+					unread: 0,
+					state: 'proposed',
+					offset: 0,
+					entries: [],
+					total: 0,
+					precedents: { entries: [], total: 0 },
+					proposals: { proposals: [], total: 0 },
+					matters: defaultMatters
+				},
+				form: { ok: true, accepted: true, projectId: 'proj1' }
+			} as never
+		});
+		expect(screen.getByText(/Added to the matter's context/)).toBeInTheDocument();
+		const link = screen.getByRole('link', { name: /view matter/i });
+		expect(link).toHaveAttribute('href', '/matters/proj1');
+	});
+
+	it('accept-success note renders without link when projectId is null', () => {
+		render(Page, {
+			props: {
+				data: {
+					autonomousEnabled: true,
+					unread: 0,
+					state: 'proposed',
+					offset: 0,
+					entries: [],
+					total: 0,
+					precedents: { entries: [], total: 0 },
+					proposals: { proposals: [], total: 0 },
+					matters: defaultMatters
+				},
+				form: { ok: true, accepted: true, projectId: null }
+			} as never
+		});
+		expect(screen.getByText(/Added to the matter's context/)).toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: /view matter/i })).toBeNull();
+	});
+
 	// ── Pagination constant swap (sanity: existing logic still correct) ────────
 
 	it('pagination: REVIEW_PAGE_SIZE constant — hrefs still correct for total=120, offset=50', () => {

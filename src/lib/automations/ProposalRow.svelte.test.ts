@@ -44,4 +44,20 @@ describe('ProposalRow', () => {
 		});
 		expect(screen.getByRole('alert')).toHaveTextContent('Context document is full.');
 	});
+
+	it('accept form contains a hidden project_id input with the proposal project_id value', async () => {
+		const { container } = render(ProposalRow, {
+			props: { proposal: proposal({ project_id: 'proj1' }), matterName: 'Acme MSA' }
+		});
+		// Reveal the confirm step
+		await fireEvent.click(screen.getByRole('button', { name: /accept/i }));
+		const form = container.querySelector('form[action*="acceptProposal"]');
+		expect(form).not.toBeNull();
+		const projectIdInput = form!.querySelector(
+			'input[name="project_id"]'
+		) as HTMLInputElement | null;
+		expect(projectIdInput).not.toBeNull();
+		expect(projectIdInput!.type).toBe('hidden');
+		expect(projectIdInput!.value).toBe('proj1');
+	});
 });

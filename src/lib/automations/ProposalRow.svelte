@@ -54,6 +54,7 @@
 				<span class="text-xs text-mlq-text">Add this to the matter's context?</span>
 				<form method="POST" action="?/acceptProposal" use:enhance={submitFn} class="shrink-0">
 					<input type="hidden" name="id" value={proposal.id} />
+					<input type="hidden" name="project_id" value={proposal.project_id} />
 					<button type="submit" class="text-xs font-medium text-mlq-success hover:underline"
 						>Confirm accept</button
 					>
