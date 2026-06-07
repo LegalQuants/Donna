@@ -49,6 +49,15 @@ export function triggerLabel(kind: string): string {
 	return kind.replace(/_/g, ' ');
 }
 
+/** Tailwind classes for a memory state chip.
+ *  proposed → workflow accent; kept → success; dismissed → muted; unknown → neutral border. */
+export function stateChipClass(state: string): string {
+	if (state === 'proposed') return 'bg-mlq-workflow/10 text-mlq-workflow';
+	if (state === 'kept') return 'bg-mlq-success/10 text-mlq-success';
+	if (state === 'dismissed') return 'bg-mlq-subtle text-mlq-muted';
+	return 'border border-mlq-subtle text-mlq-muted';
+}
+
 /** Tailwind text color for a tool-call outcome. Real values seen: `started`, `success`
  *  (see receipt spike notes). `success` → positive; `started` → neutral; else → warning. */
 export function outcomeTone(outcome: string): string {

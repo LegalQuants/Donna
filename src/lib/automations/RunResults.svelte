@@ -5,6 +5,7 @@
 <script lang="ts">
 	import FindingCard from './FindingCard.svelte';
 	import { severitySummary, type FindingItem, type RunMemoryItem } from './findings';
+	import { stateChipClass } from './display';
 
 	let {
 		findings,
@@ -24,12 +25,6 @@
 			? findingsTotal - findings.length
 			: 0
 	);
-	function stateChipClass(state: string): string {
-		if (state === 'proposed') return 'bg-mlq-workflow/10 text-mlq-workflow';
-		if (state === 'kept') return 'bg-mlq-success/10 text-mlq-success';
-		if (state === 'dismissed') return 'bg-mlq-subtle text-mlq-muted';
-		return 'border border-mlq-subtle text-mlq-muted';
-	}
 </script>
 
 <section aria-label="Results" class="flex flex-col gap-2">
