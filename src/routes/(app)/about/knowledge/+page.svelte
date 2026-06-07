@@ -32,6 +32,7 @@
 </p>
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   To remove a document, click the <strong>×</strong> icon next to the file row. This detaches the file from the KB; it will no longer be searched when Donna retrieves context.
+  Ready files also show a <strong>Download</strong> link so you can retrieve the original document directly from the KB.
 </p>
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">How retrieval works</h2>

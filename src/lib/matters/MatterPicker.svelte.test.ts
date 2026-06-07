@@ -29,10 +29,18 @@ describe('MatterPicker', () => {
 
   it('choosing "No matter" clears the selection back to the default label', async () => {
     render(MatterPicker, { props: { matters, selectedId: 'a' } });
-    const trigger = screen.getByRole('button', { name: /choose matter/i });
+    const trigger = screen.getByRole('button', { name: 'Matter: Acme MSA' });
     expect(trigger).toHaveTextContent('Acme MSA');
     await fireEvent.click(trigger);
     await fireEvent.click(screen.getByRole('button', { name: /no matter/i }));
     expect(trigger).toHaveTextContent('Matter');
+  });
+
+  it('trigger aria-label names the selected matter', async () => {
+    render(MatterPicker, { props: { matters, selectedId: 'a' } });
+    const trigger = screen.getByRole('button', { name: 'Matter: Acme MSA' });
+    await fireEvent.click(trigger);
+    await fireEvent.click(screen.getByRole('button', { name: /no matter/i }));
+    expect(screen.getByRole('button', { name: 'Choose matter' })).toBeInTheDocument();
   });
 });

@@ -33,6 +33,13 @@
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
   When defining columns manually, each column also has an optional <strong>Min. model tier</strong> setting (tiers 1–5, or none). Setting a minimum tier tells Donna to use at least that capability level when answering that column's question. Leave it at <strong>None</strong> to let the system choose automatically. Higher tiers may increase the estimated cost.
 </p>
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+  Each manually-defined column also has an <strong>Ensemble verification</strong> checkbox. When
+  enabled, the answers in that column are independently cross-checked before being accepted, and
+  when you open one of a verified cell's citations, the source view shows a green <strong>✓ Verified</strong> chip.
+  Ensemble-verified cells cost more; the cost preview shows the count of ensemble-verified cells
+  and the premium as a separate line.
+</p>
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Running the review</h2>
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
@@ -58,7 +65,7 @@
   Click any cell to open the <strong>cell detail panel</strong> — a slide-in drawer on the right side of the screen. The panel shows the full answer text, the confidence level, and a list of citations. Each citation is a button labelled <strong>Source · p.N</strong>, with a short preview of the supporting passage below it.
 </p>
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-  Clicking a citation opens the <strong>document panel</strong>, which loads the source document and jumps to the cited page and passage — the same viewer used elsewhere in Donna. Press Escape or click the × button to close the cell detail panel.
+  Clicking a citation opens the <strong>document panel</strong> — the same viewer used elsewhere in Donna — which loads the source document and jumps to the cited page and passage, with a green <strong>✓ Verified</strong> chip when the cell was ensemble-verified. Press Escape or click the × button to close the cell detail panel.
 </p>
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Exporting results</h2>

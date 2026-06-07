@@ -59,6 +59,11 @@ test('the Powered by LQ-AI page renders How-It-Works sections + Build & Learn', 
 
   // The authored closing section.
   await expect(page.getByRole('heading', { name: /Build & learn with LQ-AI/i, level: 2 })).toBeVisible();
+
+  // Build & Learn now sits ABOVE the numbered How-It-Works sections (user-specified order).
+  const buildLearnBox = await page.getByRole('heading', { name: /Build & learn with LQ-AI/i }).boundingBox();
+  const bigPictureBox = await page.getByRole('heading', { name: '1. The big picture: System Architecture', level: 2 }).boundingBox();
+  expect(buildLearnBox!.y).toBeLessThan(bigPictureBox!.y);
 });
 
 test('How It Works links to How to Build, which renders the Skill Format playground', async ({ page }) => {
@@ -74,4 +79,14 @@ test('How It Works links to How to Build, which renders the Skill Format playgro
   // Back-link returns to How It Works.
   await page.getByRole('link', { name: /← How it works/i }).click();
   await expect(page).toHaveURL(/\/about\/lq-ai$/);
+});
+
+test('the About rail includes Automations and the page renders', async ({ page }) => {
+  await login(page);
+  await page.goto('/about/overview');
+  const rail = page.locator('nav[aria-label="About sections"]');
+  await rail.getByRole('link', { name: 'Automations' }).click();
+  await expect(page).toHaveURL(/\/about\/automations$/);
+  await expect(page.getByRole('heading', { name: 'Automations', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Results: what the run produced/i, level: 2 })).toBeVisible();
 });

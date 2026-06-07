@@ -13,13 +13,7 @@
   Donna) work, from a request to a verified, cited answer.
 </p>
 
-<div class="mt-8">
-  {#each lqLearnSections as section (section.number)}
-    <LqLearnSection {section} />
-  {/each}
-</div>
-
-<section class="mt-12 border-t border-mlq-subtle pt-8">
+<section class="mt-8 border-t border-mlq-subtle py-8">
   <h2 class="mb-3 text-lg font-medium text-mlq-strong">Build &amp; learn with LQ-AI</h2>
   <p class="mb-5 max-w-prose text-sm leading-relaxed text-mlq-text">
     Donna is one application built on LQ-AI. Because the whole stack is open source, here is some of
@@ -28,7 +22,7 @@
 
   <h3 class="mb-2 text-sm font-medium uppercase tracking-wide text-mlq-muted">Power new applications</h3>
   <p class="mb-2 max-w-prose text-sm leading-relaxed text-mlq-text">
-    The same backend that powers Donna's chat, playbooks, tabular review, and knowledge retrieval can
+    The same backend that powers Donna's chat, playbooks, tabular review, autonomous runs, and knowledge retrieval can
     front entirely different products. A clause-library browser could let transactional lawyers search,
     compare, and tag contract clauses against a RAG-indexed precedent bank, with the citation engine
     flagging each match as verified or caveated. A deposition-prep assistant could ingest case
@@ -94,3 +88,9 @@
     <a href="https://github.com/LegalQuants/lq-ai" target="_blank" rel="noopener noreferrer" class="font-medium text-mlq-strong underline">LegalQuants / lq-ai on GitHub</a>.
   </p>
 </section>
+
+<div class="mt-8">
+  {#each lqLearnSections as section (section.number)}
+    <LqLearnSection {section} />
+  {/each}
+</div>
