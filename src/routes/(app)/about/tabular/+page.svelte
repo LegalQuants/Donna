@@ -65,7 +65,7 @@
   Click any cell to open the <strong>cell detail panel</strong> — a slide-in drawer on the right side of the screen. The panel shows the full answer text, the confidence level, and a list of citations. Each citation is a button labelled <strong>Source · p.N</strong>, with a short preview of the supporting passage below it.
 </p>
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-  Clicking a citation opens the <strong>document panel</strong>, which loads the source document and jumps to the cited page and passage — with a green <strong>✓ Verified</strong> chip when the cell was ensemble-verified — the same viewer used elsewhere in Donna. Press Escape or click the × button to close the cell detail panel.
+  Clicking a citation opens the <strong>document panel</strong> — the same viewer used elsewhere in Donna — which loads the source document and jumps to the cited page and passage, with a green <strong>✓ Verified</strong> chip when the cell was ensemble-verified. Press Escape or click the × button to close the cell detail panel.
 </p>
 
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Exporting results</h2>
