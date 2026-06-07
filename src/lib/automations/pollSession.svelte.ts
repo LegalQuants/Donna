@@ -55,10 +55,21 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 		}
 		session = parsed;
 		receipt = parseReceipt(body.receipt);
-		findings = Array.isArray(body.findings) ? (body.findings as FindingItem[]) : null;
-		findingsTotal = typeof body.findings_total === 'number' ? body.findings_total : null;
-		memories = Array.isArray(body.memories) ? (body.memories as RunMemoryItem[]) : null;
-		memoriesTotal = typeof body.memories_total === 'number' ? body.memories_total : null;
+		// Last-known-good retention: only overwrite when the incoming value is
+		// non-null; a null incoming value (e.g. backend findings fetch degraded)
+		// must not blank data that was successfully received in an earlier tick.
+		const incomingFindings = Array.isArray(body.findings) ? (body.findings as FindingItem[]) : null;
+		if (incomingFindings !== null) findings = incomingFindings;
+		const incomingFindingsTotal =
+			typeof body.findings_total === 'number' ? body.findings_total : null;
+		if (incomingFindingsTotal !== null) findingsTotal = incomingFindingsTotal;
+		const incomingMemories = Array.isArray(body.memories)
+			? (body.memories as RunMemoryItem[])
+			: null;
+		if (incomingMemories !== null) memories = incomingMemories;
+		const incomingMemoriesTotal =
+			typeof body.memories_total === 'number' ? body.memories_total : null;
+		if (incomingMemoriesTotal !== null) memoriesTotal = incomingMemoriesTotal;
 		return TERMINAL.has(parsed.status);
 	}
 
