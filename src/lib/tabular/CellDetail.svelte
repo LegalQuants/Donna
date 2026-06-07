@@ -47,7 +47,7 @@
 				{cell.citations.length} citation{cell.citations.length === 1 ? '' : 's'}
 			</p>
 			<ul class="mt-1 space-y-1">
-				{#each cell.citations as c}
+				{#each cell.citations as c, i (i)}
 					<li>
 						<button
 							type="button"

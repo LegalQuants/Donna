@@ -13,7 +13,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			event.locals.user = user;
 			event.locals.mustChangePassword = !!user.must_change_password;
 		} else if (res.status === 403) {
-			const body = await res.json().catch(() => ({}) as any);
+			const body = await res.json().catch(() => ({}) as Record<string, unknown>);
 			const code = body?.error?.code ?? body?.detail;
 			if (code === 'password_change_required') event.locals.mustChangePassword = true;
 		}

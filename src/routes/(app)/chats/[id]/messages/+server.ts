@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 import { lqStream } from '$lib/server/lqClient';
 
 export const POST: RequestHandler = async (event) => {
-	let content = '';
+	let content: string;
 	let model = 'smart';
 	let skills: string[] = [];
 	let skillInputs: Record<string, Record<string, unknown>> = {};
@@ -36,6 +36,7 @@ export const POST: RequestHandler = async (event) => {
 	} catch {
 		content = '';
 	}
+	content ??= '';
 
 	const payload: {
 		content: string;
