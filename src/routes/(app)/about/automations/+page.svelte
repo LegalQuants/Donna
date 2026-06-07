@@ -25,9 +25,9 @@
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
 	Automations is the fourth tab of the <strong>Workflows</strong> hub, alongside Skills, Playbooks,
-	and Prompts. Inside it, four views cover the lifecycle: <strong>Sessions</strong> (every run, past
-	and live), <strong>Schedules</strong>, <strong>Watches</strong>, and
-	<strong>Notifications</strong>.
+	and Prompts. Inside it, five views cover the lifecycle: <strong>Sessions</strong> (every run, past
+	and live), <strong>Schedules</strong>, <strong>Watches</strong>, <strong>Notifications</strong>,
+	and <strong>Review</strong>.
 </p>
 
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">
@@ -81,7 +81,8 @@
 	The <strong>Results</strong> section shows the run's work product: its findings, in the order the
 	run produced them, each with a severity badge and a severity summary up top. A run can also
 	propose <strong>memories</strong> — durable notes it suggests keeping — listed under
-	<strong>Memories this run proposed</strong>. Results stream in live while the run works.
+	<strong>Memories this run proposed</strong>. Proposed memories can be kept or dismissed right on
+	the receipt, or managed in the <strong>Review</strong> view. Results stream in live while the run works.
 </p>
 
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">Notifications</h2>

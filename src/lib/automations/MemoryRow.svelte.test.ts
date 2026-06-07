@@ -34,7 +34,7 @@ describe('MemoryRow', () => {
 	it('Edit & keep expands a textarea seeded with the content; Cancel collapses', async () => {
 		render(MemoryRow, { props: { memory: mem() } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Edit & keep' }));
-		const ta = screen.getByRole('textbox') as HTMLTextAreaElement;
+		const ta = screen.getByRole('textbox', { name: 'Edit memory content' }) as HTMLTextAreaElement;
 		expect(ta.value).toBe('Prefers concise summaries.');
 		expect(ta.name).toBe('content');
 		expect(screen.getByRole('button', { name: 'Save & keep' })).toBeInTheDocument();
