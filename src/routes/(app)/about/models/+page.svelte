@@ -66,7 +66,14 @@
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Provider keys</h2>
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-  Provider API keys (for Anthropic, OpenAI, and others) are configured at the deployment level via
-  environment variables — they are not entered or edited in the Donna UI. If you need to rotate or
-  add a provider key, contact whoever manages your Donna deployment.
+  The <strong>Provider keys</strong> card lists each model provider the deployment knows about
+  (Anthropic, OpenAI, and any others) with its key status — <strong>✓ Configured</strong>, with the
+  key's source and last four characters, or no key yet. Keys are write-only: Donna never shows a
+  stored key, only its last four characters.
 </p>
+
+<ul class="mb-3 ml-4 list-disc space-y-1 text-sm text-mlq-text">
+  <li><strong>Admins</strong> paste a key into the masked input on a row and press <strong>Add key</strong> (or <strong>Replace key</strong>). Changes apply immediately — no restart needed.</li>
+  <li>Keys set by the deployment's <strong>environment</strong> can be taken over by saving a runtime key on the same row. Runtime keys can be revoked with a two-step confirm; environment-managed keys cannot be revoked from the UI.</li>
+  <li><strong>Non-admins</strong> see a note that provider keys are managed by your administrator.</li>
+</ul>
