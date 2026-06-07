@@ -3,6 +3,8 @@
 // drop malformed rows, never throw; `state`/`category` kept as plain strings
 // so unknown values render neutrally.
 
+export const REVIEW_PAGE_SIZE = 50;
+
 export const MEMORY_STATES = ['proposed', 'kept', 'dismissed'] as const;
 export type MemoryState = (typeof MEMORY_STATES)[number];
 
