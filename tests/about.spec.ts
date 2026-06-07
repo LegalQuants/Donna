@@ -75,3 +75,13 @@ test('How It Works links to How to Build, which renders the Skill Format playgro
   await page.getByRole('link', { name: /← How it works/i }).click();
   await expect(page).toHaveURL(/\/about\/lq-ai$/);
 });
+
+test('the About rail includes Automations and the page renders', async ({ page }) => {
+  await login(page);
+  await page.goto('/about/overview');
+  const rail = page.locator('nav[aria-label="About sections"]');
+  await rail.getByRole('link', { name: 'Automations' }).click();
+  await expect(page).toHaveURL(/\/about\/automations$/);
+  await expect(page.getByRole('heading', { name: 'Automations', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Results: what the run produced/i })).toBeVisible();
+});
