@@ -49,8 +49,8 @@
 <h2 class="mb-2 mt-6 text-sm font-medium uppercase tracking-wide text-mlq-muted">Receipts: what the agent did</h2>
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-  Open any session to see its receipt. The header shows the run's status, its source, total cost,
-  and — for finished runs — why it stopped. The <strong>Activity</strong> timeline below lists every
+  Open any session to see its receipt. The header shows the run's status, how it was triggered,
+  total cost, and — for finished runs — why it stopped. The <strong>Activity</strong> timeline lists every
   phase the run moved through and every tool call it made, in order. While a run is live the page
   updates automatically every few seconds.
 </p>
