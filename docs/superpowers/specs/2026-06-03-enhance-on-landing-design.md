@@ -15,6 +15,7 @@ controller), the `enhance` prop + `✦ Enhance` button + `EnhancePreview` UI in
 `src/lib/components/Composer.svelte`, and the BFF proxies under `(app)/enhance-prompt/`.
 
 The only reason enhance is absent on landing is a **frontend** gap, not a backend one:
+
 - The landing page `src/routes/(app)/+page.svelte` never passes an `enhance` controller to
   `<Composer>` (Composer renders enhance UI only under `{#if enhance}`).
 - `createEnhance(chatId: string, …)` requires a non-null `chatId`, but landing has no chat yet.
@@ -40,6 +41,7 @@ Backend contract: `EnhancePromptRequest.chat_id: uuid | None = None`
 ### 2. `src/routes/(app)/+page.svelte` — wire enhance into the landing composer
 
 Mirror the in-chat page (`src/routes/(app)/chats/[id]/+page.svelte:28`):
+
 - Import `createEnhance` from `$lib/enhance/enhance.svelte`.
 - `const enhance = createEnhance(null, () => skillAttach.names);` — reuse the landing's
   already-present `skillAttach.names` (same source the in-chat page uses) so enhance forwards

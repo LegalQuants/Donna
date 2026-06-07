@@ -23,7 +23,7 @@ Both persist via `PATCH /api/v1/users/me/preferences` and apply app-wide immedia
 - `GET /api/v1/users/me/preferences` → `UserPreferences` (full slice). Not needed for load — see below.
 - `PATCH /api/v1/users/me/preferences` → body `UserPreferencesUpdate` (all fields optional; only supplied keys move; idempotent) → returns updated `UserPreferences`.
 - The **full `User`** object (from `GET /users/me`, surfaced as `locals.user` → `data.user` via the `(app)` layout `+layout.server.ts`) already embeds `trust_pills` and `provenance_pills`. So current values are read from `data.user` with **no extra fetch**.
-- The composer model picker already normalizes each model to a `ChatModelOption` carrying **`group: 'local' | 'cloud'`** and **`tier`** (`src/lib/models/normalize.ts`). The trust pill derives its posture from the *selected* option — **no new endpoint, no `/inference/current-tier` call, no BFF proxy for the pill.**
+- The composer model picker already normalizes each model to a `ChatModelOption` carrying **`group: 'local' | 'cloud'`** and **`tier`** (`src/lib/models/normalize.ts`). The trust pill derives its posture from the _selected_ option — **no new endpoint, no `/inference/current-tier` call, no BFF proxy for the pill.**
 
 ## Decisions locked in brainstorming
 
@@ -35,21 +35,25 @@ Both persist via `PATCH /api/v1/users/me/preferences` and apply app-wide immedia
 ## Architecture
 
 ### Route & shell
+
 - **`SettingsRail.svelte`** — append `{ href: '/settings/preferences', label: 'Preferences' }` (3rd entry).
 - **`src/routes/(app)/settings/preferences/+page.svelte`** — the two segmented controls + live previews; binds each control to its **own page-load value** (`data.provenancePills` / `data.trustPills`); optimistic toggle handlers call the BFF proxy.
-- **`src/routes/(app)/settings/preferences/+page.server.ts`** — SSR `load` returning `{ provenancePills, trustPills }` from `event.locals.user` (reload-safe + unit-testable without the layout). After a successful PATCH the page calls `invalidateAll()`, which re-runs this load, so the controls stay in sync. *(No form actions — saves go through the proxy below for the optimistic client path.)*
+- **`src/routes/(app)/settings/preferences/+page.server.ts`** — SSR `load` returning `{ provenancePills, trustPills }` from `event.locals.user` (reload-safe + unit-testable without the layout). After a successful PATCH the page calls `invalidateAll()`, which re-runs this load, so the controls stay in sync. _(No form actions — saves go through the proxy below for the optimistic client path.)_
 - **`src/routes/(app)/settings/preferences/+server.ts`** — `PATCH` BFF proxy → `lqFetch(event, '/api/v1/users/me/preferences', { method: 'PATCH', body })`. Validates the body is a known pref field → value; passes the backend's updated `UserPreferences` back as JSON; maps non-ok to 502 (404/503/504 passthrough), mirroring `files/[id]/+server.ts`.
 
 ### Components
+
 - **`src/lib/preferences/SegmentedControl.svelte`** — reusable 2+ option segmented control (`options: {value,label}[]`, `value` bindable, `onchange`). Pure presentational; `role="radiogroup"` + `aria-checked` buttons for a11y.
 - **`src/lib/preferences/preferences.ts`** — pure helpers + types: the option lists for each control, and `trustPosture(option: ChatModelOption): { kind: 'local' | 'cloud'; label: string; tone: 'local' | 'cloud' }` deriving the pill content from a selected model option.
 - **`src/lib/preferences/TrustPill.svelte`** — props `{ option: ChatModelOption | null; format: 'labels' | 'dots' }`. Renders the pill from `trustPosture(option)`; `labels` shows dot+text, `dots` shows dot only with the text in `title`. Renders nothing if `option` is null.
 
 ### Wiring
+
 - **Composer** (`src/lib/components/Composer.svelte`) — mount `<TrustPill option={selectedOption} format={page.data.user?.trust_pills ?? 'labels'} />` in the control row. `selectedOption` is the currently-selected `ChatModelOption` (already available to the picker; thread it or look it up from the options list by `selectedModel`). Read `trust_pills` from `$app/state` `page.data.user`.
 - **`Message.svelte`** — gate the existing pill row on `page.data.user?.provenance_pills`. When `'collapsed'`, hide the row behind a small inline disclosure (a compact "details" affordance the user can click to reveal the pills for that message); when `'always'` (default/undefined), render as today. Pills markup itself is unchanged.
 
 ### Data flow
+
 `data.user.{trust_pills, provenance_pills}` (from the `(app)` layout) is the single source of truth. The Preferences page mutates a field via the PATCH proxy, optimistically reflects it locally, then `invalidateAll()` re-runs the layout load so `page.data.user` updates everywhere (composer pill + message pills) without a full reload.
 
 ## Error handling

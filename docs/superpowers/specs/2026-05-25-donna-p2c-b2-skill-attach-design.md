@@ -7,7 +7,7 @@
 Second of the three P2c-B ("composer power") sub-slices, each its own PR:
 
 1. **B1 — Model / tier picker** ✅ merged (PR #5, type cleanup PR #6)
-2. **B2 — Skill-attach** ← *this spec*
+2. **B2 — Skill-attach** ← _this spec_
 3. **B3 — Enhance Prompt** — own spec later
 
 ## Goal
@@ -24,13 +24,13 @@ Let the user search and attach lq-ai **skills** to a chat, threading the chosen 
 
 ## Decisions (from brainstorming)
 
-| Decision | Choice |
-|---|---|
-| Scope | **Attach-only** — search/autocomplete + removable skill chips threading `skills[]` (names). **No `skill_inputs` forms.** |
-| Affordance | **`⊕ Skill` button** in the composer control row (beside the model picker) → search popover backed by `/skills/autocomplete`. |
-| Persistence | **Sticky until removed, in-memory.** Chips persist across sends within the chat session; cleared on remove or reload. **Not** localStorage (skills are task-contextual, unlike the model default). |
-| Landing scope | **In-chat only.** The skill affordance is hidden on the landing composer (the chat page owns the controller; landing doesn't pass it). |
-| Architecture | **Dedicated per-chat rune controller** (`createSkillAttach`) + thin autocomplete proxy + presentational `SkillAttach.svelte`; thread `skills[]` through `chat.send` like B1's `model`. |
+| Decision      | Choice                                                                                                                                                                                             |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope         | **Attach-only** — search/autocomplete + removable skill chips threading `skills[]` (names). **No `skill_inputs` forms.**                                                                           |
+| Affordance    | **`⊕ Skill` button** in the composer control row (beside the model picker) → search popover backed by `/skills/autocomplete`.                                                                      |
+| Persistence   | **Sticky until removed, in-memory.** Chips persist across sends within the chat session; cleared on remove or reload. **Not** localStorage (skills are task-contextual, unlike the model default). |
+| Landing scope | **In-chat only.** The skill affordance is hidden on the landing composer (the chat page owns the controller; landing doesn't pass it).                                                             |
+| Architecture  | **Dedicated per-chat rune controller** (`createSkillAttach`) + thin autocomplete proxy + presentational `SkillAttach.svelte`; thread `skills[]` through `chat.send` like B1's `model`.             |
 
 ## Architecture & data flow
 

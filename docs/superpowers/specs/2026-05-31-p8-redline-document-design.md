@@ -18,7 +18,7 @@ existing run-results page. It complements (does not replace) the current per-pos
 2. **Renderer: a lightweight custom Svelte/HTML/CSS component — no TipTap.** For a read-only view,
    TipTap/ProseMirror is a heavy dependency that's harder to unit-test and whose payoff (interactive
    editing) we don't need yet. **Deviation from the roadmap's "TipTap redline pane" label, recorded
-   deliberately:** TipTap remains the path *if/when* interactive accept/reject + DOCX export is
+   deliberately:** TipTap remains the path _if/when_ interactive accept/reject + DOCX export is
    scoped — at which point this read-only renderer would be replaced. YAGNI until then.
 3. **Layout: A — document + margin notes.** A centered document column; each change is a 2-column row:
    the tracked change (struck `old_text` in red, then `new_text` in green) on the left, and

@@ -37,14 +37,14 @@ services:
       # Reach the lq-ai api by its compose service name on its internal port.
       LQ_API_INTERNAL_URL: http://api:8000
     ports:
-      - "127.0.0.1:${DONNA_WEB_HOST_PORT:-3000}:3000"
+      - '127.0.0.1:${DONNA_WEB_HOST_PORT:-3000}:3000'
     healthcheck:
       # node:alpine has no reliable wget/curl; use Node's global fetch against a
       # stable 200 route (/ redirects to /login when logged out).
       test:
         [
           'CMD-SHELL',
-          "node -e \"fetch('http://localhost:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+          'node -e "fetch(''http://localhost:3000/login'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
         ]
       interval: 10s
       timeout: 5s

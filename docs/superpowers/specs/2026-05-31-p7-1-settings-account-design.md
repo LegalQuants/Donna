@@ -11,6 +11,7 @@ the settings IA shell every later P7 slice plugs into.
 ## P7 decomposition (agreed)
 
 Four PR-sized slices, built in order:
+
 1. **Settings shell + Account & Security** ← this spec.
 2. **Data & privacy** — data export (async job + poll + download) + account deletion (+ cancel, grace period).
 3. **Preferences** — the backend preference fields, scoped to those that affect Donna's behavior.
@@ -44,6 +45,7 @@ export, account deletion, preferences, the Trust page.
 ## Components & files
 
 ### Shell
+
 - **`src/routes/(app)/settings/+layout.svelte`** — renders `<SettingsRail />` + `<slot />` in a
   two-column layout (`max-w-…` container consistent with other pages; rail left, content right;
   collapses to stacked on narrow widths).
@@ -55,6 +57,7 @@ export, account deletion, preferences, the Trust page.
   `svelte/no-navigation-without-resolve` disable comment.
 
 ### Account page
+
 - **`src/routes/(app)/settings/account/+page.server.ts`** — provides **only** `actions` (no `load`).
   The page reads the user from `data.user`, which SvelteKit merges in from the `(app)` root layout's
   `load` (`locals.user`, set per-request in `hooks.server.ts`). `invalidateAll` after the MFA action
@@ -81,6 +84,7 @@ export, account deletion, preferences, the Trust page.
   reset on open (the skills-modal pattern, to avoid stale-error-on-reopen).
 
 ### Sidebar
+
 - **`src/lib/components/Sidebar.svelte`** — add a ⚙ **Settings** link (`Settings` lucide icon) in the
   bottom cluster, immediately above the existing logout `<form>`. Active styling
   (`bg-mlq-subtle text-mlq-strong` + `aria-current="page"`) when `page.url.pathname` starts with
@@ -103,6 +107,7 @@ routes, no backend/contract change.
 ## Testing (TDD)
 
 Component (`@testing-library/svelte`):
+
 - **`SettingsRail.svelte.test.ts`** — renders the Account link → `/settings/account`; it carries
   `aria-current="page"` when the mocked `$app/state` path is `/settings/account` (mutable-pathname mock,
   the `vi.hoisted` pattern from `Sidebar.svelte.test.ts`).
@@ -115,11 +120,13 @@ Component (`@testing-library/svelte`):
   mutable-pathname Sidebar test).
 
 Server (`// @vitest-environment node`, `vi.mock('$lib/server/lqClient', …)`):
+
 - **`settings/account/page.server.test.ts`** — `disableMfa` action: a `204` from `lqFetch` →
   success; `401` → `fail(401, { mfaError })`; other status → generic `mfaError`. (The established
   mock-`lqFetch` + `Request` with `URLSearchParams` body pattern.)
 
 Live e2e (`tests/settings-account.spec.ts`, against the running stack, read-only):
+
 - Log in (admin fixture) → click the sidebar ⚙ Settings → lands on `/settings/account`.
 - Assert the profile shows the account email + role, and the "not editable" note.
 - Assert "Change password" links to `/change-password`.

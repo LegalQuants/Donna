@@ -6,7 +6,7 @@
 ## Problem
 
 Donna wants an in-app way to add/manage provider API keys. Today they are **env-only**: the gateway loads
-them at startup (`gateway/app/config.py` — each provider carries `api_key_env` *or* `api_key_encrypted`,
+them at startup (`gateway/app/config.py` — each provider carries `api_key_env` _or_ `api_key_encrypted`,
 the latter decrypted with `LQ_AI_GATEWAY_MASTER_KEY`), held in memory by `ProviderKeyResolver`. There is
 **no runtime mutation** and **no key-management endpoint** anywhere in the backend or gateway. So a user
 cannot add or rotate a key without editing env and restarting — there's no in-product path at all.

@@ -4,12 +4,12 @@
 export type ExportStatus = 'queued' | 'processing' | 'completed' | 'failed';
 
 export interface ExportJob {
-  job_id: string;
-  status: ExportStatus;
-  download_url?: string | null;
+	job_id: string;
+	status: ExportStatus;
+	download_url?: string | null;
 }
 
 export interface DeletionSchedule {
-  scheduled_deletion_at: string;
-  grace_period_days: number;
+	scheduled_deletion_at: string;
+	grace_period_days: number;
 }

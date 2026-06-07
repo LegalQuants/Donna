@@ -9,6 +9,7 @@
 **Tech Stack:** SvelteKit (Svelte 5 runes), TypeScript, Vitest + `@testing-library/svelte`, Playwright. Spec: `docs/superpowers/specs/2026-05-25-donna-p2c-b2-skill-attach-design.md`.
 
 **Conventions (match existing code):**
+
 - Commit per task. Branch is `p2c-b2-skill-attach` (already created off `main`; pin `438198c`).
 - After any task that changes `src/`, `npm run check` must report **0 errors, 0 warnings** (the vendor `ERR_MODULE_NOT_FOUND` stderr is harmless; exit 0 + the "0 errors and 0 warnings" line is the signal).
 - BFF tests mock `$lib/server/lqClient`; component tests use `@testing-library/svelte`; rune controllers are tested by calling methods with an injected `fetch` mock (like `src/lib/models/store.svelte.ts`).
@@ -20,6 +21,7 @@
 ### Task 1: `/skills/autocomplete` BFF thin proxy
 
 **Files:**
+
 - Create: `src/routes/(app)/skills/autocomplete/+server.ts`
 - Test: `src/routes/(app)/skills/autocomplete/server.test.ts`
 
@@ -34,36 +36,35 @@ const lqFetch = vi.fn();
 vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(...a) }));
 import { GET } from './+server';
 
-const event = (qs = '') =>
-  ({ url: new URL(`http://x/skills/autocomplete${qs}`) }) as any;
+const event = (qs = '') => ({ url: new URL(`http://x/skills/autocomplete${qs}`) }) as any;
 
 beforeEach(() => lqFetch.mockReset());
 
 describe('GET /skills/autocomplete', () => {
-  it('forwards q and limit and returns the body', async () => {
-    lqFetch.mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
-    const res = await GET(event('?q=nda&limit=8'));
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/skills/autocomplete?q=nda&limit=8');
-    expect(await res.json()).toEqual({ results: [] });
-  });
+	it('forwards q and limit and returns the body', async () => {
+		lqFetch.mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+		const res = await GET(event('?q=nda&limit=8'));
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/skills/autocomplete?q=nda&limit=8');
+		expect(await res.json()).toEqual({ results: [] });
+	});
 
-  it('defaults q to empty and limit to 8 (recents)', async () => {
-    lqFetch.mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
-    await GET(event());
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/skills/autocomplete?q=&limit=8');
-  });
+	it('defaults q to empty and limit to 8 (recents)', async () => {
+		lqFetch.mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+		await GET(event());
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/skills/autocomplete?q=&limit=8');
+	});
 
-  it('passes through 503 and 504', async () => {
-    lqFetch.mockResolvedValue(new Response('no', { status: 503 }));
-    await expect(GET(event())).rejects.toMatchObject({ status: 503 });
-    lqFetch.mockResolvedValue(new Response('no', { status: 504 }));
-    await expect(GET(event())).rejects.toMatchObject({ status: 504 });
-  });
+	it('passes through 503 and 504', async () => {
+		lqFetch.mockResolvedValue(new Response('no', { status: 503 }));
+		await expect(GET(event())).rejects.toMatchObject({ status: 503 });
+		lqFetch.mockResolvedValue(new Response('no', { status: 504 }));
+		await expect(GET(event())).rejects.toMatchObject({ status: 504 });
+	});
 
-  it('maps other errors to 502', async () => {
-    lqFetch.mockResolvedValue(new Response('no', { status: 500 }));
-    await expect(GET(event())).rejects.toMatchObject({ status: 502 });
-  });
+	it('maps other errors to 502', async () => {
+		lqFetch.mockResolvedValue(new Response('no', { status: 500 }));
+		await expect(GET(event())).rejects.toMatchObject({ status: 502 });
+	});
 });
 ```
 
@@ -82,14 +83,18 @@ import { lqFetch } from '$lib/server/lqClient';
 import { json, error } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async (event) => {
-  const q = event.url.searchParams.get('q') ?? '';
-  const limit = event.url.searchParams.get('limit') ?? '8';
-  const path = `/api/v1/skills/autocomplete?q=${encodeURIComponent(q)}&limit=${encodeURIComponent(limit)}`;
-  const res = await lqFetch(event, path);
-  // 503/504 are the gateway's documented unreachable/timeout signals; pass them
-  // through so the popover can show "Couldn't load skills"; map anything else to 502.
-  if (!res.ok) throw error(res.status === 503 || res.status === 504 ? res.status : 502, 'Could not load skills.');
-  return json(await res.json());
+	const q = event.url.searchParams.get('q') ?? '';
+	const limit = event.url.searchParams.get('limit') ?? '8';
+	const path = `/api/v1/skills/autocomplete?q=${encodeURIComponent(q)}&limit=${encodeURIComponent(limit)}`;
+	const res = await lqFetch(event, path);
+	// 503/504 are the gateway's documented unreachable/timeout signals; pass them
+	// through so the popover can show "Couldn't load skills"; map anything else to 502.
+	if (!res.ok)
+		throw error(
+			res.status === 503 || res.status === 504 ? res.status : 502,
+			'Could not load skills.'
+		);
+	return json(await res.json());
 };
 ```
 
@@ -110,6 +115,7 @@ git commit -m "feat(p2c-b2): /skills/autocomplete BFF thin proxy"
 ### Task 2: Skill types + `createSkillAttach` controller
 
 **Files:**
+
 - Create: `src/lib/skills/types.ts`
 - Create: `src/lib/skills/attach.svelte.ts`
 - Test: `src/lib/skills/attach.svelte.test.ts`
@@ -123,12 +129,12 @@ import type { paths } from '$lib/api/backend';
 
 /** One autocomplete result, sourced from the generated backend contract. */
 export type SkillSuggestion =
-  paths['/api/v1/skills/autocomplete']['get']['responses']['200']['content']['application/json']['results'][number];
+	paths['/api/v1/skills/autocomplete']['get']['responses']['200']['content']['application/json']['results'][number];
 
 /** A skill the user has attached to the composer (the name we send + a label). */
 export interface AttachedSkill {
-  slug: string;
-  title: string;
+	slug: string;
+	title: string;
 }
 ```
 
@@ -141,59 +147,73 @@ import { describe, it, expect, vi } from 'vitest';
 import { createSkillAttach } from './attach.svelte';
 
 const ok = (results: unknown) => new Response(JSON.stringify({ results }), { status: 200 });
-const NDA = { slug: 'nda-review', slash_alias: null, title: 'NDA Review', description: 'Full NDA review', scope: 'builtin', icon: null };
-const NDA2 = { slug: 'nda-snapshot', slash_alias: null, title: 'NDA Snapshot', description: 'Quick snapshot', scope: 'builtin', icon: null };
+const NDA = {
+	slug: 'nda-review',
+	slash_alias: null,
+	title: 'NDA Review',
+	description: 'Full NDA review',
+	scope: 'builtin',
+	icon: null
+};
+const NDA2 = {
+	slug: 'nda-snapshot',
+	slash_alias: null,
+	title: 'NDA Snapshot',
+	description: 'Quick snapshot',
+	scope: 'builtin',
+	icon: null
+};
 
 describe('createSkillAttach', () => {
-  it('starts empty', () => {
-    const s = createSkillAttach();
-    expect(s.attached).toEqual([]);
-    expect(s.names).toEqual([]);
-  });
+	it('starts empty', () => {
+		const s = createSkillAttach();
+		expect(s.attached).toEqual([]);
+		expect(s.names).toEqual([]);
+	});
 
-  it('open() fetches recents (empty q) into results', async () => {
-    const s = createSkillAttach();
-    const f = vi.fn().mockResolvedValue(ok([NDA, NDA2]));
-    await s.open(f);
-    expect(f.mock.calls[0][0]).toBe('/skills/autocomplete?q=&limit=8');
-    expect(s.results.map((r) => r.slug)).toEqual(['nda-review', 'nda-snapshot']);
-    expect(s.error).toBe(false);
-  });
+	it('open() fetches recents (empty q) into results', async () => {
+		const s = createSkillAttach();
+		const f = vi.fn().mockResolvedValue(ok([NDA, NDA2]));
+		await s.open(f);
+		expect(f.mock.calls[0][0]).toBe('/skills/autocomplete?q=&limit=8');
+		expect(s.results.map((r) => r.slug)).toEqual(['nda-review', 'nda-snapshot']);
+		expect(s.error).toBe(false);
+	});
 
-  it('search(q) fetches ranked matches', async () => {
-    const s = createSkillAttach();
-    const f = vi.fn().mockResolvedValue(ok([NDA]));
-    await s.search('nda', f);
-    expect(f.mock.calls[0][0]).toBe('/skills/autocomplete?q=nda&limit=8');
-    expect(s.results.map((r) => r.slug)).toEqual(['nda-review']);
-  });
+	it('search(q) fetches ranked matches', async () => {
+		const s = createSkillAttach();
+		const f = vi.fn().mockResolvedValue(ok([NDA]));
+		await s.search('nda', f);
+		expect(f.mock.calls[0][0]).toBe('/skills/autocomplete?q=nda&limit=8');
+		expect(s.results.map((r) => r.slug)).toEqual(['nda-review']);
+	});
 
-  it('search error sets error and clears results', async () => {
-    const s = createSkillAttach();
-    await s.search('x', vi.fn().mockResolvedValue(new Response('no', { status: 503 })));
-    expect(s.error).toBe(true);
-    expect(s.results).toEqual([]);
-  });
+	it('search error sets error and clears results', async () => {
+		const s = createSkillAttach();
+		await s.search('x', vi.fn().mockResolvedValue(new Response('no', { status: 503 })));
+		expect(s.error).toBe(true);
+		expect(s.results).toEqual([]);
+	});
 
-  it('attach adds {slug,title}, dedupes by slug, and drives names', () => {
-    const s = createSkillAttach();
-    s.attach(NDA);
-    s.attach(NDA); // dedupe
-    s.attach(NDA2);
-    expect(s.attached).toEqual([
-      { slug: 'nda-review', title: 'NDA Review' },
-      { slug: 'nda-snapshot', title: 'NDA Snapshot' }
-    ]);
-    expect(s.names).toEqual(['nda-review', 'nda-snapshot']);
-  });
+	it('attach adds {slug,title}, dedupes by slug, and drives names', () => {
+		const s = createSkillAttach();
+		s.attach(NDA);
+		s.attach(NDA); // dedupe
+		s.attach(NDA2);
+		expect(s.attached).toEqual([
+			{ slug: 'nda-review', title: 'NDA Review' },
+			{ slug: 'nda-snapshot', title: 'NDA Snapshot' }
+		]);
+		expect(s.names).toEqual(['nda-review', 'nda-snapshot']);
+	});
 
-  it('remove drops by slug', () => {
-    const s = createSkillAttach();
-    s.attach(NDA);
-    s.attach(NDA2);
-    s.remove('nda-review');
-    expect(s.names).toEqual(['nda-snapshot']);
-  });
+	it('remove drops by slug', () => {
+		const s = createSkillAttach();
+		s.attach(NDA);
+		s.attach(NDA2);
+		s.remove('nda-review');
+		expect(s.names).toEqual(['nda-snapshot']);
+	});
 });
 ```
 
@@ -210,54 +230,54 @@ Create `src/lib/skills/attach.svelte.ts`:
 import type { SkillSuggestion, AttachedSkill } from './types';
 
 export function createSkillAttach() {
-  let attached = $state<AttachedSkill[]>([]);
-  let results = $state<SkillSuggestion[]>([]);
-  let loading = $state(false);
-  let error = $state(false);
+	let attached = $state<AttachedSkill[]>([]);
+	let results = $state<SkillSuggestion[]>([]);
+	let loading = $state(false);
+	let error = $state(false);
 
-  async function fetchResults(q: string, fetchFn: typeof fetch) {
-    loading = true;
-    error = false;
-    try {
-      const res = await fetchFn(`/skills/autocomplete?q=${encodeURIComponent(q)}&limit=8`);
-      if (!res.ok) throw new Error(String(res.status));
-      const body = (await res.json()) as { results: SkillSuggestion[] };
-      results = body.results ?? [];
-    } catch {
-      error = true;
-      results = [];
-    } finally {
-      loading = false;
-    }
-  }
+	async function fetchResults(q: string, fetchFn: typeof fetch) {
+		loading = true;
+		error = false;
+		try {
+			const res = await fetchFn(`/skills/autocomplete?q=${encodeURIComponent(q)}&limit=8`);
+			if (!res.ok) throw new Error(String(res.status));
+			const body = (await res.json()) as { results: SkillSuggestion[] };
+			results = body.results ?? [];
+		} catch {
+			error = true;
+			results = [];
+		} finally {
+			loading = false;
+		}
+	}
 
-  return {
-    get attached() {
-      return attached;
-    },
-    get results() {
-      return results;
-    },
-    get loading() {
-      return loading;
-    },
-    get error() {
-      return error;
-    },
-    /** Slugs to send as MessageCreate.skills. */
-    get names() {
-      return attached.map((s) => s.slug);
-    },
-    open: (fetchFn: typeof fetch = fetch) => fetchResults('', fetchFn),
-    search: (q: string, fetchFn: typeof fetch = fetch) => fetchResults(q, fetchFn),
-    attach(s: SkillSuggestion) {
-      if (attached.some((a) => a.slug === s.slug)) return;
-      attached = [...attached, { slug: s.slug, title: s.title }];
-    },
-    remove(slug: string) {
-      attached = attached.filter((a) => a.slug !== slug);
-    }
-  };
+	return {
+		get attached() {
+			return attached;
+		},
+		get results() {
+			return results;
+		},
+		get loading() {
+			return loading;
+		},
+		get error() {
+			return error;
+		},
+		/** Slugs to send as MessageCreate.skills. */
+		get names() {
+			return attached.map((s) => s.slug);
+		},
+		open: (fetchFn: typeof fetch = fetch) => fetchResults('', fetchFn),
+		search: (q: string, fetchFn: typeof fetch = fetch) => fetchResults(q, fetchFn),
+		attach(s: SkillSuggestion) {
+			if (attached.some((a) => a.slug === s.slug)) return;
+			attached = [...attached, { slug: s.slug, title: s.title }];
+		},
+		remove(slug: string) {
+			attached = attached.filter((a) => a.slug !== slug);
+		}
+	};
 }
 ```
 
@@ -278,6 +298,7 @@ git commit -m "feat(p2c-b2): skill types + createSkillAttach rune controller"
 ### Task 3: `SkillAttach.svelte` (button + popover)
 
 **Files:**
+
 - Create: `src/lib/components/SkillAttach.svelte`
 - Test: `src/lib/components/SkillAttach.svelte.test.ts`
 
@@ -294,40 +315,54 @@ import SkillAttach from './SkillAttach.svelte';
 import type { SkillSuggestion } from '$lib/skills/types';
 
 const RESULTS: SkillSuggestion[] = [
-  { slug: 'nda-review', slash_alias: null, title: 'NDA Review', description: 'Full NDA review', scope: 'builtin', icon: null }
+	{
+		slug: 'nda-review',
+		slash_alias: null,
+		title: 'NDA Review',
+		description: 'Full NDA review',
+		scope: 'builtin',
+		icon: null
+	}
 ];
-const baseProps = () => ({ results: RESULTS, loading: false, error: false, onopen: vi.fn(), onsearch: vi.fn(), onattach: vi.fn() });
+const baseProps = () => ({
+	results: RESULTS,
+	loading: false,
+	error: false,
+	onopen: vi.fn(),
+	onsearch: vi.fn(),
+	onattach: vi.fn()
+});
 
 afterEach(() => vi.useRealTimers());
 
 describe('SkillAttach', () => {
-  it('calls onopen when the button opens the popover, and onattach when a result is clicked', async () => {
-    const props = baseProps();
-    const { getByTestId } = render(SkillAttach, { props });
-    await userEvent.click(getByTestId('skill-attach'));
-    expect(props.onopen).toHaveBeenCalledTimes(1);
-    await userEvent.click(getByTestId('skill-result-nda-review'));
-    expect(props.onattach).toHaveBeenCalledWith(RESULTS[0]);
-  });
+	it('calls onopen when the button opens the popover, and onattach when a result is clicked', async () => {
+		const props = baseProps();
+		const { getByTestId } = render(SkillAttach, { props });
+		await userEvent.click(getByTestId('skill-attach'));
+		expect(props.onopen).toHaveBeenCalledTimes(1);
+		await userEvent.click(getByTestId('skill-result-nda-review'));
+		expect(props.onattach).toHaveBeenCalledWith(RESULTS[0]);
+	});
 
-  it('debounces search input (~200ms) before calling onsearch', async () => {
-    vi.useFakeTimers();
-    const props = baseProps();
-    const { getByTestId } = render(SkillAttach, { props });
-    // open the popover so the search input renders (onopen is fired but irrelevant here)
-    await fireEvent.click(getByTestId('skill-attach'));
-    await fireEvent.input(getByTestId('skill-search'), { target: { value: 'nda' } });
-    expect(props.onsearch).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(200);
-    expect(props.onsearch).toHaveBeenCalledWith('nda');
-  });
+	it('debounces search input (~200ms) before calling onsearch', async () => {
+		vi.useFakeTimers();
+		const props = baseProps();
+		const { getByTestId } = render(SkillAttach, { props });
+		// open the popover so the search input renders (onopen is fired but irrelevant here)
+		await fireEvent.click(getByTestId('skill-attach'));
+		await fireEvent.input(getByTestId('skill-search'), { target: { value: 'nda' } });
+		expect(props.onsearch).not.toHaveBeenCalled();
+		vi.advanceTimersByTime(200);
+		expect(props.onsearch).toHaveBeenCalledWith('nda');
+	});
 
-  it('shows an error note when error is set', async () => {
-    const props = { ...baseProps(), error: true };
-    const { getByTestId, getByText } = render(SkillAttach, { props });
-    await userEvent.click(getByTestId('skill-attach'));
-    expect(getByText(/couldn't load skills/i)).toBeInTheDocument();
-  });
+	it('shows an error note when error is set', async () => {
+		const props = { ...baseProps(), error: true };
+		const { getByTestId, getByText } = render(SkillAttach, { props });
+		await userEvent.click(getByTestId('skill-attach'));
+		expect(getByText(/couldn't load skills/i)).toBeInTheDocument();
+	});
 });
 ```
 
@@ -342,98 +377,102 @@ Create `src/lib/components/SkillAttach.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { Plus } from '@lucide/svelte';
-  import type { SkillSuggestion } from '$lib/skills/types';
+	import { Plus } from '@lucide/svelte';
+	import type { SkillSuggestion } from '$lib/skills/types';
 
-  let {
-    results,
-    loading = false,
-    error = false,
-    onopen,
-    onsearch,
-    onattach
-  }: {
-    results: SkillSuggestion[];
-    loading?: boolean;
-    error?: boolean;
-    onopen: () => void;
-    onsearch: (q: string) => void;
-    onattach: (s: SkillSuggestion) => void;
-  } = $props();
+	let {
+		results,
+		loading = false,
+		error = false,
+		onopen,
+		onsearch,
+		onattach
+	}: {
+		results: SkillSuggestion[];
+		loading?: boolean;
+		error?: boolean;
+		onopen: () => void;
+		onsearch: (q: string) => void;
+		onattach: (s: SkillSuggestion) => void;
+	} = $props();
 
-  let open = $state(false);
-  let root = $state<HTMLElement>();
-  let timer: ReturnType<typeof setTimeout>;
+	let open = $state(false);
+	let root = $state<HTMLElement>();
+	let timer: ReturnType<typeof setTimeout>;
 
-  function toggle() {
-    open = !open;
-    if (open) onopen();
-  }
-  function oninput(e: Event & { currentTarget: HTMLInputElement }) {
-    clearTimeout(timer);
-    const q = e.currentTarget.value;
-    timer = setTimeout(() => onsearch(q), 200);
-  }
-  function onkeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') open = false;
-  }
-  $effect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (root && !root.contains(e.target as Node)) open = false;
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  });
+	function toggle() {
+		open = !open;
+		if (open) onopen();
+	}
+	function oninput(e: Event & { currentTarget: HTMLInputElement }) {
+		clearTimeout(timer);
+		const q = e.currentTarget.value;
+		timer = setTimeout(() => onsearch(q), 200);
+	}
+	function onkeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') open = false;
+	}
+	$effect(() => {
+		if (!open) return;
+		const handler = (e: MouseEvent) => {
+			if (root && !root.contains(e.target as Node)) open = false;
+		};
+		document.addEventListener('mousedown', handler);
+		return () => document.removeEventListener('mousedown', handler);
+	});
 </script>
 
 <div bind:this={root} class="relative" {onkeydown}>
-  <button
-    type="button"
-    data-testid="skill-attach"
-    aria-haspopup="dialog"
-    aria-expanded={open}
-    aria-label="Attach skill"
-    onclick={toggle}
-    class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
-  >
-    <Plus size={13} /> Skill
-  </button>
+	<button
+		type="button"
+		data-testid="skill-attach"
+		aria-haspopup="dialog"
+		aria-expanded={open}
+		aria-label="Attach skill"
+		onclick={toggle}
+		class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
+	>
+		<Plus size={13} /> Skill
+	</button>
 
-  {#if open}
-    <div class="absolute bottom-full left-0 z-20 mb-1 w-72 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md">
-      <input
-        type="text"
-        data-testid="skill-search"
-        placeholder="Search skills…"
-        oninput={oninput}
-        class="w-full border-b border-mlq-subtle bg-transparent px-3 py-2 text-xs text-mlq-text outline-none placeholder:text-mlq-muted"
-      />
-      {#if error}
-        <p class="px-3 py-2 text-xs text-mlq-muted">Couldn't load skills.</p>
-      {:else if loading}
-        <p class="px-3 py-2 text-xs text-mlq-muted">Searching…</p>
-      {:else if results.length === 0}
-        <p class="px-3 py-2 text-xs text-mlq-muted">No skills found.</p>
-      {:else}
-        <ul class="max-h-64 overflow-y-auto">
-          {#each results as s (s.slug)}
-            <li>
-              <button
-                type="button"
-                data-testid={`skill-result-${s.slug}`}
-                onclick={() => onattach(s)}
-                class="block w-full px-3 py-2 text-left text-xs hover:bg-mlq-subtle/50"
-              >
-                <span class="font-medium text-mlq-text">{s.title}</span>
-                {#if s.description}<span class="mt-0.5 block truncate text-mlq-muted">{s.description}</span>{/if}
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </div>
-  {/if}
+	{#if open}
+		<div
+			class="absolute bottom-full left-0 z-20 mb-1 w-72 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md"
+		>
+			<input
+				type="text"
+				data-testid="skill-search"
+				placeholder="Search skills…"
+				{oninput}
+				class="w-full border-b border-mlq-subtle bg-transparent px-3 py-2 text-xs text-mlq-text outline-none placeholder:text-mlq-muted"
+			/>
+			{#if error}
+				<p class="px-3 py-2 text-xs text-mlq-muted">Couldn't load skills.</p>
+			{:else if loading}
+				<p class="px-3 py-2 text-xs text-mlq-muted">Searching…</p>
+			{:else if results.length === 0}
+				<p class="px-3 py-2 text-xs text-mlq-muted">No skills found.</p>
+			{:else}
+				<ul class="max-h-64 overflow-y-auto">
+					{#each results as s (s.slug)}
+						<li>
+							<button
+								type="button"
+								data-testid={`skill-result-${s.slug}`}
+								onclick={() => onattach(s)}
+								class="block w-full px-3 py-2 text-left text-xs hover:bg-mlq-subtle/50"
+							>
+								<span class="font-medium text-mlq-text">{s.title}</span>
+								{#if s.description}<span class="mt-0.5 block truncate text-mlq-muted"
+										>{s.description}</span
+									>{/if}
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	{/if}
 </div>
 ```
 
@@ -459,6 +498,7 @@ git commit -m "feat(p2c-b2): SkillAttach button + autocomplete popover (debounce
 ### Task 4: Carry `skills` through `chatStream.send` / `retry`
 
 **Files:**
+
 - Modify: `src/lib/chat/chatStream.svelte.ts`
 - Test: `src/lib/chat/chatStream.svelte.test.ts` (add one case)
 
@@ -467,45 +507,48 @@ git commit -m "feat(p2c-b2): SkillAttach button + autocomplete popover (debounce
 Append this `it(...)` inside the existing `describe('createChatStream', …)` block in `src/lib/chat/chatStream.svelte.test.ts`:
 
 ```ts
-  it('posts attached skills in the body and reuses them on retry', async () => {
-    const frames = () => streamResponse([
-      'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-      'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
-      'data: [DONE]\n\n'
-    ]);
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(frames()) // call 0: send POST
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadAnonymization GET
-      .mockResolvedValueOnce(frames()) // call 2: retry POST
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 3: loadAnonymization GET
-    vi.stubGlobal('fetch', fetchMock);
-    const chat = createChatStream('c1');
-    await chat.send('hi', 'smart', ['nda-review']);
-    const firstBody = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
-    expect(firstBody).toMatchObject({ content: 'hi', model: 'smart', skills: ['nda-review'] });
+it('posts attached skills in the body and reuses them on retry', async () => {
+	const frames = () =>
+		streamResponse([
+			'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+			'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+			'data: [DONE]\n\n'
+		]);
+	const fetchMock = vi
+		.fn()
+		.mockResolvedValueOnce(frames()) // call 0: send POST
+		.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadAnonymization GET
+		.mockResolvedValueOnce(frames()) // call 2: retry POST
+		.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 3: loadAnonymization GET
+	vi.stubGlobal('fetch', fetchMock);
+	const chat = createChatStream('c1');
+	await chat.send('hi', 'smart', ['nda-review']);
+	const firstBody = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+	expect(firstBody).toMatchObject({ content: 'hi', model: 'smart', skills: ['nda-review'] });
 
-    await chat.retry();
-    const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
-    expect(retryBody.skills).toEqual(['nda-review']);
-    expect(chat.messages[1].status).toBe('done');
-  });
+	await chat.retry();
+	const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+	expect(retryBody.skills).toEqual(['nda-review']);
+	expect(chat.messages[1].status).toBe('done');
+});
 
-  it('omits skills from the body when none are attached', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(streamResponse([
-        'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
-        'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
-        'data: [DONE]\n\n'
-      ]))
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
-    vi.stubGlobal('fetch', fetchMock);
-    const chat = createChatStream('c1');
-    await chat.send('hi', 'smart');
-    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
-    expect('skills' in body).toBe(false);
-  });
+it('omits skills from the body when none are attached', async () => {
+	const fetchMock = vi
+		.fn()
+		.mockResolvedValueOnce(
+			streamResponse([
+				'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+				'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"ok"}}\n\n',
+				'data: [DONE]\n\n'
+			])
+		)
+		.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+	vi.stubGlobal('fetch', fetchMock);
+	const chat = createChatStream('c1');
+	await chat.send('hi', 'smart');
+	const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+	expect('skills' in body).toBe(false);
+});
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -520,9 +563,9 @@ In `src/lib/chat/chatStream.svelte.ts`, make these edits (leave all streaming/ci
 1. Add `lastSkills` beside `lastModel`:
 
 ```ts
-  let lastUserContent = '';
-  let lastModel = 'smart';
-  let lastSkills: string[] = [];
+let lastUserContent = '';
+let lastModel = 'smart';
+let lastSkills: string[] = [];
 ```
 
 2. Change `runStream` to accept `skills` and include it in the body only when non-empty:
@@ -547,24 +590,24 @@ In `src/lib/chat/chatStream.svelte.ts`, make these edits (leave all streaming/ci
 3. Change `send` to accept `skills` (default `[]`), record it, and pass it down:
 
 ```ts
-  async function send(content: string, model = 'smart', skills: string[] = []) {
-    if (status === 'streaming') return;
-    lastUserContent = content;
-    lastModel = model;
-    lastSkills = skills;
-    messages = [
-      ...messages,
-      { key: crypto.randomUUID(), id: crypto.randomUUID(), role: 'user', content },
-      { key: crypto.randomUUID(), id: 'pending', role: 'assistant', content: '', status: 'streaming' }
-    ];
-    await runStream(messages.length - 1, content, model, skills);
-  }
+async function send(content: string, model = 'smart', skills: string[] = []) {
+	if (status === 'streaming') return;
+	lastUserContent = content;
+	lastModel = model;
+	lastSkills = skills;
+	messages = [
+		...messages,
+		{ key: crypto.randomUUID(), id: crypto.randomUUID(), role: 'user', content },
+		{ key: crypto.randomUUID(), id: 'pending', role: 'assistant', content: '', status: 'streaming' }
+	];
+	await runStream(messages.length - 1, content, model, skills);
+}
 ```
 
 4. Update the `retry()` `runStream` call to pass `lastSkills`:
 
 ```ts
-    await runStream(idx, lastUserContent, lastModel, lastSkills);
+await runStream(idx, lastUserContent, lastModel, lastSkills);
 ```
 
 - [ ] **Step 4: Run the full chatStream suite**
@@ -584,6 +627,7 @@ git commit -m "feat(p2c-b2): carry attached skills through chatStream send/retry
 ### Task 5: Thread `skills` through the messages BFF
 
 **Files:**
+
 - Modify: `src/routes/(app)/chats/[id]/messages/+server.ts`
 - Test: `src/routes/(app)/chats/[id]/messages/server.test.ts` (add cases)
 
@@ -592,27 +636,31 @@ git commit -m "feat(p2c-b2): carry attached skills through chatStream send/retry
 Append inside the existing `describe('POST messages', …)` block in `src/routes/(app)/chats/[id]/messages/server.test.ts`:
 
 ```ts
-  it('forwards skills when present', async () => {
-    lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
-    await POST(event({ content: 'hi', model: 'smart', skills: ['nda-review'] }));
-    expect(sentBody().skills).toEqual(['nda-review']);
-  });
+it('forwards skills when present', async () => {
+	lqStream.mockResolvedValue(
+		new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } })
+	);
+	await POST(event({ content: 'hi', model: 'smart', skills: ['nda-review'] }));
+	expect(sentBody().skills).toEqual(['nda-review']);
+});
 
-  it('omits skills when absent or empty', async () => {
-    lqStream.mockResolvedValue(new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } }));
-    await POST(event({ content: 'hi', model: 'smart' }));
-    expect('skills' in sentBody()).toBe(false);
-    await POST(event({ content: 'hi', model: 'smart', skills: [] }));
-    expect('skills' in sentBody()).toBe(false);
-  });
+it('omits skills when absent or empty', async () => {
+	lqStream.mockResolvedValue(
+		new Response('', { status: 200, headers: { 'content-type': 'text/event-stream' } })
+	);
+	await POST(event({ content: 'hi', model: 'smart' }));
+	expect('skills' in sentBody()).toBe(false);
+	await POST(event({ content: 'hi', model: 'smart', skills: [] }));
+	expect('skills' in sentBody()).toBe(false);
+});
 ```
 
 (Note: `sentBody()` already reads `lqStream.mock.calls[0][2].body`; the second assertion in the "omits" test still reads call index 0 because `lqStream.mockReset()` does not run between the two `POST`s — instead read the latest call. Use this helper variant by replacing the existing `sentBody` with one that reads the **last** call:)
 
 ```ts
 function sentBody() {
-  const calls = lqStream.mock.calls;
-  return JSON.parse((calls[calls.length - 1][2] as { body: string }).body);
+	const calls = lqStream.mock.calls;
+	return JSON.parse((calls[calls.length - 1][2] as { body: string }).body);
 }
 ```
 
@@ -630,37 +678,46 @@ import type { RequestHandler } from './$types';
 import { lqStream } from '$lib/server/lqClient';
 
 export const POST: RequestHandler = async (event) => {
-  let content = '';
-  let model = 'smart';
-  let skills: string[] = [];
-  try {
-    const body = (await event.request.json()) as { content?: string; model?: string; skills?: string[] };
-    content = (body.content ?? '').trim();
-    const m = (body.model ?? '').trim();
-    if (m) model = m;
-    if (Array.isArray(body.skills)) skills = body.skills.filter((s): s is string => typeof s === 'string');
-  } catch {
-    content = '';
-  }
+	let content = '';
+	let model = 'smart';
+	let skills: string[] = [];
+	try {
+		const body = (await event.request.json()) as {
+			content?: string;
+			model?: string;
+			skills?: string[];
+		};
+		content = (body.content ?? '').trim();
+		const m = (body.model ?? '').trim();
+		if (m) model = m;
+		if (Array.isArray(body.skills))
+			skills = body.skills.filter((s): s is string => typeof s === 'string');
+	} catch {
+		content = '';
+	}
 
-  const payload: { content: string; model: string; stream: true; skills?: string[] } = { content, model, stream: true };
-  if (skills.length) payload.skills = skills;
+	const payload: { content: string; model: string; stream: true; skills?: string[] } = {
+		content,
+		model,
+		stream: true
+	};
+	if (skills.length) payload.skills = skills;
 
-  const upstream = await lqStream(event, `/api/v1/chats/${event.params.id}/messages`, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
+	const upstream = await lqStream(event, `/api/v1/chats/${event.params.id}/messages`, {
+		method: 'POST',
+		body: JSON.stringify(payload)
+	});
 
-  // Pipe the upstream SSE body straight through (no buffering). On a non-2xx
-  // upstream the body is the JSON error envelope; forward status + body so the
-  // client's res.ok check surfaces it.
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: {
-      'content-type': upstream.headers.get('content-type') ?? 'text/event-stream',
-      'cache-control': 'no-cache'
-    }
-  });
+	// Pipe the upstream SSE body straight through (no buffering). On a non-2xx
+	// upstream the body is the JSON error envelope; forward status + body so the
+	// client's res.ok check surfaces it.
+	return new Response(upstream.body, {
+		status: upstream.status,
+		headers: {
+			'content-type': upstream.headers.get('content-type') ?? 'text/event-stream',
+			'cache-control': 'no-cache'
+		}
+	});
 };
 ```
 
@@ -681,6 +738,7 @@ git commit -m "feat(p2c-b2): forward attached skills through the messages SSE BF
 ### Task 6: Composer chips + `SkillAttach` wiring
 
 **Files:**
+
 - Modify: `src/lib/components/Composer.svelte`
 - Test: `src/lib/components/Composer.test.ts` (add cases)
 
@@ -689,47 +747,55 @@ git commit -m "feat(p2c-b2): forward attached skills through the messages SSE BF
 Append inside the existing `describe('Composer', …)` block in `src/lib/components/Composer.test.ts`:
 
 ```ts
-  it('hides skill UI and submits empty skills when no skillAttach is passed (landing)', async () => {
-    const onsubmit = vi.fn();
-    const { getByRole, queryByTestId } = render(Composer, { props: { onsubmit } });
-    expect(queryByTestId('skill-attach')).toBeNull();
-    await userEvent.type(getByRole('textbox'), 'hello');
-    await userEvent.click(getByRole('button', { name: /send/i }));
-    expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String), []);
-  });
+it('hides skill UI and submits empty skills when no skillAttach is passed (landing)', async () => {
+	const onsubmit = vi.fn();
+	const { getByRole, queryByTestId } = render(Composer, { props: { onsubmit } });
+	expect(queryByTestId('skill-attach')).toBeNull();
+	await userEvent.type(getByRole('textbox'), 'hello');
+	await userEvent.click(getByRole('button', { name: /send/i }));
+	expect(onsubmit).toHaveBeenCalledWith('hello', expect.any(String), []);
+});
 
-  it('renders chips + skill button and submits attached slugs when skillAttach is passed', async () => {
-    const onsubmit = vi.fn();
-    const skillAttach = {
-      attached: [{ slug: 'nda-review', title: 'NDA Review' }],
-      results: [],
-      loading: false,
-      error: false,
-      names: ['nda-review'],
-      open: vi.fn(),
-      search: vi.fn(),
-      attach: vi.fn(),
-      remove: vi.fn()
-    };
-    const { getByRole, getByTestId, getByText } = render(Composer, { props: { onsubmit, skillAttach } });
-    expect(getByTestId('skill-attach')).toBeInTheDocument();
-    expect(getByText('NDA Review')).toBeInTheDocument();
-    await userEvent.type(getByRole('textbox'), 'review this');
-    await userEvent.click(getByRole('button', { name: /send/i }));
-    expect(onsubmit).toHaveBeenCalledWith('review this', expect.any(String), ['nda-review']);
-  });
+it('renders chips + skill button and submits attached slugs when skillAttach is passed', async () => {
+	const onsubmit = vi.fn();
+	const skillAttach = {
+		attached: [{ slug: 'nda-review', title: 'NDA Review' }],
+		results: [],
+		loading: false,
+		error: false,
+		names: ['nda-review'],
+		open: vi.fn(),
+		search: vi.fn(),
+		attach: vi.fn(),
+		remove: vi.fn()
+	};
+	const { getByRole, getByTestId, getByText } = render(Composer, {
+		props: { onsubmit, skillAttach }
+	});
+	expect(getByTestId('skill-attach')).toBeInTheDocument();
+	expect(getByText('NDA Review')).toBeInTheDocument();
+	await userEvent.type(getByRole('textbox'), 'review this');
+	await userEvent.click(getByRole('button', { name: /send/i }));
+	expect(onsubmit).toHaveBeenCalledWith('review this', expect.any(String), ['nda-review']);
+});
 
-  it('removes a chip via its remove control', async () => {
-    const remove = vi.fn();
-    const skillAttach = {
-      attached: [{ slug: 'nda-review', title: 'NDA Review' }],
-      results: [], loading: false, error: false, names: ['nda-review'],
-      open: vi.fn(), search: vi.fn(), attach: vi.fn(), remove
-    };
-    const { getByRole } = render(Composer, { props: { skillAttach } });
-    await userEvent.click(getByRole('button', { name: /remove nda review/i }));
-    expect(remove).toHaveBeenCalledWith('nda-review');
-  });
+it('removes a chip via its remove control', async () => {
+	const remove = vi.fn();
+	const skillAttach = {
+		attached: [{ slug: 'nda-review', title: 'NDA Review' }],
+		results: [],
+		loading: false,
+		error: false,
+		names: ['nda-review'],
+		open: vi.fn(),
+		search: vi.fn(),
+		attach: vi.fn(),
+		remove
+	};
+	const { getByRole } = render(Composer, { props: { skillAttach } });
+	await userEvent.click(getByRole('button', { name: /remove nda review/i }));
+	expect(remove).toHaveBeenCalledWith('nda-review');
+});
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -743,110 +809,123 @@ Replace the contents of `src/lib/components/Composer.svelte` with:
 
 ```svelte
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { ArrowRight, Square, X } from '@lucide/svelte';
-  import ModelPicker from './ModelPicker.svelte';
-  import SkillAttach from './SkillAttach.svelte';
-  import { modelStore } from '$lib/models/store.svelte';
-  import type { createSkillAttach } from '$lib/skills/attach.svelte';
+	import { onMount } from 'svelte';
+	import { ArrowRight, Square, X } from '@lucide/svelte';
+	import ModelPicker from './ModelPicker.svelte';
+	import SkillAttach from './SkillAttach.svelte';
+	import { modelStore } from '$lib/models/store.svelte';
+	import type { createSkillAttach } from '$lib/skills/attach.svelte';
 
-  let {
-    value = $bindable(''),
-    placeholder = 'Ask a question about your documents…',
-    onsubmit,
-    streaming = false,
-    onstop,
-    skillAttach
-  }: {
-    value?: string;
-    placeholder?: string;
-    onsubmit?: (text: string, model: string, skills: string[]) => void;
-    streaming?: boolean;
-    onstop?: () => void;
-    skillAttach?: ReturnType<typeof createSkillAttach>;
-  } = $props();
+	let {
+		value = $bindable(''),
+		placeholder = 'Ask a question about your documents…',
+		onsubmit,
+		streaming = false,
+		onstop,
+		skillAttach
+	}: {
+		value?: string;
+		placeholder?: string;
+		onsubmit?: (text: string, model: string, skills: string[]) => void;
+		streaming?: boolean;
+		onstop?: () => void;
+		skillAttach?: ReturnType<typeof createSkillAttach>;
+	} = $props();
 
-  let textarea = $state<HTMLTextAreaElement>();
+	let textarea = $state<HTMLTextAreaElement>();
 
-  onMount(() => {
-    modelStore.load();
-  });
+	onMount(() => {
+		modelStore.load();
+	});
 
-  function autogrow() {
-    if (!textarea) return;
-    textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 192) + 'px';
-  }
-  function submit() {
-    const text = value.trim();
-    if (!text) return;
-    onsubmit?.(text, modelStore.selectedModel, skillAttach?.names ?? []);
-  }
-  function onkeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (!streaming) submit();
-    }
-  }
+	function autogrow() {
+		if (!textarea) return;
+		textarea.style.height = 'auto';
+		textarea.style.height = Math.min(textarea.scrollHeight, 192) + 'px';
+	}
+	function submit() {
+		const text = value.trim();
+		if (!text) return;
+		onsubmit?.(text, modelStore.selectedModel, skillAttach?.names ?? []);
+	}
+	function onkeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			if (!streaming) submit();
+		}
+	}
 </script>
 
 <div class="rounded-t-mlq-composer border border-mlq-subtle bg-mlq-surface p-3 shadow-sm">
-  {#if skillAttach && skillAttach.attached.length}
-    <div class="mb-2 flex flex-wrap gap-1.5">
-      {#each skillAttach.attached as s (s.slug)}
-        <span class="inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text">
-          {s.title}
-          <button
-            type="button"
-            aria-label={`Remove ${s.title}`}
-            onclick={() => skillAttach?.remove(s.slug)}
-            class="text-mlq-muted hover:text-mlq-text"
-          >
-            <X size={12} />
-          </button>
-        </span>
-      {/each}
-    </div>
-  {/if}
+	{#if skillAttach && skillAttach.attached.length}
+		<div class="mb-2 flex flex-wrap gap-1.5">
+			{#each skillAttach.attached as s (s.slug)}
+				<span
+					class="inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text"
+				>
+					{s.title}
+					<button
+						type="button"
+						aria-label={`Remove ${s.title}`}
+						onclick={() => skillAttach?.remove(s.slug)}
+						class="text-mlq-muted hover:text-mlq-text"
+					>
+						<X size={12} />
+					</button>
+				</span>
+			{/each}
+		</div>
+	{/if}
 
-  <textarea
-    bind:this={textarea}
-    bind:value
-    {placeholder}
-    rows="1"
-    oninput={autogrow}
-    {onkeydown}
-    class="max-h-48 w-full resize-none bg-transparent font-serif text-mlq-text outline-none placeholder:text-mlq-muted"
-  ></textarea>
+	<textarea
+		bind:this={textarea}
+		bind:value
+		{placeholder}
+		rows="1"
+		oninput={autogrow}
+		{onkeydown}
+		class="max-h-48 w-full resize-none bg-transparent font-serif text-mlq-text outline-none placeholder:text-mlq-muted"
+	></textarea>
 
-  <div class="mt-2 flex items-center gap-2 border-t border-mlq-subtle pt-2">
-    <ModelPicker
-      options={modelStore.options}
-      selected={modelStore.selectedModel}
-      error={modelStore.error}
-      onselect={modelStore.setModel}
-    />
-    {#if skillAttach}
-      <SkillAttach
-        results={skillAttach.results}
-        loading={skillAttach.loading}
-        error={skillAttach.error}
-        onopen={skillAttach.open}
-        onsearch={skillAttach.search}
-        onattach={skillAttach.attach}
-      />
-    {/if}
-    <span class="flex-1"></span>
-    {#if streaming}
-      <button type="button" onclick={() => onstop?.()} aria-label="Stop" class="rounded-mlq-control bg-mlq-strong p-2 text-white">
-        <Square size={18} />
-      </button>
-    {:else}
-      <button type="button" onclick={submit} disabled={!value.trim()} aria-label="Send" class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40">
-        <ArrowRight size={18} />
-      </button>
-    {/if}
-  </div>
+	<div class="mt-2 flex items-center gap-2 border-t border-mlq-subtle pt-2">
+		<ModelPicker
+			options={modelStore.options}
+			selected={modelStore.selectedModel}
+			error={modelStore.error}
+			onselect={modelStore.setModel}
+		/>
+		{#if skillAttach}
+			<SkillAttach
+				results={skillAttach.results}
+				loading={skillAttach.loading}
+				error={skillAttach.error}
+				onopen={skillAttach.open}
+				onsearch={skillAttach.search}
+				onattach={skillAttach.attach}
+			/>
+		{/if}
+		<span class="flex-1"></span>
+		{#if streaming}
+			<button
+				type="button"
+				onclick={() => onstop?.()}
+				aria-label="Stop"
+				class="rounded-mlq-control bg-mlq-strong p-2 text-white"
+			>
+				<Square size={18} />
+			</button>
+		{:else}
+			<button
+				type="button"
+				onclick={submit}
+				disabled={!value.trim()}
+				aria-label="Send"
+				class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40"
+			>
+				<ArrowRight size={18} />
+			</button>
+		{/if}
+	</div>
 </div>
 ```
 
@@ -872,6 +951,7 @@ git commit -m "feat(p2c-b2): composer skill chips + SkillAttach wiring"
 ### Task 7: Wire the chat page to own the controller and pass skills
 
 **Files:**
+
 - Modify: `src/routes/(app)/chats/[id]/+page.svelte`
 
 - [ ] **Step 1: Update the page**
@@ -881,13 +961,13 @@ In `src/routes/(app)/chats/[id]/+page.svelte`:
 1. Add the import (beside the existing `modelStore` import):
 
 ```svelte
-  import { createSkillAttach } from '$lib/skills/attach.svelte';
+import {createSkillAttach} from '$lib/skills/attach.svelte';
 ```
 
 2. Create the per-chat controller next to the chat-stream controller (after the `const chat = untrack(...)` line):
 
 ```svelte
-  const skillAttach = createSkillAttach();
+const skillAttach = createSkillAttach();
 ```
 
 3. Update `submit` to accept and forward skills:
@@ -902,13 +982,13 @@ In `src/routes/(app)/chats/[id]/+page.svelte`:
 4. Pass the controller to the Composer (add the prop to the existing `<Composer ... />`):
 
 ```svelte
-    <Composer
-      bind:value={draftValue}
-      onsubmit={submit}
-      streaming={chat.status === 'streaming'}
-      onstop={chat.stop}
-      {skillAttach}
-    />
+<Composer
+	bind:value={draftValue}
+	onsubmit={submit}
+	streaming={chat.status === 'streaming'}
+	onstop={chat.stop}
+	{skillAttach}
+/>
 ```
 
 (The `onMount` landing-draft auto-send `submit(data.draft, modelStore.selectedModel)` still works — `skills` defaults to `[]`. Confirm `modelStore` is already imported from the B1 work; it is.)
@@ -930,6 +1010,7 @@ git commit -m "feat(p2c-b2): chat page owns skill controller and forwards skills
 ### Task 8: Live e2e + full gate
 
 **Files:**
+
 - Create: `tests/skill-attach.spec.ts`
 
 **Prereqs (run once):**
@@ -952,43 +1033,45 @@ const EMAIL = process.env.DONNA_E2E_EMAIL!;
 const PASSWORD = process.env.DONNA_E2E_PASSWORD!;
 
 async function login(page: any) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
-test('attach a skill in a chat: chip appears, body carries skills, persists across sends', async ({ page }) => {
-  await login(page);
+test('attach a skill in a chat: chip appears, body carries skills, persists across sends', async ({
+	page
+}) => {
+	await login(page);
 
-  // Start a chat (the landing composer has no skill UI — in-chat only).
-  await page.fill('textarea', 'In one short sentence, what is an NDA?');
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
-  await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
+	// Start a chat (the landing composer has no skill UI — in-chat only).
+	await page.fill('textarea', 'In one short sentence, what is an NDA?');
+	await page.keyboard.press('Enter');
+	await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
+	await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
 
-  // Open the skill popover, search, and attach nda-review.
-  await page.getByTestId('skill-attach').click();
-  await page.getByTestId('skill-search').fill('nda');
-  await expect(page.getByTestId('skill-result-nda-review')).toBeVisible({ timeout: 10000 });
-  await page.getByTestId('skill-result-nda-review').click();
+	// Open the skill popover, search, and attach nda-review.
+	await page.getByTestId('skill-attach').click();
+	await page.getByTestId('skill-search').fill('nda');
+	await expect(page.getByTestId('skill-result-nda-review')).toBeVisible({ timeout: 10000 });
+	await page.getByTestId('skill-result-nda-review').click();
 
-  // Chip appears.
-  await expect(page.getByText('NDA Review')).toBeVisible();
+	// Chip appears.
+	await expect(page.getByText('NDA Review')).toBeVisible();
 
-  // Sending carries skills:["nda-review"] in the outgoing body.
-  const reqPromise = page.waitForRequest(
-    (r: any) => r.url().includes('/messages') && r.method() === 'POST'
-  );
-  await page.fill('textarea', 'Is the non-compete enforceable?');
-  await page.keyboard.press('Enter');
-  const req = await reqPromise;
-  expect(JSON.parse(req.postData() || '{}').skills).toEqual(['nda-review']);
+	// Sending carries skills:["nda-review"] in the outgoing body.
+	const reqPromise = page.waitForRequest(
+		(r: any) => r.url().includes('/messages') && r.method() === 'POST'
+	);
+	await page.fill('textarea', 'Is the non-compete enforceable?');
+	await page.keyboard.press('Enter');
+	const req = await reqPromise;
+	expect(JSON.parse(req.postData() || '{}').skills).toEqual(['nda-review']);
 
-  // Sticky: the chip is still attached for a second message.
-  await expect(page.getByRole('button', { name: /copy/i }).last()).toBeVisible({ timeout: 30000 });
-  await expect(page.getByText('NDA Review')).toBeVisible();
+	// Sticky: the chip is still attached for a second message.
+	await expect(page.getByRole('button', { name: /copy/i }).last()).toBeVisible({ timeout: 30000 });
+	await expect(page.getByText('NDA Review')).toBeVisible();
 });
 ```
 
@@ -1014,6 +1097,7 @@ git commit -m "test(p2c-b2): live e2e for skill-attach (chip, body carries skill
 ## Self-review
 
 **Spec coverage:**
+
 - Attach-only (chips + autocomplete, no input forms) → Tasks 2 (controller), 3 (component), 6 (chips). No `skill_inputs` anywhere. ✓
 - `⊕ Skill` button + popover backed by `/skills/autocomplete` → Tasks 1 (proxy), 3 (component). ✓
 - Sticky in-memory chips → Task 2 (`attached` lives in the controller, no localStorage). ✓

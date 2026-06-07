@@ -27,12 +27,14 @@ This is distinct from KB attach (persistent, project-scoped) and from `skill_inp
 ## File structure
 
 **New:**
+
 - `src/lib/files/types.ts` — `AttachedFile` interface + re-export of the generated `File` type.
 - `src/lib/files/fileAttach.svelte.ts` (+ `.svelte.test.ts`) — the `createFileAttach` controller.
 - `src/routes/(app)/chats/[id]/draftFileIds.ts` (+ `draftFileIds.test.ts`) — `parseDraftFileIds`.
 - `tests/chat-file-attach.spec.ts` — live e2e.
 
 **Modified:**
+
 - `src/lib/chat/sse.ts` — add `applied_file_ids?: string[]` to the `delta` frame and to the
   `complete` frame's `message`.
 - `src/lib/chat/chatStream.svelte.ts` (+ test) — `fileIds` 5th arg through `send`/`runStream`/
@@ -65,7 +67,7 @@ AttachedFile = {
 State: `attached: AttachedFile[]`. Mirrors `createSkillAttach`'s shape (getters + methods).
 
 - `attach(files: File[], fetchFn = fetch)` — for each browser `File`, while `attached.length <
-  16`: push an entry `{ localId, name, fileId: null, status: 'uploading' }`; POST a `FormData`
+16`: push an entry `{ localId, name, fileId: null, status: 'uploading' }`; POST a `FormData`
   (`fd.append('file', file, file.name)`) to `/files`; on a non-OK response set
   `status: 'failed'` + `error` (read the error message; the `/files` proxy already maps 413 to a
   size message); on 201 read the `File`, set `fileId` and `status` from `ingestion_status` (default
@@ -97,7 +99,7 @@ and the existing BFF routes `/files` (POST) + `/files/[id]` (GET). No new BFF ro
 - `onsubmit` type → `(text, model, skills, skillInputs, fileIds: string[]) => void`. `submit()`
   early-returns when `fileAttach && !fileAttach.allReady`, and passes `fileAttach?.fileIds ?? []`.
 - Send button `disabled` = `!value.trim() || !(skillAttach?.allRequiredFilled ?? true) ||
-  !(fileAttach?.allReady ?? true)`.
+!(fileAttach?.allReady ?? true)`.
 
 ## Send paths
 
@@ -118,7 +120,8 @@ missing/malformed JSON, drops non-string/empty entries).
 
 In `Message.svelte`, inside the existing `showPills` "done" toolbar row, when
 `message.applied_file_ids?.length`, render a small indicator: a paperclip icon (`@lucide/svelte`)
-+ `{n} file{n === 1 ? '' : 's'}`, beside the "Applied:" skills block.
+
+- `{n} file{n === 1 ? '' : 's'}`, beside the "Applied:" skills block.
 
 ## Error handling
 

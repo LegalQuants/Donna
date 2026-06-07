@@ -21,6 +21,7 @@ when nothing is pending — slightly awkward.
 ## Requested change
 
 Expose the pending-deletion state on the user-facing profile, either:
+
 - add `deletion_scheduled_at?: string | null` to the `User` schema returned by
   `GET /api/v1/users/me`, **or**
 - add a small dedicated status field/endpoint Donna can read on load.

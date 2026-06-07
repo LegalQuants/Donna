@@ -10,21 +10,23 @@ const EMAIL = process.env.DONNA_E2E_EMAIL!;
 const PASSWORD = process.env.DONNA_E2E_PASSWORD!;
 
 async function login(page: Page) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
-test('shows the Anonymized badge on a streamed turn when the anonymization layer ran', async ({ page }) => {
-  test.setTimeout(90_000);
-  await login(page);
-  await page.fill('textarea', 'Name one common contract clause in two words.');
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
-  // Wait for the turn to finish (Copy appears once the assistant row is persisted); the
-  // chat controller then fetches the inference receipt and sets `anonymized`.
-  await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
-  await expect(page.getByText(/Anonymized/i).first()).toBeVisible({ timeout: 15000 });
+test('shows the Anonymized badge on a streamed turn when the anonymization layer ran', async ({
+	page
+}) => {
+	test.setTimeout(90_000);
+	await login(page);
+	await page.fill('textarea', 'Name one common contract clause in two words.');
+	await page.keyboard.press('Enter');
+	await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
+	// Wait for the turn to finish (Copy appears once the assistant row is persisted); the
+	// chat controller then fetches the inference receipt and sets `anonymized`.
+	await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
+	await expect(page.getByText(/Anonymized/i).first()).toBeVisible({ timeout: 15000 });
 });

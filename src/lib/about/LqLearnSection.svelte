@@ -16,12 +16,20 @@
 		class="mt-2 h-[900px] w-full rounded-mlq-control border border-mlq-subtle"
 	></iframe>
 	<div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-mlq-muted">
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external static playground -->
-		<a href={playgroundHref} target="_blank" rel="noopener noreferrer" class="text-mlq-strong hover:underline">Open full-screen ↗</a>
+		<a
+			href={playgroundHref}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="text-mlq-strong hover:underline">Open full-screen ↗</a
+		>
 		<span>
 			Source:
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external github link -->
-			<a href={section.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-mlq-strong hover:underline">{section.sourceLabel}</a>
+			<a
+				href={section.sourceUrl}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="text-mlq-strong hover:underline">{section.sourceLabel}</a
+			>
 		</span>
 	</div>
 </section>

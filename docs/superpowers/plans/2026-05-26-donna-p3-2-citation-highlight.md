@@ -11,6 +11,7 @@
 **Base branch note:** this work sits on `p3-2-citation-highlight`, which is stacked on the unmerged P3-1 (PR #9). Once #9 merges, reconcile the base to `main` before opening the P3-2 PR.
 
 **Reference patterns (read before starting):**
+
 - P3-1 substrate (final): `src/lib/docpanel/{pdfRender.ts,docPanel.svelte.ts,PdfViewer.svelte,DocumentPanel.svelte,types.ts}`.
 - Citation types + UI helpers: `src/lib/citations/types.ts` (`Citation`, `citeState(c)`, `tooltipFor(c)`), `src/lib/components/CitationView.svelte` + `CitationPopover.svelte`, `src/lib/citations/files.ts` (`fileName(id)`).
 - Chat-page wiring + Message: `src/routes/(app)/chats/[id]/+page.svelte:68`, `src/lib/components/Message.svelte:8,48`.
@@ -24,6 +25,7 @@
 ## Task 1: `pdfHighlight.ts` — verbatim search core + highlight wrapper
 
 **Files:**
+
 - Create: `src/lib/docpanel/pdfHighlight.ts`
 - Test: `src/lib/docpanel/pdfHighlight.test.ts`
 - Modify: `src/app.css` (add the `::highlight(cite)` rule)
@@ -37,86 +39,86 @@ import { findQuoteRange, highlightQuote, scrollCitedIntoView } from './pdfHighli
 
 // Build a synthetic PDF.js-style text layer: one <span> per text run.
 function layer(...runs: string[]): HTMLElement {
-  const el = document.createElement('div');
-  el.className = 'textLayer';
-  for (const r of runs) {
-    const span = document.createElement('span');
-    span.textContent = r;
-    el.appendChild(span);
-  }
-  document.body.appendChild(el); // ranges need nodes in a document
-  return el;
+	const el = document.createElement('div');
+	el.className = 'textLayer';
+	for (const r of runs) {
+		const span = document.createElement('span');
+		span.textContent = r;
+		el.appendChild(span);
+	}
+	document.body.appendChild(el); // ranges need nodes in a document
+	return el;
 }
 function page(...runs: string[]): HTMLElement {
-  const p = document.createElement('div');
-  p.className = 'pdf-page';
-  p.dataset.pageNumber = '1';
-  p.appendChild(layer(...runs));
-  document.body.appendChild(p);
-  return p;
+	const p = document.createElement('div');
+	p.className = 'pdf-page';
+	p.dataset.pageNumber = '1';
+	p.appendChild(layer(...runs));
+	document.body.appendChild(p);
+	return p;
 }
 
 describe('findQuoteRange', () => {
-  it('matches a quote that spans multiple text-layer spans', () => {
-    const tl = layer('This Agreement may be ', 'terminated by either party.');
-    const range = findQuoteRange(tl, 'Agreement may be terminated by either');
-    expect(range).not.toBeNull();
-    expect(range!.toString()).toBe('Agreement may be terminated by either');
-  });
+	it('matches a quote that spans multiple text-layer spans', () => {
+		const tl = layer('This Agreement may be ', 'terminated by either party.');
+		const range = findQuoteRange(tl, 'Agreement may be terminated by either');
+		expect(range).not.toBeNull();
+		expect(range!.toString()).toBe('Agreement may be terminated by either');
+	});
 
-  it('collapses whitespace differences between quote and text layer', () => {
-    const tl = layer('foo   bar baz');
-    const range = findQuoteRange(tl, 'foo bar');
-    expect(range).not.toBeNull();
-    expect(range!.toString()).toMatch(/^foo\s+bar$/);
-  });
+	it('collapses whitespace differences between quote and text layer', () => {
+		const tl = layer('foo   bar baz');
+		const range = findQuoteRange(tl, 'foo bar');
+		expect(range).not.toBeNull();
+		expect(range!.toString()).toMatch(/^foo\s+bar$/);
+	});
 
-  it('folds ligatures via NFKC (ﬁ matches "fi")', () => {
-    const tl = layer('the ﬁrst clause'); // ﬁ = ﬁ
-    const range = findQuoteRange(tl, 'first');
-    expect(range).not.toBeNull();
-    expect(range!.toString()).toBe('ﬁrst');
-  });
+	it('folds ligatures via NFKC (ﬁ matches "fi")', () => {
+		const tl = layer('the ﬁrst clause'); // ﬁ = ﬁ
+		const range = findQuoteRange(tl, 'first');
+		expect(range).not.toBeNull();
+		expect(range!.toString()).toBe('ﬁrst');
+	});
 
-  it('ignores soft hyphens in the source text', () => {
-    const tl = layer('inter­national law'); // soft hyphen inside the word
-    const range = findQuoteRange(tl, 'international');
-    expect(range).not.toBeNull();
-  });
+	it('ignores soft hyphens in the source text', () => {
+		const tl = layer('inter­national law'); // soft hyphen inside the word
+		const range = findQuoteRange(tl, 'international');
+		expect(range).not.toBeNull();
+	});
 
-  it('returns null on a genuine content mismatch', () => {
-    const tl = layer('totally unrelated wording here');
-    expect(findQuoteRange(tl, 'nonexistent clause')).toBeNull();
-  });
+	it('returns null on a genuine content mismatch', () => {
+		const tl = layer('totally unrelated wording here');
+		expect(findQuoteRange(tl, 'nonexistent clause')).toBeNull();
+	});
 
-  it('returns null for an empty quote', () => {
-    const tl = layer('anything');
-    expect(findQuoteRange(tl, '   ')).toBeNull();
-  });
+	it('returns null for an empty quote', () => {
+		const tl = layer('anything');
+		expect(findQuoteRange(tl, '   ')).toBeNull();
+	});
 });
 
 describe('highlightQuote', () => {
-  it('returns "found" when the quote is located (CSS.highlights absent in jsdom is fine)', () => {
-    const p = page('This Agreement may be terminated by either party.');
-    expect(highlightQuote(p, 'terminated by either')).toBe('found');
-  });
+	it('returns "found" when the quote is located (CSS.highlights absent in jsdom is fine)', () => {
+		const p = page('This Agreement may be terminated by either party.');
+		expect(highlightQuote(p, 'terminated by either')).toBe('found');
+	});
 
-  it('returns "miss" when the quote is not on the page', () => {
-    const p = page('Some other text entirely.');
-    expect(highlightQuote(p, 'not present')).toBe('miss');
-  });
+	it('returns "miss" when the quote is not on the page', () => {
+		const p = page('Some other text entirely.');
+		expect(highlightQuote(p, 'not present')).toBe('miss');
+	});
 
-  it('returns "miss" when the page has no text layer', () => {
-    const p = document.createElement('div');
-    p.className = 'pdf-page';
-    expect(highlightQuote(p, 'anything')).toBe('miss');
-  });
+	it('returns "miss" when the page has no text layer', () => {
+		const p = document.createElement('div');
+		p.className = 'pdf-page';
+		expect(highlightQuote(p, 'anything')).toBe('miss');
+	});
 });
 
 describe('scrollCitedIntoView', () => {
-  it('does not throw when there is no highlight / unsupported environment (jsdom)', () => {
-    expect(() => scrollCitedIntoView()).not.toThrow();
-  });
+	it('does not throw when there is no highlight / unsupported environment (jsdom)', () => {
+		expect(() => scrollCitedIntoView()).not.toThrow();
+	});
 });
 ```
 
@@ -142,72 +144,72 @@ const HIGHLIGHT_NAME = 'cite';
 
 /** Yield normalized characters with the raw index they came from. */
 function* normalizedChars(s: string): Generator<{ ch: string; rawIndex: number }> {
-  let prevSpace = false;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if (c === '­') continue; // soft hyphen — drop
-    const folded = c.normalize('NFKC'); // ﬁ → "fi", etc.
-    for (const ch0 of folded) {
-      if (/\s/.test(ch0)) {
-        if (prevSpace) continue; // collapse whitespace runs
-        prevSpace = true;
-        yield { ch: ' ', rawIndex: i };
-      } else {
-        prevSpace = false;
-        yield { ch: ch0, rawIndex: i };
-      }
-    }
-  }
+	let prevSpace = false;
+	for (let i = 0; i < s.length; i++) {
+		const c = s[i];
+		if (c === '­') continue; // soft hyphen — drop
+		const folded = c.normalize('NFKC'); // ﬁ → "fi", etc.
+		for (const ch0 of folded) {
+			if (/\s/.test(ch0)) {
+				if (prevSpace) continue; // collapse whitespace runs
+				prevSpace = true;
+				yield { ch: ' ', rawIndex: i };
+			} else {
+				prevSpace = false;
+				yield { ch: ch0, rawIndex: i };
+			}
+		}
+	}
 }
 
 function normalize(s: string): string {
-  let out = '';
-  for (const { ch } of normalizedChars(s)) out += ch;
-  return out;
+	let out = '';
+	for (const { ch } of normalizedChars(s)) out += ch;
+	return out;
 }
 
 export function findQuoteRange(textLayerEl: HTMLElement, quote: string): Range | null {
-  const qnorm = normalize(quote).trim();
-  if (!qnorm) return null;
+	const qnorm = normalize(quote).trim();
+	if (!qnorm) return null;
 
-  // Collect text nodes in document order with a per-raw-char {node, offset} map.
-  const walker = document.createTreeWalker(textLayerEl, NodeFilter.SHOW_TEXT);
-  let raw = '';
-  const nodeAt: { node: Text; offset: number }[] = [];
-  let n: Node | null;
-  while ((n = walker.nextNode())) {
-    const t = n as Text;
-    for (let i = 0; i < t.data.length; i++) nodeAt.push({ node: t, offset: i });
-    raw += t.data;
-  }
+	// Collect text nodes in document order with a per-raw-char {node, offset} map.
+	const walker = document.createTreeWalker(textLayerEl, NodeFilter.SHOW_TEXT);
+	let raw = '';
+	const nodeAt: { node: Text; offset: number }[] = [];
+	let n: Node | null;
+	while ((n = walker.nextNode())) {
+		const t = n as Text;
+		for (let i = 0; i < t.data.length; i++) nodeAt.push({ node: t, offset: i });
+		raw += t.data;
+	}
 
-  // Normalized string + map from normalized index → global raw index.
-  let norm = '';
-  const normToRaw: number[] = [];
-  for (const { ch, rawIndex } of normalizedChars(raw)) {
-    norm += ch;
-    normToRaw.push(rawIndex);
-  }
+	// Normalized string + map from normalized index → global raw index.
+	let norm = '';
+	const normToRaw: number[] = [];
+	for (const { ch, rawIndex } of normalizedChars(raw)) {
+		norm += ch;
+		normToRaw.push(rawIndex);
+	}
 
-  const idx = norm.indexOf(qnorm);
-  if (idx === -1) return null;
+	const idx = norm.indexOf(qnorm);
+	if (idx === -1) return null;
 
-  const start = nodeAt[normToRaw[idx]];
-  const end = nodeAt[normToRaw[idx + qnorm.length - 1]];
-  if (!start || !end) return null;
+	const start = nodeAt[normToRaw[idx]];
+	const end = nodeAt[normToRaw[idx + qnorm.length - 1]];
+	if (!start || !end) return null;
 
-  const range = document.createRange();
-  range.setStart(start.node, start.offset);
-  range.setEnd(end.node, end.offset + 1);
-  return range;
+	const range = document.createRange();
+	range.setStart(start.node, start.offset);
+	range.setEnd(end.node, end.offset + 1);
+	return range;
 }
 
 function highlightsSupported(): boolean {
-  return typeof CSS !== 'undefined' && !!CSS.highlights && typeof Highlight !== 'undefined';
+	return typeof CSS !== 'undefined' && !!CSS.highlights && typeof Highlight !== 'undefined';
 }
 
 export function clearHighlight(): void {
-  if (highlightsSupported()) CSS.highlights.delete(HIGHLIGHT_NAME);
+	if (highlightsSupported()) CSS.highlights.delete(HIGHLIGHT_NAME);
 }
 
 /**
@@ -216,24 +218,27 @@ export function clearHighlight(): void {
  * browsers (highlight just isn't painted; the result still reflects the match).
  */
 export function highlightQuote(pageEl: HTMLElement, quote: string): 'found' | 'miss' {
-  const textLayer = pageEl.querySelector<HTMLElement>('.textLayer');
-  const range = textLayer ? findQuoteRange(textLayer, quote) : null;
-  clearHighlight();
-  if (!range) return 'miss';
-  if (highlightsSupported()) CSS.highlights.set(HIGHLIGHT_NAME, new Highlight(range));
-  range.startContainer.parentElement?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-  return 'found';
+	const textLayer = pageEl.querySelector<HTMLElement>('.textLayer');
+	const range = textLayer ? findQuoteRange(textLayer, quote) : null;
+	clearHighlight();
+	if (!range) return 'miss';
+	if (highlightsSupported()) CSS.highlights.set(HIGHLIGHT_NAME, new Highlight(range));
+	range.startContainer.parentElement?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+	return 'found';
 }
 
 /** Re-centre the currently-registered citation highlight (the "Jump to ¶" action). No-op if none/unsupported. */
 export function scrollCitedIntoView(): void {
-  if (!highlightsSupported()) return;
-  const hl = CSS.highlights.get(HIGHLIGHT_NAME);
-  if (!hl) return;
-  for (const range of hl) {
-    (range as Range).startContainer.parentElement?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-    break;
-  }
+	if (!highlightsSupported()) return;
+	const hl = CSS.highlights.get(HIGHLIGHT_NAME);
+	if (!hl) return;
+	for (const range of hl) {
+		(range as Range).startContainer.parentElement?.scrollIntoView?.({
+			block: 'center',
+			behavior: 'smooth'
+		});
+		break;
+	}
 }
 ```
 
@@ -247,8 +252,8 @@ Append at the end of `src/app.css`:
    layer renders transparent glyphs over the canvas, so this paints a yellow box
    behind the cited words. */
 ::highlight(cite) {
-  background-color: #fff2a8;
-  color: inherit;
+	background-color: #fff2a8;
+	color: inherit;
 }
 ```
 
@@ -274,6 +279,7 @@ git commit -m "feat(p3-2): pdfHighlight — verbatim text-layer search + CSS Cus
 ## Task 2: Controller carries the citation + highlight status
 
 **Files:**
+
 - Modify: `src/lib/docpanel/types.ts`
 - Modify: `src/lib/docpanel/docPanel.svelte.ts`
 - Test: `src/lib/docpanel/docPanel.svelte.test.ts` (extend)
@@ -281,24 +287,24 @@ git commit -m "feat(p3-2): pdfHighlight — verbatim text-layer search + CSS Cus
 - [ ] **Step 1: Write the failing tests** (append to the existing `describe('createDocPanel', …)` in `docPanel.svelte.test.ts`)
 
 ```ts
-  it('stores the citation and starts highlight status pending', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(meta());
-    const dp = createDocPanel();
-    const c = cite({ source_file_id: 'f1', source_text: 'clause text' });
-    await dp.open(c, fetchFn);
-    expect(dp.activeTab?.cite).toEqual(c);
-    expect(dp.activeTab?.highlightStatus).toBe('pending');
-  });
+it('stores the citation and starts highlight status pending', async () => {
+	const fetchFn = vi.fn().mockResolvedValue(meta());
+	const dp = createDocPanel();
+	const c = cite({ source_file_id: 'f1', source_text: 'clause text' });
+	await dp.open(c, fetchFn);
+	expect(dp.activeTab?.cite).toEqual(c);
+	expect(dp.activeTab?.highlightStatus).toBe('pending');
+});
 
-  it('setHighlightStatus updates the tab; re-opening (dedupe) resets it to pending', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(meta());
-    const dp = createDocPanel();
-    await dp.open(cite({ source_file_id: 'f1' }), fetchFn);
-    dp.setHighlightStatus('f1', 'found');
-    expect(dp.activeTab?.highlightStatus).toBe('found');
-    await dp.open(cite({ source_file_id: 'f1', source_page: 5, source_text: 'other' }), fetchFn);
-    expect(dp.activeTab?.highlightStatus).toBe('pending');
-  });
+it('setHighlightStatus updates the tab; re-opening (dedupe) resets it to pending', async () => {
+	const fetchFn = vi.fn().mockResolvedValue(meta());
+	const dp = createDocPanel();
+	await dp.open(cite({ source_file_id: 'f1' }), fetchFn);
+	dp.setHighlightStatus('f1', 'found');
+	expect(dp.activeTab?.highlightStatus).toBe('found');
+	await dp.open(cite({ source_file_id: 'f1', source_page: 5, source_text: 'other' }), fetchFn);
+	expect(dp.activeTab?.highlightStatus).toBe('pending');
+});
 ```
 
 > The existing `cite()` helper builds a full `Citation`; reuse it. Existing tests use `toMatchObject`, so adding fields won't break them.
@@ -318,18 +324,18 @@ export type DocTabStatus = 'loading' | 'ready' | 'error';
 export type HighlightStatus = 'pending' | 'found' | 'miss';
 
 export interface DocTab {
-  fileId: string;
-  filename: string;
-  mime: string;
-  status: DocTabStatus;
-  /** 1-based page the cited span lives on. */
-  page: number | null;
-  /** Verbatim cited text to highlight. */
-  quote: string;
-  /** The citation behind this tab — drives the panel's verification chip. */
-  cite: Citation;
-  /** Outcome of the highlight attempt for the current {page, quote}. */
-  highlightStatus: HighlightStatus;
+	fileId: string;
+	filename: string;
+	mime: string;
+	status: DocTabStatus;
+	/** 1-based page the cited span lives on. */
+	page: number | null;
+	/** Verbatim cited text to highlight. */
+	quote: string;
+	/** The citation behind this tab — drives the panel's verification chip. */
+	cite: Citation;
+	/** Outcome of the highlight attempt for the current {page, quote}. */
+	highlightStatus: HighlightStatus;
 }
 ```
 
@@ -338,34 +344,45 @@ export interface DocTab {
 In `open(c, fetchFn)`, the dedupe branch and the new-tab push both need the citation + status. Replace the dedupe branch and the `tabs = [...]` push:
 
 ```ts
-    const existing = tabs.find((t) => t.fileId === fileId);
-    if (existing) {
-      existing.page = page;
-      existing.quote = quote;
-      existing.cite = c;
-      existing.highlightStatus = 'pending';
-      activeId = fileId;
-      return;
-    }
+const existing = tabs.find((t) => t.fileId === fileId);
+if (existing) {
+	existing.page = page;
+	existing.quote = quote;
+	existing.cite = c;
+	existing.highlightStatus = 'pending';
+	activeId = fileId;
+	return;
+}
 
-    tabs = [...tabs, { fileId, filename: '', mime: '', status: 'loading', page, quote, cite: c, highlightStatus: 'pending' }];
-    activeId = fileId;
+tabs = [
+	...tabs,
+	{
+		fileId,
+		filename: '',
+		mime: '',
+		status: 'loading',
+		page,
+		quote,
+		cite: c,
+		highlightStatus: 'pending'
+	}
+];
+activeId = fileId;
 ```
 
 Add the `setHighlightStatus` method (next to `setActive`):
 
 ```ts
-  function setHighlightStatus(fileId: string, status: 'found' | 'miss') {
-    const t = tabs.find((t) => t.fileId === fileId);
-    if (t) t.highlightStatus = status;
-  }
+function setHighlightStatus(fileId: string, status: 'found' | 'miss') {
+	const t = tabs.find((t) => t.fileId === fileId);
+	if (t) t.highlightStatus = status;
+}
 ```
 
 Add it to the returned object (after `setWidth`):
 
 ```ts
-    setWidth,
-    setHighlightStatus
+(setWidth, setHighlightStatus);
 ```
 
 - [ ] **Step 5: Run tests to verify they pass**
@@ -385,48 +402,61 @@ git commit -m "feat(p3-2): docPanel carries citation + per-tab highlight status"
 ## Task 3: `PdfViewer` runs the highlight reactively
 
 **Files:**
+
 - Modify: `src/lib/docpanel/PdfViewer.svelte`
 - Test: `src/lib/docpanel/PdfViewer.svelte.test.ts` (extend)
 
 - [ ] **Step 1: Write the failing test** (append to the existing `describe('PdfViewer', …)`)
 
 ```ts
-  it('highlights the cited span after render and reports the result', async () => {
-    const bytes = new Uint8Array([0x25]).buffer;
-    const fetchFn = vi.fn().mockResolvedValue(new Response(bytes, { status: 200 }));
-    // fake renderPdf populates the container with a page + text layer
-    const renderPdf = vi.fn().mockImplementation(async (container: HTMLElement) => {
-      const pg = document.createElement('div');
-      pg.className = 'pdf-page';
-      pg.dataset.pageNumber = '2';
-      const tl = document.createElement('div');
-      tl.className = 'textLayer';
-      pg.appendChild(tl);
-      container.appendChild(pg);
-      return { numPages: 3 };
-    });
-    const highlightQuote = vi.fn().mockReturnValue('found');
-    const onhighlight = vi.fn();
+it('highlights the cited span after render and reports the result', async () => {
+	const bytes = new Uint8Array([0x25]).buffer;
+	const fetchFn = vi.fn().mockResolvedValue(new Response(bytes, { status: 200 }));
+	// fake renderPdf populates the container with a page + text layer
+	const renderPdf = vi.fn().mockImplementation(async (container: HTMLElement) => {
+		const pg = document.createElement('div');
+		pg.className = 'pdf-page';
+		pg.dataset.pageNumber = '2';
+		const tl = document.createElement('div');
+		tl.className = 'textLayer';
+		pg.appendChild(tl);
+		container.appendChild(pg);
+		return { numPages: 3 };
+	});
+	const highlightQuote = vi.fn().mockReturnValue('found');
+	const onhighlight = vi.fn();
 
-    render(PdfViewer, { props: { fileId: 'f1', page: 2, quote: 'hello clause', fetchFn, renderPdf, highlightQuote, onhighlight } });
+	render(PdfViewer, {
+		props: {
+			fileId: 'f1',
+			page: 2,
+			quote: 'hello clause',
+			fetchFn,
+			renderPdf,
+			highlightQuote,
+			onhighlight
+		}
+	});
 
-    await vi.waitFor(() => expect(highlightQuote).toHaveBeenCalled());
-    const [pageElArg, quoteArg] = highlightQuote.mock.calls[0];
-    expect((pageElArg as HTMLElement).dataset.pageNumber).toBe('2');
-    expect(quoteArg).toBe('hello clause');
-    await vi.waitFor(() => expect(onhighlight).toHaveBeenCalledWith('found'));
-  });
+	await vi.waitFor(() => expect(highlightQuote).toHaveBeenCalled());
+	const [pageElArg, quoteArg] = highlightQuote.mock.calls[0];
+	expect((pageElArg as HTMLElement).dataset.pageNumber).toBe('2');
+	expect(quoteArg).toBe('hello clause');
+	await vi.waitFor(() => expect(onhighlight).toHaveBeenCalledWith('found'));
+});
 
-  it('reports "miss" when the cited page is not present', async () => {
-    const bytes = new Uint8Array([0x25]).buffer;
-    const fetchFn = vi.fn().mockResolvedValue(new Response(bytes, { status: 200 }));
-    const renderPdf = vi.fn().mockResolvedValue({ numPages: 1 }); // renders nothing
-    const highlightQuote = vi.fn().mockReturnValue('found');
-    const onhighlight = vi.fn();
-    render(PdfViewer, { props: { fileId: 'f1', page: 9, quote: 'x', fetchFn, renderPdf, highlightQuote, onhighlight } });
-    await vi.waitFor(() => expect(onhighlight).toHaveBeenCalledWith('miss'));
-    expect(highlightQuote).not.toHaveBeenCalled(); // no page element → miss before calling
-  });
+it('reports "miss" when the cited page is not present', async () => {
+	const bytes = new Uint8Array([0x25]).buffer;
+	const fetchFn = vi.fn().mockResolvedValue(new Response(bytes, { status: 200 }));
+	const renderPdf = vi.fn().mockResolvedValue({ numPages: 1 }); // renders nothing
+	const highlightQuote = vi.fn().mockReturnValue('found');
+	const onhighlight = vi.fn();
+	render(PdfViewer, {
+		props: { fileId: 'f1', page: 9, quote: 'x', fetchFn, renderPdf, highlightQuote, onhighlight }
+	});
+	await vi.waitFor(() => expect(onhighlight).toHaveBeenCalledWith('miss'));
+	expect(highlightQuote).not.toHaveBeenCalled(); // no page element → miss before calling
+});
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -440,62 +470,62 @@ Replace the `<script>` block with:
 
 ```svelte
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { renderPdf as defaultRenderPdf, type RenderedPdf } from './pdfRender';
-  import { highlightQuote as defaultHighlightQuote } from './pdfHighlight';
+	import { onMount } from 'svelte';
+	import { renderPdf as defaultRenderPdf, type RenderedPdf } from './pdfRender';
+	import { highlightQuote as defaultHighlightQuote } from './pdfHighlight';
 
-  let {
-    fileId,
-    page = null,
-    quote = '',
-    fetchFn = fetch,
-    renderPdf = defaultRenderPdf,
-    highlightQuote = defaultHighlightQuote,
-    onhighlight
-  }: {
-    fileId: string;
-    page?: number | null;
-    quote?: string;
-    fetchFn?: typeof fetch;
-    renderPdf?: (container: HTMLElement, bytes: ArrayBuffer) => Promise<RenderedPdf>;
-    highlightQuote?: (pageEl: HTMLElement, quote: string) => 'found' | 'miss';
-    onhighlight?: (status: 'found' | 'miss') => void;
-  } = $props();
+	let {
+		fileId,
+		page = null,
+		quote = '',
+		fetchFn = fetch,
+		renderPdf = defaultRenderPdf,
+		highlightQuote = defaultHighlightQuote,
+		onhighlight
+	}: {
+		fileId: string;
+		page?: number | null;
+		quote?: string;
+		fetchFn?: typeof fetch;
+		renderPdf?: (container: HTMLElement, bytes: ArrayBuffer) => Promise<RenderedPdf>;
+		highlightQuote?: (pageEl: HTMLElement, quote: string) => 'found' | 'miss';
+		onhighlight?: (status: 'found' | 'miss') => void;
+	} = $props();
 
-  let container = $state<HTMLElement | null>(null);
-  let status = $state<'loading' | 'ready' | 'error'>('loading');
+	let container = $state<HTMLElement | null>(null);
+	let status = $state<'loading' | 'ready' | 'error'>('loading');
 
-  onMount(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetchFn(`/files/${fileId}/content`);
-        if (!res.ok) throw new Error(String(res.status));
-        const bytes = await res.arrayBuffer();
-        if (cancelled) return;
-        if (!container) throw new Error('container unmounted before render');
-        await renderPdf(container, bytes);
-        if (!cancelled) status = 'ready';
-      } catch {
-        if (!cancelled) status = 'error';
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  });
+	onMount(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const res = await fetchFn(`/files/${fileId}/content`);
+				if (!res.ok) throw new Error(String(res.status));
+				const bytes = await res.arrayBuffer();
+				if (cancelled) return;
+				if (!container) throw new Error('container unmounted before render');
+				await renderPdf(container, bytes);
+				if (!cancelled) status = 'ready';
+			} catch {
+				if (!cancelled) status = 'error';
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	});
 
-  // After render, locate the cited page + highlight. Re-runs when page/quote change
-  // — so re-navigating within an already-open doc re-highlights without re-render.
-  $effect(() => {
-    if (status !== 'ready' || !container || page == null || !quote) return;
-    const pageEl = container.querySelector<HTMLElement>(`.pdf-page[data-page-number="${page}"]`);
-    if (!pageEl) {
-      onhighlight?.('miss');
-      return;
-    }
-    onhighlight?.(highlightQuote(pageEl, quote));
-  });
+	// After render, locate the cited page + highlight. Re-runs when page/quote change
+	// — so re-navigating within an already-open doc re-highlights without re-render.
+	$effect(() => {
+		if (status !== 'ready' || !container || page == null || !quote) return;
+		const pageEl = container.querySelector<HTMLElement>(`.pdf-page[data-page-number="${page}"]`);
+		if (!pageEl) {
+			onhighlight?.('miss');
+			return;
+		}
+		onhighlight?.(highlightQuote(pageEl, quote));
+	});
 </script>
 ```
 
@@ -523,6 +553,7 @@ git commit -m "feat(p3-2): PdfViewer highlights the cited span reactively after 
 ## Task 4: `DocumentPanel` cited-passage bar + viewer wiring
 
 **Files:**
+
 - Modify: `src/lib/docpanel/DocumentPanel.svelte`
 - Test: `src/lib/docpanel/DocumentPanel.svelte.test.ts` (extend)
 
@@ -533,25 +564,43 @@ First, the existing `stub()` helper must provide the new tab fields. Update it (
 ```ts
 import type { Citation } from '$lib/citations/types';
 
-const CITE: Citation = { id: 'c1', source_file_id: 'f1', source_page: 1, source_text: 'the cited clause text', verified: true, partial: false };
-const TAB = { fileId: 'f1', filename: 'spike.pdf', mime: 'application/pdf', status: 'ready', page: 1, quote: 'the cited clause text', cite: CITE, highlightStatus: 'found' };
+const CITE: Citation = {
+	id: 'c1',
+	source_file_id: 'f1',
+	source_page: 1,
+	source_text: 'the cited clause text',
+	verified: true,
+	partial: false
+};
+const TAB = {
+	fileId: 'f1',
+	filename: 'spike.pdf',
+	mime: 'application/pdf',
+	status: 'ready',
+	page: 1,
+	quote: 'the cited clause text',
+	cite: CITE,
+	highlightStatus: 'found'
+};
 ```
 
 Update `stub()` so `tabs: [TAB]`, `activeTab: TAB`, and add `setHighlightStatus: vi.fn()` to the returned object (keep the existing `as unknown as DocPanel` cast). Then add tests:
 
 ```ts
-  it('shows the cited quote and a verified chip in the found state', () => {
-    render(DocumentPanel, { props: { docPanel: stub() } });
-    expect(screen.getByText(/the cited clause text/i)).toBeInTheDocument();
-    expect(screen.getByText(/verified/i)).toBeInTheDocument();
-  });
+it('shows the cited quote and a verified chip in the found state', () => {
+	render(DocumentPanel, { props: { docPanel: stub() } });
+	expect(screen.getByText(/the cited clause text/i)).toBeInTheDocument();
+	expect(screen.getByText(/verified/i)).toBeInTheDocument();
+});
 
-  it('shows the amber miss callout with the full quote when highlight missed', () => {
-    const tab = { ...TAB, highlightStatus: 'miss' as const };
-    render(DocumentPanel, { props: { docPanel: stub({ tabs: [tab], activeTab: tab }) } });
-    expect(screen.getByText(/couldn’t pinpoint|couldn't pinpoint|cited passage on this page/i)).toBeInTheDocument();
-    expect(screen.getByText(/the cited clause text/i)).toBeInTheDocument();
-  });
+it('shows the amber miss callout with the full quote when highlight missed', () => {
+	const tab = { ...TAB, highlightStatus: 'miss' as const };
+	render(DocumentPanel, { props: { docPanel: stub({ tabs: [tab], activeTab: tab }) } });
+	expect(
+		screen.getByText(/couldn’t pinpoint|couldn't pinpoint|cited passage on this page/i)
+	).toBeInTheDocument();
+	expect(screen.getByText(/the cited clause text/i)).toBeInTheDocument();
+});
 ```
 
 > If TypeScript objects to the `TAB`/`tab` literal types in `stub({...})`, annotate them (`const tab: DocTab = …`) — do not loosen the stub cast further. Import `DocTab` from `./types` if needed.
@@ -566,8 +615,7 @@ Expected: FAIL — the bar markup doesn't exist yet.
 Add imports at the top of `<script>`:
 
 ```svelte
-  import { citeState, tooltipFor } from '$lib/citations/types';
-  import { scrollCitedIntoView } from './pdfHighlight';
+import {(citeState, tooltipFor)} from '$lib/citations/types'; import {scrollCitedIntoView} from './pdfHighlight';
 ```
 
 (No extra component state needed — "Jump to ¶" calls `scrollCitedIntoView()` directly, which re-centres the registered `'cite'` highlight.)
@@ -646,6 +694,7 @@ git commit -m "feat(p3-2): cited-passage bar (verified chip + quote + jump / amb
 ## Task 5: Pill rework — hover/focus popover, click opens the panel
 
 **Files:**
+
 - Modify: `src/lib/components/CitationView.svelte`
 - Modify: `src/lib/components/CitationPopover.svelte` (remove stale footer)
 - Modify: `src/lib/components/Message.svelte` (rename callback)
@@ -662,29 +711,40 @@ import CitationView from './CitationView.svelte';
 import type { Citation } from '$lib/citations/types';
 
 const citations: Citation[] = [
-  { id: 'c1', source_file_id: 'f1', source_page: 1, source_text: 'cited clause', verified: true, partial: false }
+	{
+		id: 'c1',
+		source_file_id: 'f1',
+		source_page: 1,
+		source_text: 'cited clause',
+		verified: true,
+		partial: false
+	}
 ];
 
 describe('CitationView pill interaction', () => {
-  it('opens the metadata popover on focus and not on click', async () => {
-    const onactivate = vi.fn();
-    const { container } = render(CitationView, { props: { content: 'See the clause (Source: [1]).', citations, onactivate } });
-    const pill = container.querySelector('[data-cite-index="1"]') as HTMLElement;
-    expect(pill).toBeTruthy();
+	it('opens the metadata popover on focus and not on click', async () => {
+		const onactivate = vi.fn();
+		const { container } = render(CitationView, {
+			props: { content: 'See the clause (Source: [1]).', citations, onactivate }
+		});
+		const pill = container.querySelector('[data-cite-index="1"]') as HTMLElement;
+		expect(pill).toBeTruthy();
 
-    // focus → popover appears
-    await fireEvent.focusIn(pill);
-    expect(container.querySelector('[role="dialog"]')).toBeTruthy();
-  });
+		// focus → popover appears
+		await fireEvent.focusIn(pill);
+		expect(container.querySelector('[role="dialog"]')).toBeTruthy();
+	});
 
-  it('calls onactivate on click and does NOT open the popover', async () => {
-    const onactivate = vi.fn();
-    const { container } = render(CitationView, { props: { content: 'See the clause (Source: [1]).', citations, onactivate } });
-    const pill = container.querySelector('[data-cite-index="1"]') as HTMLElement;
-    await userEvent.click(pill);
-    expect(onactivate).toHaveBeenCalledWith(citations[0]);
-    expect(container.querySelector('[role="dialog"]')).toBeFalsy();
-  });
+	it('calls onactivate on click and does NOT open the popover', async () => {
+		const onactivate = vi.fn();
+		const { container } = render(CitationView, {
+			props: { content: 'See the clause (Source: [1]).', citations, onactivate }
+		});
+		const pill = container.querySelector('[data-cite-index="1"]') as HTMLElement;
+		await userEvent.click(pill);
+		expect(onactivate).toHaveBeenCalledWith(citations[0]);
+		expect(container.querySelector('[role="dialog"]')).toBeFalsy();
+	});
 });
 ```
 
@@ -773,15 +833,17 @@ Replace the prop declaration and the event handlers. Keep `container`, `openInde
 Update the markup's interactive wrapper to bind the new handlers (the `{@html}` div):
 
 ```svelte
-  <div
-    class="prose-mlq"
-    onclick={onClick}
-    onkeydown={onKeydown}
-    onpointerover={onPointerOver}
-    onpointerout={onPointerOut}
-    onfocusin={onFocusIn}
-    onfocusout={onFocusOut}
-  >{@html html}</div>
+<div
+	class="prose-mlq"
+	onclick={onClick}
+	onkeydown={onKeydown}
+	onpointerover={onPointerOver}
+	onpointerout={onPointerOut}
+	onfocusin={onFocusIn}
+	onfocusout={onFocusOut}
+>
+	{@html html}
+</div>
 ```
 
 Keep the existing `<!-- svelte-ignore a11y_no_static_element_interactions -->` and the eslint-disable line above it. Keep the popover render block (`{#if openIndex !== null}…CitationPopover…`) unchanged.
@@ -791,10 +853,10 @@ Keep the existing `<!-- svelte-ignore a11y_no_static_element_interactions -->` a
 Delete the `.foot` block from the markup:
 
 ```svelte
-  <div class="foot">
-    <button type="button" disabled>Open in document →</button>
-    <span class="hint">Document panel arrives in P3</span>
-  </div>
+<div class="foot">
+	<button type="button" disabled>Open in document →</button>
+	<span class="hint">Document panel arrives in P3</span>
+</div>
 ```
 
 …and delete the now-unused `.foot`, `.foot button`, and `.hint` CSS rules in the same file. (Run `npm run check` after — Svelte flags unused selectors, which would fail the 0-warning bar.)
@@ -806,6 +868,7 @@ In `src/lib/components/Message.svelte`: rename the prop `onopencitation` → `on
 ```svelte
   let { message, onretry, onactivatecitation }: { message: ChatMessage; onretry?: () => void; onactivatecitation?: (c: Citation) => void } = $props();
 ```
+
 ```svelte
         <CitationView content={message.content} citations={message.citations as Citation[]} onactivate={onactivatecitation} />
 ```
@@ -813,7 +876,7 @@ In `src/lib/components/Message.svelte`: rename the prop `onopencitation` → `on
 In `src/routes/(app)/chats/[id]/+page.svelte`, rename the `<Message>` callsite prop:
 
 ```svelte
-        <Message message={m} onretry={retry} onactivatecitation={(c) => docPanel.open(c)} />
+<Message message={m} onretry={retry} onactivatecitation={(c) => docPanel.open(c)} />
 ```
 
 - [ ] **Step 6: Run tests to verify they pass**
@@ -838,6 +901,7 @@ git commit -m "feat(p3-2): pill hover=metadata / click=open panel; drop stale po
 ## Task 6: Live e2e — citation click highlights; hover shows metadata
 
 **Files:**
+
 - Create: `tests/citation-highlight.spec.ts`
 
 **Precondition:** rebuild `donna-web` so the container serves the P3-2 build before running:
@@ -855,75 +919,128 @@ const API = process.env.DONNA_LQ_AI_API ?? 'http://localhost:18000/api/v1';
 const PDF = process.env.DONNA_SPIKE_PDF ?? '/tmp/spike.pdf';
 
 async function api(token: string, path: string, init: RequestInit = {}) {
-  return fetch(`${API}${path}`, { ...init, headers: { authorization: `Bearer ${token}`, ...(init.headers || {}) } });
+	return fetch(`${API}${path}`, {
+		...init,
+		headers: { authorization: `Bearer ${token}`, ...(init.headers || {}) }
+	});
 }
 
 async function seedCitedChat(): Promise<string> {
-  const tok = await fetch(`${API}/auth/login`, {
-    method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: EMAIL, password: PASSWORD })
-  }).then((r) => r.json()).then((d) => d.access_token);
+	const tok = await fetch(`${API}/auth/login`, {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ email: EMAIL, password: PASSWORD })
+	})
+		.then((r) => r.json())
+		.then((d) => d.access_token);
 
-  const pid = await api(tok, '/projects', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'E2E Highlight Matter' }) }).then((r) => r.json()).then((d) => d.id);
-  const kid = await api(tok, '/knowledge-bases', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'E2E Highlight KB' }) }).then((r) => r.json()).then((d) => d.id);
-  await api(tok, `/projects/${pid}/knowledge-bases`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ knowledge_base_id: kid }) });
+	const pid = await api(tok, '/projects', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ name: 'E2E Highlight Matter' })
+	})
+		.then((r) => r.json())
+		.then((d) => d.id);
+	const kid = await api(tok, '/knowledge-bases', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ name: 'E2E Highlight KB' })
+	})
+		.then((r) => r.json())
+		.then((d) => d.id);
+	await api(tok, `/projects/${pid}/knowledge-bases`, {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ knowledge_base_id: kid })
+	});
 
-  const fd = new FormData();
-  fd.append('file', new Blob([readFileSync(PDF)], { type: 'application/pdf' }), 'spike.pdf');
-  const fid = await api(tok, '/files', { method: 'POST', body: fd }).then((r) => r.json()).then((d) => d.id);
+	const fd = new FormData();
+	fd.append('file', new Blob([readFileSync(PDF)], { type: 'application/pdf' }), 'spike.pdf');
+	const fid = await api(tok, '/files', { method: 'POST', body: fd })
+		.then((r) => r.json())
+		.then((d) => d.id);
 
-  for (let i = 0; i < 60; i++) {
-    const st = await api(tok, `/files/${fid}`).then((r) => r.json()).then((d) => d.ingestion_status);
-    if (st === 'ready') break;
-    if (st === 'failed') throw new Error('ingestion failed');
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  await api(tok, `/knowledge-bases/${kid}/files`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file_id: fid }) });
+	for (let i = 0; i < 60; i++) {
+		const st = await api(tok, `/files/${fid}`)
+			.then((r) => r.json())
+			.then((d) => d.ingestion_status);
+		if (st === 'ready') break;
+		if (st === 'failed') throw new Error('ingestion failed');
+		await new Promise((r) => setTimeout(r, 2000));
+	}
+	await api(tok, `/knowledge-bases/${kid}/files`, {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ file_id: fid })
+	});
 
-  for (let i = 0; i < 60; i++) {
-    const res = await api(tok, `/knowledge-bases/${kid}/query`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: 'termination convenience notice', top_k: 1 }) }).then((r) => r.json());
-    if ((res.results ?? []).length > 0) break;
-    await new Promise((r) => setTimeout(r, 2000));
-  }
+	for (let i = 0; i < 60; i++) {
+		const res = await api(tok, `/knowledge-bases/${kid}/query`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ query: 'termination convenience notice', top_k: 1 })
+		}).then((r) => r.json());
+		if ((res.results ?? []).length > 0) break;
+		await new Promise((r) => setTimeout(r, 2000));
+	}
 
-  const cid = await api(tok, '/chats', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title: 'E2E highlight chat', project_id: pid }) }).then((r) => r.json()).then((d) => d.id);
-  const q = 'What is the termination-for-convenience notice period? Quote the operative clause.';
-  await api(tok, `/chats/${cid}/messages`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content: q, model: 'smart', stream: false }) });
-  return cid;
+	const cid = await api(tok, '/chats', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ title: 'E2E highlight chat', project_id: pid })
+	})
+		.then((r) => r.json())
+		.then((d) => d.id);
+	const q = 'What is the termination-for-convenience notice period? Quote the operative clause.';
+	await api(tok, `/chats/${cid}/messages`, {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ content: q, model: 'smart', stream: false })
+	});
+	return cid;
 }
 
 async function login(page: Page) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
 test('hovering a citation shows metadata; clicking highlights the cited span', async ({ page }) => {
-  test.setTimeout(180_000);
-  const cid = await seedCitedChat();
-  await login(page);
-  await page.goto(`/chats/${cid}`);
-  await page.waitForLoadState('networkidle');
+	test.setTimeout(180_000);
+	const cid = await seedCitedChat();
+	await login(page);
+	await page.goto(`/chats/${cid}`);
+	await page.waitForLoadState('networkidle');
 
-  const pill = page.locator('.cite-tab').first();
-  await expect(pill).toBeVisible({ timeout: 15000 });
+	const pill = page.locator('.cite-tab').first();
+	await expect(pill).toBeVisible({ timeout: 15000 });
 
-  // Hover → metadata popover appears (and click is NOT what triggers it).
-  await pill.hover();
-  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
+	// Hover → metadata popover appears (and click is NOT what triggers it).
+	await pill.hover();
+	await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
 
-  // Click → panel opens, cited-passage bar shows the quote, and a highlight is registered.
-  await pill.click();
-  const panel = page.getByRole('complementary', { name: /document panel/i });
-  await expect(panel).toBeVisible({ timeout: 15000 });
-  await expect(panel.getByText(/Jump to ¶|couldn’t pinpoint|couldn't pinpoint/i)).toBeVisible({ timeout: 15000 });
+	// Click → panel opens, cited-passage bar shows the quote, and a highlight is registered.
+	await pill.click();
+	const panel = page.getByRole('complementary', { name: /document panel/i });
+	await expect(panel).toBeVisible({ timeout: 15000 });
+	await expect(panel.getByText(/Jump to ¶|couldn’t pinpoint|couldn't pinpoint/i)).toBeVisible({
+		timeout: 15000
+	});
 
-  // The CSS Custom Highlight 'cite' has at least one range (found state).
-  await expect
-    .poll(async () => page.evaluate(() => (globalThis.CSS?.highlights?.get('cite') as { size?: number } | undefined)?.size ?? 0), { timeout: 15000 })
-    .toBeGreaterThan(0);
+	// The CSS Custom Highlight 'cite' has at least one range (found state).
+	await expect
+		.poll(
+			async () =>
+				page.evaluate(
+					() =>
+						(globalThis.CSS?.highlights?.get('cite') as { size?: number } | undefined)?.size ?? 0
+				),
+			{ timeout: 15000 }
+		)
+		.toBeGreaterThan(0);
 });
 ```
 
@@ -936,6 +1053,7 @@ set -a; . ./.env; set +a
 docker compose up -d --build donna-web
 npx playwright test tests/citation-highlight.spec.ts
 ```
+
 Expected: PASS. Timing-sensitive (async embeddings) — re-run once if the pill never appears. A highlight-poll failure with the bar in `found` state is a real bug.
 
 - [ ] **Step 3: Commit**

@@ -11,16 +11,18 @@ completes the "Powered by LQ-AI" surface: How It Works (the architecture tour) +
 extend/contribute). See [[donna-about-page]].
 
 ## Decision (locked in brainstorm, 2026-06-03)
+
 - **Curated port:** port the durable, inspiring sections faithfully; **condense** the hyper-repo-specific
   sections (the list of 7 curated mini-PRDs with effort estimates; the exact CI/PR-gate commands) into a
   short lead-in + a link to the live repo, so the page doesn't carry granular internal detail that drifts.
 - Same re-skin-natively approach as 2b-i (`mlq-*` tokens; no LQ-AI `lq-*` stylesheet).
 
 ## Source material
+
 - LQ-AI page: `vendor/lq-ai/web/src/routes/lq-ai/learn/build/+page.svelte` (599 lines). 7 `<h2>` sections:
   1. The contribution path · 2. Want to contribute a skill? Start here. · 3. Curated mini-PRDs ·
-  4. Before you open a PR: what must pass · 5. Anatomy of an aligned agentic flow (M4) · 6. The roadmap ·
-  7. GitHub.
+  2. Before you open a PR: what must pass · 5. Anatomy of an aligned agentic flow (M4) · 6. The roadmap ·
+  3. GitHub.
 - Playgrounds: copy **`skill-format.html`** (embedded as an iframe in §2) and **`test-landscape.html`**
   (linked full-screen from §4) into `static/learn/playgrounds/`. (`otel-eval.html` is already present
   from 2b-i.) This brings the total copied playgrounds to all 18.
@@ -81,5 +83,6 @@ uses `startsWith('/about/lq-ai')` → build gets `max-w-6xl`, correct for the sk
 3. Both new playgrounds serve; `npm run check` = 0/0; no new lint; `npx vitest run` green; e2e passes live.
 
 ## Out of scope
+
 - No backend/BFF/vendor change. No change to the 16 How-It-Works sections (only the cross-link is added
   to that page).

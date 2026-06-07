@@ -25,25 +25,25 @@ All endpoints are user-scoped server-side (the backend keys off the caller's ide
 
 ## 3. Architecture
 
-**BFF proxies + a shared `promptLibrary` client controller.** Both *save-from-composer* and a live-updating list require client-side mutation, so all CRUD flows through one rune controller backed by thin JSON proxies. The composer popover and the `/prompts` management page share that single data path. (Alternative considered: SSR `load` + form actions for the management page while only the composer uses proxies — rejected as two paths to the same CRUD for marginal gain.)
+**BFF proxies + a shared `promptLibrary` client controller.** Both _save-from-composer_ and a live-updating list require client-side mutation, so all CRUD flows through one rune controller backed by thin JSON proxies. The composer popover and the `/prompts` management page share that single data path. (Alternative considered: SSR `load` + form actions for the management page while only the composer uses proxies — rejected as two paths to the same CRUD for marginal gain.)
 
 ### 3.1 Files / units
 
-| File | C/M | Responsibility |
-|---|---|---|
-| `src/lib/prompts/types.ts` | C | `SavedPrompt` re-export + inline `SavedPromptCreate`/`SavedPromptUpdate` aliases |
-| `src/routes/(app)/prompts/+server.ts` (+test) | C | BFF proxy: `GET` list, `POST` create |
-| `src/routes/(app)/prompts/[id]/+server.ts` (+test) | C | BFF proxy: `PATCH`, `DELETE` |
-| `src/lib/prompts/promptLibrary.svelte.ts` (+test) | C | client controller over the proxies |
-| `src/lib/prompts/PromptPicker.svelte` (+test) | C | composer popover: search + insert-at-cursor + save-current-draft |
-| `src/lib/prompts/PromptRow.svelte` (+test) | C | management list row (name + tags + preview + Edit/Delete) |
-| `src/lib/prompts/PromptModal.svelte` (+test) | C | create/edit modal (name + prompt_text + TagInput) |
-| `src/routes/(app)/prompts/+page.server.ts` (+test) | C | SSR `load` (GET list) for instant paint |
-| `src/routes/(app)/prompts/+page.svelte` (+test) | C | management page (rows + create/edit modal + delete-confirm) |
-| `src/lib/components/Composer.svelte` | M | `insertAtCursor(text)` helper + `promptLibrary` prop + Prompts control |
-| landing `+page.svelte` + chat `[id]/+page.svelte` | M | instantiate `promptLibrary`, pass to Composer |
-| sidebar nav component | M | add "Prompts" entry (lucide icon) |
-| `tests/saved-prompts.spec.ts` | C | live e2e |
+| File                                               | C/M | Responsibility                                                                   |
+| -------------------------------------------------- | --- | -------------------------------------------------------------------------------- |
+| `src/lib/prompts/types.ts`                         | C   | `SavedPrompt` re-export + inline `SavedPromptCreate`/`SavedPromptUpdate` aliases |
+| `src/routes/(app)/prompts/+server.ts` (+test)      | C   | BFF proxy: `GET` list, `POST` create                                             |
+| `src/routes/(app)/prompts/[id]/+server.ts` (+test) | C   | BFF proxy: `PATCH`, `DELETE`                                                     |
+| `src/lib/prompts/promptLibrary.svelte.ts` (+test)  | C   | client controller over the proxies                                               |
+| `src/lib/prompts/PromptPicker.svelte` (+test)      | C   | composer popover: search + insert-at-cursor + save-current-draft                 |
+| `src/lib/prompts/PromptRow.svelte` (+test)         | C   | management list row (name + tags + preview + Edit/Delete)                        |
+| `src/lib/prompts/PromptModal.svelte` (+test)       | C   | create/edit modal (name + prompt_text + TagInput)                                |
+| `src/routes/(app)/prompts/+page.server.ts` (+test) | C   | SSR `load` (GET list) for instant paint                                          |
+| `src/routes/(app)/prompts/+page.svelte` (+test)    | C   | management page (rows + create/edit modal + delete-confirm)                      |
+| `src/lib/components/Composer.svelte`               | M   | `insertAtCursor(text)` helper + `promptLibrary` prop + Prompts control           |
+| landing `+page.svelte` + chat `[id]/+page.svelte`  | M   | instantiate `promptLibrary`, pass to Composer                                    |
+| sidebar nav component                              | M   | add "Prompts" entry (lucide icon)                                                |
+| `tests/saved-prompts.spec.ts`                      | C   | live e2e                                                                         |
 
 ### 3.2 `promptLibrary.svelte.ts` (client controller)
 

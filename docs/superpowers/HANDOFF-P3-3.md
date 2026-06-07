@@ -10,11 +10,11 @@ Standalone MikeOSS-inspired **SvelteKit (Svelte 5 runes)** frontend for the **lq
 
 ## 2. Phase status
 
-| Phase | Status |
-|---|---|
-| P0–P2c-B | ✅ merged (#1–#8) |
-| **P3 — Document panel + highlighting** | P3-1 ✅ (#9), P3-2 ✅ (#10), **P3-3 ⬅️ NEXT** |
-| P4 Projects/Matters · P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending |
+| Phase                                                                            | Status                                        |
+| -------------------------------------------------------------------------------- | --------------------------------------------- |
+| P0–P2c-B                                                                         | ✅ merged (#1–#8)                             |
+| **P3 — Document panel + highlighting**                                           | P3-1 ✅ (#9), P3-2 ✅ (#10), **P3-3 ⬅️ NEXT** |
+| P4 Projects/Matters · P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending                                       |
 
 P3 was sliced into three PR-sized slices (P3-1 shell+render, P3-2 highlight+pill-rework, **P3-3 multi-tab + non-PDF fallback**). **P3-3 is the last P3 slice.** Continue the pattern: brainstorm → spec → plan → subagent-execute → review → PR.
 
@@ -39,17 +39,20 @@ npm run check && npx vitest run && npx playwright test
 
 ## 5. P3-3 scope — multi-tab strip + non-PDF fallback card
 
-Roadmap deliverable wording: *"Tabbed resizable PDF.js/DOCX viewer."* P3-1/P3-2 delivered a single-doc resizable viewer with citation highlight. P3-3 adds:
+Roadmap deliverable wording: _"Tabbed resizable PDF.js/DOCX viewer."_ P3-1/P3-2 delivered a single-doc resizable viewer with citation highlight. P3-3 adds:
+
 1. **Multi-tab strip UI** — open several cited documents at once, switch between them, close individual tabs. **The controller is already multi-tab-ready:** `docPanel` (`src/lib/docpanel/docPanel.svelte.ts`) holds `tabs: DocTab[]`, `activeId`, `setActive(id)`, `close(id)`, and each `DocTab` carries its own `cite`/`page`/`quote`/`highlightStatus`. `open()` already dedupes by `source_file_id` and adds/focuses tabs. So P3-3 is mostly the **tab-strip presentation** in `DocumentPanel.svelte` (currently shows only the active tab's filename in the header) + wiring clicks to `setActive`/`close`.
 2. **Non-PDF fallback card** — `DocumentPanel` currently renders a bare "Preview not available for this file type." line for non-`application/pdf` mime. Replace with a real `UnsupportedFileCard.svelte` (filename, mime, a download link to `/files/[id]/content`).
 
 **Carried-forward threads to fold in (from P3-1/P3-2 reviews):**
+
 - **First commit: `content-disposition` hardening** on `src/routes/(app)/files/[id]/content/+server.ts`. The byte proxy currently sets `content-type` + `nosniff` but no `content-disposition`. Decide **inline vs attachment** alongside the fallback card's download UX (attachment is safer against a non-PDF, e.g. `text/html`, rendering inline in the app origin; the PDF viewer fetches via `arrayBuffer()` so disposition doesn't affect it). The non-PDF card's "download" link is the natural consumer.
 - **Highlight on tab-switch:** the CSS Custom Highlight API uses a **single global `'cite'` highlight** (`src/lib/docpanel/pdfHighlight.ts`). Today only one doc is active at a time; `closePanel()` clears it. With multiple tabs, switching the active tab must **clear/replace** the `'cite'` highlight so a previous doc's yellow box doesn't bleed onto the new tab. The per-tab `highlightStatus` is already stored; on `setActive`, the newly-active PDF's `PdfViewer` `$effect` should re-run (it's keyed on `{page,quote}` and remounts via `{#key fileId}` when the active fileId changes) — **verify** this actually re-highlights/clears correctly when switching tabs, since P3-1/P3-2 only ever had one tab.
 
 **Likely open questions for the brainstorm:**
+
 - Tab-strip placement/visual (above the cited-passage bar? where the filename header is now?) — **use the visual companion.** Overflow behavior with many tabs (scroll? truncate?). Close affordance per tab.
-- Does P3-3 need the citation→panel flow to support multiple *distinct* files? Today the seeded chat cites one file (`spike.pdf`). To demonstrate/e2e multi-tab you need **2+ distinct cited files** — seed a project with two PDFs and either a query that retrieves both or two grounding messages citing different files. Spike this before designing the e2e.
+- Does P3-3 need the citation→panel flow to support multiple _distinct_ files? Today the seeded chat cites one file (`spike.pdf`). To demonstrate/e2e multi-tab you need **2+ distinct cited files** — seed a project with two PDFs and either a query that retrieves both or two grounding messages citing different files. Spike this before designing the e2e.
 - Non-PDF: there is **no DOCX/non-PDF citation in the backend today** (all citations are PDF). So the fallback card can't be e2e'd against a real non-PDF citation — unit-test the mime branch + the card; reaching it live would need an uploaded non-PDF file opened directly (no UI path until P4). Scope accordingly (the card is the deliverable; live coverage is limited).
 
 This is viewer-UI-heavy → spike the seeding reality (can you get 2 distinct cited files?), then use the visual companion for the tab-strip UX.

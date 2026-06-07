@@ -72,7 +72,7 @@ placement all verified accurate.)
 - [severity: wrong?] Page says runs emit `autonomous.execute` + `autonomous.tool_call` spans; the
   vendored alignment guide documents `autonomous.session` (evidence:
   vendor/lq-ai docs/LQVern/agentic-flow-alignment-guide.md:169 vs api/app/autonomous/executor.py:121).
-  NOTE: the page matches the *implementation*; the guide is what diverged.
+  NOTE: the page matches the _implementation_; the guide is what diverged.
   **(waived: page matches the implementation; the upstream guide doc is stale — candidate upstream docs nit, not a Donna defect)**
 - [severity: gap] Audit-action list "phase_transition / tool_call / halted / cost_cap_reached /
   completed" omits "started" (evidence: vendor/lq-ai api/app/autonomous/audit.py:39-54) **(fixed)**

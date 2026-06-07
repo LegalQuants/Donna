@@ -27,6 +27,7 @@ It also **upgrades the easy-gen wizard's Step 3** from prune-only (`DraftReview`
 - **There is no playbook fork endpoint** (unlike skills) — Duplicate is implemented client/SSR-side: fetch the source, strip ids, prefill the create form, `POST` as new.
 
 **Research items to confirm during planning (not blocking design):**
+
 - **R1:** `locals.user.id` is exposed for ownership comparison. The run gate (`[id]/run/+page.server.ts`) only reads `locals.user.is_admin`; confirm `id` is present on `locals.user` (check the auth hook / `app.d.ts`). Needed to compute `isOwner = playbook.created_by === locals.user.id`.
 - **R2:** PATCH/DELETE authorization — confirm owner-only vs owner-OR-admin. Default design assumption: **owner-only; built-ins (`created_by === null`) are read-only for everyone.** If the backend also lets admins edit built-ins, we still keep built-ins read-only in the UI (Duplicate is the path) to avoid mutating shared seed content. Map a backend `403` to an inline error regardless.
 
@@ -35,17 +36,18 @@ It also **upgrades the easy-gen wizard's Step 3** from prune-only (`DraftReview`
 **Shared, mode-agnostic `PlaybookEditor` + thin route consumers.** The editor owns all form state and emits a `PlaybookCreate` via `onchange` (the same contract `DraftReview` uses today). It does **no** I/O and has **no** async controller — unlike easy-gen (`genFlow`), authoring is pure synchronous form state; persistence is a SvelteKit form `?/save` action per route (`POST` for create, `PATCH` for edit), mirroring the wizard's hidden-`draft`-JSON pattern.
 
 Three consumers:
+
 - **Create route** `/playbooks/new/manual` — blank, or `?from={id}` duplicate-prefill.
 - **Edit route** `/playbooks/[id]/edit` — owner-gated, PATCH on save.
 - **Wizard Step 3** `/playbooks/new` — swaps `DraftReview` → `PlaybookEditor` in place (prune is now "Remove a position").
 
 ### 3.1 New components — `src/lib/playbooks/editor/`
 
-| Component | Responsibility | Emits / interface |
-|---|---|---|
-| `FallbackTierEditor.svelte` | Repeatable rows for `fallback_tiers: {rank, description, language}[]`. Add/remove a tier; **`rank` auto-assigned sequentially** (1,2,3…) on every add/remove so users never hand-number. `description` = text input, `language` = textarea. | `{ tiers, onchange: (tiers: FallbackTier[]) => void }` |
-| `PositionEditor.svelte` | All fields of one `PositionCreate`: `issue` (required), `description`, `standard_language` (textarea, required), `severity_if_missing` (`<select>`, required), `redline_strategy` (textarea), `detection_keywords` (reuse `TagInput`), `detection_examples` (one-per-line `<textarea>` ↔ string[]), nested `<FallbackTierEditor>`. | `{ position, onchange: (p: PositionCreate) => void }` |
-| `PlaybookEditor.svelte` | Header fields (`name`, `contract_type`, `description`, `version`) + an **accordion** list of positions (collapsed = `issue` + `SeverityBadge`; expand to edit), **↑/↓ reorder** (rewrites `position_order`), **+ Add position** / **Remove**, inline per-position invalid markers, a derived `valid` flag. | `{ initial: PlaybookCreate, onchange: (value: PlaybookCreate) => void }` |
+| Component                   | Responsibility                                                                                                                                                                                                                                                                                                                     | Emits / interface                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `FallbackTierEditor.svelte` | Repeatable rows for `fallback_tiers: {rank, description, language}[]`. Add/remove a tier; **`rank` auto-assigned sequentially** (1,2,3…) on every add/remove so users never hand-number. `description` = text input, `language` = textarea.                                                                                        | `{ tiers, onchange: (tiers: FallbackTier[]) => void }`                   |
+| `PositionEditor.svelte`     | All fields of one `PositionCreate`: `issue` (required), `description`, `standard_language` (textarea, required), `severity_if_missing` (`<select>`, required), `redline_strategy` (textarea), `detection_keywords` (reuse `TagInput`), `detection_examples` (one-per-line `<textarea>` ↔ string[]), nested `<FallbackTierEditor>`. | `{ position, onchange: (p: PositionCreate) => void }`                    |
+| `PlaybookEditor.svelte`     | Header fields (`name`, `contract_type`, `description`, `version`) + an **accordion** list of positions (collapsed = `issue` + `SeverityBadge`; expand to edit), **↑/↓ reorder** (rewrites `position_order`), **+ Add position** / **Remove**, inline per-position invalid markers, a derived `valid` flag.                         | `{ initial: PlaybookCreate, onchange: (value: PlaybookCreate) => void }` |
 
 - **`detection_examples` textarea convention:** split on `\n`, trim, drop blank lines → `string[]`; join with `\n` for display. Round-trips losslessly for non-empty single-line examples (examples are short clauses).
 - **`DraftReview.svelte` is removed** once the wizard consumes `PlaybookEditor`; its test is replaced by the `PlaybookEditor` tests.
@@ -75,43 +77,47 @@ No new BFF proxies — all server-side via `lqFetch` in `load` + form actions (i
 
 ## 5. File structure
 
-| File | C/M | Responsibility |
-|---|---|---|
-| `src/lib/playbooks/editor/FallbackTierEditor.svelte` (+test) | C | fallback tiers rows, auto-rank |
-| `src/lib/playbooks/editor/PositionEditor.svelte` (+test) | C | one position, all fields |
-| `src/lib/playbooks/editor/PlaybookEditor.svelte` (+test) | C | header + accordion + add/remove/reorder; emits `PlaybookCreate` |
-| `src/lib/playbooks/editorDraft.ts` (+test) | C | pure helpers: blank-draft factory, duplicate-strip (`id`/`position_order` reseat), examples↔text, validity check |
-| `src/routes/(app)/playbooks/new/manual/+page.server.ts` (+test) | C | create load (blank/`?from`) + `?/save` POST |
-| `src/routes/(app)/playbooks/new/manual/+page.svelte` | C | create page (e2e-covered) |
-| `src/routes/(app)/playbooks/[id]/edit/+page.server.ts` (+test) | C | edit load (owner-gated) + `?/save` PATCH |
-| `src/routes/(app)/playbooks/[id]/edit/+page.svelte` | C | edit page (e2e-covered) |
-| `src/routes/(app)/playbooks/[id]/+page.server.ts` | M | add `isOwner`; `?/delete` action |
-| `src/routes/(app)/playbooks/[id]/+page.svelte` | M | Edit/Delete (owner) + Duplicate (all) buttons; delete-confirm modal |
-| `src/routes/(app)/playbooks/+page.svelte` | M | "+ New playbook" → chooser (generate vs scratch) |
-| `src/routes/(app)/playbooks/new/+page.svelte` | M | Step 3: `DraftReview` → `PlaybookEditor` |
-| `src/lib/playbooks/DraftReview.svelte` (+test) | D | removed (absorbed by `PlaybookEditor`) |
-| `tests/playbooks-authoring.spec.ts` | C | live e2e |
+| File                                                            | C/M | Responsibility                                                                                                   |
+| --------------------------------------------------------------- | --- | ---------------------------------------------------------------------------------------------------------------- |
+| `src/lib/playbooks/editor/FallbackTierEditor.svelte` (+test)    | C   | fallback tiers rows, auto-rank                                                                                   |
+| `src/lib/playbooks/editor/PositionEditor.svelte` (+test)        | C   | one position, all fields                                                                                         |
+| `src/lib/playbooks/editor/PlaybookEditor.svelte` (+test)        | C   | header + accordion + add/remove/reorder; emits `PlaybookCreate`                                                  |
+| `src/lib/playbooks/editorDraft.ts` (+test)                      | C   | pure helpers: blank-draft factory, duplicate-strip (`id`/`position_order` reseat), examples↔text, validity check |
+| `src/routes/(app)/playbooks/new/manual/+page.server.ts` (+test) | C   | create load (blank/`?from`) + `?/save` POST                                                                      |
+| `src/routes/(app)/playbooks/new/manual/+page.svelte`            | C   | create page (e2e-covered)                                                                                        |
+| `src/routes/(app)/playbooks/[id]/edit/+page.server.ts` (+test)  | C   | edit load (owner-gated) + `?/save` PATCH                                                                         |
+| `src/routes/(app)/playbooks/[id]/edit/+page.svelte`             | C   | edit page (e2e-covered)                                                                                          |
+| `src/routes/(app)/playbooks/[id]/+page.server.ts`               | M   | add `isOwner`; `?/delete` action                                                                                 |
+| `src/routes/(app)/playbooks/[id]/+page.svelte`                  | M   | Edit/Delete (owner) + Duplicate (all) buttons; delete-confirm modal                                              |
+| `src/routes/(app)/playbooks/+page.svelte`                       | M   | "+ New playbook" → chooser (generate vs scratch)                                                                 |
+| `src/routes/(app)/playbooks/new/+page.svelte`                   | M   | Step 3: `DraftReview` → `PlaybookEditor`                                                                         |
+| `src/lib/playbooks/DraftReview.svelte` (+test)                  | D   | removed (absorbed by `PlaybookEditor`)                                                                           |
+| `tests/playbooks-authoring.spec.ts`                             | C   | live e2e                                                                                                         |
 
 Pure logic (draft factory, duplicate-strip, examples↔text, validity) lives in `editorDraft.ts` so it's unit-testable without component mounting and keeps the components thin.
 
 ## 6. Testing
 
 **Unit (Vitest + @testing-library/svelte):**
+
 - `editorDraft.ts` — blank factory shape; duplicate-strip removes ids + reseats `position_order` + "Copy of" name; examples↔text round-trip (blank lines dropped); validity true/false cases.
 - `FallbackTierEditor` — add → ranks 1,2; remove first → renumber to 1; edit emits updated array.
 - `PositionEditor` — each field type emits an updated `PositionCreate`; keywords via `TagInput`; examples textarea ↔ array; nested fallback tiers wired.
 - `PlaybookEditor` — header + a card per position; **+ Add** appends blank; **Remove** drops; **↑/↓** reorders + rewrites `position_order`; emits `PlaybookCreate`; `valid` flips with required fields. (Replaces `DraftReview` tests.)
 
 **Server tests (`// @vitest-environment node`, mock `lqFetch`):**
+
 - `new/manual` — `load` blank vs `?from` (strips ids, "Copy of …"); `?/save` POST → 303 `/playbooks/{id}`; 422 → fail.
 - `[id]/edit` — `load` owner OK, **403 non-owner / built-in**; `?/save` PATCH (full positions) → 303; 422/403 mapped.
 - `[id]` detail — `isOwner` computed in `load`; `?/delete` DELETE → 303 `/playbooks`.
 
 **Live e2e — `tests/playbooks-authoring.spec.ts`** (no `arq-worker` needed; authoring is synchronous). One self-cleaning flow:
+
 1. Open a built-in (e.g. NDA-Mutual) detail → **Duplicate** → manual editor prefilled → **Save** → new owned playbook detail.
 2. **Edit** it: change name, edit a position's `standard_language`, add a fallback tier, **+ Add** a position, **↑/↓** reorder, **Save** → assert on detail.
 3. **Create from scratch:** chooser → manual → fill header + one position → **Save**.
 4. **Delete** an owned playbook → confirm → back on index, gone.
+
 - **Teardown:** `try/finally` `DELETE`s every owned playbook id created during the run (a real `DELETE /playbooks/{id}` exists → this e2e self-cleans, unlike the easy-gen e2e).
 
 ## 7. Conventions

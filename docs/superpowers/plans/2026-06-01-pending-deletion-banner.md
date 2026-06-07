@@ -19,10 +19,10 @@
 - **Unchanged:** `+page.server.ts` (the `cancelDeletion` action already exists), `DeleteAccountModal.svelte`, `DataExportCard.svelte`, `dataPrivacy.ts`.
 
 Reference shape (already in the codebase) — the sibling Account page consumes `user` the same way this plan does:
+
 ```svelte
-import type { PageProps } from './$types';
-let { data }: PageProps = $props();
-const user = $derived(data.user);
+import type {PageProps} from './$types'; let {data}: PageProps = $props(); const user =
+$derived(data.user);
 ```
 
 ---
@@ -30,6 +30,7 @@ const user = $derived(data.user);
 ## Task 1: Conditional banner on the data page (component + tests)
 
 **Files:**
+
 - Modify: `src/routes/(app)/settings/data/+page.svelte`
 - Test: `src/routes/(app)/settings/data/page.svelte.test.ts`
 
@@ -48,34 +49,38 @@ import Page from './+page.svelte';
 
 // Only `deletion_scheduled_at` is read by the page; cast to `never` like the Account test.
 const props = (deletion_scheduled_at: string | null = null) =>
-  ({ data: { user: { deletion_scheduled_at } }, form: null }) as never;
+	({ data: { user: { deletion_scheduled_at } }, form: null }) as never;
 
 describe('/settings/data page', () => {
-  it('not-pending: renders heading, export card, delete button, and no banner or cancel control', () => {
-    render(Page, props(null));
-    expect(screen.getByRole('heading', { level: 1, name: /data & privacy/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /export my data/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /delete my account/i })).toBeInTheDocument();
-    expect(screen.queryByText(/pending deletion/i)).toBeNull();
-    expect(screen.queryByRole('button', { name: /cancel scheduled deletion/i })).toBeNull();
-  });
+	it('not-pending: renders heading, export card, delete button, and no banner or cancel control', () => {
+		render(Page, props(null));
+		expect(screen.getByRole('heading', { level: 1, name: /data & privacy/i })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /export my data/i })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /delete my account/i })).toBeInTheDocument();
+		expect(screen.queryByText(/pending deletion/i)).toBeNull();
+		expect(screen.queryByRole('button', { name: /cancel scheduled deletion/i })).toBeNull();
+	});
 
-  it('opens the delete modal when Delete my account is clicked', async () => {
-    const { getByRole } = render(Page, props(null));
-    await getByRole('button', { name: /delete my account/i }).click();
-    expect(screen.getByRole('dialog', { name: /delete your account/i })).toBeInTheDocument();
-  });
+	it('opens the delete modal when Delete my account is clicked', async () => {
+		const { getByRole } = render(Page, props(null));
+		await getByRole('button', { name: /delete my account/i }).click();
+		expect(screen.getByRole('dialog', { name: /delete your account/i })).toBeInTheDocument();
+	});
 
-  it('pending: shows the banner with the scheduled date and a cancel control, and hides delete', () => {
-    const iso = '2026-07-01T12:00:00Z';
-    // Compute the expected string the same way the component does, so the assertion is timezone-agnostic.
-    const expectedDate = new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    render(Page, props(iso));
-    expect(screen.getByText(/pending deletion/i)).toBeInTheDocument();
-    expect(screen.getByText(expectedDate)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /cancel scheduled deletion/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /delete my account/i })).toBeNull();
-  });
+	it('pending: shows the banner with the scheduled date and a cancel control, and hides delete', () => {
+		const iso = '2026-07-01T12:00:00Z';
+		// Compute the expected string the same way the component does, so the assertion is timezone-agnostic.
+		const expectedDate = new Date(iso).toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		});
+		render(Page, props(iso));
+		expect(screen.getByText(/pending deletion/i)).toBeInTheDocument();
+		expect(screen.getByText(expectedDate)).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /cancel scheduled deletion/i })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /delete my account/i })).toBeNull();
+	});
 });
 ```
 
@@ -90,46 +95,49 @@ Replace the entire contents of `src/routes/(app)/settings/data/+page.svelte` wit
 
 ```svelte
 <script lang="ts">
-  import { goto, invalidateAll } from '$app/navigation';
-  import { enhance } from '$app/forms';
-  import type { SubmitFunction } from '@sveltejs/kit';
-  import type { PageProps } from './$types';
-  import DataExportCard from '$lib/settings/DataExportCard.svelte';
-  import DeleteAccountModal from '$lib/settings/DeleteAccountModal.svelte';
-  import type { DeletionSchedule } from '$lib/settings/dataPrivacy';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { PageProps } from './$types';
+	import DataExportCard from '$lib/settings/DataExportCard.svelte';
+	import DeleteAccountModal from '$lib/settings/DeleteAccountModal.svelte';
+	import type { DeletionSchedule } from '$lib/settings/dataPrivacy';
 
-  let { data }: PageProps = $props();
+	let { data }: PageProps = $props();
 
-  let deleteOpen = $state(false);
-  let scheduled = $state<DeletionSchedule | null>(null);
-  let cancelMsg = $state<string | null>(null);
+	let deleteOpen = $state(false);
+	let scheduled = $state<DeletionSchedule | null>(null);
+	let cancelMsg = $state<string | null>(null);
 
-  // Server truth (P1.4, GET /users/me): non-null while a deletion is pending, else null.
-  const pendingDeletionAt = $derived(data.user?.deletion_scheduled_at ?? null);
+	// Server truth (P1.4, GET /users/me): non-null while a deletion is pending, else null.
+	const pendingDeletionAt = $derived(data.user?.deletion_scheduled_at ?? null);
 
-  const fmtDate = (s: string) =>
-    new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+	const fmtDate = (s: string) =>
+		new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  const cancelSubmit: SubmitFunction = () => async ({ result }) => {
-    if (result.type === 'success') {
-      cancelMsg = 'Scheduled deletion cancelled.';
-      // Refresh data.user so the banner clears and the page falls back to the normal state.
-      await invalidateAll();
-    } else if (result.type === 'failure')
-      cancelMsg = (result.data?.cancelMessage as string | undefined)
-        ?? (result.data?.cancelError as string | undefined)
-        ?? 'Could not cancel.';
-  };
+	const cancelSubmit: SubmitFunction =
+		() =>
+		async ({ result }) => {
+			if (result.type === 'success') {
+				cancelMsg = 'Scheduled deletion cancelled.';
+				// Refresh data.user so the banner clears and the page falls back to the normal state.
+				await invalidateAll();
+			} else if (result.type === 'failure')
+				cancelMsg =
+					(result.data?.cancelMessage as string | undefined) ??
+					(result.data?.cancelError as string | undefined) ??
+					'Could not cancel.';
+		};
 
-  function onDeleted(info: DeletionSchedule) {
-    deleteOpen = false;
-    scheduled = info;
-  }
+	function onDeleted(info: DeletionSchedule) {
+		deleteOpen = false;
+		scheduled = info;
+	}
 
-  function returnToLogin() {
-    // eslint-disable-next-line svelte/no-navigation-without-resolve -- post-delete sign-out
-    goto('/login');
-  }
+	function returnToLogin() {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- post-delete sign-out
+		goto('/login');
+	}
 </script>
 
 <svelte:head><title>Data & privacy — Donna</title></svelte:head>
@@ -137,44 +145,69 @@ Replace the entire contents of `src/routes/(app)/settings/data/+page.svelte` wit
 <h1 class="mb-4 text-xl font-medium text-mlq-text">Data & privacy</h1>
 
 {#if scheduled}
-  <section class="rounded-mlq-control border border-mlq-subtle p-4 text-sm">
-    <h2 class="text-mlq-text">Account scheduled for deletion</h2>
-    <p class="mt-1 text-mlq-muted">
-      Your account is scheduled for permanent deletion on <strong>{fmtDate(scheduled.scheduled_deletion_at)}</strong>.
-      You can cancel by signing back in within {scheduled.grace_period_days} days.
-    </p>
-    <button type="button" onclick={returnToLogin} class="mt-4 rounded-mlq-control bg-mlq-strong px-2.5 py-1 text-xs text-white">Return to sign in</button>
-  </section>
+	<section class="rounded-mlq-control border border-mlq-subtle p-4 text-sm">
+		<h2 class="text-mlq-text">Account scheduled for deletion</h2>
+		<p class="mt-1 text-mlq-muted">
+			Your account is scheduled for permanent deletion on <strong
+				>{fmtDate(scheduled.scheduled_deletion_at)}</strong
+			>. You can cancel by signing back in within {scheduled.grace_period_days} days.
+		</p>
+		<button
+			type="button"
+			onclick={returnToLogin}
+			class="mt-4 rounded-mlq-control bg-mlq-strong px-2.5 py-1 text-xs text-white"
+			>Return to sign in</button
+		>
+	</section>
 {:else if pendingDeletionAt}
-  <DataExportCard />
+	<DataExportCard />
 
-  <section class="mt-6 rounded-mlq-control border border-mlq-error/40 bg-mlq-error/5 p-4 text-sm">
-    <h2 class="font-medium text-mlq-error">Pending deletion</h2>
-    <p class="mt-1 text-mlq-muted">
-      Scheduled for <strong>{fmtDate(pendingDeletionAt)}</strong>; cancel to keep your account.
-    </p>
-    <form method="POST" action="?/cancelDeletion" use:enhance={cancelSubmit} class="mt-3">
-      <button type="submit" class="rounded-mlq-control bg-mlq-strong px-2.5 py-1 text-xs text-white">Cancel scheduled deletion</button>
-    </form>
-    {#if cancelMsg}<p class="mt-2 text-mlq-text">{cancelMsg}</p>{/if}
-  </section>
+	<section class="mt-6 rounded-mlq-control border border-mlq-error/40 bg-mlq-error/5 p-4 text-sm">
+		<h2 class="font-medium text-mlq-error">Pending deletion</h2>
+		<p class="mt-1 text-mlq-muted">
+			Scheduled for <strong>{fmtDate(pendingDeletionAt)}</strong>; cancel to keep your account.
+		</p>
+		<form method="POST" action="?/cancelDeletion" use:enhance={cancelSubmit} class="mt-3">
+			<button type="submit" class="rounded-mlq-control bg-mlq-strong px-2.5 py-1 text-xs text-white"
+				>Cancel scheduled deletion</button
+			>
+		</form>
+		{#if cancelMsg}<p class="mt-2 text-mlq-text">{cancelMsg}</p>{/if}
+	</section>
 {:else}
-  <DataExportCard />
+	<DataExportCard />
 
-  <section class="mt-6 rounded-mlq-control border border-mlq-error/40 bg-mlq-error/5">
-    <h2 class="border-b border-mlq-error/30 px-4 py-2 text-xs font-medium uppercase tracking-wide text-mlq-error">Danger zone</h2>
-    <div class="px-4 py-3 text-sm">
-      <div class="text-mlq-text">Delete account</div>
-      <p class="mb-3 mt-0.5 text-xs text-mlq-muted">Schedules your account for permanent deletion after a grace period. You'll be signed out on all devices.</p>
-      <button type="button" onclick={() => (deleteOpen = true)} class="rounded-mlq-control bg-mlq-error px-2.5 py-1 text-xs text-white">Delete my account</button>
-    </div>
-  </section>
+	<section class="mt-6 rounded-mlq-control border border-mlq-error/40 bg-mlq-error/5">
+		<h2
+			class="border-b border-mlq-error/30 px-4 py-2 text-xs font-medium tracking-wide text-mlq-error uppercase"
+		>
+			Danger zone
+		</h2>
+		<div class="px-4 py-3 text-sm">
+			<div class="text-mlq-text">Delete account</div>
+			<p class="mt-0.5 mb-3 text-xs text-mlq-muted">
+				Schedules your account for permanent deletion after a grace period. You'll be signed out on
+				all devices.
+			</p>
+			<button
+				type="button"
+				onclick={() => (deleteOpen = true)}
+				class="rounded-mlq-control bg-mlq-error px-2.5 py-1 text-xs text-white"
+				>Delete my account</button
+			>
+		</div>
+	</section>
 
-  <DeleteAccountModal open={deleteOpen} onclose={() => (deleteOpen = false)} ondeleted={onDeleted} />
+	<DeleteAccountModal
+		open={deleteOpen}
+		onclose={() => (deleteOpen = false)}
+		ondeleted={onDeleted}
+	/>
 {/if}
 ```
 
 Notes for the implementer:
+
 - The in-session `scheduled` branch is **unchanged** from the original; it is checked first so the post-delete "Return to sign in" screen still wins while the session is being torn down.
 - The new `{:else if pendingDeletionAt}` branch hides the Delete button entirely; export stays available.
 - The normal `{:else}` branch no longer contains the always-on "Already scheduled a deletion?" cancel form.
@@ -201,6 +234,7 @@ git commit -m "feat(settings): conditional pending-deletion banner on /settings/
 ## Task 2: Rework the live e2e for the not-pending state
 
 **Files:**
+
 - Modify: `tests/data-privacy.spec.ts`
 
 - [ ] **Step 1: Replace the cancel-nothing-pending block with not-pending assertions**
@@ -208,19 +242,19 @@ git commit -m "feat(settings): conditional pending-deletion banner on /settings/
 In `tests/data-privacy.spec.ts`, find this block (the last step of the test):
 
 ```ts
-  // --- Cancel-with-nothing-pending (safe; admin fixture has no pending deletion) ---
-  await page.getByRole('button', { name: /cancel scheduled deletion/i }).click();
-  await expect(page.getByText(/no scheduled deletion to cancel/i)).toBeVisible({ timeout: 15_000 });
+// --- Cancel-with-nothing-pending (safe; admin fixture has no pending deletion) ---
+await page.getByRole('button', { name: /cancel scheduled deletion/i }).click();
+await expect(page.getByText(/no scheduled deletion to cancel/i)).toBeVisible({ timeout: 15_000 });
 ```
 
 Replace it with:
 
 ```ts
-  // --- Not-pending state (admin fixture has no pending deletion; never POST a real deletion) ---
-  // The banner and its cancel control only exist when data.user.deletion_scheduled_at is non-null.
-  await expect(page.getByText(/pending deletion/i)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /cancel scheduled deletion/i })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /delete my account/i })).toBeVisible();
+// --- Not-pending state (admin fixture has no pending deletion; never POST a real deletion) ---
+// The banner and its cancel control only exist when data.user.deletion_scheduled_at is non-null.
+await expect(page.getByText(/pending deletion/i)).toHaveCount(0);
+await expect(page.getByRole('button', { name: /cancel scheduled deletion/i })).toHaveCount(0);
+await expect(page.getByRole('button', { name: /delete my account/i })).toBeVisible();
 ```
 
 Also update the test title on the `test(...)` line from:
@@ -237,22 +271,26 @@ test('Data & privacy — export end-to-end, delete-confirm UI (no submit), not-p
 
 - [ ] **Step 2: Rebuild donna-web so the live server serves the updated component**
 
-The running `donna-web` container serves *built* code, so `src/` changes must be rebuilt before a live e2e.
+The running `donna-web` container serves _built_ code, so `src/` changes must be rebuilt before a live e2e.
 
 Run:
+
 ```bash
 set -a; . ./.env; set +a
 docker compose up -d --build donna-web
 ```
+
 Expected: `donna-web` rebuilds and reports healthy.
 
 - [ ] **Step 3: Run the live e2e**
 
 Run:
+
 ```bash
 set -a; . ./.env; set +a
 npx playwright test tests/data-privacy.spec.ts
 ```
+
 Expected: PASS — export completes, delete modal gates then cancels out, not-pending assertions hold. No real deletion is POSTed.
 
 - [ ] **Step 4: Commit**
@@ -267,6 +305,7 @@ git commit -m "test(settings): cover not-pending data page state; drop unsafe ca
 ## Task 3: Mark the P1.4 upstream ask as landed
 
 **Files:**
+
 - Modify: `docs/upstream-requests/lq-ai-backend-asks-for-donna.md`
 
 - [ ] **Step 1: Update the header status line**
@@ -276,7 +315,9 @@ In `docs/upstream-requests/lq-ai-backend-asks-for-donna.md`, change the metadata
 ```
 **From:** Donna frontend session · **To:** the LQ_AI backend session · **Date:** 2026-05-31 (status updated 2026-06-01) · **Pin Donna is on:** `badf83d` (v0.4.0)
 ```
+
 to:
+
 ```
 **From:** Donna frontend session · **To:** the LQ_AI backend session · **Date:** 2026-05-31 (status updated 2026-06-01) · **Pin Donna is on:** `945ad31`
 ```
@@ -290,7 +331,9 @@ reference. (The bigger "autonomous workflows" item is **not** here — Donna tra
 roadmap: `/Users/kevinkeller/Code/Donna/docs/roadmap/donna-future-roadmap.md`. You're building that
 backend; the consumer-side requirements Donna will need are captured there for later.)
 ```
+
 to:
+
 ```
 **Status (2026-06-01): P1.1–P1.4 all landed** and Donna is pinned at `945ad31` —
 see *Already landed* below. **No open asks remain.** The P1.1–P1.4 sections are kept below for
@@ -301,12 +344,14 @@ backend; the consumer-side requirements Donna will need are captured there for l
 
 - [ ] **Step 2: Add the landed entry**
 
-In the same file, in the *Already landed* list, after the line:
+In the same file, in the _Already landed_ list, after the line:
 
 ```
 - DE-329 filed + DE-328 marked resolved — lq-ai **#119** `badf83d`
 ```
+
 add:
+
 ```
 - **P1.4** `deletion_scheduled_at` on `GET /users/me` — lq-ai `945ad31` (Donna pin PR #42); resolves `lq-ai-expose-deletion-status-on-users-me.md`. Consumed by the conditional pending-deletion banner on `/settings/data`.
 ```
@@ -316,7 +361,9 @@ Then update the summary line below that list:
 ```
 All five merged to lq-ai main; **Donna pinned at `badf83d` (v0.4.0)** as of 2026-06-01 (see `docs/decisions/lq-ai-pin.md`).
 ```
+
 to:
+
 ```
 All merged to lq-ai main; **Donna pinned at `945ad31`** as of 2026-06-01 (see `docs/decisions/lq-ai-pin.md`).
 ```

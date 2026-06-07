@@ -1,7 +1,7 @@
 # Upstream lq-ai drift — schedule `max_cost_usd` missing from OpenAPI sketch
 
 **Status:** ✅ RESOLVED upstream same day — lq-ai `69a0d35`
-(*fix(api): sync max_cost_usd onto autonomous schedule/watch OpenAPI schemas (contract drift) #129*).
+(_fix(api): sync max_cost_usd onto autonomous schedule/watch OpenAPI schemas (contract drift) #129_).
 Donna bumped the `vendor/lq-ai` submodule pin `541bd6f → 69a0d35` and reran `gen:api`;
 `AutonomousScheduleCreate`/`Update`/`Read` now all type `max_cost_usd?: string | null`.
 (The bump also brought `29c1106` — the BYOK provider-key backend, Donna #7 — unblocking that future milestone.)

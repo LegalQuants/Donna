@@ -12,13 +12,13 @@ Donna is a **standalone application** that delivers a [MikeOSS](https://github.c
 
 Three properties define Donna and distinguish it from the two reference projects:
 
-- **Backend leverage, not fork-and-diverge.** Donna *vendors* the lq-ai backend (`api` + `gateway` + supporting services) as a pinned dependency and talks to it **only** through its two published OpenAPI contracts. Donna does not modify lq-ai source.
-- **Fresh frontend, MikeOSS-inspired.** The frontend is written from scratch in **SvelteKit**. No MikeOSS code is copied (MikeOSS is AGPL-3.0; we replicate *behavior and visual language*, not source). lq-ai's own SvelteKit `web/` shell is **not** reused either.
+- **Backend leverage, not fork-and-diverge.** Donna _vendors_ the lq-ai backend (`api` + `gateway` + supporting services) as a pinned dependency and talks to it **only** through its two published OpenAPI contracts. Donna does not modify lq-ai source.
+- **Fresh frontend, MikeOSS-inspired.** The frontend is written from scratch in **SvelteKit**. No MikeOSS code is copied (MikeOSS is AGPL-3.0; we replicate _behavior and visual language_, not source). lq-ai's own SvelteKit `web/` shell is **not** reused either.
 - **Verified substance under a familiar surface.** Donna presents MikeOSS's recognizable IA while surfacing lq-ai's differentiators that MikeOSS lacks: character-verified citations, anonymization, inference-tier awareness, audit, and skill transparency.
 
 ### 1.1 Relationship to the existing scope docs
 
-`mikeossfrontendscope.md` and `mikeossuxbreakdown.md` (in the repo root) were written for an **in-repo reskin branch of lq-ai** — their locked Decision **MLQ-1** is "stay in SvelteKit and reskin lq-ai's existing `/lq-ai/*` routes in place." **This spec supersedes MLQ-1.** Donna is a separate app, not an in-repo reskin. Those documents are retained as a **UX/behavior reference** (the screen-by-screen breakdown remains the authoritative description of the target *feel*), but they are no longer the build target. Where they describe editing `web/src/routes/lq-ai/**`, read instead "build the equivalent surface fresh in Donna's SvelteKit app."
+`mikeossfrontendscope.md` and `mikeossuxbreakdown.md` (in the repo root) were written for an **in-repo reskin branch of lq-ai** — their locked Decision **MLQ-1** is "stay in SvelteKit and reskin lq-ai's existing `/lq-ai/*` routes in place." **This spec supersedes MLQ-1.** Donna is a separate app, not an in-repo reskin. Those documents are retained as a **UX/behavior reference** (the screen-by-screen breakdown remains the authoritative description of the target _feel_), but they are no longer the build target. Where they describe editing `web/src/routes/lq-ai/**`, read instead "build the equivalent surface fresh in Donna's SvelteKit app."
 
 ### 1.2 What the backend provides (verified)
 
@@ -47,7 +47,8 @@ The lq-ai backend is a monorepo deployed via docker-compose. Relevant facts conf
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-**The single load-bearing decision is the BFF (backend-for-frontend) proxy.** Donna's SvelteKit server is the *only* thing that talks to the lq-ai api. The browser is same-origin to the SvelteKit server, so:
+**The single load-bearing decision is the BFF (backend-for-frontend) proxy.** Donna's SvelteKit server is the _only_ thing that talks to the lq-ai api. The browser is same-origin to the SvelteKit server, so:
+
 - there is **no CORS** to configure (matches lq-ai's "behind a reverse proxy" expectation),
 - the **JWT never reaches client JavaScript** (tokens live in httpOnly cookies, read only server-side),
 - a single chokepoint handles **refresh-token rotation** and (in P2) **SSE stream pass-through**.
@@ -56,17 +57,17 @@ The lq-ai backend is a monorepo deployed via docker-compose. Relevant facts conf
 
 ## 3. Phase roadmap (context only — not all specified here)
 
-| Phase | Deliverable |
-|---|---|
-| **P0 — Foundation** *(this spec)* | Scaffold, backend wiring (submodule + compose), design tokens, primitives, typed API client, BFF auth session, global app shell |
-| **P1 — Auth + Assistant landing** *(this spec)* | Login/signup/bootstrap/MFA; collapsible app shell; serif "Hi, {name}" landing + composer; create-and-route a new chat |
-| P2 — Chat hero + verified citations ⭐ | Message list, streaming composer, 5-state verified citation pills, tier badge, anonymization indicator, Receipts drawer |
-| P3 — Document panel + highlighting | Tabbed resizable PDF.js/DOCX viewer, character-exact citation highlight |
-| P4 — Projects / Matters | List + detail, folder tree, versions, privileged toggle, tier-floor, sharing |
-| P5 — Workflows | Unified Skills + Playbooks + Saved Prompts IA with transparency surfaces |
-| P6 — Tabular review | Doc×column grid, per-cell citations, export |
-| P7 — Settings / Account / Trust | Profile, tier visibility (no BYO keys), export/deletion, Trust page |
-| P8 — TipTap redline pane | Read-only tracked-changes Svelte editor |
+| Phase                                           | Deliverable                                                                                                                     |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **P0 — Foundation** _(this spec)_               | Scaffold, backend wiring (submodule + compose), design tokens, primitives, typed API client, BFF auth session, global app shell |
+| **P1 — Auth + Assistant landing** _(this spec)_ | Login/signup/bootstrap/MFA; collapsible app shell; serif "Hi, {name}" landing + composer; create-and-route a new chat           |
+| P2 — Chat hero + verified citations ⭐          | Message list, streaming composer, 5-state verified citation pills, tier badge, anonymization indicator, Receipts drawer         |
+| P3 — Document panel + highlighting              | Tabbed resizable PDF.js/DOCX viewer, character-exact citation highlight                                                         |
+| P4 — Projects / Matters                         | List + detail, folder tree, versions, privileged toggle, tier-floor, sharing                                                    |
+| P5 — Workflows                                  | Unified Skills + Playbooks + Saved Prompts IA with transparency surfaces                                                        |
+| P6 — Tabular review                             | Doc×column grid, per-cell citations, export                                                                                     |
+| P7 — Settings / Account / Trust                 | Profile, tier visibility (no BYO keys), export/deletion, Trust page                                                             |
+| P8 — TipTap redline pane                        | Read-only tracked-changes Svelte editor                                                                                         |
 
 P0 is the only hard blocker. P0→P1→P2 is the "hero thread" that proves the thesis end-to-end.
 
@@ -195,15 +196,15 @@ Donna/
 
 ## 9. Decisions log
 
-| # | Decision | Rationale |
-|---|---|---|
-| D-1 | Donna is a **standalone app**, not an in-repo lq-ai reskin (supersedes MLQ-1) | User directive; own repo `LegalQuants/Donna` |
-| D-2 | **Bundle** lq-ai backend via **git submodule + Donna docker-compose**; consume only via OpenAPI | "Leverage the backend," deploy as one product, no fork divergence |
-| D-3 | Frontend built fresh in **SvelteKit** (not Next.js, not lq-ai's `web/`) | User choice; same framework family as lq-ai; MikeOSS patterns translated, not copied |
-| D-4 | **BFF proxy** with httpOnly-cookie tokens; no CORS, no browser-held JWT | Matches lq-ai's reverse-proxy expectation; security; single chokepoint for refresh + SSE |
-| D-5 | **bits-ui** primitives + **lucide-svelte** | Higher Radix-API parity than melt-ui |
-| D-6 | **openapi-typescript** generated client, server-only | Two published OpenAPI contracts are the source of truth |
-| D-7 | **Vitest + Playwright** | Modern SvelteKit-native test stack |
+| #   | Decision                                                                                        | Rationale                                                                                |
+| --- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| D-1 | Donna is a **standalone app**, not an in-repo lq-ai reskin (supersedes MLQ-1)                   | User directive; own repo `LegalQuants/Donna`                                             |
+| D-2 | **Bundle** lq-ai backend via **git submodule + Donna docker-compose**; consume only via OpenAPI | "Leverage the backend," deploy as one product, no fork divergence                        |
+| D-3 | Frontend built fresh in **SvelteKit** (not Next.js, not lq-ai's `web/`)                         | User choice; same framework family as lq-ai; MikeOSS patterns translated, not copied     |
+| D-4 | **BFF proxy** with httpOnly-cookie tokens; no CORS, no browser-held JWT                         | Matches lq-ai's reverse-proxy expectation; security; single chokepoint for refresh + SSE |
+| D-5 | **bits-ui** primitives + **lucide-svelte**                                                      | Higher Radix-API parity than melt-ui                                                     |
+| D-6 | **openapi-typescript** generated client, server-only                                            | Two published OpenAPI contracts are the source of truth                                  |
+| D-7 | **Vitest + Playwright**                                                                         | Modern SvelteKit-native test stack                                                       |
 
 ---
 

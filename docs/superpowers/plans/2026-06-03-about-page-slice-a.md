@@ -19,6 +19,7 @@
 Build the full navigable IA: redirect, rail, layout+callout, the `/about/lq-ai` stub, eight topic pages with **placeholder** bodies (real `<svelte:head>`/`<h1>` so the rail resolves and the e2e passes), and the sidebar "About" link. Tasks 3–10 replace the placeholder bodies with real content.
 
 **Files:**
+
 - Create: `src/routes/(app)/about/+page.server.ts`
 - Create: `src/lib/about/AboutRail.svelte`
 - Create: `src/routes/(app)/about/+layout.svelte`
@@ -35,7 +36,7 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-  throw redirect(307, '/about/overview');
+	throw redirect(307, '/about/overview');
 };
 ```
 
@@ -45,31 +46,36 @@ Create `src/lib/about/AboutRail.svelte` (mirrors `src/lib/settings/SettingsRail.
 
 ```svelte
 <script lang="ts">
-  import { page } from '$app/state';
+	import { page } from '$app/state';
 
-  const sections: { href: string; label: string }[] = [
-    { href: '/about/overview', label: 'Overview' },
-    { href: '/about/assistant', label: 'Assistant' },
-    { href: '/about/projects', label: 'Projects' },
-    { href: '/about/workflows', label: 'Workflows' },
-    { href: '/about/tabular', label: 'Tabular' },
-    { href: '/about/knowledge', label: 'Knowledge' },
-    { href: '/about/models', label: 'Models' },
-    { href: '/about/trust', label: 'Trust & citations' }
-  ];
-  const isActive = (href: string) => page.url.pathname === href || page.url.pathname.startsWith(href + '/');
+	const sections: { href: string; label: string }[] = [
+		{ href: '/about/overview', label: 'Overview' },
+		{ href: '/about/assistant', label: 'Assistant' },
+		{ href: '/about/projects', label: 'Projects' },
+		{ href: '/about/workflows', label: 'Workflows' },
+		{ href: '/about/tabular', label: 'Tabular' },
+		{ href: '/about/knowledge', label: 'Knowledge' },
+		{ href: '/about/models', label: 'Models' },
+		{ href: '/about/trust', label: 'Trust & citations' }
+	];
+	const isActive = (href: string) =>
+		page.url.pathname === href || page.url.pathname.startsWith(href + '/');
 </script>
 
 <nav aria-label="About sections" class="flex flex-row gap-1 sm:w-44 sm:flex-col">
-  {#each sections as s (s.href)}
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- about section link -->
-    <a href={s.href}
-       aria-current={isActive(s.href) ? 'page' : undefined}
-       class="rounded-mlq-control px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow
-              {isActive(s.href) ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text hover:bg-mlq-subtle/50'}">
-      {s.label}
-    </a>
-  {/each}
+	{#each sections as s (s.href)}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- about section link -->
+		<a
+			href={s.href}
+			aria-current={isActive(s.href) ? 'page' : undefined}
+			class="rounded-mlq-control px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-mlq-workflow focus-visible:outline-none
+              {isActive(s.href)
+				? 'bg-mlq-subtle text-mlq-strong'
+				: 'text-mlq-text hover:bg-mlq-subtle/50'}"
+		>
+			{s.label}
+		</a>
+	{/each}
 </nav>
 ```
 
@@ -79,22 +85,27 @@ Create `src/routes/(app)/about/+layout.svelte` (mirrors `settings/+layout.svelte
 
 ```svelte
 <script lang="ts">
-  import { ArrowRight } from '@lucide/svelte';
-  import AboutRail from '$lib/about/AboutRail.svelte';
-  let { children } = $props();
+	import { ArrowRight } from '@lucide/svelte';
+	import AboutRail from '$lib/about/AboutRail.svelte';
+	let { children } = $props();
 </script>
 
 <div class="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- powered-by callout -->
-  <a href="/about/lq-ai"
-     class="flex items-center justify-between gap-3 rounded-mlq-control border border-mlq-subtle bg-mlq-subtle/30 px-4 py-3 text-sm transition-colors hover:bg-mlq-subtle/60">
-    <span class="text-mlq-text">Donna is powered by <span class="font-medium text-mlq-strong">LQ-AI</span>, an open-source legal operating system — learn how it works.</span>
-    <ArrowRight size={16} class="shrink-0 text-mlq-muted" />
-  </a>
-  <div class="flex flex-col gap-6 sm:flex-row">
-    <AboutRail />
-    <div class="min-w-0 flex-1">{@render children()}</div>
-  </div>
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- powered-by callout -->
+	<a
+		href="/about/lq-ai"
+		class="flex items-center justify-between gap-3 rounded-mlq-control border border-mlq-subtle bg-mlq-subtle/30 px-4 py-3 text-sm transition-colors hover:bg-mlq-subtle/60"
+	>
+		<span class="text-mlq-text"
+			>Donna is powered by <span class="font-medium text-mlq-strong">LQ-AI</span>, an open-source
+			legal operating system — learn how it works.</span
+		>
+		<ArrowRight size={16} class="shrink-0 text-mlq-muted" />
+	</a>
+	<div class="flex flex-col gap-6 sm:flex-row">
+		<AboutRail />
+		<div class="min-w-0 flex-1">{@render children()}</div>
+	</div>
 </div>
 ```
 
@@ -108,15 +119,20 @@ Create `src/routes/(app)/about/lq-ai/+page.svelte`. The intro text is the user-a
 <h1 class="mb-4 text-xl font-medium text-mlq-text">Powered by LQ-AI</h1>
 
 <p class="mb-4 max-w-prose text-sm leading-relaxed text-mlq-text">
-  Donna is powered by LQ-AI, an open source legal operating system. Donna uses some, but not all, of
-  the functionality available in LQ-AI. You can learn how LQ-AI (and Donna) work below.
+	Donna is powered by LQ-AI, an open source legal operating system. Donna uses some, but not all, of
+	the functionality available in LQ-AI. You can learn how LQ-AI (and Donna) work below.
 </p>
 
 <p class="text-sm text-mlq-muted">
-  A full “How it works” walkthrough is coming soon. In the meantime, explore the open-source project:
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external repo link -->
-  <a href="https://github.com/LegalQuants/lq-ai" target="_blank" rel="noopener noreferrer"
-     class="font-medium text-mlq-strong underline">LegalQuants / lq-ai on GitHub</a>.
+	A full “How it works” walkthrough is coming soon. In the meantime, explore the open-source
+	project:
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external repo link -->
+	<a
+		href="https://github.com/LegalQuants/lq-ai"
+		target="_blank"
+		rel="noopener noreferrer"
+		class="font-medium text-mlq-strong underline">LegalQuants / lq-ai on GitHub</a
+	>.
 </p>
 ```
 
@@ -129,39 +145,47 @@ Create each of the 8 files below. Each is a minimal placeholder with the correct
 
 <h1 class="mb-4 text-xl font-medium text-mlq-text">HEADING</h1>
 
-<p class="max-w-prose text-sm leading-relaxed text-mlq-muted">Guide content coming in this slice.</p>
+<p class="max-w-prose text-sm leading-relaxed text-mlq-muted">
+	Guide content coming in this slice.
+</p>
 ```
 
-| File | TITLE | HEADING |
-| --- | --- | --- |
-| `about/overview/+page.svelte` | `Overview` | `About Donna` |
-| `about/assistant/+page.svelte` | `Assistant` | `The Assistant` |
-| `about/projects/+page.svelte` | `Projects` | `Projects` |
-| `about/workflows/+page.svelte` | `Workflows` | `Workflows` |
-| `about/tabular/+page.svelte` | `Tabular` | `Tabular review` |
-| `about/knowledge/+page.svelte` | `Knowledge` | `Knowledge bases` |
-| `about/models/+page.svelte` | `Models` | `Models` |
-| `about/trust/+page.svelte` | `Trust & citations` | `Trust & citations` |
+| File                           | TITLE               | HEADING             |
+| ------------------------------ | ------------------- | ------------------- |
+| `about/overview/+page.svelte`  | `Overview`          | `About Donna`       |
+| `about/assistant/+page.svelte` | `Assistant`         | `The Assistant`     |
+| `about/projects/+page.svelte`  | `Projects`          | `Projects`          |
+| `about/workflows/+page.svelte` | `Workflows`         | `Workflows`         |
+| `about/tabular/+page.svelte`   | `Tabular`           | `Tabular review`    |
+| `about/knowledge/+page.svelte` | `Knowledge`         | `Knowledge bases`   |
+| `about/models/+page.svelte`    | `Models`            | `Models`            |
+| `about/trust/+page.svelte`     | `Trust & citations` | `Trust & citations` |
 
 - [ ] **Step 6: Sidebar "About" entry above Settings**
 
 In `src/lib/components/Sidebar.svelte`:
 
 (a) Add `Info` to the lucide import on line 3:
+
 ```svelte
-  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut, Settings, Info } from '@lucide/svelte';
+import {(MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut, Settings, Info)} from '@lucide/svelte';
 ```
 
 (b) In the footer `<div class="space-y-1 border-t border-mlq-subtle p-2">` (line 46), insert the About link **immediately before** the Settings link (the `<!-- ... settings link -->` comment on line 47):
+
 ```svelte
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- about link -->
-    <a href="/about"
-       aria-current={page.url.pathname.startsWith('/about') ? 'page' : undefined}
-       class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
-              {page.url.pathname.startsWith('/about') ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text'}">
-      <Info size={18} />
-      {#if open}<span>About</span>{/if}
-    </a>
+<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- about link -->
+<a
+	href="/about"
+	aria-current={page.url.pathname.startsWith('/about') ? 'page' : undefined}
+	class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
+              {page.url.pathname.startsWith('/about')
+		? 'bg-mlq-subtle text-mlq-strong'
+		: 'text-mlq-text'}"
+>
+	<Info size={18} />
+	{#if open}<span>About</span>{/if}
+</a>
 ```
 
 - [ ] **Step 7: Run the gate**
@@ -186,6 +210,7 @@ git commit -m "feat(about): /about IA skeleton — rail, layout, lq-ai stub, sid
 ### Task 2: e2e — navigation + callout
 
 **Files:**
+
 - Create: `tests/about.spec.ts`
 
 - [ ] **Step 1: Write the e2e spec**
@@ -199,54 +224,54 @@ const EMAIL = process.env.DONNA_E2E_EMAIL!;
 const PASSWORD = process.env.DONNA_E2E_PASSWORD!;
 
 async function login(page: Page) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
 test('About lives above Settings in the sidebar and opens the guide', async ({ page }) => {
-  await login(page);
+	await login(page);
 
-  // Sidebar shows About, positioned above Settings.
-  const nav = page.locator('aside');
-  const about = nav.getByRole('link', { name: 'About' });
-  const settings = nav.getByRole('link', { name: 'Settings' });
-  await expect(about).toBeVisible();
-  await expect(settings).toBeVisible();
-  const aboutBox = await about.boundingBox();
-  const settingsBox = await settings.boundingBox();
-  expect(aboutBox!.y).toBeLessThan(settingsBox!.y);
+	// Sidebar shows About, positioned above Settings.
+	const nav = page.locator('aside');
+	const about = nav.getByRole('link', { name: 'About' });
+	const settings = nav.getByRole('link', { name: 'Settings' });
+	await expect(about).toBeVisible();
+	await expect(settings).toBeVisible();
+	const aboutBox = await about.boundingBox();
+	const settingsBox = await settings.boundingBox();
+	expect(aboutBox!.y).toBeLessThan(settingsBox!.y);
 
-  // Clicking About lands on the Overview topic (via the /about redirect).
-  await about.click();
-  await expect(page).toHaveURL(/\/about\/overview$/);
-  await expect(page.getByRole('heading', { name: 'About Donna', level: 1 })).toBeVisible();
+	// Clicking About lands on the Overview topic (via the /about redirect).
+	await about.click();
+	await expect(page).toHaveURL(/\/about\/overview$/);
+	await expect(page.getByRole('heading', { name: 'About Donna', level: 1 })).toBeVisible();
 });
 
 test('the About rail navigates between topics and marks the active one', async ({ page }) => {
-  await login(page);
-  await page.goto('/about/overview');
+	await login(page);
+	await page.goto('/about/overview');
 
-  // Scope to the About rail — the sidebar also has a "Tabular" link, so a
-  // page-wide locator would hit Playwright strict-mode collision.
-  const rail = page.locator('nav[aria-label="About sections"]');
-  const railTabular = rail.getByRole('link', { name: 'Tabular', exact: true });
-  await railTabular.click();
-  await expect(page).toHaveURL(/\/about\/tabular$/);
-  await expect(page.getByRole('heading', { name: 'Tabular review', level: 1 })).toBeVisible();
-  await expect(railTabular).toHaveAttribute('aria-current', 'page');
+	// Scope to the About rail — the sidebar also has a "Tabular" link, so a
+	// page-wide locator would hit Playwright strict-mode collision.
+	const rail = page.locator('nav[aria-label="About sections"]');
+	const railTabular = rail.getByRole('link', { name: 'Tabular', exact: true });
+	await railTabular.click();
+	await expect(page).toHaveURL(/\/about\/tabular$/);
+	await expect(page.getByRole('heading', { name: 'Tabular review', level: 1 })).toBeVisible();
+	await expect(railTabular).toHaveAttribute('aria-current', 'page');
 });
 
 test('the Powered by LQ-AI callout reaches the lq-ai page', async ({ page }) => {
-  await login(page);
-  await page.goto('/about/overview');
+	await login(page);
+	await page.goto('/about/overview');
 
-  await page.getByRole('link', { name: /powered by/i }).click();
-  await expect(page).toHaveURL(/\/about\/lq-ai$/);
-  await expect(page.getByRole('heading', { name: 'Powered by LQ-AI', level: 1 })).toBeVisible();
-  await expect(page.getByText(/open source legal operating system/i)).toBeVisible();
+	await page.getByRole('link', { name: /powered by/i }).click();
+	await expect(page).toHaveURL(/\/about\/lq-ai$/);
+	await expect(page.getByRole('heading', { name: 'Powered by LQ-AI', level: 1 })).toBeVisible();
+	await expect(page.getByText(/open source legal operating system/i)).toBeVisible();
 });
 ```
 

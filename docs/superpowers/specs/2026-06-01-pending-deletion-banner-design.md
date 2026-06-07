@@ -68,10 +68,10 @@ the admin fixture revokes its sessions (banked safety lesson).
 ### Component test — `src/routes/(app)/settings/data/page.svelte.test.ts`
 
 - **New case — pending state:** `render(Page, { props: { data: { user: { deletion_scheduled_at:
-  '<iso>' } } } })` → asserts the banner text (`/pending deletion/i`) and the cancel control are
+'<iso>' } } } })` → asserts the banner text (`/pending deletion/i`) and the cancel control are
   present, and the "Delete my account" button is **absent**.
 - **Update existing case — not-pending state:** render with no `data` (or `data.user.
-  deletion_scheduled_at: null`) → assert heading, export button, and "Delete my account" button
+deletion_scheduled_at: null`) → assert heading, export button, and "Delete my account" button
   are present, and **no** cancel control is present (the old assertion that a "cancel scheduled
   deletion" control is always present is removed).
 - Existing "opens the delete modal" case stays (renders in the not-pending state).
@@ -106,4 +106,4 @@ the admin fixture revokes its sessions (banked safety lesson).
 ## Follow-up bookkeeping (after merge)
 
 - Mark **P1.4 landed** in `docs/upstream-requests/lq-ai-backend-asks-for-donna.md` (move to
-  *Already landed*); note `lq-ai-expose-deletion-status-on-users-me.md` is resolved.
+  _Already landed_); note `lq-ai-expose-deletion-status-on-users-me.md` is resolved.

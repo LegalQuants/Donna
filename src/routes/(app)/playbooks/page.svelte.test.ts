@@ -5,16 +5,25 @@ import { fireEvent } from '@testing-library/dom';
 import Page from './+page.svelte';
 
 describe('/playbooks index', () => {
-  it('renders the Workflows sub-nav with Playbooks active', () => {
-    render(Page, { props: { data: { playbooks: [] } } as never });
-    const nav = screen.getByRole('navigation', { name: 'Workflows sections' });
-    expect(within(nav).getByRole('link', { name: 'Playbooks' })).toHaveAttribute('aria-current', 'page');
-  });
+	it('renders the Workflows sub-nav with Playbooks active', () => {
+		render(Page, { props: { data: { playbooks: [] } } as never });
+		const nav = screen.getByRole('navigation', { name: 'Workflows sections' });
+		expect(within(nav).getByRole('link', { name: 'Playbooks' })).toHaveAttribute(
+			'aria-current',
+			'page'
+		);
+	});
 
-  it('opening the New playbook menu reveals both create paths', async () => {
-    render(Page, { props: { data: { playbooks: [] } } as never });
-    await fireEvent.click(screen.getByRole('button', { name: /new playbook/i }));
-    expect(screen.getByRole('link', { name: /generate from documents/i })).toHaveAttribute('href', '/playbooks/new');
-    expect(screen.getByRole('link', { name: /start from scratch/i })).toHaveAttribute('href', '/playbooks/new/manual');
-  });
+	it('opening the New playbook menu reveals both create paths', async () => {
+		render(Page, { props: { data: { playbooks: [] } } as never });
+		await fireEvent.click(screen.getByRole('button', { name: /new playbook/i }));
+		expect(screen.getByRole('link', { name: /generate from documents/i })).toHaveAttribute(
+			'href',
+			'/playbooks/new'
+		);
+		expect(screen.getByRole('link', { name: /start from scratch/i })).toHaveAttribute(
+			'href',
+			'/playbooks/new/manual'
+		);
+	});
 });

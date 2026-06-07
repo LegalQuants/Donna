@@ -6,16 +6,16 @@
 
 ## 1. What Donna is
 
-Standalone MikeOSS-inspired **SvelteKit (Svelte 5 runes)** frontend for the **lq-ai** legal-AI backend. Browser talks only to Donna's SvelteKit server (a **BFF**) which holds the lq-ai JWT in httpOnly cookies and proxies to the lq-ai `api`. lq-ai is vendored at `vendor/lq-ai` (pinned submodule), brought up by this repo's `docker-compose.yml`. Visual language: document-forward, serif, restrained grays. **Product thesis (important — see memory `donna-product-direction`):** Donna exposes the lq-ai backend's power through a **friendly, minimal-chrome, plain-language UX** — the *opposite* of the LQ_AI developer frontend's menu-dense, capability-showcase style. When porting an LQ_AI capability, re-imagine it the Donna way.
+Standalone MikeOSS-inspired **SvelteKit (Svelte 5 runes)** frontend for the **lq-ai** legal-AI backend. Browser talks only to Donna's SvelteKit server (a **BFF**) which holds the lq-ai JWT in httpOnly cookies and proxies to the lq-ai `api`. lq-ai is vendored at `vendor/lq-ai` (pinned submodule), brought up by this repo's `docker-compose.yml`. Visual language: document-forward, serif, restrained grays. **Product thesis (important — see memory `donna-product-direction`):** Donna exposes the lq-ai backend's power through a **friendly, minimal-chrome, plain-language UX** — the _opposite_ of the LQ_AI developer frontend's menu-dense, capability-showcase style. When porting an LQ_AI capability, re-imagine it the Donna way.
 
 ## 2. Phase status
 
-| Phase | Status |
-|---|---|
-| P0–P2c-B | ✅ merged (#1–#8) |
-| P3 — Document panel + highlighting | ✅ P3-1 (#9), P3-2 (#10), P3-3 (#12), polish-auto-scroll (#16) |
-| **P4 — Projects / Matters** | **P4-1 ✅ (#13)** · **P4-2 ✅ (#15)** · **P4-3a ✅ (#17)** · **P4-3b ⬅️ NEXT** |
-| P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending |
+| Phase                                                      | Status                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| P0–P2c-B                                                   | ✅ merged (#1–#8)                                                              |
+| P3 — Document panel + highlighting                         | ✅ P3-1 (#9), P3-2 (#10), P3-3 (#12), polish-auto-scroll (#16)                 |
+| **P4 — Projects / Matters**                                | **P4-1 ✅ (#13)** · **P4-2 ✅ (#15)** · **P4-3a ✅ (#17)** · **P4-3b ⬅️ NEXT** |
+| P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending                                                                        |
 
 **P4-3a shipped (#17, 2026-05-28):** Four new sections on the matter detail page — **Files** (upload + attach + list + remove via SvelteKit form action with multipart drop zone), **Knowledge** (link/unlink existing KBs via searchable `KbPicker`), **Skills** (reuses composer's `SkillAttach.svelte` driven by a new matter-scoped `createMatterSkillAttach` controller), **Context** (Markdown textarea + UTF-8 byte counter + 422 fallback). All wired via 7 new form actions on `[id]/+page.server.ts` (10 total now: rename / archive / newChat / uploadFile / detachFile / linkKb / unlinkKb / attachSkill / detachSkill / saveContext). Code lives in `src/lib/matters/sections/`, `src/lib/matters/files/`, `src/lib/matters/knowledge/`, `src/lib/matters/skills/`. **Two real production bugs were caught by the live e2e and fixed:** `lqClient.raw()` was unconditionally setting `content-type: application/json` (clobbering FormData's multipart boundary → 422); `Dropzone.svelte` nested inside a parent form duplicated the `file` field (both inputs were named `name="file"` → every upload happened twice). Both have regression tests. 353 unit + 4 matter live e2es green.
 
@@ -41,6 +41,7 @@ npm run check && npx vitest run && npx playwright test
 ## 5. Next slice — P4-3b (KB creation + KB upload with ingestion polling)
 
 P4-3a deliberately deferred KB **creation** AND KB **upload** to this slice — they travel together because:
+
 - Creation alone is half-baked (you make an empty KB; can't put files in it).
 - Upload alone needs a KB to upload into, which means the user needs to either bring one from LQ_AI's dev frontend (poor UX) or this slice has to create it.
 
@@ -48,16 +49,16 @@ So P4-3b is the cohesive KB management surface that makes the P4-3a Knowledge se
 
 ### Backend reality (verified 2026-05-27 against `src/lib/api/backend.d.ts` at pin `438198c`)
 
-| Surface | Endpoint | Notes |
-|---|---|---|
-| Create KB | `POST /api/v1/knowledge-bases` (`KnowledgeBaseCreate`) | Body: `{ name, description?, project_id?, hybrid_alpha (default 0.5) }`. Returns 201 + `KnowledgeBase`. 404 if `project_id` provided but missing. |
-| Upload a file | `POST /api/v1/files` (multipart) | Same endpoint P4-3a uses for matter files. 100 MB cap → 413 with `details.limit_bytes`/`received_bytes`. Returns 201 + `File` with `ingestion_status='pending'`. |
+| Surface                   | Endpoint                                                        | Notes                                                                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----- | ----------------------------------------------------------------------------------- |
+| Create KB                 | `POST /api/v1/knowledge-bases` (`KnowledgeBaseCreate`)          | Body: `{ name, description?, project_id?, hybrid_alpha (default 0.5) }`. Returns 201 + `KnowledgeBase`. 404 if `project_id` provided but missing.                               |
+| Upload a file             | `POST /api/v1/files` (multipart)                                | Same endpoint P4-3a uses for matter files. 100 MB cap → 413 with `details.limit_bytes`/`received_bytes`. Returns 201 + `File` with `ingestion_status='pending'`.                |
 | **Attach a file to a KB** | `POST /api/v1/knowledge-bases/{kb_id}/files` body `{ file_id }` | **Requires `ingestion_status='ready'`** — distinct from the matter-files attach which has no such requirement. This is the big difference and the source of polling complexity. |
-| Poll file status | `GET /api/v1/files/{file_id}` | Returns `File` with `ingestion_status` ∈ `pending|processing|ready|failed`. `ingestion_error` set on failure (e.g., `unsupported_type`, `parse_failed`). |
-| List KB files | `GET /api/v1/knowledge-bases/{kb_id}/files` | Returns `KBFile[]` (= `File` + `attached_at`). |
-| Detach file from KB | `DELETE /api/v1/knowledge-bases/{kb_id}/files/{file_id}` | Removes the join row only. |
-| Patch KB | `PATCH /api/v1/knowledge-bases/{kb_id}` (`KnowledgeBaseUpdate`) | Already used by P4-3a's linkKb/unlinkKb. Same endpoint supports name/description/hybrid_alpha/archived edits. |
-| Soft-delete KB | `DELETE /api/v1/knowledge-bases/{kb_id}` | Returns 204. |
+| Poll file status          | `GET /api/v1/files/{file_id}`                                   | Returns `File` with `ingestion_status` ∈ `pending                                                                                                                               | processing | ready | failed`. `ingestion_error`set on failure (e.g.,`unsupported_type`, `parse_failed`). |
+| List KB files             | `GET /api/v1/knowledge-bases/{kb_id}/files`                     | Returns `KBFile[]` (= `File` + `attached_at`).                                                                                                                                  |
+| Detach file from KB       | `DELETE /api/v1/knowledge-bases/{kb_id}/files/{file_id}`        | Removes the join row only.                                                                                                                                                      |
+| Patch KB                  | `PATCH /api/v1/knowledge-bases/{kb_id}` (`KnowledgeBaseUpdate`) | Already used by P4-3a's linkKb/unlinkKb. Same endpoint supports name/description/hybrid_alpha/archived edits.                                                                   |
+| Soft-delete KB            | `DELETE /api/v1/knowledge-bases/{kb_id}`                        | Returns 204.                                                                                                                                                                    |
 
 ### Scope for P4-3b (suggested decomposition — confirm in brainstorm)
 
@@ -68,7 +69,7 @@ The cleanest split is probably one PR with all of it, but if it grows large, two
 2. **KB upload (large)** — A dedicated UX inside each linked-KB row. Could be:
    - Click-to-expand-into-KB-details mode on the matter detail page, OR
    - A dedicated `/knowledge/{kb_id}` route (probably cleaner; mirrors `/matters/{id}` shape).
-   The latter feels right since KB management is genuinely a separate surface (a KB can outlive a matter; the KB has its own file list, hybrid alpha tuning, etc.).
+     The latter feels right since KB management is genuinely a separate surface (a KB can outlive a matter; the KB has its own file list, hybrid alpha tuning, etc.).
    - Upload UX itself: same drop zone + Add file pattern as `FilesSection` (reuse `Dropzone.svelte` and the form-action multipart upload), but the **attach-to-KB step requires `ingestion_status='ready'`**, so the action either: (a) blocks until ingestion completes (poll loop in the action, simple but slow on UX), or (b) returns immediately after upload and lets the client poll separately via a refresh button or auto-poll `$effect`.
    - Per-row ingestion status badge (reuse `statusBadge` from `src/lib/matters/files/uploadFile.ts`).
    - Failure surfacing: `ingestion_error` should be visible on `Failed` rows.

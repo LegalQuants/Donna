@@ -4,7 +4,7 @@
 
 ## What the user sees
 
-When a citation pill is clicked and the document panel opens, the PDF renders at the **top of the document** (page 1 title), not at the cited passage — even though the cited-passage bar at the top of the panel already shows the verbatim quote with a "Jump to ¶" button. The user has to click "Jump to ¶" *every* time to actually see the quote in context. On long PDFs the highlighted span is far off-screen.
+When a citation pill is clicked and the document panel opens, the PDF renders at the **top of the document** (page 1 title), not at the cited passage — even though the cited-passage bar at the top of the panel already shows the verbatim quote with a "Jump to ¶" button. The user has to click "Jump to ¶" _every_ time to actually see the quote in context. On long PDFs the highlighted span is far off-screen.
 
 Verified visually 2026-05-27 against the live stack: opening a citation in `tests/citation-highlight.spec.ts`-style flow lands the panel scrolled to the PDF top; the highlighted span sits at the very bottom of the viewport (or completely off-screen on smaller windows).
 
@@ -13,6 +13,7 @@ Verified visually 2026-05-27 against the live stack: opening a citation in `test
 P3-2 introduced `scrollCitedIntoView` (in `src/lib/docpanel/`) and wired it to the "Jump to ¶" button in the cited-passage bar — but it is **not** automatically invoked when the panel opens or when the highlight successfully lands on the rendered PDF. The intent in P3-2 was to make jump explicit; in practice the panel-on-open state is unusable without it.
 
 The relevant pieces (from `donna-phase-status` memory + the P3-2 commit train):
+
 - `pdfHighlight.ts` paints the highlight via the CSS Custom Highlight API.
 - `PdfViewer.svelte` runs the highlight `$effect` keyed on `{page, quote}` and reports found/miss to `docPanel.setHighlightStatus(...)`.
 - `DocumentPanel.svelte` cited-passage bar exposes the manual "Jump to ¶" button calling `scrollCitedIntoView`.

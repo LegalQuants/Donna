@@ -11,3 +11,4 @@ bun.lockb
 # Vendored lq-ai backend (separate upstream monorepo) + generated API types
 /vendor/
 /src/lib/api/
+

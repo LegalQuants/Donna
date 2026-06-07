@@ -26,12 +26,12 @@ Out of scope: admin tier-policy (deployment-wide floors), context-Markdown editi
 
 ## 3. Decisions log (from brainstorm Q1–Q4)
 
-| # | Question | Choice | Why |
-|---|---|---|---|
-| Q1 | Scope of in-chat tier-floor surface | **Full in-chat enforcement** | Disable sub-floor models + privileged chip in chat header; faithful to the gateway-level enforcement. |
-| Q2 | Tier-control presentation | **Numeric 1–5 select + helper** | Faithful to backend, matches the LQ_AI modal. Footgun at `5` accepted and surfaced honestly. |
-| Q3 | Coupled-validation UX | **Disable submit + inline hint** | Mirrors the existing empty-name disable; server 422/400 stays as a fallback for bypassed clients. |
-| Q4 | Privileged visual treatment | **Distinct chip (Lock icon + "Privileged")** | One reusable component across list/detail/chat-header; keeps matter identity and privilege visually separate. |
+| #   | Question                            | Choice                                       | Why                                                                                                           |
+| --- | ----------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Q1  | Scope of in-chat tier-floor surface | **Full in-chat enforcement**                 | Disable sub-floor models + privileged chip in chat header; faithful to the gateway-level enforcement.         |
+| Q2  | Tier-control presentation           | **Numeric 1–5 select + helper**              | Faithful to backend, matches the LQ_AI modal. Footgun at `5` accepted and surfaced honestly.                  |
+| Q3  | Coupled-validation UX               | **Disable submit + inline hint**             | Mirrors the existing empty-name disable; server 422/400 stays as a fallback for bypassed clients.             |
+| Q4  | Privileged visual treatment         | **Distinct chip (Lock icon + "Privileged")** | One reusable component across list/detail/chat-header; keeps matter identity and privilege visually separate. |
 
 ## 4. Data model & types
 
@@ -45,13 +45,13 @@ New props: `privileged?: boolean = false`, `minimumTier?: 1|2|3|4|5|null = null`
 
 **Layout** (below the existing name + description fields, matching the LQ_AI modal order):
 
-1. A **privileged checkbox** — `<input type="checkbox" name="privileged">`, label "Privileged matter" with helper *"Flags every chat in this matter as privileged in the audit log and enforces a minimum model tier."*
-2. A **"Minimum model tier" `<select name="minimum_inference_tier">`** with options: a `None` empty value (default), plus `1`, `2`, `3`, `4`, `5`. Helper *"Higher tiers require cloud models. Privileged matters require a tier."*
+1. A **privileged checkbox** — `<input type="checkbox" name="privileged">`, label "Privileged matter" with helper _"Flags every chat in this matter as privileged in the audit log and enforces a minimum model tier."_
+2. A **"Minimum model tier" `<select name="minimum_inference_tier">`** with options: a `None` empty value (default), plus `1`, `2`, `3`, `4`, `5`. Helper _"Higher tiers require cloud models. Privileged matters require a tier."_
 
 **Coupling (Q3):**
 
 - `canSubmit = nameValue.trim() && !(privilegedValue && tierValue === '')`.
-- When `privilegedValue && tierValue === ''`, render an inline hint *"Privileged matters require a minimum tier."* The submit button stays disabled (same pattern as the existing empty-name disable).
+- When `privilegedValue && tierValue === ''`, render an inline hint _"Privileged matters require a minimum tier."_ The submit button stays disabled (same pattern as the existing empty-name disable).
 - Form continues to submit via `use:enhance`; the server 422/400 still flows into the `error` slot as a fallback for the bypassed-client case.
 
 **Form-field wire format:**
@@ -66,15 +66,14 @@ Both pages parse the two new fields via a small local helper:
 ```ts
 const privileged = data.get('privileged') === 'on';
 const tierRaw = String(data.get('minimum_inference_tier') ?? '');
-const minimum_inference_tier =
-  tierRaw === '' ? null : (Number(tierRaw) as 1|2|3|4|5);
+const minimum_inference_tier = tierRaw === '' ? null : (Number(tierRaw) as 1 | 2 | 3 | 4 | 5);
 ```
 
 **`create` — `POST /api/v1/projects` (ProjectCreate):**
 
 - Body: `{ name, description, privileged, ...(minimum_inference_tier !== null && { minimum_inference_tier }) }`. `privileged` is always sent (contract requires the boolean; defaults `false`).
 - Defense-in-depth pre-check: if `privileged && minimum_inference_tier === null`, `return fail(422, { error: 'Privileged matters require a minimum tier.' })` before calling the backend (catches a bypassed form).
-- On non-ok response, map **422** specifically to the privilege message; other failures keep the generic *"Could not create the matter."* Redirect on success as today.
+- On non-ok response, map **422** specifically to the privilege message; other failures keep the generic _"Could not create the matter."_ Redirect on success as today.
 
 **`rename` — `PATCH /api/v1/projects/{id}` (ProjectUpdate):**
 
@@ -95,7 +94,7 @@ New `src/lib/matters/PrivilegedChip.svelte` — presentational, optional `size` 
 
 ## 8. In-chat tier-floor enforcement
 
-- **`src/lib/components/ModelPicker.svelte`** gains `minimumTier?: 1|2|3|4|5|null = null`. An option is **sub-floor** when `minimumTier != null && opt.tier != null && opt.tier < minimumTier`. Sub-floor options render with `disabled`, `opacity-40`, `cursor-not-allowed`, `aria-disabled="true"`; `choose` is a no-op for them. When a floor is active, a one-line note appears at the top of the dropdown: *"This matter requires tier ≥ N — lower-tier models are unavailable."*
+- **`src/lib/components/ModelPicker.svelte`** gains `minimumTier?: 1|2|3|4|5|null = null`. An option is **sub-floor** when `minimumTier != null && opt.tier != null && opt.tier < minimumTier`. Sub-floor options render with `disabled`, `opacity-40`, `cursor-not-allowed`, `aria-disabled="true"`; `choose` is a no-op for them. When a floor is active, a one-line note appears at the top of the dropdown: _"This matter requires tier ≥ N — lower-tier models are unavailable."_
 - **`src/lib/components/Composer.svelte`** gains `minimumTier?: 1|2|3|4|5|null` and passes it straight through to `ModelPicker`. The landing path passes nothing (no floor), so it stays inert there.
 - **Chat page** reads `data.matter?.minimumTier` and passes it to `Composer`.
 - **Stale-selection guard:** the chat page ensures `modelStore.selectedModel` satisfies the floor before first render. If the current selection is sub-floor, it resets to the **highest-tier valid option, preferring `smart`** (cloud, tier 4) — overshooting the floor is the conservative default and converges on `smart` for the realistic tier distribution. The selection logic is extracted as a pure function `pickValidModel(options, currentId, minimumTier)` in `src/lib/models/` so it's unit-testable without the store. The gateway remains the server-side backstop.
@@ -156,7 +155,7 @@ New `src/lib/matters/PrivilegedChip.svelte` — presentational, optional `size` 
 - **`minimumTier = 5` degenerate state** (all models disabled): faithful to the backend and the Q2 numeric-select choice. The floor note explains why, and the gateway would refuse anyway. Documented; not blocked.
 - **Stale model selection** persisted in `modelStore` across chats with different floors: the chat-page guard resets to a valid model on mount. The guard is a pure function and unit-tested.
 - **`resolveMatter` widening** changes the chat-page `data.matter` shape — `MatterBadge` still accepts a `MatterSummary` (it only reads `id`/`name`), so a `{...matter}` spread to a `MatterSummary`-typed slot continues to type-check.
-- **`MatterPicker` (landing/new-chat) is unchanged** — still takes `MatterSummary[]`. The user has no privilege/tier *picker* at chat-create time; they pick the matter, and the matter's settings flow with it (see §8 stale-selection guard).
+- **`MatterPicker` (landing/new-chat) is unchanged** — still takes `MatterSummary[]`. The user has no privilege/tier _picker_ at chat-create time; they pick the matter, and the matter's settings flow with it (see §8 stale-selection guard).
 - **PATCH coupled-rule with merged state:** unchecking `privileged` while leaving a tier set is allowed (the rule is `privileged ⇒ tier`, not the reverse). Unchecking tier on an already-privileged matter without also unchecking `privileged` would 400 — the form's client-side disable prevents this, and the server-side mapping catches the bypass.
 - **No backend changes needed** — the contract already supports everything (verified §2).
 

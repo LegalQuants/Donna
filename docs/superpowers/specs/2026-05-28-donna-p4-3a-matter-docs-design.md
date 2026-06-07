@@ -6,36 +6,36 @@
 
 Expand the matter detail page (`/matters/{id}`) with **four new sections** that let a user manage everything the lq-ai backend already supports at the matter (project) level: **Files** (attach existing/uploaded files), **Knowledge** (link existing KBs to the matter), **Skills** (attach skills to the matter), and **Context** (edit the matter's free-form Markdown context). Net delivery is the document-attach UX the user emphasized in the product direction, plus three small attach/edit surfaces that fit on the same page.
 
-**Out of scope (deferred to P4-3b):** uploading documents *into* a KB with ingestion-status polling, and KB *creation* — both ride together in the next slice so the KB section can grow without churn here.
+**Out of scope (deferred to P4-3b):** uploading documents _into_ a KB with ingestion-status polling, and KB _creation_ — both ride together in the next slice so the KB section can grow without churn here.
 
 **Out of scope (further future):** chat-level file upload (composer attach), skills authoring (P5), playbooks (P5), folder tree / file versions / project sharing (upstream-blocked).
 
 ## 2. Backend contract (verified 2026-05-28 against `src/lib/api/backend.d.ts` at pin `438198c`)
 
-| Surface | Endpoint | Notes |
-|---|---|---|
-| Upload a file | `POST /api/v1/files` (multipart, streaming) | 100 MB cap → 413 with `details.limit_bytes`/`received_bytes`. Returns 201 + `File` with `ingestion_status='pending'`. `project_id` in the multipart body is accepted but currently ignored — attach is a separate explicit call. |
-| Attach a file to a matter | `POST /api/v1/projects/{project_id}/files` body `{ file_id }` | 204 success. 404 if project or file missing. 409 if already attached. No ingestion-ready requirement. |
-| Detach a file from a matter | `DELETE /api/v1/projects/{project_id}/files/{file_id}` | 204 success. 404 if not attached / project missing. File row itself is not deleted. |
-| Get file metadata | `GET /api/v1/files/{file_id}` | Returns `File` (filename, size_bytes, mime_type, ingestion_status, etc.). |
-| Download file | `GET /api/v1/files/{file_id}/content` | Returns the raw bytes (P3-3 set `content-disposition: attachment`). |
-| List the user's KBs | `GET /api/v1/knowledge-bases` | Optionally `?project_id=<id>` to filter to a matter's KBs. |
-| Patch a KB | `PATCH /api/v1/knowledge-bases/{kb_id}` `{ project_id }` | KB↔matter link lives on the KB (`KnowledgeBase.project_id`), not on the project. Set to `null` to unlink. |
-| Attach a skill | `POST /api/v1/projects/{project_id}/skills` body `{ skill_name }` | Working assumption; exact body shape re-checked at plan time. |
-| Detach a skill | `DELETE /api/v1/projects/{project_id}/skills/{skill_name}` | Working assumption. |
-| Edit context_md | `PATCH /api/v1/projects/{id}` `{ context_md }` | Already used by the P4-2 `rename` action. ≤100 KiB UTF-8 bytes → 422 over cap. `null` clears. |
+| Surface                     | Endpoint                                                          | Notes                                                                                                                                                                                                                            |
+| --------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Upload a file               | `POST /api/v1/files` (multipart, streaming)                       | 100 MB cap → 413 with `details.limit_bytes`/`received_bytes`. Returns 201 + `File` with `ingestion_status='pending'`. `project_id` in the multipart body is accepted but currently ignored — attach is a separate explicit call. |
+| Attach a file to a matter   | `POST /api/v1/projects/{project_id}/files` body `{ file_id }`     | 204 success. 404 if project or file missing. 409 if already attached. No ingestion-ready requirement.                                                                                                                            |
+| Detach a file from a matter | `DELETE /api/v1/projects/{project_id}/files/{file_id}`            | 204 success. 404 if not attached / project missing. File row itself is not deleted.                                                                                                                                              |
+| Get file metadata           | `GET /api/v1/files/{file_id}`                                     | Returns `File` (filename, size_bytes, mime_type, ingestion_status, etc.).                                                                                                                                                        |
+| Download file               | `GET /api/v1/files/{file_id}/content`                             | Returns the raw bytes (P3-3 set `content-disposition: attachment`).                                                                                                                                                              |
+| List the user's KBs         | `GET /api/v1/knowledge-bases`                                     | Optionally `?project_id=<id>` to filter to a matter's KBs.                                                                                                                                                                       |
+| Patch a KB                  | `PATCH /api/v1/knowledge-bases/{kb_id}` `{ project_id }`          | KB↔matter link lives on the KB (`KnowledgeBase.project_id`), not on the project. Set to `null` to unlink.                                                                                                                        |
+| Attach a skill              | `POST /api/v1/projects/{project_id}/skills` body `{ skill_name }` | Working assumption; exact body shape re-checked at plan time.                                                                                                                                                                    |
+| Detach a skill              | `DELETE /api/v1/projects/{project_id}/skills/{skill_name}`        | Working assumption.                                                                                                                                                                                                              |
+| Edit context_md             | `PATCH /api/v1/projects/{id}` `{ context_md }`                    | Already used by the P4-2 `rename` action. ≤100 KiB UTF-8 bytes → 422 over cap. `null` clears.                                                                                                                                    |
 
 **Handoff drift correction (2026-05-27):** the original P4 handoff mentioned `POST /projects/{id}/knowledge-bases` for KB linking; that endpoint **does not exist**. KB↔matter linkage is a property of the KB row itself, set via `PATCH /knowledge-bases/{kb_id}`. This spec uses the correct mechanism.
 
 ## 3. Decisions log
 
-| # | Decision | Choice | Why |
-|---|---|---|---|
-| Q1 | Decomposition | P4-3a = Files + Knowledge linking + Skills + Context · P4-3b = KB upload (incl. KB create) | First slice ships the matter-level UX surfaces in one PR; KB upload is the large net-new flow and stands alone. |
-| Q2 | File upload affordance | Drop zone replaces the section when empty; populated state shows file list + small "Add file" button | Most document-forward affordance for an empty matter; minimal chrome once populated. |
-| Q3 | Skills attach UI | Reuse composer `SkillAttach.svelte`'s popover idiom; new matter-scoped controller | Consistent with chat-level skill UX; lowest effort. |
-| Q4 | Context editor depth | Plain textarea + byte counter + 422 fallback | Field is machine-consumed by the backend; preview adds no real value. Matches Donna's restrained design. |
-| Q5 | KB section in P4-3a | Link-only (no create, no upload) | KB creation + upload travel together in P4-3b. Picker explicitly surfaces "no other KBs to link" so the deferred state is visible, not silently broken. |
+| #   | Decision               | Choice                                                                                               | Why                                                                                                                                                     |
+| --- | ---------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q1  | Decomposition          | P4-3a = Files + Knowledge linking + Skills + Context · P4-3b = KB upload (incl. KB create)           | First slice ships the matter-level UX surfaces in one PR; KB upload is the large net-new flow and stands alone.                                         |
+| Q2  | File upload affordance | Drop zone replaces the section when empty; populated state shows file list + small "Add file" button | Most document-forward affordance for an empty matter; minimal chrome once populated.                                                                    |
+| Q3  | Skills attach UI       | Reuse composer `SkillAttach.svelte`'s popover idiom; new matter-scoped controller                    | Consistent with chat-level skill UX; lowest effort.                                                                                                     |
+| Q4  | Context editor depth   | Plain textarea + byte counter + 422 fallback                                                         | Field is machine-consumed by the backend; preview adds no real value. Matches Donna's restrained design.                                                |
+| Q5  | KB section in P4-3a    | Link-only (no create, no upload)                                                                     | KB creation + upload travel together in P4-3b. Picker explicitly surfaces "no other KBs to link" so the deferred state is visible, not silently broken. |
 
 ## 4. Architecture (Approach A — Section subcomponents + per-section form actions)
 
@@ -61,21 +61,25 @@ Section ordering reflects the user's emphasis (files first, knowledge adjacent, 
 ### 4.1 New files
 
 **`src/lib/matters/sections/`** (one .svelte per section, presentational, plain props):
+
 - `FilesSection.svelte`
 - `KnowledgeSection.svelte`
 - `SkillsSection.svelte`
 - `ContextSection.svelte`
 
 **`src/lib/matters/files/`** (the only sub-folder with non-trivial helpers):
+
 - `Dropzone.svelte` — empty-state drop target (also used as a populated-state secondary target); emits `files: File[]`
 - `FileRow.svelte` — single attached-file row
 - `uploadFile.ts` — pure helpers (byte formatter, status-badge label/tone resolver)
 - `uploadFile.test.ts`
 
 **`src/lib/matters/knowledge/`**:
+
 - `KbPicker.svelte` — searchable popover, mirrors `MatterPicker.svelte`'s idiom
 
 **`src/lib/matters/skills/`**:
+
 - `createMatterSkillAttach.svelte.ts` — matter-scoped controller mirroring the composer's `createSkillAttach()` but driving the persistent form actions instead of in-memory state
 
 Plus per-component test files alongside (`*.svelte.test.ts` / `*.test.ts`).
@@ -94,9 +98,11 @@ After fetching `matter` (existing) and `chats` (existing), the load function fan
 
 ```ts
 const files = await Promise.all(
-  (matter.attached_file_ids ?? []).map((id) =>
-    lqFetch(event, `/api/v1/files/${id}`).then(async (r) => r.ok ? (await r.json()) as File : null)
-  )
+	(matter.attached_file_ids ?? []).map((id) =>
+		lqFetch(event, `/api/v1/files/${id}`).then(async (r) =>
+			r.ok ? ((await r.json()) as File) : null
+		)
+	)
 ).then((arr) => arr.filter((f): f is File => f !== null));
 ```
 
@@ -112,6 +118,7 @@ Form posts `multipart/form-data` via `use:enhance`. Server reads `event.request.
 On success: return `{ uploaded: <n> }`. The SvelteKit `enhance` action's default behavior re-runs the load function and updates the page (no manual redirect needed).
 
 **Error mapping:**
+
 - **413** on the upload step → `fail(413, { error: 'File "{filename}" is too large — max {limit_mb} MB.' })`. `limit_mb` derived from the 413 body's `details.limit_bytes` (parsed via `Math.round(limit_bytes / 1024 / 1024)`); if the body can't be parsed, fall back to "max 100 MB".
 - **409** on the attach step → silent no-op (treat as success; the file is attached either way).
 - Any other 4xx/5xx on either step → `fail(502, { error: 'Could not upload "{filename}".' })`.
@@ -123,7 +130,7 @@ Body `{ file_id }`. Calls `DELETE /api/v1/projects/{matter_id}/files/{file_id}`.
 
 ### 5.4 Section UI
 
-- **Empty state:** the Dropzone fills the section with a large prompt — *"Drag PDFs or contracts here, or click to browse"*. Click or keyboard activation opens a hidden `<input type="file" multiple>`.
+- **Empty state:** the Dropzone fills the section with a large prompt — _"Drag PDFs or contracts here, or click to browse"_. Click or keyboard activation opens a hidden `<input type="file" multiple>`.
 - **Populated state:** vertical list of `FileRow`s + a trailing small "Add file" button (clicks open the same hidden input). The whole list area remains a drop target with the same handlers so drag-drop works regardless of state — the button is an alternate entry point, not the only one.
 - **File row:** filename · formatted size (B / KB / MB via `uploadFile.ts`) · status badge (Pending / Processing / **Ready** / Failed; colors `text-mlq-muted` / `text-mlq-muted` / `text-mlq-success` / `text-mlq-error`) · Download link (`/api/v1/files/{id}/content` via the BFF, opens in new tab) · Remove button (submits `detachFile`).
 - **No polling in P4-3a.** Ingestion status reflects the most recent SSR fetch; users can refresh to see updates. Polling is a follow-up if real-world latency becomes painful.
@@ -154,9 +161,9 @@ Either failure degrades gracefully (empty array, section renders with an inline 
 
 ### 6.2 Section UI
 
-- **Empty linked state:** one helper line *"No knowledge bases linked. Linking a KB makes its documents available to chats in this matter."* + a "Link a knowledge base" button (opens the picker).
+- **Empty linked state:** one helper line _"No knowledge bases linked. Linking a KB makes its documents available to chats in this matter."_ + a "Link a knowledge base" button (opens the picker).
 - **Linked state:** a list of rows: KB name · `{file_count} files` · Unlink button. Plus a small "Add" affordance at the bottom (same treatment as the Files section's "Add file").
-- **Picker (`KbPicker`):** popover mirroring `MatterPicker`'s idiom — root div + `open` state + outside-click `$effect` + Escape capture. Search input filters `kbs.available` by case-insensitive substring match on `name`. Selecting a row submits the `linkKb` form. When `kbs.available.length === 0` the popover shows *"No other knowledge bases to link. (Creating a KB lands in a follow-up slice.)"* — making the deferred-create state explicit instead of silently empty.
+- **Picker (`KbPicker`):** popover mirroring `MatterPicker`'s idiom — root div + `open` state + outside-click `$effect` + Escape capture. Search input filters `kbs.available` by case-insensitive substring match on `name`. Selecting a row submits the `linkKb` form. When `kbs.available.length === 0` the popover shows _"No other knowledge bases to link. (Creating a KB lands in a follow-up slice.)"_ — making the deferred-create state explicit instead of silently empty.
 
 ### 6.3 Form actions
 
@@ -165,13 +172,13 @@ Either failure degrades gracefully (empty array, section renders with an inline 
 
 ### 6.4 Forward-compat note
 
-When P4-3b adds KB create + upload, this section gains *"Create new KB"* alongside *"Link existing"* in the picker and *"Upload to KB"* inside each linked row. The structure here leaves room without restructuring.
+When P4-3b adds KB create + upload, this section gains _"Create new KB"_ alongside _"Link existing"_ in the picker and _"Upload to KB"_ inside each linked row. The structure here leaves room without restructuring.
 
 ## 7. Skills section (attach via the SkillAttach idiom)
 
 ### 7.1 Load
 
-`matter.attached_skill_names: string[]` is already on the loaded project — no additional fetch for currently-attached skills. The skills *catalog* (the picker's source list) is fetched the same way the composer's `SkillAttach` already does; the exact endpoint will be confirmed at plan time by re-reading `src/lib/skills/attach.svelte.ts`. The catalog returns to the page data as `skills: { attached: string[]; catalog: Skill[] }`.
+`matter.attached_skill_names: string[]` is already on the loaded project — no additional fetch for currently-attached skills. The skills _catalog_ (the picker's source list) is fetched the same way the composer's `SkillAttach` already does; the exact endpoint will be confirmed at plan time by re-reading `src/lib/skills/attach.svelte.ts`. The catalog returns to the page data as `skills: { attached: string[]; catalog: Skill[] }`.
 
 ### 7.2 Section UI
 
@@ -195,7 +202,7 @@ When P4-3b adds KB create + upload, this section gains *"Create new KB"* alongsi
 
 ### 8.1 Section UI
 
-- Small heading *"Context"* + one-line helper *"Markdown notes the assistant sees on every chat in this matter. Optional, max 100 KiB."*
+- Small heading _"Context"_ + one-line helper _"Markdown notes the assistant sees on every chat in this matter. Optional, max 100 KiB."_
 - `<textarea name="context_md">` seeded with `data.matter.context_md ?? ''`, `rows="4"` minimum, capped via `max-h-96` and the existing `autogrow` pattern from `Composer.svelte`'s textarea.
 - Byte counter under the textarea: `"{bytes(value)} / 102400 bytes"`. Goes `text-mlq-error` when over the cap. Bytes counted via `new TextEncoder().encode(value).length` so non-ASCII content (which the user might paste) is measured correctly against the backend's UTF-8 byte limit.
 - "Save context" button. **Disabled** when (a) value equals the seeded value (nothing to save) **or** (b) value exceeds 102400 bytes.
@@ -250,6 +257,7 @@ src/routes/(app)/matters/[id]/+page.svelte          (render the 4 new sections)
 ### 10.1 Unit (vitest + @testing-library/svelte + userEvent / fireEvent; mock `$app/forms` `enhance`)
 
 **Section components:**
+
 - **`FilesSection`** — empty state renders Dropzone with the "Drag PDFs or contracts here" prompt; populated state renders one `FileRow` per file + the "Add file" button; the Dropzone files callback wires through to the form submission.
 - **`FileRow`** — shows filename + formatted size + status badge per `ingestion_status` (Pending / Processing / **Ready** / Failed); the download link points at `/api/v1/files/{id}/content`; the Remove button submits `?/detachFile` with the right `file_id`.
 - **`KnowledgeSection`** — empty linked state shows the helper line + Link button; non-empty shows rows with KB name + `file_count` + Unlink; `KbPicker` opened against `available: []` shows "No other KBs to link" with the deferred-create copy.
