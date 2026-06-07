@@ -4,10 +4,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/svelte';
 
 vi.mock('$app/forms', () => ({ enhance: () => ({ destroy() {} }) }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(), invalidateAll: vi.fn() }));
 
 import Page from './+page.svelte';
 import type { MemoryEntry } from '$lib/automations/memory';
+import type { PrecedentEntry, ProposalEntry } from '$lib/automations/precedents';
 
 const entry = (over: Partial<MemoryEntry> = {}): MemoryEntry => ({
 	id: 'm1',
@@ -18,6 +19,28 @@ const entry = (over: Partial<MemoryEntry> = {}): MemoryEntry => ({
 	created_at: '2026-06-07T09:00:00Z',
 	...over
 });
+
+const precedentEntry = (over: Partial<PrecedentEntry> = {}): PrecedentEntry => ({
+	id: 'p1',
+	pattern_kind: 'recurring-clause',
+	summary: 'Vendor repeatedly accepts 30-day termination.',
+	observed_count: 3,
+	source_session_id: 's1',
+	created_at: '2026-06-07T09:00:00Z',
+	...over
+});
+
+const proposalEntry = (over: Partial<ProposalEntry> = {}): ProposalEntry => ({
+	id: 'pr1',
+	precedent_id: 'p1',
+	project_id: 'proj1',
+	suggested_md: '## Precedent\nVendor accepts 30-day termination.',
+	state: 'proposed',
+	created_at: '2026-06-07T09:00:00Z',
+	...over
+});
+
+const defaultMatters = [{ id: 'proj1', name: 'Acme MSA' }];
 
 function makeData(overrides: Record<string, unknown> = {}): {
 	data: Record<string, unknown>;
@@ -31,6 +54,9 @@ function makeData(overrides: Record<string, unknown> = {}): {
 			offset: 0,
 			entries: [],
 			total: 0,
+			precedents: { entries: [], total: 0 },
+			proposals: { proposals: [], total: 0 },
+			matters: defaultMatters,
 			...overrides
 		},
 		form: null
@@ -160,7 +186,10 @@ describe('/automations/review page', () => {
 					state: 'proposed',
 					offset: 0,
 					entries: [],
-					total: 0
+					total: 0,
+					precedents: { entries: [], total: 0 },
+					proposals: { proposals: [], total: 0 },
+					matters: defaultMatters
 				},
 				form: { error: 'Automations are turned off.' }
 			} as never
@@ -178,7 +207,10 @@ describe('/automations/review page', () => {
 					state: 'proposed',
 					offset: 0,
 					entries: [entry({ id: 'mA', content: 'Alpha' })],
-					total: 1
+					total: 1,
+					precedents: { entries: [], total: 0 },
+					proposals: { proposals: [], total: 0 },
+					matters: defaultMatters
 				},
 				form: { id: 'mA', error: 'This memory no longer exists.' }
 			} as never
@@ -201,7 +233,10 @@ describe('/automations/review page', () => {
 					state: 'proposed',
 					offset: 0,
 					entries: [entry({ id: 'mA', content: 'Alpha' }), entry({ id: 'mB', content: 'Beta' })],
-					total: 2
+					total: 2,
+					precedents: { entries: [], total: 0 },
+					proposals: { proposals: [], total: 0 },
+					matters: defaultMatters
 				},
 				form: { id: 'mB', error: 'This memory no longer exists.' }
 			} as never
@@ -211,5 +246,98 @@ describe('/automations/review page', () => {
 		expect(alert).toHaveTextContent('This memory no longer exists.');
 		// The Alpha row should NOT have an alert
 		expect(screen.queryAllByRole('alert')).toHaveLength(1);
+	});
+
+	// ── Precedents section ─────────────────────────────────────────────────────
+
+	it('precedents section renders rows when data.precedents.entries is non-empty', () => {
+		render(Page, {
+			props: makeData({
+				precedents: {
+					entries: [
+						precedentEntry({ id: 'p1', summary: 'Clause pattern A' }),
+						precedentEntry({ id: 'p2', summary: 'Clause pattern B' })
+					],
+					total: 2
+				}
+			}) as never
+		});
+		expect(screen.getByText('Clause pattern A')).toBeInTheDocument();
+		expect(screen.getByText('Clause pattern B')).toBeInTheDocument();
+	});
+
+	it('precedents null → section alert; memory section still renders', () => {
+		render(Page, {
+			props: makeData({
+				precedents: null,
+				entries: [entry({ id: 'm1', content: 'A memory' })],
+				total: 1
+			}) as never
+		});
+		expect(screen.getByRole('alert')).toHaveTextContent(
+			"Couldn't load precedents — reload to retry."
+		);
+		expect(screen.getByText('A memory')).toBeInTheDocument();
+	});
+
+	it('proposals empty → shows empty-state copy', () => {
+		render(Page, {
+			props: makeData({
+				proposals: { proposals: [], total: 0 }
+			}) as never
+		});
+		expect(
+			screen.getByText('No pending proposals. Promote a precedent to create one.')
+		).toBeInTheDocument();
+	});
+
+	it('proposal row shows resolved matter name from matters list', () => {
+		render(Page, {
+			props: makeData({
+				proposals: {
+					proposals: [proposalEntry({ project_id: 'proj1' })],
+					total: 1
+				},
+				matters: [{ id: 'proj1', name: 'Acme MSA' }]
+			}) as never
+		});
+		expect(screen.getByText(/For matter: Acme MSA/)).toBeInTheDocument();
+	});
+
+	it('promote success note renders when form.promoted is true', () => {
+		render(Page, {
+			props: {
+				data: {
+					autonomousEnabled: true,
+					unread: 0,
+					state: 'proposed',
+					offset: 0,
+					entries: [],
+					total: 0,
+					precedents: { entries: [], total: 0 },
+					proposals: { proposals: [], total: 0 },
+					matters: defaultMatters
+				},
+				form: { ok: true, promoted: true }
+			} as never
+		});
+		expect(screen.getByText('Proposal created below.')).toBeInTheDocument();
+	});
+
+	// ── Pagination constant swap (sanity: existing logic still correct) ────────
+
+	it('pagination: REVIEW_PAGE_SIZE constant — hrefs still correct for total=120, offset=50', () => {
+		render(Page, {
+			props: makeData({
+				state: 'proposed',
+				offset: 50,
+				entries: Array.from({ length: 50 }, (_, i) => entry({ id: `m${i}`, content: `Mem ${i}` })),
+				total: 120
+			}) as never
+		});
+		const prevLink = screen.getByRole('link', { name: /prev/i });
+		const nextLink = screen.getByRole('link', { name: /next/i });
+		expect(prevLink).toHaveAttribute('href', '?state=proposed&offset=0');
+		expect(nextLink).toHaveAttribute('href', '?state=proposed&offset=100');
 	});
 });

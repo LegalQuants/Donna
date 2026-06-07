@@ -82,7 +82,9 @@
 	run produced them, each with a severity badge and a severity summary up top. A run can also
 	propose <strong>memories</strong> — durable notes it suggests keeping — listed under
 	<strong>Memories this run proposed</strong>. Proposed memories can be kept or dismissed right on
-	the receipt, or managed in the <strong>Review</strong> view. Results stream in live while the run works.
+	the receipt, or managed in the <strong>Review</strong> view. The Review view also lists
+	<strong>precedents</strong> — recurring patterns the agent noticed — which you can dismiss or promote
+	into a matter's context (you approve the final write). Results stream in live while the run works.
 </p>
 
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">Notifications</h2>
