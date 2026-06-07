@@ -15,11 +15,11 @@ ValueError: assemble_analysis_messages: skill registry not initialised (skill_re
 Observed on Donna's dev stack (single recurring schedule, `cron_expr: 0 9 * * *`,
 `skill_ref: dpa-checklist-review`):
 
-| Tick (UTC) | Worker image | Result |
-|---|---|---|
-| 2026-06-05 09:00 | pre-`0097b01` (older pin era) | **completed** |
-| 2026-06-06 09:00 | pre-rebuild | **failed** (error above) |
-| 2026-06-07 09:00 | rebuilt on `0097b01` | **failed** (error above) |
+| Tick (UTC)       | Worker image                  | Result                   |
+| ---------------- | ----------------------------- | ------------------------ |
+| 2026-06-05 09:00 | pre-`0097b01` (older pin era) | **completed**            |
+| 2026-06-06 09:00 | pre-rebuild                   | **failed** (error above) |
+| 2026-06-07 09:00 | rebuilt on `0097b01`          | **failed** (error above) |
 
 The 06-05 success on an older image suggests this is a **regression** somewhere in the range
 leading up to `0097b01` (e.g. if skill resolution previously loaded the registry lazily rather

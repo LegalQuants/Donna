@@ -1,6 +1,13 @@
 // src/lib/automations/display.test.ts
 import { describe, it, expect } from 'vitest';
-import { formatUsd, formatWhen, statusTone, terminalReasonLabel, outcomeTone } from './display';
+import {
+	formatUsd,
+	formatWhen,
+	statusTone,
+	terminalReasonLabel,
+	outcomeTone,
+	stateChipClass
+} from './display';
 
 describe('display helpers', () => {
 	it('outcomeTone maps started/success/other to distinct classes', () => {
@@ -28,5 +35,9 @@ describe('display helpers', () => {
 		expect(terminalReasonLabel('cost_cap_reached')).toBe('Cost cap reached');
 		expect(terminalReasonLabel('external_halt')).toBe('Halted');
 		expect(terminalReasonLabel(null)).toBe('In progress');
+	});
+	it('stateChipClass returns workflow class for proposed and neutral class for unknown', () => {
+		expect(stateChipClass('proposed')).toContain('mlq-workflow');
+		expect(stateChipClass('unknown-state')).toContain('mlq-muted');
 	});
 });

@@ -17,6 +17,7 @@
 ### Task 1: `$lib/automations/memory.ts` — types + defensive parse
 
 **Files:**
+
 - Create: `src/lib/automations/memory.ts`
 - Test: `src/lib/automations/memory.test.ts`
 
@@ -159,12 +160,14 @@ git push
 ### Task 2: `MemoryRow.svelte` — one queue row with state-dependent actions
 
 **Files:**
+
 - Create: `src/lib/automations/MemoryRow.svelte`
 - Test: `src/lib/automations/MemoryRow.svelte.test.ts`
 
 The row renders the entry + actions wired as **page-level form actions** (`?/keep`, `?/dismiss`, `?/delete`) — the component contains the `<form>`s; the page provides the actions. Read `src/lib/automations/ScheduleRow.svelte` first for the house two-step-delete + `use:enhance` idiom and copy its structure.
 
 Behavior contract:
+
 - Always: state chip (copy `stateChipClass` from `RunResults.svelte` — extract it into `memory.ts`? NO — keep duplication out: **move** `stateChipClass` into `$lib/automations/display.ts` and import it in BOTH RunResults and MemoryRow; display.ts already exists for shared formatting), free-text-safe `category` badge, `content`, created date via the existing date helper in `display.ts` (read it; reuse `formatWhen` if exported there or in `NotificationRow`'s source), "From run" link to `/automations/{source_session_id}` when set.
 - `state === 'proposed'`: buttons **Keep** (form → `?/keep`, hidden `id`), **Edit & keep** (toggles a textarea seeded with `content`; its form posts `?/keep` with hidden `id` + the textarea named `content`; Cancel collapses), **Dismiss** (form → `?/dismiss`).
 - `state === 'kept' | 'dismissed'` (and any unknown state): only **Delete** with two-step confirm ("Delete memory?" → Confirm delete / Cancel; form → `?/delete`).
@@ -259,6 +262,7 @@ describe('MemoryRow', () => {
 	let confirmingDelete = $state(false);
 	const actionable = $derived(memory.state === 'proposed');
 </script>
+
 <!-- card: chip + category badge + content + meta row (date · From run link) -->
 <!-- proposed: Keep form · Edit & keep toggle (textarea name="content" seeded once on open) · Dismiss form -->
 <!-- otherwise: Delete → "Delete memory?" + Confirm delete form / Cancel -->
@@ -282,12 +286,14 @@ git push
 ### Task 3: Review page server — load + keep/dismiss/delete actions
 
 **Files:**
+
 - Create: `src/routes/(app)/automations/review/+page.server.ts`
 - Test: `src/routes/(app)/automations/review/page.server.test.ts`
 
 Read `src/routes/(app)/automations/schedules/+page.server.ts` AND its test first — mirror the load/actions/fail patterns and the test's lqFetch mock harness exactly.
 
 Behavior contract:
+
 - `load`: `state` from `url.searchParams` (must be one of `MEMORY_STATES`, else default `proposed`); `offset` integer ≥ 0 (default 0); fixed `limit = 50`. Fetch `/api/v1/autonomous/memory?state=&limit=50&offset=`; non-OK → return `{ state, offset, error: true, entries: [], total: 0 }` (page-level error rendering — NOT a silent empty list; distinguish from a true empty queue). OK → `parseMemoryList` → `{ state, offset, entries, total }`. Also return `optedIn` the same way the schedules page does (read how it feeds `AutomationsGate` and copy it).
 - Actions (`keep`, `dismiss`, `del`): read `id` from the form data (`fail(400)` if missing). `keep` also reads optional `content` — include `{ content }` in the JSON body ONLY when it's a non-empty string after trim. POST (or DELETE for `del`) to the matching endpoint. Map: 403 → `fail(403, { error: 'Automations are turned off.' })`; 404 → `fail(404, { error: 'This memory no longer exists.', id })`; other non-OK → `fail(502, { error: 'Could not update the memory.', id })`. Success → `return { ok: true }`.
 - NOTE: name the delete action `del` is NOT house style — schedules uses `delete:` as a key (check the file; `delete` IS valid as an object key). Use `delete` exactly like schedules does.
@@ -310,6 +316,7 @@ git push
 ### Task 4: Review page UI + 5th nav tab
 
 **Files:**
+
 - Create: `src/routes/(app)/automations/review/+page.svelte`
 - Test: `src/routes/(app)/automations/review/page.svelte.test.ts`
 - Modify: `src/lib/automations/AutomationsNav.svelte` (tabs array)
@@ -318,6 +325,7 @@ git push
 Read `src/routes/(app)/automations/schedules/+page.svelte` (+ its page test if one exists) first; mirror its shell: WorkflowsNav → AutomationsNav → AutomationsGate-wrapped body.
 
 Page contract:
+
 - `AutomationsNav` gains `{ id: 'review', label: 'Review', href: '/automations/review' }` LAST (5 tabs); extend the View type union; nav test gains the new tab case (active state on `/automations/review`).
 - Body inside the gate: h2 "Memory"; the `SegmentedControl` (import from `$lib/preferences/SegmentedControl.svelte`, options from `MEMORY_STATES` with capitalized labels, `label="Memory state"`) — `onchange` performs `goto(`?state=${value}`)` (import `goto` from `$app/navigation`; resets offset).
 - List: `{#each data.entries as m (m.id)}<MemoryRow memory={m} error={rowError(m.id)} />` where `rowError` reads the page `form` prop (`form?.id === m.id ? form.error : null`).
@@ -343,6 +351,7 @@ git push
 ### Task 5: Receipt leftover 1+2 — memories total (overflow note) + inline keep/dismiss
 
 **Files:**
+
 - Modify: `src/lib/automations/findings.ts` (`parseRunMemories` → also return total)
 - Modify: `src/lib/automations/runOutput.server.ts` (+`memories_total`)
 - Modify: `src/lib/automations/RunResults.svelte` (overflow note + inline actions)
@@ -371,6 +380,7 @@ git push
 ### Task 6: Receipt leftover 3 — last-known-good poll retention
 
 **Files:**
+
 - Modify: `src/lib/automations/pollSession.svelte.ts`
 - Modify: `src/lib/automations/SessionDetail.svelte` (only if its deriveds need it)
 - Test: `src/lib/automations/pollSession.svelte.test.ts` (extend)
@@ -394,6 +404,7 @@ git push
 ### Task 7: Live e2e — `tests/automations-memory-review.spec.ts`
 
 **Files:**
+
 - Create: `tests/automations-memory-review.spec.ts`
 
 **Seeding (resolved at plan time):** the dev DB has ZERO memories and the API is GET-only (runs create memories internally) → seed via SQL. In the spec file use a helper:

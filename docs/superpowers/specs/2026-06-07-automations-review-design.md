@@ -13,10 +13,10 @@ matter's `context_md`, per upstream ADR 0013 D5).
 
 ## Shape: two sequential PRs, one Review home
 
-| | Branch | Contents |
-|---|---|---|
-| **PR D** | `feat/automations-memory-review` | `/automations/review` page + 5th nav tab + Memory queue + the three banked receipt leftovers |
-| **PR E** | `feat/automations-precedents` (off `main` after D merges) | Precedents + Proposals sections on the same page |
+|          | Branch                                                    | Contents                                                                                     |
+| -------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **PR D** | `feat/automations-memory-review`                          | `/automations/review` page + 5th nav tab + Memory queue + the three banked receipt leftovers |
+| **PR E** | `feat/automations-precedents` (off `main` after D merges) | Precedents + Proposals sections on the same page                                             |
 
 User decisions (2026-06-07): two PRs · one combined **Review** tab (not per-surface tabs) ·
 all three D leftovers included · proposals surface in Automations only (matter page untouched).
@@ -49,7 +49,7 @@ a deliberate activity, not a live view).
 - `/automations/review` (`+page.svelte` + `+page.server.ts`), wrapped in the existing
   `AutomationsGate` like its siblings.
 - `src/lib/automations/AutomationsNav.svelte`: 5th tab `{ id: 'review', label: 'Review',
-  href: '/automations/review' }` (order: Sessions · Schedules · Watches · Notifications · Review).
+href: '/automations/review' }` (order: Sessions · Schedules · Watches · Notifications · Review).
 
 ### Queue UI
 
@@ -129,7 +129,7 @@ after checking the dev DB). Self-cleaning via delete.
   Errors row-scoped: 404 → "no longer exists" (also covers promote-to-deleted-project);
   422/4xx body `detail` surfaced via the `errorDetail` helper where it adds precision.
 - New: `src/lib/automations/{precedents.ts,precedents.test.ts,PrecedentRow.svelte,
-  ProposalRow.svelte}` (+tests).
+ProposalRow.svelte}` (+tests).
 
 ### Verification (E)
 
