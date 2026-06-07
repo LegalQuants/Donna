@@ -32,4 +32,17 @@ describe('/automations/[id] page', () => {
 		await rerender({ data: mk('s2', 'manual') } as never);
 		expect(screen.getByText('trigger: manual')).toBeInTheDocument();
 	});
+
+	it('renders a page-level alert when form.error is set (e.g. 403 keep/dismiss failure)', () => {
+		render(Page, {
+			props: { data: mk('s1', 'manual'), form: { error: 'Automations are turned off.' } } as never
+		});
+		const alert = screen.getByRole('alert');
+		expect(alert).toHaveTextContent('Automations are turned off.');
+	});
+
+	it('renders no alert when form is null', () => {
+		render(Page, { props: { data: mk('s1', 'manual'), form: null } as never });
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
 });

@@ -28,6 +28,7 @@ describe('loadRunOutput', () => {
 		expect(out.findings).toHaveLength(1);
 		expect(out.findings_total).toBe(1);
 		expect(out.memories).toHaveLength(1);
+		expect(out.memories_total).toBe(1);
 	});
 	it('degrades a failed findings fetch to null without touching memories', async () => {
 		lqFetch
@@ -45,6 +46,7 @@ describe('loadRunOutput', () => {
 		const out = await loadRunOutput(ev, 's1');
 		expect(out.findings).toHaveLength(1);
 		expect(out.memories).toBeNull();
+		expect(out.memories_total).toBeNull();
 	});
 	it('degrades non-JSON bodies to null', async () => {
 		lqFetch

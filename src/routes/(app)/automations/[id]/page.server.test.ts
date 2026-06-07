@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 const lqFetch = vi.fn();
 vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(...a) }));
-import { load } from './+page.server';
+import { load, actions } from './+page.server';
 const ev = (id = 's1') => ({ params: { id } }) as never;
 beforeEach(() => lqFetch.mockReset());
 
@@ -131,5 +131,85 @@ describe('/automations/[id] load', () => {
 		const out = (await load(ev())) as { findings: null; memories: null };
 		expect(out.findings).toBeNull();
 		expect(out.memories).toBeNull();
+	});
+});
+
+function formData(fields: Record<string, string>) {
+	const fd = new FormData();
+	for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+	return fd;
+}
+
+describe('/automations/[id] actions', () => {
+	beforeEach(() => lqFetch.mockReset());
+
+	it('keepMemory: success → { ok: true }', async () => {
+		lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'm1' }), { status: 200 }));
+		const result = await actions.keepMemory({
+			request: { formData: async () => formData({ id: 'm1' }) }
+		} as never);
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/memory/m1/keep');
+		expect(result).toEqual({ ok: true });
+	});
+
+	it('dismissMemory: success → { ok: true }', async () => {
+		lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'm1' }), { status: 200 }));
+		const result = await actions.dismissMemory({
+			request: { formData: async () => formData({ id: 'm1' }) }
+		} as never);
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/memory/m1/dismiss');
+		expect(result).toEqual({ ok: true });
+	});
+
+	it('keepMemory: missing id → fail(400)', async () => {
+		const result = await actions.keepMemory({
+			request: { formData: async () => formData({}) }
+		} as never);
+		expect(result).toMatchObject({ status: 400 });
+	});
+
+	it('dismissMemory: missing id → fail(400)', async () => {
+		const result = await actions.dismissMemory({
+			request: { formData: async () => formData({}) }
+		} as never);
+		expect(result).toMatchObject({ status: 400 });
+	});
+
+	it('keepMemory: 403 → fail(403, { error })', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
+		const result = await actions.keepMemory({
+			request: { formData: async () => formData({ id: 'm1' }) }
+		} as never);
+		expect(result).toMatchObject({ status: 403, data: { error: 'Automations are turned off.' } });
+	});
+
+	it('keepMemory: 404 → fail(404, { error, id })', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('not found', { status: 404 }));
+		const result = await actions.keepMemory({
+			request: { formData: async () => formData({ id: 'm1' }) }
+		} as never);
+		expect(result).toMatchObject({
+			status: 404,
+			data: { error: 'This memory no longer exists.', id: 'm1' }
+		});
+	});
+
+	it('keepMemory: 500 → fail(502, { error, id })', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('server error', { status: 500 }));
+		const result = await actions.keepMemory({
+			request: { formData: async () => formData({ id: 'm1' }) }
+		} as never);
+		expect(result).toMatchObject({
+			status: 502,
+			data: { error: 'Could not update the memory.', id: 'm1' }
+		});
+	});
+
+	it('dismissMemory: 403 → fail(403, { error })', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
+		const result = await actions.dismissMemory({
+			request: { formData: async () => formData({ id: 'm1' }) }
+		} as never);
+		expect(result).toMatchObject({ status: 403, data: { error: 'Automations are turned off.' } });
 	});
 });
