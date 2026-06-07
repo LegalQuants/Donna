@@ -50,11 +50,13 @@ lets the admin persist `LQ.AI Admin → Donna Admin` while disabling Save on a t
 Clicking Edit sets `editing = true`, `nameInput = rebrandName(name)`, clears `msg`.
 
 **Edit mode:** `<form method="POST" action="?/updateProfile" use:enhance={onSubmit}>` containing:
+
 - `<input name="display_name" maxlength={200} bind:value={nameInput}>`
 - **Save** (`type="submit"`, disabled unless `canSave`)
 - **Cancel** (`type="button"` → `editing = false`, clears `msg`)
 
 `onSubmit` enhance callback:
+
 - `result.type === 'success'`: `msg = 'Name updated.'`, `editing = false`, `await invalidateAll()`.
   (The read-mode re-render with the new name is the primary confirmation; the message is a brief
   extra.) Render `msg` in a `<p role="status" aria-live="polite">` so it is announced.
@@ -115,7 +117,9 @@ is added. Edit → submit → server PATCH → success → `invalidateAll()` re-
 ## Testing
 
 ### Component — `src/lib/settings/EditableDisplayName.svelte.test.ts`
+
 Mock `$app/forms` (`enhance`) and `$app/navigation` (`invalidateAll`). Cases:
+
 - Read mode: renders the rebranded name and an "Edit" button; no input.
 - Click Edit: shows an input pre-filled with the rebranded value, plus Save and Cancel.
 - Save disabled when the input is cleared (empty) and when it equals the raw stored name
@@ -125,7 +129,9 @@ Mock `$app/forms` (`enhance`) and `$app/navigation` (`invalidateAll`). Cases:
 - Cancel returns to read mode (input gone, Edit button back).
 
 ### Server — `src/routes/(app)/settings/account/page.server.test.ts`
+
 Add an `updateProfile action` describe block (mirror the `disableMfa` mock setup):
+
 - Empty/whitespace `display_name` → `{ status: 400 }`, `lqFetch` not called.
 - 200 → PATCHes `/api/v1/users/me` with body `{ display_name: '<trimmed>' }` (method PATCH) and
   returns `{ profileSaved: true }`.
@@ -133,14 +139,17 @@ Add an `updateProfile action` describe block (mirror the `disableMfa` mock setup
 - Backend 500 → `{ status: 502, data: { profileError: /could not update/i } }`.
 
 ### Existing tests updated
+
 - `account/page.svelte.test.ts`: the "renders read-only profile fields + the not-editable note"
   test asserts `/aren't editable here yet/i` → change to `/email isn't editable/i`. (The name still
   renders via the component, so the email/role assertions stand.)
 - `tests/settings-account.spec.ts`: the `/aren't editable here yet/i` assertion → `/email isn't
-  editable/i`.
+editable/i`.
 
 ### Live e2e — `tests/settings-account.spec.ts` (round-trip, self-cleaning)
+
 In the existing account test (or a new one in the same file), after the read-only checks:
+
 1. Capture the current name (read the Edit input's value after clicking Edit, or the read-mode text).
 2. Click Edit, set the input to a sentinel (e.g. `Donna Admin E2E`), click Save.
 3. Assert read mode shows the sentinel and the "Name updated." status appears.
@@ -168,4 +177,4 @@ server serves the new component.
 ## Follow-up bookkeeping (after merge)
 
 - Mark **P1.3** consumed / the editable-profile note retired in the upstream relay doc if it still
-  references the read-only workaround (the ask itself is already in *Already landed*).
+  references the read-only workaround (the ask itself is already in _Already landed_).

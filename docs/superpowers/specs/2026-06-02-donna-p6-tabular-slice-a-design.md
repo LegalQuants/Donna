@@ -5,15 +5,15 @@
 
 ## What this is
 
-**Tabular Reviews** runs a *question-per-column* extraction across many documents at once and returns a
+**Tabular Reviews** runs a _question-per-column_ extraction across many documents at once and returns a
 grid where every cell is an extracted answer with a confidence badge and citations, exportable to
-Excel/CSV. Example: pick 12 NDAs, define columns *Governing law* · *Term* · *Auto-renewal?*, run → a
+Excel/CSV. Example: pick 12 NDAs, define columns _Governing law_ · _Term_ · _Auto-renewal?_, run → a
 12×3 cited table.
 
 The backend (lq-ai, fully built — `vendor/lq-ai/docs/tabular-review.md`) provides: synchronous cost
 preview, async execute → poll → cancel, an executions list, xlsx/csv export, and two ways to define
 columns (**ad-hoc** = name + NL query with optional per-column verification/tier-floor, or a registered
-**table skill**). The `/tabular` route is a 4-line stub today; the sidebar already has a *Tabular* entry.
+**table skill**). The `/tabular` route is a 4-line stub today; the sidebar already has a _Tabular_ entry.
 
 ## Slicing (agreed)
 
@@ -46,8 +46,8 @@ P6 ships as PR-sized slices, like Playbooks (A→B→C):
 ## Routes & flow
 
 - **`/tabular`** (replaces the stub) — the **builder** (single page):
-  - **Documents** panel, two tabs: *From a matter* (multi-select checkboxes over a matter's ready
-    files, fetched via SSR `load` keyed on `?matter=`) and *Upload* (batch PDF drop → ingest → rows).
+  - **Documents** panel, two tabs: _From a matter_ (multi-select checkboxes over a matter's ready
+    files, fetched via SSR `load` keyed on `?matter=`) and _Upload_ (batch PDF drop → ingest → rows).
   - **Columns** builder: rows of `name` + `query`, add/remove (no reorder).
   - **Sticky bottom bar:** live cell count (`docs × columns`, client math) + **Preview cost** + **Run
     review**. Run is disabled until ≥1 document and ≥1 valid column (named + non-empty query).
@@ -73,9 +73,22 @@ New `src/lib/tabular/`:
   `{[k]: unknown}`):
   ```ts
   type CellConfidence = 'high' | 'medium' | 'low' | 'failed';
-  interface TabularCell { value: string; cited_chunk_ids: string[]; confidence: CellConfidence; error?: string | null; }
-  interface TabularRow { document_id: string; document_name: string; cells: Record<string, TabularCell>; }
-  interface TabularResults { schema_version: string; rows: TabularRow[]; summary: { total_cells: number; failed_cells: number }; }
+  interface TabularCell {
+  	value: string;
+  	cited_chunk_ids: string[];
+  	confidence: CellConfidence;
+  	error?: string | null;
+  }
+  interface TabularRow {
+  	document_id: string;
+  	document_name: string;
+  	cells: Record<string, TabularCell>;
+  }
+  interface TabularResults {
+  	schema_version: string;
+  	rows: TabularRow[];
+  	summary: { total_cells: number; failed_cells: number };
+  }
   ```
 - **`tabularBuilder.svelte.ts`** — a `createTabularBuilder()` rune controller: selected documents
   (`{document_id, name}[]`), columns (`{name, query}[]`), `addColumn`/`removeColumn`/`setColumn`,
@@ -97,7 +110,7 @@ Components in `src/lib/tabular/`:
   `(failed)` cells styled with the error token; a summary line (`N cells · M failed`).
 - **`CellDetail.svelte`** — click-a-cell panel/popover: full `value`, confidence, citation **count**,
   and `error` if failed. (No source navigation in Slice A.)
-- **`ExportMenu.svelte`** — *Export ▾* → xlsx / csv; enabled only when `status === 'completed'`.
+- **`ExportMenu.svelte`** — _Export ▾_ → xlsx / csv; enabled only when `status === 'completed'`.
 
 BFF proxies (thin `lqFetch` forwards, mirroring Playbooks; error map: pass 503/504, else 502 — and 409
 surfaced where meaningful). Execution-**scoped** proxies live at a **top-level `/tabular-executions/[id]`**

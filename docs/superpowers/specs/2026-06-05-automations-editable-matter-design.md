@@ -49,7 +49,7 @@ Update schemas.
 
 ### 4. 404 disambiguation — both `[id]/+page.server.ts` `?/update` actions
 
-A PATCH 404 now means *either* "schedule/watch not found" *or* "referenced project not found".
+A PATCH 404 now means _either_ "schedule/watch not found" _or_ "referenced project not found".
 Upstream detail strings are distinguishable (`"project not found"` vs `"schedule/watch not found"`,
 conflation idiom in `_load_owned_project`). The action reads the 404 response body:
 

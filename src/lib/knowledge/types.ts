@@ -11,9 +11,9 @@ export type KBFile = components['schemas']['KBFile'];
  * `KBFile[]` list and the pending row is filtered out.
  */
 export type PendingUpload = {
-  file_id: string;
-  filename: string;
-  size_bytes: number;
-  status: 'pending' | 'processing' | 'ready' | 'failed';
-  ingestion_error?: string | null;
+	file_id: string;
+	filename: string;
+	size_bytes: number;
+	status: 'pending' | 'processing' | 'ready' | 'failed';
+	ingestion_error?: string | null;
 };

@@ -1,1 +1,146 @@
-{"session":{"id":"57fd529f-3c47-4e8e-8696-635e5f2474f1","user_id":"3c1337ba-20df-451c-9531-c0e1a4407aac","project_id":null,"trigger_kind":"manual","trigger_ref":null,"current_phase":"delivery","halt_state":"running","max_cost_usd":"2.0000","cost_total_usd":"0.0050","cost_cap_reached":false,"idle_halt_minutes":5,"last_activity_at":"2026-06-04T20:43:22.655112Z","status":"completed","params":{"since":null,"playbook_id":"a8e28d38-3fd5-47ea-b58b-71f540cf0d24"},"result":{"status":"completed","created_at":"2026-06-04T20:43:11.575334+00:00","halt_state":"running","session_id":"57fd529f-3c47-4e8e-8696-635e5f2474f1","tool_calls":[{"tool":"run_playbook","outcome":"started","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"run_playbook","outcome":"success","cost_usd":0.005,"timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"emit_finding","outcome":"started","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"emit_finding","outcome":"success","cost_usd":0.0,"timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"emit_finding","outcome":"started","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"emit_finding","outcome":"success","cost_usd":0.0,"timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"notify","outcome":"started","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"notify","outcome":"success","cost_usd":0.0,"timestamp":"2026-06-04T20:43:11.975719+00:00"}],"completed_at":"2026-06-04T20:43:22.656153+00:00","max_cost_usd":2.0,"trigger_kind":"manual","current_phase":"delivery","cost_total_usd":0.005,"terminal_reason":"completed","cost_cap_reached":false,"phase_transitions":[{"to_phase":"intake","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"to_phase":"analysis","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"to_phase":"drafting","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"to_phase":"ethics_review","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"to_phase":"delivery","timestamp":"2026-06-04T20:43:11.975719+00:00"}]},"error":null,"created_at":"2026-06-04T20:43:11.575334Z","updated_at":"2026-06-04T20:43:11.575334Z","completed_at":"2026-06-04T20:43:22.656153Z"},"receipt":{"session_id":"57fd529f-3c47-4e8e-8696-635e5f2474f1","trigger_kind":"manual","status":"completed","halt_state":"running","current_phase":"delivery","cost_total_usd":0.005,"max_cost_usd":2.0,"cost_cap_reached":false,"created_at":"2026-06-04T20:43:11.575334+00:00","completed_at":"2026-06-04T20:43:22.656153+00:00","phase_transitions":[{"to_phase":"intake","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"to_phase":"analysis","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"to_phase":"drafting","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"to_phase":"ethics_review","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"to_phase":"delivery","timestamp":"2026-06-04T20:43:11.975719+00:00"}],"tool_calls":[{"tool":"run_playbook","outcome":"started","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"run_playbook","outcome":"success","timestamp":"2026-06-04T20:43:11.975719+00:00","cost_usd":0.005},{"tool":"emit_finding","outcome":"started","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"emit_finding","outcome":"success","timestamp":"2026-06-04T20:43:11.975719+00:00","cost_usd":0.0},{"tool":"emit_finding","outcome":"started","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"emit_finding","outcome":"success","timestamp":"2026-06-04T20:43:11.975719+00:00","cost_usd":0.0},{"tool":"notify","outcome":"started","timestamp":"2026-06-04T20:43:11.975719+00:00"},{"tool":"notify","outcome":"success","timestamp":"2026-06-04T20:43:11.975719+00:00","cost_usd":0.0}],"terminal_reason":"completed"}}
+{
+	"session": {
+		"id": "57fd529f-3c47-4e8e-8696-635e5f2474f1",
+		"user_id": "3c1337ba-20df-451c-9531-c0e1a4407aac",
+		"project_id": null,
+		"trigger_kind": "manual",
+		"trigger_ref": null,
+		"current_phase": "delivery",
+		"halt_state": "running",
+		"max_cost_usd": "2.0000",
+		"cost_total_usd": "0.0050",
+		"cost_cap_reached": false,
+		"idle_halt_minutes": 5,
+		"last_activity_at": "2026-06-04T20:43:22.655112Z",
+		"status": "completed",
+		"params": { "since": null, "playbook_id": "a8e28d38-3fd5-47ea-b58b-71f540cf0d24" },
+		"result": {
+			"status": "completed",
+			"created_at": "2026-06-04T20:43:11.575334+00:00",
+			"halt_state": "running",
+			"session_id": "57fd529f-3c47-4e8e-8696-635e5f2474f1",
+			"tool_calls": [
+				{
+					"tool": "run_playbook",
+					"outcome": "started",
+					"timestamp": "2026-06-04T20:43:11.975719+00:00"
+				},
+				{
+					"tool": "run_playbook",
+					"outcome": "success",
+					"cost_usd": 0.005,
+					"timestamp": "2026-06-04T20:43:11.975719+00:00"
+				},
+				{
+					"tool": "emit_finding",
+					"outcome": "started",
+					"timestamp": "2026-06-04T20:43:11.975719+00:00"
+				},
+				{
+					"tool": "emit_finding",
+					"outcome": "success",
+					"cost_usd": 0.0,
+					"timestamp": "2026-06-04T20:43:11.975719+00:00"
+				},
+				{
+					"tool": "emit_finding",
+					"outcome": "started",
+					"timestamp": "2026-06-04T20:43:11.975719+00:00"
+				},
+				{
+					"tool": "emit_finding",
+					"outcome": "success",
+					"cost_usd": 0.0,
+					"timestamp": "2026-06-04T20:43:11.975719+00:00"
+				},
+				{ "tool": "notify", "outcome": "started", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+				{
+					"tool": "notify",
+					"outcome": "success",
+					"cost_usd": 0.0,
+					"timestamp": "2026-06-04T20:43:11.975719+00:00"
+				}
+			],
+			"completed_at": "2026-06-04T20:43:22.656153+00:00",
+			"max_cost_usd": 2.0,
+			"trigger_kind": "manual",
+			"current_phase": "delivery",
+			"cost_total_usd": 0.005,
+			"terminal_reason": "completed",
+			"cost_cap_reached": false,
+			"phase_transitions": [
+				{ "to_phase": "intake", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+				{ "to_phase": "analysis", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+				{ "to_phase": "drafting", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+				{ "to_phase": "ethics_review", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+				{ "to_phase": "delivery", "timestamp": "2026-06-04T20:43:11.975719+00:00" }
+			]
+		},
+		"error": null,
+		"created_at": "2026-06-04T20:43:11.575334Z",
+		"updated_at": "2026-06-04T20:43:11.575334Z",
+		"completed_at": "2026-06-04T20:43:22.656153Z"
+	},
+	"receipt": {
+		"session_id": "57fd529f-3c47-4e8e-8696-635e5f2474f1",
+		"trigger_kind": "manual",
+		"status": "completed",
+		"halt_state": "running",
+		"current_phase": "delivery",
+		"cost_total_usd": 0.005,
+		"max_cost_usd": 2.0,
+		"cost_cap_reached": false,
+		"created_at": "2026-06-04T20:43:11.575334+00:00",
+		"completed_at": "2026-06-04T20:43:22.656153+00:00",
+		"phase_transitions": [
+			{ "to_phase": "intake", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+			{ "to_phase": "analysis", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+			{ "to_phase": "drafting", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+			{ "to_phase": "ethics_review", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+			{ "to_phase": "delivery", "timestamp": "2026-06-04T20:43:11.975719+00:00" }
+		],
+		"tool_calls": [
+			{
+				"tool": "run_playbook",
+				"outcome": "started",
+				"timestamp": "2026-06-04T20:43:11.975719+00:00"
+			},
+			{
+				"tool": "run_playbook",
+				"outcome": "success",
+				"timestamp": "2026-06-04T20:43:11.975719+00:00",
+				"cost_usd": 0.005
+			},
+			{
+				"tool": "emit_finding",
+				"outcome": "started",
+				"timestamp": "2026-06-04T20:43:11.975719+00:00"
+			},
+			{
+				"tool": "emit_finding",
+				"outcome": "success",
+				"timestamp": "2026-06-04T20:43:11.975719+00:00",
+				"cost_usd": 0.0
+			},
+			{
+				"tool": "emit_finding",
+				"outcome": "started",
+				"timestamp": "2026-06-04T20:43:11.975719+00:00"
+			},
+			{
+				"tool": "emit_finding",
+				"outcome": "success",
+				"timestamp": "2026-06-04T20:43:11.975719+00:00",
+				"cost_usd": 0.0
+			},
+			{ "tool": "notify", "outcome": "started", "timestamp": "2026-06-04T20:43:11.975719+00:00" },
+			{
+				"tool": "notify",
+				"outcome": "success",
+				"timestamp": "2026-06-04T20:43:11.975719+00:00",
+				"cost_usd": 0.0
+			}
+		],
+		"terminal_reason": "completed"
+	}
+}

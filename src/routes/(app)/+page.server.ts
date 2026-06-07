@@ -6,39 +6,59 @@ import { parseDraftSkillInputs } from './chats/[id]/draftSkillInputs';
 import { parseDraftFileIds } from './chats/[id]/draftFileIds';
 
 export const load: PageServerLoad = async (event) => {
-  const res = await lqFetch(event, '/api/v1/projects');
-  const matters = res.ok ? activeMatters((await res.json()) as Matter[]) : [];
-  return { matters };
+	const res = await lqFetch(event, '/api/v1/projects');
+	const matters = res.ok ? activeMatters((await res.json()) as Matter[]) : [];
+	return { matters };
 };
 
 export const actions: Actions = {
-  start: async (event) => {
-    const data = await event.request.formData();
-    const message = String(data.get('message') ?? '').trim();
-    const projectId = String(data.get('project_id') ?? '').trim();
-    const skills = data.getAll('skills').map(String).filter(Boolean);
-    const skillInputs = parseDraftSkillInputs(String(data.get('skill_inputs') ?? ''));
-    const fileIds = parseDraftFileIds(String(data.get('file_ids') ?? ''));
+	start: async (event) => {
+		const data = await event.request.formData();
+		const message = String(data.get('message') ?? '').trim();
+		const projectId = String(data.get('project_id') ?? '').trim();
+		const skills = data.getAll('skills').map(String).filter(Boolean);
+		const skillInputs = parseDraftSkillInputs(String(data.get('skill_inputs') ?? ''));
+		const fileIds = parseDraftFileIds(String(data.get('file_ids') ?? ''));
 
-    const res = await lqFetch(event, '/api/v1/chats', {
-      method: 'POST',
-      body: JSON.stringify(projectId ? { project_id: projectId } : {})
-    });
-    if (!res.ok) return fail(502, { error: 'Could not start a chat. Please try again.' });
+		const res = await lqFetch(event, '/api/v1/chats', {
+			method: 'POST',
+			body: JSON.stringify(projectId ? { project_id: projectId } : {})
+		});
+		if (!res.ok) return fail(502, { error: 'Could not start a chat. Please try again.' });
 
-    const chat = (await res.json()) as { id: string };
-    if (message) {
-      event.cookies.set('donna_draft', message, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
-    }
-    if (skills.length) {
-      event.cookies.set('donna_draft_skills', JSON.stringify(skills), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
-    }
-    if (Object.keys(skillInputs).length) {
-      event.cookies.set('donna_draft_skill_inputs', JSON.stringify(skillInputs), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
-    }
-    if (fileIds.length) {
-      event.cookies.set('donna_draft_file_ids', JSON.stringify(fileIds), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 120 });
-    }
-    throw redirect(303, `/chats/${chat.id}`);
-  }
+		const chat = (await res.json()) as { id: string };
+		if (message) {
+			event.cookies.set('donna_draft', message, {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				maxAge: 120
+			});
+		}
+		if (skills.length) {
+			event.cookies.set('donna_draft_skills', JSON.stringify(skills), {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				maxAge: 120
+			});
+		}
+		if (Object.keys(skillInputs).length) {
+			event.cookies.set('donna_draft_skill_inputs', JSON.stringify(skillInputs), {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				maxAge: 120
+			});
+		}
+		if (fileIds.length) {
+			event.cookies.set('donna_draft_file_ids', JSON.stringify(fileIds), {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				maxAge: 120
+			});
+		}
+		throw redirect(303, `/chats/${chat.id}`);
+	}
 };

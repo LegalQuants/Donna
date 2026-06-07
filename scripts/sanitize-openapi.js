@@ -72,7 +72,13 @@ const fixed = lines.map((line) => {
 	}
 
 	// Skip flow mappings, references, anchors, and other special YAML values
-	if (value.startsWith('{') || value.startsWith('[') || value.startsWith('*') || value.startsWith('&') || value.startsWith('!')) {
+	if (
+		value.startsWith('{') ||
+		value.startsWith('[') ||
+		value.startsWith('*') ||
+		value.startsWith('&') ||
+		value.startsWith('!')
+	) {
 		return line;
 	}
 

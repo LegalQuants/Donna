@@ -36,6 +36,7 @@
 ## Task 1: MfaDisableModal
 
 **Files:**
+
 - Create: `src/lib/settings/MfaDisableModal.svelte`
 - Test: `src/lib/settings/MfaDisableModal.svelte.test.ts`
 
@@ -54,25 +55,25 @@ vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
 vi.mock('$app/navigation', () => ({ invalidateAll: vi.fn() }));
 
 describe('MfaDisableModal', () => {
-  it('renders nothing when closed', () => {
-    render(MfaDisableModal, { props: { open: false } });
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
+	it('renders nothing when closed', () => {
+		render(MfaDisableModal, { props: { open: false } });
+		expect(screen.queryByRole('dialog')).toBeNull();
+	});
 
-  it('renders password + code fields and a Disable submit posting ?/disableMfa', () => {
-    const { container } = render(MfaDisableModal, { props: { open: true } });
-    expect(screen.getByLabelText('Password')).toBeInTheDocument();
-    expect(screen.getByLabelText('Authentication code')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument();
-    expect(container.querySelector('form')).toHaveAttribute('action', '?/disableMfa');
-  });
+	it('renders password + code fields and a Disable submit posting ?/disableMfa', () => {
+		const { container } = render(MfaDisableModal, { props: { open: true } });
+		expect(screen.getByLabelText('Password')).toBeInTheDocument();
+		expect(screen.getByLabelText('Authentication code')).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument();
+		expect(container.querySelector('form')).toHaveAttribute('action', '?/disableMfa');
+	});
 
-  it('calls onclose on Cancel', async () => {
-    const onclose = vi.fn();
-    render(MfaDisableModal, { props: { open: true, onclose } });
-    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(onclose).toHaveBeenCalled();
-  });
+	it('calls onclose on Cancel', async () => {
+		const onclose = vi.fn();
+		render(MfaDisableModal, { props: { open: true, onclose } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		expect(onclose).toHaveBeenCalled();
+	});
 });
 ```
 
@@ -154,6 +155,7 @@ git commit -m "feat(settings): MfaDisableModal — confirm dialog for disabling 
 ## Task 2: Account page + disableMfa action
 
 **Files:**
+
 - Create: `src/routes/(app)/settings/account/+page.server.ts`
 - Create: `src/routes/(app)/settings/account/page.server.test.ts`
 - Create: `src/routes/(app)/settings/account/+page.svelte`
@@ -172,36 +174,44 @@ vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(.
 import { actions } from './+page.server';
 
 const formEvent = (fields: Record<string, string>) =>
-  ({ request: new Request('http://x', { method: 'POST', body: new URLSearchParams(fields) }) }) as never;
+	({
+		request: new Request('http://x', { method: 'POST', body: new URLSearchParams(fields) })
+	}) as never;
 
 beforeEach(() => lqFetch.mockReset());
 
 describe('disableMfa action', () => {
-  it('rejects empty fields without calling the backend', async () => {
-    const r = await actions.disableMfa(formEvent({ password: '', code: '' }));
-    expect(r).toMatchObject({ status: 400 });
-    expect(lqFetch).not.toHaveBeenCalled();
-  });
+	it('rejects empty fields without calling the backend', async () => {
+		const r = await actions.disableMfa(formEvent({ password: '', code: '' }));
+		expect(r).toMatchObject({ status: 400 });
+		expect(lqFetch).not.toHaveBeenCalled();
+	});
 
-  it('POSTs password+code and returns success on 204', async () => {
-    lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
-    const r = await actions.disableMfa(formEvent({ password: 'pw', code: '123456' }));
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/auth/mfa/disable');
-    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ password: 'pw', code: '123456' });
-    expect(r).toEqual({ success: true });
-  });
+	it('POSTs password+code and returns success on 204', async () => {
+		lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
+		const r = await actions.disableMfa(formEvent({ password: 'pw', code: '123456' }));
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/auth/mfa/disable');
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ password: 'pw', code: '123456' });
+		expect(r).toEqual({ success: true });
+	});
 
-  it('maps 401 to a generic inline error', async () => {
-    lqFetch.mockResolvedValue(new Response(null, { status: 401 }));
-    const r = await actions.disableMfa(formEvent({ password: 'pw', code: '000000' }));
-    expect(r).toMatchObject({ status: 401, data: { mfaError: expect.stringMatching(/incorrect/i) } });
-  });
+	it('maps 401 to a generic inline error', async () => {
+		lqFetch.mockResolvedValue(new Response(null, { status: 401 }));
+		const r = await actions.disableMfa(formEvent({ password: 'pw', code: '000000' }));
+		expect(r).toMatchObject({
+			status: 401,
+			data: { mfaError: expect.stringMatching(/incorrect/i) }
+		});
+	});
 
-  it('maps other failures to a generic retry error', async () => {
-    lqFetch.mockResolvedValue(new Response(null, { status: 500 }));
-    const r = await actions.disableMfa(formEvent({ password: 'pw', code: '123456' }));
-    expect(r).toMatchObject({ status: 500, data: { mfaError: expect.stringMatching(/could not disable/i) } });
-  });
+	it('maps other failures to a generic retry error', async () => {
+		lqFetch.mockResolvedValue(new Response(null, { status: 500 }));
+		const r = await actions.disableMfa(formEvent({ password: 'pw', code: '123456' }));
+		expect(r).toMatchObject({
+			status: 500,
+			data: { mfaError: expect.stringMatching(/could not disable/i) }
+		});
+	});
 });
 ```
 
@@ -218,20 +228,21 @@ import { lqFetch } from '$lib/server/lqClient';
 
 // No `load`: the profile comes from `data.user` (merged from the (app) layout).
 export const actions: Actions = {
-  disableMfa: async (event) => {
-    const form = await event.request.formData();
-    const password = String(form.get('password') ?? '');
-    const code = String(form.get('code') ?? '');
-    if (!password || !code) return fail(400, { mfaError: 'Enter your password and a current code.' });
+	disableMfa: async (event) => {
+		const form = await event.request.formData();
+		const password = String(form.get('password') ?? '');
+		const code = String(form.get('code') ?? '');
+		if (!password || !code)
+			return fail(400, { mfaError: 'Enter your password and a current code.' });
 
-    const res = await lqFetch(event, '/api/v1/auth/mfa/disable', {
-      method: 'POST',
-      body: JSON.stringify({ password, code })
-    });
-    if (res.status === 204 || res.ok) return { success: true };
-    if (res.status === 401) return fail(401, { mfaError: 'That password or code was incorrect.' });
-    return fail(res.status, { mfaError: 'Could not disable two-factor. Please try again.' });
-  }
+		const res = await lqFetch(event, '/api/v1/auth/mfa/disable', {
+			method: 'POST',
+			body: JSON.stringify({ password, code })
+		});
+		if (res.status === 204 || res.ok) return { success: true };
+		if (res.status === 401) return fail(401, { mfaError: 'That password or code was incorrect.' });
+		return fail(res.status, { mfaError: 'Could not disable two-factor. Please try again.' });
+	}
 };
 ```
 
@@ -255,39 +266,54 @@ vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
 vi.mock('$app/navigation', () => ({ invalidateAll: vi.fn() }));
 
 const user = (over: Record<string, unknown> = {}) => ({
-  id: 'u1', email: 'ada@firm.com', display_name: 'Ada Counsel', is_admin: true, role: 'admin',
-  mfa_enabled: false, must_change_password: false, reasoning_visibility: 'disclosure',
-  featured_tools: 'prominent', workspace_layout: 'three_pane', trust_pills: 'labels',
-  provenance_pills: 'always', created_at: '2026-01-05T00:00:00Z', last_login_at: '2026-05-30T00:00:00Z', ...over
+	id: 'u1',
+	email: 'ada@firm.com',
+	display_name: 'Ada Counsel',
+	is_admin: true,
+	role: 'admin',
+	mfa_enabled: false,
+	must_change_password: false,
+	reasoning_visibility: 'disclosure',
+	featured_tools: 'prominent',
+	workspace_layout: 'three_pane',
+	trust_pills: 'labels',
+	provenance_pills: 'always',
+	created_at: '2026-01-05T00:00:00Z',
+	last_login_at: '2026-05-30T00:00:00Z',
+	...over
 });
-const props = (over: Record<string, unknown> = {}) => ({ data: { user: user(over) }, form: null }) as never;
+const props = (over: Record<string, unknown> = {}) =>
+	({ data: { user: user(over) }, form: null }) as never;
 
 describe('/settings/account', () => {
-  it('renders read-only profile fields + the not-editable note', () => {
-    render(Page, props());
-    expect(screen.getByText('ada@firm.com')).toBeInTheDocument();
-    expect(screen.getByText('admin')).toBeInTheDocument();
-    expect(screen.getByText(/aren't editable here yet/i)).toBeInTheDocument();
-  });
+	it('renders read-only profile fields + the not-editable note', () => {
+		render(Page, props());
+		expect(screen.getByText('ada@firm.com')).toBeInTheDocument();
+		expect(screen.getByText('admin')).toBeInTheDocument();
+		expect(screen.getByText(/aren't editable here yet/i)).toBeInTheDocument();
+	});
 
-  it('links Change password to /change-password', () => {
-    render(Page, props());
-    expect(screen.getByRole('link', { name: 'Change' })).toHaveAttribute('href', '/change-password');
-  });
+	it('links Change password to /change-password', () => {
+		render(Page, props());
+		expect(screen.getByRole('link', { name: 'Change' })).toHaveAttribute(
+			'href',
+			'/change-password'
+		);
+	});
 
-  it('shows Off and no Disable button when MFA is disabled', () => {
-    render(Page, props({ mfa_enabled: false }));
-    expect(screen.getByText('Off')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Disable' })).toBeNull();
-  });
+	it('shows Off and no Disable button when MFA is disabled', () => {
+		render(Page, props({ mfa_enabled: false }));
+		expect(screen.getByText('Off')).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Disable' })).toBeNull();
+	});
 
-  it('shows a Disable button when MFA is enabled, and clicking it opens the modal', async () => {
-    render(Page, props({ mfa_enabled: true }));
-    const btn = screen.getByRole('button', { name: 'Disable' });
-    expect(btn).toBeInTheDocument();
-    await fireEvent.click(btn);
-    expect(screen.getByRole('dialog', { name: /disable two-factor/i })).toBeInTheDocument();
-  });
+	it('shows a Disable button when MFA is enabled, and clicking it opens the modal', async () => {
+		render(Page, props({ mfa_enabled: true }));
+		const btn = screen.getByRole('button', { name: 'Disable' });
+		expect(btn).toBeInTheDocument();
+		await fireEvent.click(btn);
+		expect(screen.getByRole('dialog', { name: /disable two-factor/i })).toBeInTheDocument();
+	});
 });
 ```
 
@@ -300,17 +326,19 @@ Expected: FAIL — `./+page.svelte` does not exist.
 
 ```svelte
 <script lang="ts">
-  import MfaDisableModal from '$lib/settings/MfaDisableModal.svelte';
-  import type { PageProps } from './$types';
+	import MfaDisableModal from '$lib/settings/MfaDisableModal.svelte';
+	import type { PageProps } from './$types';
 
-  let { data }: PageProps = $props();
-  const user = $derived(data.user);
-  let mfaModalOpen = $state(false);
+	let { data }: PageProps = $props();
+	const user = $derived(data.user);
+	let mfaModalOpen = $state(false);
 
-  const fmtMonthYear = (s: string | null | undefined) =>
-    s ? new Date(s).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—';
-  const fmtDate = (s: string | null | undefined) =>
-    s ? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+	const fmtMonthYear = (s: string | null | undefined) =>
+		s ? new Date(s).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—';
+	const fmtDate = (s: string | null | undefined) =>
+		s
+			? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+			: '—';
 </script>
 
 <svelte:head><title>Account — Donna</title></svelte:head>
@@ -318,36 +346,70 @@ Expected: FAIL — `./+page.svelte` does not exist.
 <h1 class="mb-4 text-xl font-medium text-mlq-text">Account</h1>
 
 <section class="rounded-mlq-control border border-mlq-subtle">
-  <h2 class="border-b border-mlq-subtle px-4 py-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Profile</h2>
-  <dl class="divide-y divide-mlq-subtle text-sm">
-    <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Name</dt><dd class="text-mlq-text">{user?.display_name || '—'}</dd></div>
-    <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Email</dt><dd class="text-mlq-text">{user?.email}</dd></div>
-    <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Role</dt><dd class="capitalize text-mlq-text">{user?.role}</dd></div>
-    <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Member since</dt><dd class="text-mlq-text">{fmtMonthYear(user?.created_at)}</dd></div>
-    <div class="flex justify-between px-4 py-2"><dt class="text-mlq-muted">Last sign-in</dt><dd class="text-mlq-text">{fmtDate(user?.last_login_at)}</dd></div>
-  </dl>
-  <p class="px-4 py-2 text-xs text-mlq-muted">Name and email aren't editable here yet.</p>
+	<h2
+		class="border-b border-mlq-subtle px-4 py-2 text-xs font-medium tracking-wide text-mlq-muted uppercase"
+	>
+		Profile
+	</h2>
+	<dl class="divide-y divide-mlq-subtle text-sm">
+		<div class="flex justify-between px-4 py-2">
+			<dt class="text-mlq-muted">Name</dt>
+			<dd class="text-mlq-text">{user?.display_name || '—'}</dd>
+		</div>
+		<div class="flex justify-between px-4 py-2">
+			<dt class="text-mlq-muted">Email</dt>
+			<dd class="text-mlq-text">{user?.email}</dd>
+		</div>
+		<div class="flex justify-between px-4 py-2">
+			<dt class="text-mlq-muted">Role</dt>
+			<dd class="text-mlq-text capitalize">{user?.role}</dd>
+		</div>
+		<div class="flex justify-between px-4 py-2">
+			<dt class="text-mlq-muted">Member since</dt>
+			<dd class="text-mlq-text">{fmtMonthYear(user?.created_at)}</dd>
+		</div>
+		<div class="flex justify-between px-4 py-2">
+			<dt class="text-mlq-muted">Last sign-in</dt>
+			<dd class="text-mlq-text">{fmtDate(user?.last_login_at)}</dd>
+		</div>
+	</dl>
+	<p class="px-4 py-2 text-xs text-mlq-muted">Name and email aren't editable here yet.</p>
 </section>
 
 <section class="mt-6 rounded-mlq-control border border-mlq-subtle">
-  <h2 class="border-b border-mlq-subtle px-4 py-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Security</h2>
-  <div class="flex items-center justify-between px-4 py-3 text-sm">
-    <div>
-      <div class="text-mlq-text">Password</div>
-      <div class="text-xs text-mlq-muted">Changing your password signs you out of other sessions.</div>
-    </div>
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app change-password link -->
-    <a href="/change-password" class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:bg-mlq-subtle/50">Change</a>
-  </div>
-  <div class="flex items-center justify-between border-t border-mlq-subtle px-4 py-3 text-sm">
-    <div>
-      <div class="text-mlq-text">Two-factor authentication</div>
-      <div class="text-xs text-mlq-muted">{user?.mfa_enabled ? 'On' : 'Off'}</div>
-    </div>
-    {#if user?.mfa_enabled}
-      <button type="button" onclick={() => (mfaModalOpen = true)} class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:bg-mlq-subtle/50">Disable</button>
-    {/if}
-  </div>
+	<h2
+		class="border-b border-mlq-subtle px-4 py-2 text-xs font-medium tracking-wide text-mlq-muted uppercase"
+	>
+		Security
+	</h2>
+	<div class="flex items-center justify-between px-4 py-3 text-sm">
+		<div>
+			<div class="text-mlq-text">Password</div>
+			<div class="text-xs text-mlq-muted">
+				Changing your password signs you out of other sessions.
+			</div>
+		</div>
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app change-password link -->
+		<a
+			href="/change-password"
+			class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:bg-mlq-subtle/50"
+			>Change</a
+		>
+	</div>
+	<div class="flex items-center justify-between border-t border-mlq-subtle px-4 py-3 text-sm">
+		<div>
+			<div class="text-mlq-text">Two-factor authentication</div>
+			<div class="text-xs text-mlq-muted">{user?.mfa_enabled ? 'On' : 'Off'}</div>
+		</div>
+		{#if user?.mfa_enabled}
+			<button
+				type="button"
+				onclick={() => (mfaModalOpen = true)}
+				class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:bg-mlq-subtle/50"
+				>Disable</button
+			>
+		{/if}
+	</div>
 </section>
 
 <MfaDisableModal open={mfaModalOpen} onclose={() => (mfaModalOpen = false)} />
@@ -374,6 +436,7 @@ git commit -m "feat(settings): Account page — read-only profile, password link
 ## Task 3: Settings shell (rail + layout + redirect)
 
 **Files:**
+
 - Create: `src/lib/settings/SettingsRail.svelte` + `src/lib/settings/SettingsRail.svelte.test.ts`
 - Create: `src/routes/(app)/settings/+layout.svelte`
 - Create: `src/routes/(app)/settings/+page.server.ts`
@@ -388,22 +451,31 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 
 const h = vi.hoisted(() => ({ pathname: '/settings/account' }));
-vi.mock('$app/state', () => ({ page: { get url() { return new URL('http://localhost' + h.pathname); } } }));
+vi.mock('$app/state', () => ({
+	page: {
+		get url() {
+			return new URL('http://localhost' + h.pathname);
+		}
+	}
+}));
 
 import SettingsRail from './SettingsRail.svelte';
 
 describe('SettingsRail', () => {
-  it('renders the Account section link', () => {
-    h.pathname = '/settings/account';
-    render(SettingsRail);
-    expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute('href', '/settings/account');
-  });
+	it('renders the Account section link', () => {
+		h.pathname = '/settings/account';
+		render(SettingsRail);
+		expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute(
+			'href',
+			'/settings/account'
+		);
+	});
 
-  it('marks Account active on /settings/account', () => {
-    h.pathname = '/settings/account';
-    render(SettingsRail);
-    expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
-  });
+	it('marks Account active on /settings/account', () => {
+		h.pathname = '/settings/account';
+		render(SettingsRail);
+		expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page');
+	});
 });
 ```
 
@@ -416,25 +488,30 @@ Expected: FAIL — `./SettingsRail.svelte` does not exist.
 
 ```svelte
 <script lang="ts">
-  import { page } from '$app/state';
+	import { page } from '$app/state';
 
-  // Built sections only (no dead UI); later P7 slices add their entry.
-  const sections: { href: string; label: string }[] = [
-    { href: '/settings/account', label: 'Account' }
-  ];
-  const isActive = (href: string) => page.url.pathname === href || page.url.pathname.startsWith(href + '/');
+	// Built sections only (no dead UI); later P7 slices add their entry.
+	const sections: { href: string; label: string }[] = [
+		{ href: '/settings/account', label: 'Account' }
+	];
+	const isActive = (href: string) =>
+		page.url.pathname === href || page.url.pathname.startsWith(href + '/');
 </script>
 
 <nav aria-label="Settings sections" class="flex flex-row gap-1 sm:w-44 sm:flex-col">
-  {#each sections as s (s.href)}
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- settings section link -->
-    <a href={s.href}
-       aria-current={isActive(s.href) ? 'page' : undefined}
-       class="rounded-mlq-control px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow
-              {isActive(s.href) ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text hover:bg-mlq-subtle/50'}">
-      {s.label}
-    </a>
-  {/each}
+	{#each sections as s (s.href)}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- settings section link -->
+		<a
+			href={s.href}
+			aria-current={isActive(s.href) ? 'page' : undefined}
+			class="rounded-mlq-control px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-mlq-workflow focus-visible:outline-none
+              {isActive(s.href)
+				? 'bg-mlq-subtle text-mlq-strong'
+				: 'text-mlq-text hover:bg-mlq-subtle/50'}"
+		>
+			{s.label}
+		</a>
+	{/each}
 </nav>
 ```
 
@@ -447,13 +524,13 @@ Expected: PASS (2 tests).
 
 ```svelte
 <script lang="ts">
-  import SettingsRail from '$lib/settings/SettingsRail.svelte';
-  let { children } = $props();
+	import SettingsRail from '$lib/settings/SettingsRail.svelte';
+	let { children } = $props();
 </script>
 
 <div class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 sm:flex-row">
-  <SettingsRail />
-  <div class="min-w-0 flex-1">{@render children()}</div>
+	<SettingsRail />
+	<div class="min-w-0 flex-1">{@render children()}</div>
 </div>
 ```
 
@@ -464,7 +541,7 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-  throw redirect(307, '/settings/account');
+	throw redirect(307, '/settings/account');
 };
 ```
 
@@ -485,6 +562,7 @@ git commit -m "feat(settings): /settings shell — section rail, layout, redirec
 ## Task 4: Sidebar ⚙ Settings entry
 
 **Files:**
+
 - Modify: `src/lib/components/Sidebar.svelte`
 - Modify: `src/lib/components/Sidebar.svelte.test.ts`
 
@@ -493,13 +571,13 @@ git commit -m "feat(settings): /settings shell — section rail, layout, redirec
 In `src/lib/components/Sidebar.svelte.test.ts` (which already has the `vi.hoisted` `h.pathname` mock + `import Sidebar`), add inside the `describe('Sidebar', …)` block:
 
 ```ts
-  it('has a Settings entry pointing at /settings, active on /settings/*', () => {
-    h.pathname = '/settings/account';
-    render(Sidebar, { props: { displayName: 'Admin' } });
-    const link = screen.getByRole('link', { name: 'Settings' });
-    expect(link).toHaveAttribute('href', '/settings');
-    expect(link).toHaveAttribute('aria-current', 'page');
-  });
+it('has a Settings entry pointing at /settings, active on /settings/*', () => {
+	h.pathname = '/settings/account';
+	render(Sidebar, { props: { displayName: 'Admin' } });
+	const link = screen.getByRole('link', { name: 'Settings' });
+	expect(link).toHaveAttribute('href', '/settings');
+	expect(link).toHaveAttribute('aria-current', 'page');
+});
 ```
 
 - [ ] **Step 2: Run it to verify it fails**
@@ -510,29 +588,45 @@ Expected: the new test FAILS (no Settings link yet); existing tests still pass.
 - [ ] **Step 3: Edit `Sidebar.svelte`**
 
 (a) Add `Settings` to the Lucide import (line 2):
+
 ```ts
-  import { MessageSquare, FolderKanban, Workflow, Table, PanelLeft, LogOut, Settings } from '@lucide/svelte';
+import {
+	MessageSquare,
+	FolderKanban,
+	Workflow,
+	Table,
+	PanelLeft,
+	LogOut,
+	Settings
+} from '@lucide/svelte';
 ```
 
 (b) Replace the bottom logout `<form>` block (the `<form method="POST" action="/logout" class="border-t border-mlq-subtle p-2">…</form>`) with a bottom cluster that adds the Settings link above the logout form:
+
 ```svelte
-  <div class="space-y-1 border-t border-mlq-subtle p-2">
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- settings link -->
-    <a href="/settings"
-       aria-current={page.url.pathname.startsWith('/settings') ? 'page' : undefined}
-       class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
-              {page.url.pathname.startsWith('/settings') ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text'}">
-      <Settings size={18} />
-      {#if open}<span>Settings</span>{/if}
-    </a>
-    <form method="POST" action="/logout">
-      <button type="submit"
-              class="flex w-full items-center gap-3 rounded-mlq-control px-3 py-2 text-sm text-mlq-text hover:bg-mlq-subtle">
-        <LogOut size={18} />
-        {#if open}<span>{displayName} · Sign out</span>{/if}
-      </button>
-    </form>
-  </div>
+<div class="space-y-1 border-t border-mlq-subtle p-2">
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- settings link -->
+	<a
+		href="/settings"
+		aria-current={page.url.pathname.startsWith('/settings') ? 'page' : undefined}
+		class="flex items-center gap-3 rounded-mlq-control px-3 py-2 text-sm hover:bg-mlq-subtle
+              {page.url.pathname.startsWith('/settings')
+			? 'bg-mlq-subtle text-mlq-strong'
+			: 'text-mlq-text'}"
+	>
+		<Settings size={18} />
+		{#if open}<span>Settings</span>{/if}
+	</a>
+	<form method="POST" action="/logout">
+		<button
+			type="submit"
+			class="flex w-full items-center gap-3 rounded-mlq-control px-3 py-2 text-sm text-mlq-text hover:bg-mlq-subtle"
+		>
+			<LogOut size={18} />
+			{#if open}<span>{displayName} · Sign out</span>{/if}
+		</button>
+	</form>
+</div>
 ```
 
 - [ ] **Step 4: Run the Sidebar test to verify it passes**
@@ -557,6 +651,7 @@ git commit -m "feat(settings): add the Settings entry to the sidebar account clu
 ## Task 5: Live e2e
 
 **Files:**
+
 - Create: `tests/settings-account.spec.ts`
 
 - [ ] **Step 1: Write the e2e**
@@ -570,31 +665,36 @@ const EMAIL = process.env.DONNA_E2E_EMAIL!;
 const PASSWORD = process.env.DONNA_E2E_PASSWORD!;
 
 async function login(page: Page) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
-test('settings → account: profile, password link, MFA status (dev fixture is MFA-off)', async ({ page }) => {
-  await login(page);
+test('settings → account: profile, password link, MFA status (dev fixture is MFA-off)', async ({
+	page
+}) => {
+	await login(page);
 
-  // Sidebar Settings entry → redirects to the Account section.
-  await page.locator('aside a[href="/settings"]').click();
-  await page.waitForURL('**/settings/account');
-  await expect(page.getByRole('heading', { name: 'Account', level: 1 })).toBeVisible();
+	// Sidebar Settings entry → redirects to the Account section.
+	await page.locator('aside a[href="/settings"]').click();
+	await page.waitForURL('**/settings/account');
+	await expect(page.getByRole('heading', { name: 'Account', level: 1 })).toBeVisible();
 
-  // Profile shows the account email + the read-only note.
-  await expect(page.getByText(EMAIL)).toBeVisible();
-  await expect(page.getByText(/aren't editable here yet/i)).toBeVisible();
+	// Profile shows the account email + the read-only note.
+	await expect(page.getByText(EMAIL)).toBeVisible();
+	await expect(page.getByText(/aren't editable here yet/i)).toBeVisible();
 
-  // Change-password links to the existing flow.
-  await expect(page.getByRole('link', { name: 'Change' })).toHaveAttribute('href', '/change-password');
+	// Change-password links to the existing flow.
+	await expect(page.getByRole('link', { name: 'Change' })).toHaveAttribute(
+		'href',
+		'/change-password'
+	);
 
-  // Two-factor is Off for the dev admin fixture → no Disable button.
-  await expect(page.getByText('Off')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Disable' })).toHaveCount(0);
+	// Two-factor is Off for the dev admin fixture → no Disable button.
+	await expect(page.getByText('Off')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Disable' })).toHaveCount(0);
 });
 ```
 

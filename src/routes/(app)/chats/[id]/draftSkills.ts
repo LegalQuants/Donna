@@ -4,12 +4,12 @@
  * missing or malformed cookie by returning an empty list.
  */
 export function parseDraftSkills(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is string => typeof x === 'string' && x.length > 0);
-  } catch {
-    return [];
-  }
+	if (!raw) return [];
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter((x): x is string => typeof x === 'string' && x.length > 0);
+	} catch {
+		return [];
+	}
 }

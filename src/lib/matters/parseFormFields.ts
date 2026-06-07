@@ -16,13 +16,14 @@ export type MinimumInferenceTier = 1 | 2 | 3 | 4 | 5;
  *  smuggle an out-of-range tier past the type system; values outside
  *  1..5 are normalized to null. */
 export function parsePrivilegeFields(data: FormData): {
-  privileged: boolean;
-  minimum_inference_tier: MinimumInferenceTier | null;
+	privileged: boolean;
+	minimum_inference_tier: MinimumInferenceTier | null;
 } {
-  const privileged = data.get('privileged') === 'on';
-  const raw = String(data.get('minimum_inference_tier') ?? '');
-  if (raw === '') return { privileged, minimum_inference_tier: null };
-  const n = Number(raw);
-  const tier = n === 1 || n === 2 || n === 3 || n === 4 || n === 5 ? (n as MinimumInferenceTier) : null;
-  return { privileged, minimum_inference_tier: tier };
+	const privileged = data.get('privileged') === 'on';
+	const raw = String(data.get('minimum_inference_tier') ?? '');
+	if (raw === '') return { privileged, minimum_inference_tier: null };
+	const n = Number(raw);
+	const tier =
+		n === 1 || n === 2 || n === 3 || n === 4 || n === 5 ? (n as MinimumInferenceTier) : null;
+	return { privileged, minimum_inference_tier: tier };
 }

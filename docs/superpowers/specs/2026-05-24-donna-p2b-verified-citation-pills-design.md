@@ -7,8 +7,8 @@ In P2a the model's `(Source: [N])` markers render as plain text; P2b makes them 
 the quoted span is underlined and color-coded by verification state, with a numbered
 tab that opens a popover showing the verified source quote, page, file, and method.
 
-This is the flagship transparency differentiator: *a wrong answer the lawyer can see
-is wrong is more useful than a wrong answer that looks right* (lq-ai PRD §1.3).
+This is the flagship transparency differentiator: _a wrong answer the lawyer can see
+is wrong is more useful than a wrong answer that looks right_ (lq-ai PRD §1.3).
 
 ---
 
@@ -35,7 +35,7 @@ The SSE `complete` frame's `citations` field is **empty** even when citations ex
 (P2a has been storing empties into `ChatMessage.citations`). Therefore **both freshly
 streamed and history-loaded messages fetch citations by `message_id`** — fresh ones
 right after the stream completes (the `start`/`complete` frame carries the assistant
-`message_id`), history ones during the page `load`. This *unifies* the fetch path.
+`message_id`), history ones during the page `load`. This _unifies_ the fetch path.
 
 ### 1.2 Citation payload (richer than the generated type)
 
@@ -44,13 +44,16 @@ Observed payload (verified citation):
 
 ```json
 {
-  "id": "…", "source_file_id": "…",
-  "source_offset_start": 59, "source_offset_end": 166, "source_page": 1,
-  "source_text": "This Agreement may be terminated … thirty (30) days prior written notice",
-  "verified": true,
-  "verification_method": "exact_match",      // NOT in generated type
-  "verification_confidence": 1.0,            // NOT in generated type
-  "partial": false
+	"id": "…",
+	"source_file_id": "…",
+	"source_offset_start": 59,
+	"source_offset_end": 166,
+	"source_page": 1,
+	"source_text": "This Agreement may be terminated … thirty (30) days prior written notice",
+	"verified": true,
+	"verification_method": "exact_match", // NOT in generated type
+	"verification_confidence": 1.0, // NOT in generated type
+	"partial": false
 }
 ```
 
@@ -87,26 +90,26 @@ State follows the citation-engine doc's UI table — **method drives green-vs-ye
 not just `verified`/`partial`. Single derivation function is the only place state is
 decided:
 
-| State (UI) | Color | When |
-|---|---|---|
-| `verified` | green | `verified===true` and `method ∈ {exact_match, tolerant_match}` |
-| `caveats` | yellow | `verified===true` and (`method ∈ {paraphrase_judge, ensemble_strict, ensemble_majority}` **or** `partial===true`) |
-| `unverified` | red (dashed underline) | citation missing (out-of-range `[N]`) **or** `verified!==true` |
+| State (UI)   | Color                  | When                                                                                                              |
+| ------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `verified`   | green                  | `verified===true` and `method ∈ {exact_match, tolerant_match}`                                                    |
+| `caveats`    | yellow                 | `verified===true` and (`method ∈ {paraphrase_judge, ensemble_strict, ensemble_majority}` **or** `partial===true`) |
+| `unverified` | red (dashed underline) | citation missing (out-of-range `[N]`) **or** `verified!==true`                                                    |
 
 Defensive fallback when `verification_method` is absent: `verified && !partial → verified`,
 `verified && partial → caveats`, else `unverified`.
 
 Tooltip label by method (confidence appended when present, e.g. " (100%)"):
 
-| method | label |
-|---|---|
-| `exact_match` | "Verified — exact match in source" |
-| `tolerant_match` | "Verified — matches source (normalized)" |
-| `paraphrase_judge` | "Verified by judge — source supports this claim" |
-| `ensemble_strict` | "Verified by ensemble — all judges agreed" |
-| `ensemble_majority` | "Verified by ensemble — majority of judges agreed" |
-| (partial appends) | "… (source partially supports)" |
-| unverified | "Unverified — could not confirm against the source" |
+| method              | label                                               |
+| ------------------- | --------------------------------------------------- |
+| `exact_match`       | "Verified — exact match in source"                  |
+| `tolerant_match`    | "Verified — matches source (normalized)"            |
+| `paraphrase_judge`  | "Verified by judge — source supports this claim"    |
+| `ensemble_strict`   | "Verified by ensemble — all judges agreed"          |
+| `ensemble_majority` | "Verified by ensemble — majority of judges agreed"  |
+| (partial appends)   | "… (source partially supports)"                     |
+| unverified          | "Unverified — could not confirm against the source" |
 
 ---
 
@@ -114,7 +117,7 @@ Tooltip label by method (confidence appended when present, e.g. " (100%)"):
 
 **Treatment C — underlined quote + numbered tab.** The quoted text is underlined in the
 state color (dashed for unverified); the `(Source: [N])` marker is replaced by a small
-raised numbered tab in the state color. This colors the *span*, the strongest provenance
+raised numbered tab in the state color. This colors the _span_, the strongest provenance
 cue, and sets up P3's document highlighting.
 
 **Interaction — click to open, one popover at a time.** The tab is a button
@@ -123,6 +126,7 @@ to the tab; Esc or click-away closes; opening another closes the first. (Hover i
 trigger — accessible + touch-friendly.)
 
 **Popover content:**
+
 - State header (green/yellow/red) with the method-derived label (§2).
 - `source_text` as a blockquote (the verbatim text the engine matched).
 - `Page {source_page}` when present, and the **filename** (lazily resolved, §6).
@@ -166,6 +170,7 @@ underline-the-preceding-quote requirement straddles split boundaries).
 ## 5. Components & files
 
 **New**
+
 - `src/lib/markdown.ts` — extracted `renderMarkdown()` (markdown-it + KaTeX + DOMPurify).
 - `src/lib/citations/types.ts` — `Citation` (extends generated type with optional
   `verification_method`, `verification_confidence`), `CiteState`, `citeState(c)`,
@@ -183,6 +188,7 @@ underline-the-preceding-quote requirement straddles split boundaries).
   returns `{ filename }`.
 
 **Modified**
+
 - `src/lib/components/Markdown.svelte` — call `renderMarkdown()` (no behavior change).
 - `src/lib/components/Message.svelte` — assistant branch: when `status==='done'` and
   `message.citations?.length`, render `<CitationView>`, else `<Markdown>` (streaming
@@ -246,14 +252,14 @@ only on interaction).
   fallback; **tag-aware** (a `(Source: [1])` literal inside an `href`/attribute is NOT
   converted); markdown-in-quote → fallback; multiple markers (incl. repeated index);
   no-marker passthrough; sanitization preserved. `citeState`/`tooltipFor`: every method
-  + partial. `files.ts`: one fetch per id (cache).
+  - partial. `files.ts`: one fetch per id (cache).
 - **Deterministic Playwright** — intercept the BFF citations route with a crafted payload
   exercising all three states + an out-of-range marker; assert underline colors, the tab,
   popover content (state label, source_text, page, lazily-fetched filename), and keyboard
   (Enter opens, Esc closes). The only reliable way to cover yellow/red (live engine output
   is nondeterministic).
 - **Live-stack Playwright smoke (real backend)** — **constraint:** Donna's UI creates
-  *project-less* chats (`POST /chats` with `{}`; no project picker until P4), and RAG only
+  _project-less_ chats (`POST /chats` with `{}`; no project picker until P4), and RAG only
   runs when `chat.project_id` resolves to a KB with embedded files. So the smoke **seeds a
   project-backed chat via the API** (project → KB → upload PDF → wait ready → attach →
   **wait for embedding** → post a grounding message so a cited assistant turn persists),

@@ -23,7 +23,7 @@ export const actions: Actions = {
 		} catch {
 			return fail(400, { error: 'Could not read the playbook.' });
 		}
-		if (!draft.name?.trim() || !draft.contract_type?.trim() || !(draft.positions?.length)) {
+		if (!draft.name?.trim() || !draft.contract_type?.trim() || !draft.positions?.length) {
 			return fail(400, { error: 'A name, contract type, and at least one position are required.' });
 		}
 		const res = await lqFetch(event, `/api/v1/playbooks/${event.params.id}`, {
@@ -32,7 +32,9 @@ export const actions: Actions = {
 		});
 		if (res.status === 403) return fail(403, { error: 'You can only edit playbooks you own.' });
 		if (res.status === 422)
-			return fail(422, { error: 'The backend rejected the playbook. Check the fields and try again.' });
+			return fail(422, {
+				error: 'The backend rejected the playbook. Check the fields and try again.'
+			});
 		if (!res.ok) return fail(502, { error: 'Could not save the playbook.' });
 		throw redirect(303, `/playbooks/${event.params.id}`);
 	}

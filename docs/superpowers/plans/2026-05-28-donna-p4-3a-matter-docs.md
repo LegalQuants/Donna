@@ -9,6 +9,7 @@
 **Tech Stack:** SvelteKit (Svelte 5 runes), TypeScript, Tailwind v4 (`@theme` block in `src/app.css`), `@lucide/svelte` icons, vitest + `@testing-library/svelte` + `userEvent`/`fireEvent` for unit/component tests, Playwright for live e2e against the Docker stack on `localhost:13002`.
 
 **Preconditions:**
+
 - On branch `p4-3a-matter-docs` (already created off `main`; spec commit `5d29d99`).
 - Docker stack up: `set -a; . ./.env; set +a && docker compose up -d --build postgres redis minio gateway api donna-web ingest-worker`.
 - Vendor pin verified: `git -C vendor/lq-ai rev-parse --short HEAD` → `438198c`.
@@ -21,6 +22,7 @@
 **Why first:** Pure functions with no dependencies; everything else uses them. TDD bottom-up.
 
 **Files:**
+
 - Create: `src/lib/matters/files/uploadFile.ts`
 - Create: `src/lib/matters/files/uploadFile.test.ts`
 
@@ -33,29 +35,39 @@ import { describe, it, expect } from 'vitest';
 import { formatBytes, statusBadge } from './uploadFile';
 
 describe('formatBytes', () => {
-  it('renders 0 B', () => { expect(formatBytes(0)).toBe('0 B'); });
-  it('renders raw bytes under 1 KB', () => { expect(formatBytes(512)).toBe('512 B'); });
-  it('renders KB with one decimal for kilobytes', () => { expect(formatBytes(1536)).toBe('1.5 KB'); });
-  it('renders MB with one decimal for megabytes', () => { expect(formatBytes(2 * 1024 * 1024 + 512 * 1024)).toBe('2.5 MB'); });
-  it('rounds KB down to whole numbers when no fractional part', () => { expect(formatBytes(2048)).toBe('2 KB'); });
+	it('renders 0 B', () => {
+		expect(formatBytes(0)).toBe('0 B');
+	});
+	it('renders raw bytes under 1 KB', () => {
+		expect(formatBytes(512)).toBe('512 B');
+	});
+	it('renders KB with one decimal for kilobytes', () => {
+		expect(formatBytes(1536)).toBe('1.5 KB');
+	});
+	it('renders MB with one decimal for megabytes', () => {
+		expect(formatBytes(2 * 1024 * 1024 + 512 * 1024)).toBe('2.5 MB');
+	});
+	it('rounds KB down to whole numbers when no fractional part', () => {
+		expect(formatBytes(2048)).toBe('2 KB');
+	});
 });
 
 describe('statusBadge', () => {
-  it('maps "ready" to a success-toned badge', () => {
-    expect(statusBadge('ready')).toEqual({ label: 'Ready', tone: 'success' });
-  });
-  it('maps "pending" to a muted badge', () => {
-    expect(statusBadge('pending')).toEqual({ label: 'Pending', tone: 'muted' });
-  });
-  it('maps "processing" to a muted badge', () => {
-    expect(statusBadge('processing')).toEqual({ label: 'Processing', tone: 'muted' });
-  });
-  it('maps "failed" to an error-toned badge', () => {
-    expect(statusBadge('failed')).toEqual({ label: 'Failed', tone: 'error' });
-  });
-  it('maps undefined/null to a muted "Pending" badge (defensive default)', () => {
-    expect(statusBadge(undefined)).toEqual({ label: 'Pending', tone: 'muted' });
-  });
+	it('maps "ready" to a success-toned badge', () => {
+		expect(statusBadge('ready')).toEqual({ label: 'Ready', tone: 'success' });
+	});
+	it('maps "pending" to a muted badge', () => {
+		expect(statusBadge('pending')).toEqual({ label: 'Pending', tone: 'muted' });
+	});
+	it('maps "processing" to a muted badge', () => {
+		expect(statusBadge('processing')).toEqual({ label: 'Processing', tone: 'muted' });
+	});
+	it('maps "failed" to an error-toned badge', () => {
+		expect(statusBadge('failed')).toEqual({ label: 'Failed', tone: 'error' });
+	});
+	it('maps undefined/null to a muted "Pending" badge (defensive default)', () => {
+		expect(statusBadge(undefined)).toEqual({ label: 'Pending', tone: 'muted' });
+	});
 });
 ```
 
@@ -73,16 +85,16 @@ Create `src/lib/matters/files/uploadFile.ts`:
  *  at the conventional 1024 boundaries; one decimal place unless the value is
  *  a whole number (e.g. "2 KB" not "2.0 KB"). */
 export function formatBytes(n: number): string {
-  if (n === 0) return '0 B';
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${formatOne(n / 1024)} KB`;
-  return `${formatOne(n / 1024 / 1024)} MB`;
+	if (n === 0) return '0 B';
+	if (n < 1024) return `${n} B`;
+	if (n < 1024 * 1024) return `${formatOne(n / 1024)} KB`;
+	return `${formatOne(n / 1024 / 1024)} MB`;
 }
 
 function formatOne(v: number): string {
-  // Strip trailing ".0" so "2 KB" reads cleaner than "2.0 KB".
-  const rounded = Math.round(v * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+	// Strip trailing ".0" so "2 KB" reads cleaner than "2.0 KB".
+	const rounded = Math.round(v * 10) / 10;
+	return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
 export type IngestionStatus = 'pending' | 'processing' | 'ready' | 'failed' | undefined;
@@ -90,14 +102,17 @@ export type BadgeTone = 'success' | 'muted' | 'error';
 
 /** Resolve a File's ingestion_status into a presentational label + tone. */
 export function statusBadge(s: IngestionStatus): { label: string; tone: BadgeTone } {
-  switch (s) {
-    case 'ready': return { label: 'Ready', tone: 'success' };
-    case 'failed': return { label: 'Failed', tone: 'error' };
-    case 'processing': return { label: 'Processing', tone: 'muted' };
-    case 'pending':
-    default:
-      return { label: 'Pending', tone: 'muted' };
-  }
+	switch (s) {
+		case 'ready':
+			return { label: 'Ready', tone: 'success' };
+		case 'failed':
+			return { label: 'Failed', tone: 'error' };
+		case 'processing':
+			return { label: 'Processing', tone: 'muted' };
+		case 'pending':
+		default:
+			return { label: 'Pending', tone: 'muted' };
+	}
 }
 ```
 
@@ -132,6 +147,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 **Why now:** Leaf presentational component; FilesSection composes it. Independent of any server interaction.
 
 **Files:**
+
 - Create: `src/lib/matters/files/Dropzone.svelte`
 - Create: `src/lib/matters/files/Dropzone.svelte.test.ts`
 
@@ -147,62 +163,62 @@ import userEvent from '@testing-library/user-event';
 import Dropzone from './Dropzone.svelte';
 
 function makeDataTransfer(files: File[]): DataTransfer {
-  // jsdom doesn't construct DataTransfer; minimal stub is enough for the drop event.
-  return { files: files as unknown as FileList } as unknown as DataTransfer;
+	// jsdom doesn't construct DataTransfer; minimal stub is enough for the drop event.
+	return { files: files as unknown as FileList } as unknown as DataTransfer;
 }
 
 describe('Dropzone', () => {
-  it('renders the prompt and is keyboard-focusable', () => {
-    render(Dropzone, { props: { onfiles: vi.fn() } });
-    const btn = screen.getByRole('button', { name: /upload files/i });
-    expect(btn).toBeInTheDocument();
-    expect(btn).toHaveTextContent(/drag.*pdfs.*contracts.*click to browse/i);
-  });
+	it('renders the prompt and is keyboard-focusable', () => {
+		render(Dropzone, { props: { onfiles: vi.fn() } });
+		const btn = screen.getByRole('button', { name: /upload files/i });
+		expect(btn).toBeInTheDocument();
+		expect(btn).toHaveTextContent(/drag.*pdfs.*contracts.*click to browse/i);
+	});
 
-  it('clicking the prompt opens the hidden file input', async () => {
-    render(Dropzone, { props: { onfiles: vi.fn() } });
-    const input = screen.getByTestId('dropzone-input') as HTMLInputElement;
-    const clickSpy = vi.spyOn(input, 'click');
-    await userEvent.click(screen.getByRole('button', { name: /upload files/i }));
-    expect(clickSpy).toHaveBeenCalled();
-  });
+	it('clicking the prompt opens the hidden file input', async () => {
+		render(Dropzone, { props: { onfiles: vi.fn() } });
+		const input = screen.getByTestId('dropzone-input') as HTMLInputElement;
+		const clickSpy = vi.spyOn(input, 'click');
+		await userEvent.click(screen.getByRole('button', { name: /upload files/i }));
+		expect(clickSpy).toHaveBeenCalled();
+	});
 
-  it('Enter key on the prompt opens the hidden file input', async () => {
-    render(Dropzone, { props: { onfiles: vi.fn() } });
-    const input = screen.getByTestId('dropzone-input') as HTMLInputElement;
-    const clickSpy = vi.spyOn(input, 'click');
-    const btn = screen.getByRole('button', { name: /upload files/i });
-    btn.focus();
-    await userEvent.keyboard('{Enter}');
-    expect(clickSpy).toHaveBeenCalled();
-  });
+	it('Enter key on the prompt opens the hidden file input', async () => {
+		render(Dropzone, { props: { onfiles: vi.fn() } });
+		const input = screen.getByTestId('dropzone-input') as HTMLInputElement;
+		const clickSpy = vi.spyOn(input, 'click');
+		const btn = screen.getByRole('button', { name: /upload files/i });
+		btn.focus();
+		await userEvent.keyboard('{Enter}');
+		expect(clickSpy).toHaveBeenCalled();
+	});
 
-  it('dropping files emits onfiles with the File[] from the DataTransfer', () => {
-    const onfiles = vi.fn();
-    render(Dropzone, { props: { onfiles } });
-    const btn = screen.getByRole('button', { name: /upload files/i });
-    const file = new File([new Uint8Array(10)], 'a.pdf', { type: 'application/pdf' });
-    fireEvent.drop(btn, { dataTransfer: makeDataTransfer([file]) });
-    expect(onfiles).toHaveBeenCalledWith([file]);
-  });
+	it('dropping files emits onfiles with the File[] from the DataTransfer', () => {
+		const onfiles = vi.fn();
+		render(Dropzone, { props: { onfiles } });
+		const btn = screen.getByRole('button', { name: /upload files/i });
+		const file = new File([new Uint8Array(10)], 'a.pdf', { type: 'application/pdf' });
+		fireEvent.drop(btn, { dataTransfer: makeDataTransfer([file]) });
+		expect(onfiles).toHaveBeenCalledWith([file]);
+	});
 
-  it('toggles a dragging visual state on dragenter / dragleave', async () => {
-    render(Dropzone, { props: { onfiles: vi.fn() } });
-    const btn = screen.getByRole('button', { name: /upload files/i });
-    expect(btn.className).not.toMatch(/ring-2/);
-    await fireEvent.dragEnter(btn);
-    expect(btn.className).toMatch(/ring-2/);
-    await fireEvent.dragLeave(btn);
-    expect(btn.className).not.toMatch(/ring-2/);
-  });
+	it('toggles a dragging visual state on dragenter / dragleave', async () => {
+		render(Dropzone, { props: { onfiles: vi.fn() } });
+		const btn = screen.getByRole('button', { name: /upload files/i });
+		expect(btn.className).not.toMatch(/ring-2/);
+		await fireEvent.dragEnter(btn);
+		expect(btn.className).toMatch(/ring-2/);
+		await fireEvent.dragLeave(btn);
+		expect(btn.className).not.toMatch(/ring-2/);
+	});
 
-  it('prevents default on dragover so the drop event fires', () => {
-    render(Dropzone, { props: { onfiles: vi.fn() } });
-    const btn = screen.getByRole('button', { name: /upload files/i });
-    const ev = new Event('dragover', { cancelable: true });
-    btn.dispatchEvent(ev);
-    expect(ev.defaultPrevented).toBe(true);
-  });
+	it('prevents default on dragover so the drop event fires', () => {
+		render(Dropzone, { props: { onfiles: vi.fn() } });
+		const btn = screen.getByRole('button', { name: /upload files/i });
+		const ev = new Event('dragover', { cancelable: true });
+		btn.dispatchEvent(ev);
+		expect(ev.defaultPrevented).toBe(true);
+	});
 });
 ```
 
@@ -217,70 +233,72 @@ Create `src/lib/matters/files/Dropzone.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { UploadCloud } from '@lucide/svelte';
+	import { UploadCloud } from '@lucide/svelte';
 
-  let { onfiles }: { onfiles: (files: File[]) => void } = $props();
+	let { onfiles }: { onfiles: (files: File[]) => void } = $props();
 
-  let input = $state<HTMLInputElement>();
-  let dragging = $state(false);
+	let input = $state<HTMLInputElement>();
+	let dragging = $state(false);
 
-  function openPicker() {
-    input?.click();
-  }
-  function onkeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      openPicker();
-    }
-  }
-  function ondragenter(e: DragEvent) {
-    e.preventDefault();
-    dragging = true;
-  }
-  function ondragover(e: DragEvent) {
-    e.preventDefault();
-  }
-  function ondragleave(e: DragEvent) {
-    e.preventDefault();
-    dragging = false;
-  }
-  function ondrop(e: DragEvent) {
-    e.preventDefault();
-    dragging = false;
-    const files = Array.from(e.dataTransfer?.files ?? []);
-    if (files.length) onfiles(files);
-  }
-  function onchange(e: Event) {
-    const target = e.currentTarget as HTMLInputElement;
-    const files = Array.from(target.files ?? []);
-    if (files.length) onfiles(files);
-    target.value = ''; // allow re-picking the same file later
-  }
+	function openPicker() {
+		input?.click();
+	}
+	function onkeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			openPicker();
+		}
+	}
+	function ondragenter(e: DragEvent) {
+		e.preventDefault();
+		dragging = true;
+	}
+	function ondragover(e: DragEvent) {
+		e.preventDefault();
+	}
+	function ondragleave(e: DragEvent) {
+		e.preventDefault();
+		dragging = false;
+	}
+	function ondrop(e: DragEvent) {
+		e.preventDefault();
+		dragging = false;
+		const files = Array.from(e.dataTransfer?.files ?? []);
+		if (files.length) onfiles(files);
+	}
+	function onchange(e: Event) {
+		const target = e.currentTarget as HTMLInputElement;
+		const files = Array.from(target.files ?? []);
+		if (files.length) onfiles(files);
+		target.value = ''; // allow re-picking the same file later
+	}
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <button
-  type="button"
-  aria-label="Upload files to this matter"
-  onclick={openPicker}
-  {onkeydown}
-  {ondragenter}
-  {ondragover}
-  {ondragleave}
-  {ondrop}
-  class="flex w-full flex-col items-center justify-center gap-2 rounded-mlq-control border-2 border-dashed border-mlq-subtle px-6 py-10 text-mlq-muted hover:border-mlq-workflow hover:text-mlq-text {dragging ? 'ring-2 ring-mlq-workflow border-mlq-workflow' : ''}"
+	type="button"
+	aria-label="Upload files to this matter"
+	onclick={openPicker}
+	{onkeydown}
+	{ondragenter}
+	{ondragover}
+	{ondragleave}
+	{ondrop}
+	class="flex w-full flex-col items-center justify-center gap-2 rounded-mlq-control border-2 border-dashed border-mlq-subtle px-6 py-10 text-mlq-muted hover:border-mlq-workflow hover:text-mlq-text {dragging
+		? 'border-mlq-workflow ring-2 ring-mlq-workflow'
+		: ''}"
 >
-  <UploadCloud size={24} aria-hidden="true" />
-  <span class="text-sm">Drag PDFs or contracts here, or click to browse</span>
+	<UploadCloud size={24} aria-hidden="true" />
+	<span class="text-sm">Drag PDFs or contracts here, or click to browse</span>
 </button>
 <input
-  bind:this={input}
-  type="file"
-  name="file"
-  multiple
-  data-testid="dropzone-input"
-  {onchange}
-  class="sr-only"
+	bind:this={input}
+	type="file"
+	name="file"
+	multiple
+	data-testid="dropzone-input"
+	{onchange}
+	class="sr-only"
 />
 ```
 
@@ -316,6 +334,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 **Why now:** Independent leaf component; FilesSection composes it.
 
 **Files:**
+
 - Create: `src/lib/matters/files/FileRow.svelte`
 - Create: `src/lib/matters/files/FileRow.svelte.test.ts`
 
@@ -332,48 +351,48 @@ import FileRow from './FileRow.svelte';
 vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
 
 const file = (over = {}) => ({
-  id: 'f1',
-  owner_id: 'u',
-  filename: 'msa.pdf',
-  mime_type: 'application/pdf',
-  size_bytes: 1536,
-  ingestion_status: 'ready' as const,
-  created_at: '2026-05-28T00:00:00Z',
-  ...over
+	id: 'f1',
+	owner_id: 'u',
+	filename: 'msa.pdf',
+	mime_type: 'application/pdf',
+	size_bytes: 1536,
+	ingestion_status: 'ready' as const,
+	created_at: '2026-05-28T00:00:00Z',
+	...over
 });
 
 describe('FileRow', () => {
-  it('renders filename, size, and a Ready badge', () => {
-    render(FileRow, { props: { file: file() } });
-    expect(screen.getByText('msa.pdf')).toBeInTheDocument();
-    expect(screen.getByText('1.5 KB')).toBeInTheDocument();
-    expect(screen.getByText('Ready')).toBeInTheDocument();
-  });
+	it('renders filename, size, and a Ready badge', () => {
+		render(FileRow, { props: { file: file() } });
+		expect(screen.getByText('msa.pdf')).toBeInTheDocument();
+		expect(screen.getByText('1.5 KB')).toBeInTheDocument();
+		expect(screen.getByText('Ready')).toBeInTheDocument();
+	});
 
-  it('shows Pending badge when ingestion_status is pending', () => {
-    render(FileRow, { props: { file: file({ ingestion_status: 'pending' }) } });
-    expect(screen.getByText('Pending')).toBeInTheDocument();
-  });
+	it('shows Pending badge when ingestion_status is pending', () => {
+		render(FileRow, { props: { file: file({ ingestion_status: 'pending' }) } });
+		expect(screen.getByText('Pending')).toBeInTheDocument();
+	});
 
-  it('shows Failed badge with error tone when ingestion_status is failed', () => {
-    render(FileRow, { props: { file: file({ ingestion_status: 'failed' }) } });
-    const badge = screen.getByText('Failed');
-    expect(badge.className).toMatch(/text-mlq-error/);
-  });
+	it('shows Failed badge with error tone when ingestion_status is failed', () => {
+		render(FileRow, { props: { file: file({ ingestion_status: 'failed' }) } });
+		const badge = screen.getByText('Failed');
+		expect(badge.className).toMatch(/text-mlq-error/);
+	});
 
-  it('exposes a Download link to the BFF content route', () => {
-    render(FileRow, { props: { file: file() } });
-    const link = screen.getByRole('link', { name: /download/i }) as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe('/api/v1/files/f1/content');
-  });
+	it('exposes a Download link to the BFF content route', () => {
+		render(FileRow, { props: { file: file() } });
+		const link = screen.getByRole('link', { name: /download/i }) as HTMLAnchorElement;
+		expect(link.getAttribute('href')).toBe('/api/v1/files/f1/content');
+	});
 
-  it('renders a Remove form that posts to ?/detachFile with the file_id', () => {
-    render(FileRow, { props: { file: file() } });
-    const form = screen.getByRole('form', { name: /remove file/i });
-    expect(form).toHaveAttribute('action', '?/detachFile');
-    const hidden = form.querySelector('input[name="file_id"]') as HTMLInputElement;
-    expect(hidden.value).toBe('f1');
-  });
+	it('renders a Remove form that posts to ?/detachFile with the file_id', () => {
+		render(FileRow, { props: { file: file() } });
+		const form = screen.getByRole('form', { name: /remove file/i });
+		expect(form).toHaveAttribute('action', '?/detachFile');
+		const hidden = form.querySelector('input[name="file_id"]') as HTMLInputElement;
+		expect(hidden.value).toBe('f1');
+	});
 });
 ```
 
@@ -388,52 +407,50 @@ Create `src/lib/matters/files/FileRow.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { X } from '@lucide/svelte';
-  import { enhance } from '$app/forms';
-  import type { components } from '$lib/api/backend';
-  import { formatBytes, statusBadge } from './uploadFile';
+	import { X } from '@lucide/svelte';
+	import { enhance } from '$app/forms';
+	import type { components } from '$lib/api/backend';
+	import { formatBytes, statusBadge } from './uploadFile';
 
-  type File = components['schemas']['File'];
+	type File = components['schemas']['File'];
 
-  let { file }: { file: File } = $props();
+	let { file }: { file: File } = $props();
 
-  const badge = $derived(statusBadge(file.ingestion_status));
-  const toneClass = $derived(
-    badge.tone === 'success' ? 'text-mlq-success' : badge.tone === 'error' ? 'text-mlq-error' : 'text-mlq-muted'
-  );
+	const badge = $derived(statusBadge(file.ingestion_status));
+	const toneClass = $derived(
+		badge.tone === 'success'
+			? 'text-mlq-success'
+			: badge.tone === 'error'
+				? 'text-mlq-error'
+				: 'text-mlq-muted'
+	);
 </script>
 
 <div class="flex items-center gap-3 border-b border-mlq-subtle px-3 py-2 last:border-b-0">
-  <div class="min-w-0 flex-1">
-    <div class="truncate text-sm text-mlq-text">{file.filename}</div>
-    <div class="mt-0.5 flex items-center gap-2 text-xs">
-      <span class="text-mlq-muted">{formatBytes(file.size_bytes)}</span>
-      <span class={`${toneClass}`}>{badge.label}</span>
-    </div>
-  </div>
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- BFF download proxy -->
-  <a
-    href="/api/v1/files/{file.id}/content"
-    target="_blank"
-    rel="noopener"
-    class="shrink-0 text-xs text-mlq-workflow hover:underline"
-  >Download</a>
-  <form
-    method="POST"
-    action="?/detachFile"
-    use:enhance
-    aria-label="Remove file"
-    class="shrink-0"
-  >
-    <input type="hidden" name="file_id" value={file.id} />
-    <button
-      type="submit"
-      aria-label={`Remove ${file.filename}`}
-      class="rounded-mlq-control p-1 text-mlq-muted hover:text-mlq-error"
-    >
-      <X size={14} />
-    </button>
-  </form>
+	<div class="min-w-0 flex-1">
+		<div class="truncate text-sm text-mlq-text">{file.filename}</div>
+		<div class="mt-0.5 flex items-center gap-2 text-xs">
+			<span class="text-mlq-muted">{formatBytes(file.size_bytes)}</span>
+			<span class={`${toneClass}`}>{badge.label}</span>
+		</div>
+	</div>
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- BFF download proxy -->
+	<a
+		href="/api/v1/files/{file.id}/content"
+		target="_blank"
+		rel="noopener"
+		class="shrink-0 text-xs text-mlq-workflow hover:underline">Download</a
+	>
+	<form method="POST" action="?/detachFile" use:enhance aria-label="Remove file" class="shrink-0">
+		<input type="hidden" name="file_id" value={file.id} />
+		<button
+			type="submit"
+			aria-label={`Remove ${file.filename}`}
+			class="rounded-mlq-control p-1 text-mlq-muted hover:text-mlq-error"
+		>
+			<X size={14} />
+		</button>
+	</form>
 </div>
 ```
 
@@ -469,6 +486,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 **Why now:** Leaf component for the Knowledge section. Mirrors `MatterPicker.svelte`'s idiom (root div + open state + outside-click + Escape).
 
 **Files:**
+
 - Create: `src/lib/matters/knowledge/KbPicker.svelte`
 - Create: `src/lib/matters/knowledge/KbPicker.svelte.test.ts`
 
@@ -487,58 +505,75 @@ import type { components } from '$lib/api/backend';
 type KnowledgeBase = components['schemas']['KnowledgeBase'];
 
 const kb = (over: Partial<KnowledgeBase>): KnowledgeBase => ({
-  id: 'k1', name: 'Standards', owner_id: 'u', hybrid_alpha: 0.5,
-  file_count: 3, chunk_count: 50,
-  created_at: '2026-05-28T00:00:00Z', updated_at: '2026-05-28T00:00:00Z',
-  ...over
+	id: 'k1',
+	name: 'Standards',
+	owner_id: 'u',
+	hybrid_alpha: 0.5,
+	file_count: 3,
+	chunk_count: 50,
+	created_at: '2026-05-28T00:00:00Z',
+	updated_at: '2026-05-28T00:00:00Z',
+	...over
 });
 
 describe('KbPicker', () => {
-  it('renders a Link button by default; popover is hidden', () => {
-    render(KbPicker, { props: { kbs: [kb({ id: 'a', name: 'Alpha' })], onpick: vi.fn() } });
-    expect(screen.getByRole('button', { name: /link a knowledge base/i })).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(/search knowledge bases/i)).not.toBeInTheDocument();
-  });
+	it('renders a Link button by default; popover is hidden', () => {
+		render(KbPicker, { props: { kbs: [kb({ id: 'a', name: 'Alpha' })], onpick: vi.fn() } });
+		expect(screen.getByRole('button', { name: /link a knowledge base/i })).toBeInTheDocument();
+		expect(screen.queryByPlaceholderText(/search knowledge bases/i)).not.toBeInTheDocument();
+	});
 
-  it('opens the popover on click and shows all KBs', async () => {
-    render(KbPicker, { props: { kbs: [kb({ id: 'a', name: 'Alpha' }), kb({ id: 'b', name: 'Beta' })], onpick: vi.fn() } });
-    await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
-    expect(screen.getByPlaceholderText(/search knowledge bases/i)).toBeInTheDocument();
-    expect(screen.getByText('Alpha')).toBeInTheDocument();
-    expect(screen.getByText('Beta')).toBeInTheDocument();
-  });
+	it('opens the popover on click and shows all KBs', async () => {
+		render(KbPicker, {
+			props: {
+				kbs: [kb({ id: 'a', name: 'Alpha' }), kb({ id: 'b', name: 'Beta' })],
+				onpick: vi.fn()
+			}
+		});
+		await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
+		expect(screen.getByPlaceholderText(/search knowledge bases/i)).toBeInTheDocument();
+		expect(screen.getByText('Alpha')).toBeInTheDocument();
+		expect(screen.getByText('Beta')).toBeInTheDocument();
+	});
 
-  it('filters by case-insensitive substring on the name', async () => {
-    render(KbPicker, { props: { kbs: [kb({ id: 'a', name: 'Alpha' }), kb({ id: 'b', name: 'Beta' })], onpick: vi.fn() } });
-    await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
-    await fireEvent.input(screen.getByPlaceholderText(/search knowledge bases/i), { target: { value: 'bet' } });
-    expect(screen.queryByText('Alpha')).not.toBeInTheDocument();
-    expect(screen.getByText('Beta')).toBeInTheDocument();
-  });
+	it('filters by case-insensitive substring on the name', async () => {
+		render(KbPicker, {
+			props: {
+				kbs: [kb({ id: 'a', name: 'Alpha' }), kb({ id: 'b', name: 'Beta' })],
+				onpick: vi.fn()
+			}
+		});
+		await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
+		await fireEvent.input(screen.getByPlaceholderText(/search knowledge bases/i), {
+			target: { value: 'bet' }
+		});
+		expect(screen.queryByText('Alpha')).not.toBeInTheDocument();
+		expect(screen.getByText('Beta')).toBeInTheDocument();
+	});
 
-  it('calls onpick with the kb id when a result is clicked, then closes', async () => {
-    const onpick = vi.fn();
-    render(KbPicker, { props: { kbs: [kb({ id: 'a', name: 'Alpha' })], onpick } });
-    await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
-    await userEvent.click(screen.getByText('Alpha'));
-    expect(onpick).toHaveBeenCalledWith('a');
-    expect(screen.queryByPlaceholderText(/search knowledge bases/i)).not.toBeInTheDocument();
-  });
+	it('calls onpick with the kb id when a result is clicked, then closes', async () => {
+		const onpick = vi.fn();
+		render(KbPicker, { props: { kbs: [kb({ id: 'a', name: 'Alpha' })], onpick } });
+		await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
+		await userEvent.click(screen.getByText('Alpha'));
+		expect(onpick).toHaveBeenCalledWith('a');
+		expect(screen.queryByPlaceholderText(/search knowledge bases/i)).not.toBeInTheDocument();
+	});
 
-  it('shows the deferred-create message when there are no KBs available', async () => {
-    render(KbPicker, { props: { kbs: [], onpick: vi.fn() } });
-    await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
-    expect(screen.getByText(/no other knowledge bases to link/i)).toBeInTheDocument();
-    expect(screen.getByText(/creating a kb lands in a follow-up slice/i)).toBeInTheDocument();
-  });
+	it('shows the deferred-create message when there are no KBs available', async () => {
+		render(KbPicker, { props: { kbs: [], onpick: vi.fn() } });
+		await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
+		expect(screen.getByText(/no other knowledge bases to link/i)).toBeInTheDocument();
+		expect(screen.getByText(/creating a kb lands in a follow-up slice/i)).toBeInTheDocument();
+	});
 
-  it('closes on Escape', async () => {
-    render(KbPicker, { props: { kbs: [kb({ id: 'a', name: 'Alpha' })], onpick: vi.fn() } });
-    await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
-    expect(screen.getByPlaceholderText(/search knowledge bases/i)).toBeInTheDocument();
-    await userEvent.keyboard('{Escape}');
-    expect(screen.queryByPlaceholderText(/search knowledge bases/i)).not.toBeInTheDocument();
-  });
+	it('closes on Escape', async () => {
+		render(KbPicker, { props: { kbs: [kb({ id: 'a', name: 'Alpha' })], onpick: vi.fn() } });
+		await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
+		expect(screen.getByPlaceholderText(/search knowledge bases/i)).toBeInTheDocument();
+		await userEvent.keyboard('{Escape}');
+		expect(screen.queryByPlaceholderText(/search knowledge bases/i)).not.toBeInTheDocument();
+	});
 });
 ```
 
@@ -553,85 +588,87 @@ Create `src/lib/matters/knowledge/KbPicker.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { Plus } from '@lucide/svelte';
-  import type { components } from '$lib/api/backend';
+	import { Plus } from '@lucide/svelte';
+	import type { components } from '$lib/api/backend';
 
-  type KnowledgeBase = components['schemas']['KnowledgeBase'];
+	type KnowledgeBase = components['schemas']['KnowledgeBase'];
 
-  let { kbs, onpick }: { kbs: KnowledgeBase[]; onpick: (kbId: string) => void } = $props();
+	let { kbs, onpick }: { kbs: KnowledgeBase[]; onpick: (kbId: string) => void } = $props();
 
-  let open = $state(false);
-  let q = $state('');
-  let root = $state<HTMLElement>();
+	let open = $state(false);
+	let q = $state('');
+	let root = $state<HTMLElement>();
 
-  const filtered = $derived(
-    q.trim() ? kbs.filter((k) => k.name.toLowerCase().includes(q.trim().toLowerCase())) : kbs
-  );
+	const filtered = $derived(
+		q.trim() ? kbs.filter((k) => k.name.toLowerCase().includes(q.trim().toLowerCase())) : kbs
+	);
 
-  function choose(id: string) {
-    onpick(id);
-    open = false;
-    q = '';
-  }
-  function onkeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') open = false;
-  }
-  $effect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (root && !root.contains(e.target as Node)) open = false;
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  });
+	function choose(id: string) {
+		onpick(id);
+		open = false;
+		q = '';
+	}
+	function onkeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') open = false;
+	}
+	$effect(() => {
+		if (!open) return;
+		const handler = (e: MouseEvent) => {
+			if (root && !root.contains(e.target as Node)) open = false;
+		};
+		document.addEventListener('mousedown', handler);
+		return () => document.removeEventListener('mousedown', handler);
+	});
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div bind:this={root} class="relative inline-block" {onkeydown}>
-  <button
-    type="button"
-    aria-haspopup="dialog"
-    aria-expanded={open}
-    aria-label="Link a knowledge base"
-    onclick={() => (open = !open)}
-    class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
-  >
-    <Plus size={13} /> Link a knowledge base
-  </button>
+	<button
+		type="button"
+		aria-haspopup="dialog"
+		aria-expanded={open}
+		aria-label="Link a knowledge base"
+		onclick={() => (open = !open)}
+		class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
+	>
+		<Plus size={13} /> Link a knowledge base
+	</button>
 
-  {#if open}
-    <div class="absolute right-0 z-20 mt-1 w-72 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md">
-      <input
-        type="text"
-        placeholder="Search knowledge bases…"
-        bind:value={q}
-        class="w-full border-b border-mlq-subtle bg-transparent px-3 py-2 text-xs text-mlq-text outline-none placeholder:text-mlq-muted"
-      />
-      {#if kbs.length === 0}
-        <p class="px-3 py-3 text-xs text-mlq-muted">
-          No other knowledge bases to link.
-          <span class="block text-[10px]">(Creating a KB lands in a follow-up slice.)</span>
-        </p>
-      {:else if filtered.length === 0}
-        <p class="px-3 py-2 text-xs text-mlq-muted">No matches.</p>
-      {:else}
-        <ul class="max-h-64 overflow-y-auto">
-          {#each filtered as k (k.id)}
-            <li>
-              <button
-                type="button"
-                onclick={() => choose(k.id)}
-                class="block w-full px-3 py-2 text-left text-xs hover:bg-mlq-subtle/50"
-              >
-                <span class="font-medium text-mlq-text">{k.name}</span>
-                <span class="ml-2 text-mlq-muted">{k.file_count} files</span>
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </div>
-  {/if}
+	{#if open}
+		<div
+			class="absolute right-0 z-20 mt-1 w-72 overflow-hidden rounded-mlq-control border border-mlq-subtle bg-mlq-surface shadow-md"
+		>
+			<input
+				type="text"
+				placeholder="Search knowledge bases…"
+				bind:value={q}
+				class="w-full border-b border-mlq-subtle bg-transparent px-3 py-2 text-xs text-mlq-text outline-none placeholder:text-mlq-muted"
+			/>
+			{#if kbs.length === 0}
+				<p class="px-3 py-3 text-xs text-mlq-muted">
+					No other knowledge bases to link.
+					<span class="block text-[10px]">(Creating a KB lands in a follow-up slice.)</span>
+				</p>
+			{:else if filtered.length === 0}
+				<p class="px-3 py-2 text-xs text-mlq-muted">No matches.</p>
+			{:else}
+				<ul class="max-h-64 overflow-y-auto">
+					{#each filtered as k (k.id)}
+						<li>
+							<button
+								type="button"
+								onclick={() => choose(k.id)}
+								class="block w-full px-3 py-2 text-left text-xs hover:bg-mlq-subtle/50"
+							>
+								<span class="font-medium text-mlq-text">{k.name}</span>
+								<span class="ml-2 text-mlq-muted">{k.file_count} files</span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	{/if}
 </div>
 ```
 
@@ -667,6 +704,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 **Why now:** All sections need this data. Server-side change first; component sections (later tasks) will consume it.
 
 **Files:**
+
 - Modify: `src/routes/(app)/matters/[id]/+page.server.ts`
 - Modify: `src/routes/(app)/matters/[id]/page.server.test.ts`
 
@@ -680,47 +718,127 @@ Append (just before the final closing of the file) this new describe block:
 
 ```ts
 describe('/matters/[id] load — files + KBs', () => {
-  it('fans out file metadata for each attached_file_id and filters out 404s', async () => {
-    const matter = { id: 'p1', name: 'Acme', description: 'd', privileged: false, minimum_inference_tier: null, attached_file_ids: ['a', 'b', 'gone'] };
-    lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))                                      // GET /projects/p1
-      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))                                // GET /chats?project_id=p1
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'a', filename: 'a.pdf', size_bytes: 1, mime_type: 'application/pdf', ingestion_status: 'ready' }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'b', filename: 'b.pdf', size_bytes: 2, mime_type: 'application/pdf', ingestion_status: 'pending' }), { status: 200 }))
-      .mockResolvedValueOnce(new Response('not found', { status: 404 }))                                                 // GET /files/gone → filtered
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))                                          // GET /knowledge-bases?project_id=p1
-      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 'k1', name: 'KB', owner_id: 'u', hybrid_alpha: 0.5, file_count: 0, chunk_count: 0, created_at: '', updated_at: '' }]), { status: 200 })); // GET /knowledge-bases
-    const out = (await load(loadEv())) as { files: { id: string }[]; kbs: { linked: unknown[]; available: { id: string }[] } };
-    expect(out.files.map((f) => f.id)).toEqual(['a', 'b']);
-    expect(out.kbs.linked).toEqual([]);
-    expect(out.kbs.available.map((k) => k.id)).toEqual(['k1']);
-  });
+	it('fans out file metadata for each attached_file_id and filters out 404s', async () => {
+		const matter = {
+			id: 'p1',
+			name: 'Acme',
+			description: 'd',
+			privileged: false,
+			minimum_inference_tier: null,
+			attached_file_ids: ['a', 'b', 'gone']
+		};
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 })) // GET /projects/p1
+			.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 })) // GET /chats?project_id=p1
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						id: 'a',
+						filename: 'a.pdf',
+						size_bytes: 1,
+						mime_type: 'application/pdf',
+						ingestion_status: 'ready'
+					}),
+					{ status: 200 }
+				)
+			)
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						id: 'b',
+						filename: 'b.pdf',
+						size_bytes: 2,
+						mime_type: 'application/pdf',
+						ingestion_status: 'pending'
+					}),
+					{ status: 200 }
+				)
+			)
+			.mockResolvedValueOnce(new Response('not found', { status: 404 })) // GET /files/gone → filtered
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // GET /knowledge-bases?project_id=p1
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify([
+						{
+							id: 'k1',
+							name: 'KB',
+							owner_id: 'u',
+							hybrid_alpha: 0.5,
+							file_count: 0,
+							chunk_count: 0,
+							created_at: '',
+							updated_at: ''
+						}
+					]),
+					{ status: 200 }
+				)
+			); // GET /knowledge-bases
+		const out = (await load(loadEv())) as {
+			files: { id: string }[];
+			kbs: { linked: unknown[]; available: { id: string }[] };
+		};
+		expect(out.files.map((f) => f.id)).toEqual(['a', 'b']);
+		expect(out.kbs.linked).toEqual([]);
+		expect(out.kbs.available.map((k) => k.id)).toEqual(['k1']);
+	});
 
-  it('subtracts linked KBs from the available picker list', async () => {
-    const matter = { id: 'p1', name: 'Acme', privileged: false, minimum_inference_tier: null, attached_file_ids: [] };
-    const linkedKb = { id: 'k1', name: 'Linked', owner_id: 'u', hybrid_alpha: 0.5, file_count: 1, chunk_count: 1, created_at: '', updated_at: '' };
-    const otherKb = { id: 'k2', name: 'Other', owner_id: 'u', hybrid_alpha: 0.5, file_count: 0, chunk_count: 0, created_at: '', updated_at: '' };
-    lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify([linkedKb]), { status: 200 }))                                  // linked
-      .mockResolvedValueOnce(new Response(JSON.stringify([linkedKb, otherKb]), { status: 200 }));                        // all
-    const out = (await load(loadEv())) as { kbs: { linked: { id: string }[]; available: { id: string }[] } };
-    expect(out.kbs.linked.map((k) => k.id)).toEqual(['k1']);
-    expect(out.kbs.available.map((k) => k.id)).toEqual(['k2']);
-  });
+	it('subtracts linked KBs from the available picker list', async () => {
+		const matter = {
+			id: 'p1',
+			name: 'Acme',
+			privileged: false,
+			minimum_inference_tier: null,
+			attached_file_ids: []
+		};
+		const linkedKb = {
+			id: 'k1',
+			name: 'Linked',
+			owner_id: 'u',
+			hybrid_alpha: 0.5,
+			file_count: 1,
+			chunk_count: 1,
+			created_at: '',
+			updated_at: ''
+		};
+		const otherKb = {
+			id: 'k2',
+			name: 'Other',
+			owner_id: 'u',
+			hybrid_alpha: 0.5,
+			file_count: 0,
+			chunk_count: 0,
+			created_at: '',
+			updated_at: ''
+		};
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify([linkedKb]), { status: 200 })) // linked
+			.mockResolvedValueOnce(new Response(JSON.stringify([linkedKb, otherKb]), { status: 200 })); // all
+		const out = (await load(loadEv())) as {
+			kbs: { linked: { id: string }[]; available: { id: string }[] };
+		};
+		expect(out.kbs.linked.map((k) => k.id)).toEqual(['k1']);
+		expect(out.kbs.available.map((k) => k.id)).toEqual(['k2']);
+	});
 
-  it('degrades gracefully when KB fetches fail (returns empty arrays)', async () => {
-    const matter = { id: 'p1', name: 'Acme', privileged: false, minimum_inference_tier: null, attached_file_ids: [] };
-    lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
-      .mockResolvedValueOnce(new Response('boom', { status: 502 }))
-      .mockResolvedValueOnce(new Response('boom', { status: 502 }));
-    const out = (await load(loadEv())) as { kbs: { linked: unknown[]; available: unknown[] } };
-    expect(out.kbs.linked).toEqual([]);
-    expect(out.kbs.available).toEqual([]);
-  });
+	it('degrades gracefully when KB fetches fail (returns empty arrays)', async () => {
+		const matter = {
+			id: 'p1',
+			name: 'Acme',
+			privileged: false,
+			minimum_inference_tier: null,
+			attached_file_ids: []
+		};
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+			.mockResolvedValueOnce(new Response('boom', { status: 502 }))
+			.mockResolvedValueOnce(new Response('boom', { status: 502 }));
+		const out = (await load(loadEv())) as { kbs: { linked: unknown[]; available: unknown[] } };
+		expect(out.kbs.linked).toEqual([]);
+		expect(out.kbs.available).toEqual([]);
+	});
 });
 ```
 
@@ -742,31 +860,31 @@ type KnowledgeBase = components['schemas']['KnowledgeBase'];
 type ProjectFile = components['schemas']['File'];
 
 export const load: PageServerLoad = async (event) => {
-  const [mRes, cRes] = await Promise.all([
-    lqFetch(event, `/api/v1/projects/${event.params.id}`),
-    lqFetch(event, `/api/v1/chats?project_id=${event.params.id}`)
-  ]);
-  if (!mRes.ok) throw error(mRes.status === 404 ? 404 : 502, 'Could not load this matter.');
-  const matter = (await mRes.json()) as Matter;
-  const chats = cRes.ok ? (((await cRes.json()) as { items: Chat[] }).items ?? []) : [];
+	const [mRes, cRes] = await Promise.all([
+		lqFetch(event, `/api/v1/projects/${event.params.id}`),
+		lqFetch(event, `/api/v1/chats?project_id=${event.params.id}`)
+	]);
+	if (!mRes.ok) throw error(mRes.status === 404 ? 404 : 502, 'Could not load this matter.');
+	const matter = (await mRes.json()) as Matter;
+	const chats = cRes.ok ? (((await cRes.json()) as { items: Chat[] }).items ?? []) : [];
 
-  const [filesArr, kbLinkedRes, kbAllRes] = await Promise.all([
-    Promise.all(
-      (matter.attached_file_ids ?? []).map(async (id) => {
-        const r = await lqFetch(event, `/api/v1/files/${id}`);
-        return r.ok ? ((await r.json()) as ProjectFile) : null;
-      })
-    ),
-    lqFetch(event, `/api/v1/knowledge-bases?project_id=${event.params.id}`),
-    lqFetch(event, '/api/v1/knowledge-bases')
-  ]);
-  const files = filesArr.filter((f): f is ProjectFile => f !== null);
-  const linked = kbLinkedRes.ok ? ((await kbLinkedRes.json()) as KnowledgeBase[]) : [];
-  const allKbs = kbAllRes.ok ? ((await kbAllRes.json()) as KnowledgeBase[]) : [];
-  const linkedIds = new Set(linked.map((k) => k.id));
-  const available = allKbs.filter((k) => !linkedIds.has(k.id));
+	const [filesArr, kbLinkedRes, kbAllRes] = await Promise.all([
+		Promise.all(
+			(matter.attached_file_ids ?? []).map(async (id) => {
+				const r = await lqFetch(event, `/api/v1/files/${id}`);
+				return r.ok ? ((await r.json()) as ProjectFile) : null;
+			})
+		),
+		lqFetch(event, `/api/v1/knowledge-bases?project_id=${event.params.id}`),
+		lqFetch(event, '/api/v1/knowledge-bases')
+	]);
+	const files = filesArr.filter((f): f is ProjectFile => f !== null);
+	const linked = kbLinkedRes.ok ? ((await kbLinkedRes.json()) as KnowledgeBase[]) : [];
+	const allKbs = kbAllRes.ok ? ((await kbAllRes.json()) as KnowledgeBase[]) : [];
+	const linkedIds = new Set(linked.map((k) => k.id));
+	const available = allKbs.filter((k) => !linkedIds.has(k.id));
 
-  return { matter, chats, files, kbs: { linked, available } };
+	return { matter, chats, files, kbs: { linked, available } };
 };
 ```
 
@@ -803,6 +921,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 6: `uploadFile` + `detachFile` server actions
 
 **Files:**
+
 - Modify: `src/routes/(app)/matters/[id]/+page.server.ts`
 - Modify: `src/routes/(app)/matters/[id]/page.server.test.ts`
 
@@ -812,97 +931,120 @@ Append to `src/routes/(app)/matters/[id]/page.server.test.ts` a new helper + des
 
 ```ts
 const fileEvent = (files: { name: string; type: string; bytes?: number }[], id = 'p1') => {
-  const fd = new FormData();
-  for (const f of files) {
-    fd.append('file', new File([new Uint8Array(f.bytes ?? 8)], f.name, { type: f.type }));
-  }
-  return { params: { id }, request: new Request('http://x', { method: 'POST', body: fd }) } as never;
+	const fd = new FormData();
+	for (const f of files) {
+		fd.append('file', new File([new Uint8Array(f.bytes ?? 8)], f.name, { type: f.type }));
+	}
+	return {
+		params: { id },
+		request: new Request('http://x', { method: 'POST', body: fd })
+	} as never;
 };
 const detachEvent = (file_id: string, id = 'p1') =>
-  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ file_id }) }) }) as never;
+	({
+		params: { id },
+		request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ file_id }) })
+	}) as never;
 
 describe('/matters/[id] uploadFile action', () => {
-  it('uploads one file then attaches it; redirects via { uploaded: 1 }', async () => {
-    lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'newfile1' }), { status: 201 })) // POST /files
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));                              // POST /projects/p1/files
-    const r = await actions.uploadFile(fileEvent([{ name: 'a.pdf', type: 'application/pdf' }]));
-    expect(r).toEqual({ uploaded: 1 });
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/files');
-    expect(lqFetch.mock.calls[0][2].method).toBe('POST');
-    expect(lqFetch.mock.calls[0][2].body).toBeInstanceOf(FormData);
-    expect(lqFetch.mock.calls[1][1]).toBe('/api/v1/projects/p1/files');
-    expect(JSON.parse(lqFetch.mock.calls[1][2].body)).toEqual({ file_id: 'newfile1' });
-  });
+	it('uploads one file then attaches it; redirects via { uploaded: 1 }', async () => {
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'newfile1' }), { status: 201 })) // POST /files
+			.mockResolvedValueOnce(new Response(null, { status: 204 })); // POST /projects/p1/files
+		const r = await actions.uploadFile(fileEvent([{ name: 'a.pdf', type: 'application/pdf' }]));
+		expect(r).toEqual({ uploaded: 1 });
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/files');
+		expect(lqFetch.mock.calls[0][2].method).toBe('POST');
+		expect(lqFetch.mock.calls[0][2].body).toBeInstanceOf(FormData);
+		expect(lqFetch.mock.calls[1][1]).toBe('/api/v1/projects/p1/files');
+		expect(JSON.parse(lqFetch.mock.calls[1][2].body)).toEqual({ file_id: 'newfile1' });
+	});
 
-  it('uploads multiple files in order', async () => {
-    lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f2' }), { status: 201 }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
-    const r = await actions.uploadFile(fileEvent([
-      { name: 'a.pdf', type: 'application/pdf' },
-      { name: 'b.pdf', type: 'application/pdf' }
-    ]));
-    expect(r).toEqual({ uploaded: 2 });
-    expect(JSON.parse(lqFetch.mock.calls[1][2].body)).toEqual({ file_id: 'f1' });
-    expect(JSON.parse(lqFetch.mock.calls[3][2].body)).toEqual({ file_id: 'f2' });
-  });
+	it('uploads multiple files in order', async () => {
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 }))
+			.mockResolvedValueOnce(new Response(null, { status: 204 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f2' }), { status: 201 }))
+			.mockResolvedValueOnce(new Response(null, { status: 204 }));
+		const r = await actions.uploadFile(
+			fileEvent([
+				{ name: 'a.pdf', type: 'application/pdf' },
+				{ name: 'b.pdf', type: 'application/pdf' }
+			])
+		);
+		expect(r).toEqual({ uploaded: 2 });
+		expect(JSON.parse(lqFetch.mock.calls[1][2].body)).toEqual({ file_id: 'f1' });
+		expect(JSON.parse(lqFetch.mock.calls[3][2].body)).toEqual({ file_id: 'f2' });
+	});
 
-  it('returns 413 with the formatted MB limit when the backend returns 413 on upload', async () => {
-    lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ details: { limit_bytes: 100 * 1024 * 1024, received_bytes: 200 * 1024 * 1024 } }), { status: 413 }));
-    const r = await actions.uploadFile(fileEvent([{ name: 'huge.pdf', type: 'application/pdf' }]));
-    expect(r).toMatchObject({ status: 413, data: { error: 'File "huge.pdf" is too large — max 100 MB.' } });
-  });
+	it('returns 413 with the formatted MB limit when the backend returns 413 on upload', async () => {
+		lqFetch.mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({
+					details: { limit_bytes: 100 * 1024 * 1024, received_bytes: 200 * 1024 * 1024 }
+				}),
+				{ status: 413 }
+			)
+		);
+		const r = await actions.uploadFile(fileEvent([{ name: 'huge.pdf', type: 'application/pdf' }]));
+		expect(r).toMatchObject({
+			status: 413,
+			data: { error: 'File "huge.pdf" is too large — max 100 MB.' }
+		});
+	});
 
-  it('falls back to "max 100 MB" when the 413 body is unparseable', async () => {
-    lqFetch.mockResolvedValueOnce(new Response('garbage', { status: 413 }));
-    const r = await actions.uploadFile(fileEvent([{ name: 'huge.pdf', type: 'application/pdf' }]));
-    expect(r).toMatchObject({ status: 413, data: { error: 'File "huge.pdf" is too large — max 100 MB.' } });
-  });
+	it('falls back to "max 100 MB" when the 413 body is unparseable', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('garbage', { status: 413 }));
+		const r = await actions.uploadFile(fileEvent([{ name: 'huge.pdf', type: 'application/pdf' }]));
+		expect(r).toMatchObject({
+			status: 413,
+			data: { error: 'File "huge.pdf" is too large — max 100 MB.' }
+		});
+	});
 
-  it('returns 502 with the failing filename when the backend errors mid-batch (file 2 fails on upload)', async () => {
-    lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 })) // file 1 upload
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))                          // file 1 attach
-      .mockResolvedValueOnce(new Response('oops', { status: 500 }));                       // file 2 upload fails
-    const r = await actions.uploadFile(fileEvent([
-      { name: 'ok.pdf', type: 'application/pdf' },
-      { name: 'bad.pdf', type: 'application/pdf' }
-    ]));
-    expect(r).toMatchObject({ status: 502, data: { error: 'Could not upload "bad.pdf".' } });
-  });
+	it('returns 502 with the failing filename when the backend errors mid-batch (file 2 fails on upload)', async () => {
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 })) // file 1 upload
+			.mockResolvedValueOnce(new Response(null, { status: 204 })) // file 1 attach
+			.mockResolvedValueOnce(new Response('oops', { status: 500 })); // file 2 upload fails
+		const r = await actions.uploadFile(
+			fileEvent([
+				{ name: 'ok.pdf', type: 'application/pdf' },
+				{ name: 'bad.pdf', type: 'application/pdf' }
+			])
+		);
+		expect(r).toMatchObject({ status: 502, data: { error: 'Could not upload "bad.pdf".' } });
+	});
 
-  it('silently treats 409 on the attach step as success', async () => {
-    lqFetch
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 }))
-      .mockResolvedValueOnce(new Response(null, { status: 409 }));
-    const r = await actions.uploadFile(fileEvent([{ name: 'a.pdf', type: 'application/pdf' }]));
-    expect(r).toEqual({ uploaded: 1 });
-  });
+	it('silently treats 409 on the attach step as success', async () => {
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'f1' }), { status: 201 }))
+			.mockResolvedValueOnce(new Response(null, { status: 409 }));
+		const r = await actions.uploadFile(fileEvent([{ name: 'a.pdf', type: 'application/pdf' }]));
+		expect(r).toEqual({ uploaded: 1 });
+	});
 });
 
 describe('/matters/[id] detachFile action', () => {
-  it('DELETEs the project-file join and returns success', async () => {
-    lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
-    const r = await actions.detachFile(detachEvent('f1'));
-    expect(r).toEqual({ success: true });
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/files/f1');
-    expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
-  });
+	it('DELETEs the project-file join and returns success', async () => {
+		lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
+		const r = await actions.detachFile(detachEvent('f1'));
+		expect(r).toEqual({ success: true });
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/files/f1');
+		expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
+	});
 
-  it('treats 404 as silent success (idempotent from the UI POV)', async () => {
-    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
-    const r = await actions.detachFile(detachEvent('f1'));
-    expect(r).toEqual({ success: true });
-  });
+	it('treats 404 as silent success (idempotent from the UI POV)', async () => {
+		lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+		const r = await actions.detachFile(detachEvent('f1'));
+		expect(r).toEqual({ success: true });
+	});
 
-  it('returns 502 on other backend failures', async () => {
-    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
-    const r = await actions.detachFile(detachEvent('f1'));
-    expect(r).toMatchObject({ status: 502, data: { error: 'Could not remove the file.' } });
-  });
+	it('returns 502 on other backend failures', async () => {
+		lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+		const r = await actions.detachFile(detachEvent('f1'));
+		expect(r).toMatchObject({ status: 502, data: { error: 'Could not remove the file.' } });
+	});
 });
 ```
 
@@ -996,6 +1138,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 7: `linkKb` + `unlinkKb` server actions
 
 **Files:**
+
 - Modify: `src/routes/(app)/matters/[id]/+page.server.ts`
 - Modify: `src/routes/(app)/matters/[id]/page.server.test.ts`
 
@@ -1005,48 +1148,54 @@ Append to `src/routes/(app)/matters/[id]/page.server.test.ts`:
 
 ```ts
 const kbEvent = (kb_id: string, id = 'p1') =>
-  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ kb_id }) }) }) as never;
+	({
+		params: { id },
+		request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ kb_id }) })
+	}) as never;
 
 describe('/matters/[id] linkKb / unlinkKb actions', () => {
-  it('linkKb PATCHes the KB with the matter id', async () => {
-    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
-    const r = await actions.linkKb(kbEvent('k1'));
-    expect(r).toEqual({ success: true });
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1');
-    expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
-    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ project_id: 'p1' });
-  });
+	it('linkKb PATCHes the KB with the matter id', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+		const r = await actions.linkKb(kbEvent('k1'));
+		expect(r).toEqual({ success: true });
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1');
+		expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ project_id: 'p1' });
+	});
 
-  it('linkKb maps 404 to a friendly error', async () => {
-    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
-    const r = await actions.linkKb(kbEvent('k1'));
-    expect(r).toMatchObject({ status: 404, data: { error: 'Knowledge base no longer exists.' } });
-  });
+	it('linkKb maps 404 to a friendly error', async () => {
+		lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+		const r = await actions.linkKb(kbEvent('k1'));
+		expect(r).toMatchObject({ status: 404, data: { error: 'Knowledge base no longer exists.' } });
+	});
 
-  it('linkKb maps other failures to a 502', async () => {
-    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
-    const r = await actions.linkKb(kbEvent('k1'));
-    expect(r).toMatchObject({ status: 502, data: { error: 'Could not link the knowledge base.' } });
-  });
+	it('linkKb maps other failures to a 502', async () => {
+		lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+		const r = await actions.linkKb(kbEvent('k1'));
+		expect(r).toMatchObject({ status: 502, data: { error: 'Could not link the knowledge base.' } });
+	});
 
-  it('unlinkKb PATCHes the KB with project_id: null', async () => {
-    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
-    const r = await actions.unlinkKb(kbEvent('k1'));
-    expect(r).toEqual({ success: true });
-    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ project_id: null });
-  });
+	it('unlinkKb PATCHes the KB with project_id: null', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+		const r = await actions.unlinkKb(kbEvent('k1'));
+		expect(r).toEqual({ success: true });
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ project_id: null });
+	});
 
-  it('unlinkKb treats 404 as silent success', async () => {
-    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
-    const r = await actions.unlinkKb(kbEvent('k1'));
-    expect(r).toEqual({ success: true });
-  });
+	it('unlinkKb treats 404 as silent success', async () => {
+		lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+		const r = await actions.unlinkKb(kbEvent('k1'));
+		expect(r).toEqual({ success: true });
+	});
 
-  it('unlinkKb maps other failures to a 502', async () => {
-    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
-    const r = await actions.unlinkKb(kbEvent('k1'));
-    expect(r).toMatchObject({ status: 502, data: { error: 'Could not unlink the knowledge base.' } });
-  });
+	it('unlinkKb maps other failures to a 502', async () => {
+		lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+		const r = await actions.unlinkKb(kbEvent('k1'));
+		expect(r).toMatchObject({
+			status: 502,
+			data: { error: 'Could not unlink the knowledge base.' }
+		});
+	});
 });
 ```
 
@@ -1122,6 +1271,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 8: `attachSkill` + `detachSkill` server actions
 
 **Files:**
+
 - Modify: `src/routes/(app)/matters/[id]/+page.server.ts`
 - Modify: `src/routes/(app)/matters/[id]/page.server.test.ts`
 
@@ -1131,55 +1281,58 @@ Append to `src/routes/(app)/matters/[id]/page.server.test.ts`:
 
 ```ts
 const skillEvent = (skill_name: string, id = 'p1') =>
-  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ skill_name }) }) }) as never;
+	({
+		params: { id },
+		request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ skill_name }) })
+	}) as never;
 
 describe('/matters/[id] attachSkill / detachSkill actions', () => {
-  it('attachSkill POSTs { skill_name } to /projects/{id}/skills', async () => {
-    lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
-    const r = await actions.attachSkill(skillEvent('contract-redline'));
-    expect(r).toEqual({ success: true });
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/skills');
-    expect(lqFetch.mock.calls[0][2].method).toBe('POST');
-    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ skill_name: 'contract-redline' });
-  });
+	it('attachSkill POSTs { skill_name } to /projects/{id}/skills', async () => {
+		lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
+		const r = await actions.attachSkill(skillEvent('contract-redline'));
+		expect(r).toEqual({ success: true });
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/skills');
+		expect(lqFetch.mock.calls[0][2].method).toBe('POST');
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ skill_name: 'contract-redline' });
+	});
 
-  it('attachSkill maps 404 to a friendly error', async () => {
-    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
-    const r = await actions.attachSkill(skillEvent('ghost'));
-    expect(r).toMatchObject({ status: 404, data: { error: 'Skill no longer exists.' } });
-  });
+	it('attachSkill maps 404 to a friendly error', async () => {
+		lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+		const r = await actions.attachSkill(skillEvent('ghost'));
+		expect(r).toMatchObject({ status: 404, data: { error: 'Skill no longer exists.' } });
+	});
 
-  it('attachSkill treats 409 as silent success', async () => {
-    lqFetch.mockResolvedValue(new Response('already', { status: 409 }));
-    const r = await actions.attachSkill(skillEvent('contract-redline'));
-    expect(r).toEqual({ success: true });
-  });
+	it('attachSkill treats 409 as silent success', async () => {
+		lqFetch.mockResolvedValue(new Response('already', { status: 409 }));
+		const r = await actions.attachSkill(skillEvent('contract-redline'));
+		expect(r).toEqual({ success: true });
+	});
 
-  it('attachSkill maps other failures to a 502', async () => {
-    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
-    const r = await actions.attachSkill(skillEvent('x'));
-    expect(r).toMatchObject({ status: 502, data: { error: 'Could not attach the skill.' } });
-  });
+	it('attachSkill maps other failures to a 502', async () => {
+		lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+		const r = await actions.attachSkill(skillEvent('x'));
+		expect(r).toMatchObject({ status: 502, data: { error: 'Could not attach the skill.' } });
+	});
 
-  it('detachSkill DELETEs /projects/{id}/skills/{name}', async () => {
-    lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
-    const r = await actions.detachSkill(skillEvent('contract-redline'));
-    expect(r).toEqual({ success: true });
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/skills/contract-redline');
-    expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
-  });
+	it('detachSkill DELETEs /projects/{id}/skills/{name}', async () => {
+		lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
+		const r = await actions.detachSkill(skillEvent('contract-redline'));
+		expect(r).toEqual({ success: true });
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/skills/contract-redline');
+		expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
+	});
 
-  it('detachSkill treats 404 as silent success', async () => {
-    lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
-    const r = await actions.detachSkill(skillEvent('contract-redline'));
-    expect(r).toEqual({ success: true });
-  });
+	it('detachSkill treats 404 as silent success', async () => {
+		lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
+		const r = await actions.detachSkill(skillEvent('contract-redline'));
+		expect(r).toEqual({ success: true });
+	});
 
-  it('detachSkill maps other failures to a 502', async () => {
-    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
-    const r = await actions.detachSkill(skillEvent('x'));
-    expect(r).toMatchObject({ status: 502, data: { error: 'Could not detach the skill.' } });
-  });
+	it('detachSkill maps other failures to a 502', async () => {
+		lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+		const r = await actions.detachSkill(skillEvent('x'));
+		expect(r).toMatchObject({ status: 502, data: { error: 'Could not detach the skill.' } });
+	});
 });
 ```
 
@@ -1252,6 +1405,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 9: `saveContext` server action
 
 **Files:**
+
 - Modify: `src/routes/(app)/matters/[id]/+page.server.ts`
 - Modify: `src/routes/(app)/matters/[id]/page.server.test.ts`
 
@@ -1261,43 +1415,46 @@ Append to `src/routes/(app)/matters/[id]/page.server.test.ts`:
 
 ```ts
 const ctxEvent = (context_md: string, id = 'p1') =>
-  ({ params: { id }, request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ context_md }) }) }) as never;
+	({
+		params: { id },
+		request: new Request('http://x', { method: 'POST', body: new URLSearchParams({ context_md }) })
+	}) as never;
 
 describe('/matters/[id] saveContext action', () => {
-  it('PATCHes the matter with the non-empty context_md', async () => {
-    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
-    const r = await actions.saveContext(ctxEvent('## Notes\n- thing'));
-    expect(r).toEqual({ success: true });
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1');
-    expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
-    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ context_md: '## Notes\n- thing' });
-  });
+	it('PATCHes the matter with the non-empty context_md', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+		const r = await actions.saveContext(ctxEvent('## Notes\n- thing'));
+		expect(r).toEqual({ success: true });
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1');
+		expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ context_md: '## Notes\n- thing' });
+	});
 
-  it('sends context_md: null when the input is empty (clear case)', async () => {
-    lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
-    const r = await actions.saveContext(ctxEvent(''));
-    expect(r).toEqual({ success: true });
-    expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ context_md: null });
-  });
+	it('sends context_md: null when the input is empty (clear case)', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+		const r = await actions.saveContext(ctxEvent(''));
+		expect(r).toEqual({ success: true });
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ context_md: null });
+	});
 
-  it('pre-checks the 100 KiB byte cap without calling the backend', async () => {
-    const huge = 'A'.repeat(102_401); // 102_401 ASCII bytes > 102_400-byte cap
-    const r = await actions.saveContext(ctxEvent(huge));
-    expect(r).toMatchObject({ status: 422, data: { error: 'Context exceeds the 100 KiB limit.' } });
-    expect(lqFetch).not.toHaveBeenCalled();
-  });
+	it('pre-checks the 100 KiB byte cap without calling the backend', async () => {
+		const huge = 'A'.repeat(102_401); // 102_401 ASCII bytes > 102_400-byte cap
+		const r = await actions.saveContext(ctxEvent(huge));
+		expect(r).toMatchObject({ status: 422, data: { error: 'Context exceeds the 100 KiB limit.' } });
+		expect(lqFetch).not.toHaveBeenCalled();
+	});
 
-  it('maps a backend 422 to the same friendly oversize message', async () => {
-    lqFetch.mockResolvedValue(new Response('{}', { status: 422 }));
-    const r = await actions.saveContext(ctxEvent('within-cap'));
-    expect(r).toMatchObject({ status: 422, data: { error: 'Context exceeds the 100 KiB limit.' } });
-  });
+	it('maps a backend 422 to the same friendly oversize message', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 422 }));
+		const r = await actions.saveContext(ctxEvent('within-cap'));
+		expect(r).toMatchObject({ status: 422, data: { error: 'Context exceeds the 100 KiB limit.' } });
+	});
 
-  it('maps other failures to a 502', async () => {
-    lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
-    const r = await actions.saveContext(ctxEvent('x'));
-    expect(r).toMatchObject({ status: 502, data: { error: 'Could not save the context.' } });
-  });
+	it('maps other failures to a 502', async () => {
+		lqFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+		const r = await actions.saveContext(ctxEvent('x'));
+		expect(r).toMatchObject({ status: 502, data: { error: 'Could not save the context.' } });
+	});
 });
 ```
 
@@ -1311,20 +1468,23 @@ Expected: the 5 new cases FAIL.
 In `src/routes/(app)/matters/[id]/+page.server.ts`, append inside the `actions` object:
 
 ```ts
-  saveContext: async (event) => {
-    const data = await event.request.formData();
-    const raw = String(data.get('context_md') ?? '');
-    if (new TextEncoder().encode(raw).length > 102_400) {
-      return fail(422, { error: 'Context exceeds the 100 KiB limit.' });
-    }
-    const body = { context_md: raw === '' ? null : raw };
-    const res = await lqFetch(event, `/api/v1/projects/${event.params.id}`, { method: 'PATCH', body: JSON.stringify(body) });
-    if (!res.ok) {
-      if (res.status === 422) return fail(422, { error: 'Context exceeds the 100 KiB limit.' });
-      return fail(502, { error: 'Could not save the context.' });
-    }
-    return { success: true };
-  }
+saveContext: async (event) => {
+	const data = await event.request.formData();
+	const raw = String(data.get('context_md') ?? '');
+	if (new TextEncoder().encode(raw).length > 102_400) {
+		return fail(422, { error: 'Context exceeds the 100 KiB limit.' });
+	}
+	const body = { context_md: raw === '' ? null : raw };
+	const res = await lqFetch(event, `/api/v1/projects/${event.params.id}`, {
+		method: 'PATCH',
+		body: JSON.stringify(body)
+	});
+	if (!res.ok) {
+		if (res.status === 422) return fail(422, { error: 'Context exceeds the 100 KiB limit.' });
+		return fail(502, { error: 'Could not save the context.' });
+	}
+	return { success: true };
+};
 ```
 
 - [ ] **Step 4: Run tests — expect pass**
@@ -1356,6 +1516,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 10: `FilesSection.svelte` — compose Dropzone, FileRow, the upload form
 
 **Files:**
+
 - Create: `src/lib/matters/sections/FilesSection.svelte`
 - Create: `src/lib/matters/sections/FilesSection.svelte.test.ts`
 
@@ -1376,51 +1537,58 @@ vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
 type File = components['schemas']['File'];
 
 const file = (over: Partial<File>): File => ({
-  id: 'f1', owner_id: 'u', filename: 'msa.pdf', mime_type: 'application/pdf',
-  size_bytes: 1024, ingestion_status: 'ready', created_at: '2026-05-28T00:00:00Z',
-  ...over
+	id: 'f1',
+	owner_id: 'u',
+	filename: 'msa.pdf',
+	mime_type: 'application/pdf',
+	size_bytes: 1024,
+	ingestion_status: 'ready',
+	created_at: '2026-05-28T00:00:00Z',
+	...over
 });
 
 describe('FilesSection', () => {
-  it('renders the Files heading', () => {
-    render(FilesSection, { props: { files: [] } });
-    expect(screen.getByRole('heading', { name: /files/i })).toBeInTheDocument();
-  });
+	it('renders the Files heading', () => {
+		render(FilesSection, { props: { files: [] } });
+		expect(screen.getByRole('heading', { name: /files/i })).toBeInTheDocument();
+	});
 
-  it('empty state shows the Dropzone prompt and no rows', () => {
-    render(FilesSection, { props: { files: [] } });
-    expect(screen.getByRole('button', { name: /upload files/i })).toBeInTheDocument();
-    expect(screen.queryByText(/msa\.pdf/)).not.toBeInTheDocument();
-  });
+	it('empty state shows the Dropzone prompt and no rows', () => {
+		render(FilesSection, { props: { files: [] } });
+		expect(screen.getByRole('button', { name: /upload files/i })).toBeInTheDocument();
+		expect(screen.queryByText(/msa\.pdf/)).not.toBeInTheDocument();
+	});
 
-  it('populated state shows one row per file plus an "Add file" button', () => {
-    render(FilesSection, { props: { files: [file({ id: 'a', filename: 'a.pdf' }), file({ id: 'b', filename: 'b.pdf' })] } });
-    expect(screen.getByText('a.pdf')).toBeInTheDocument();
-    expect(screen.getByText('b.pdf')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /add file/i })).toBeInTheDocument();
-  });
+	it('populated state shows one row per file plus an "Add file" button', () => {
+		render(FilesSection, {
+			props: { files: [file({ id: 'a', filename: 'a.pdf' }), file({ id: 'b', filename: 'b.pdf' })] }
+		});
+		expect(screen.getByText('a.pdf')).toBeInTheDocument();
+		expect(screen.getByText('b.pdf')).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /add file/i })).toBeInTheDocument();
+	});
 
-  it('"Add file" button opens the hidden file input', async () => {
-    render(FilesSection, { props: { files: [file({})] } });
-    // The hidden input is the form's; the Dropzone is hidden in populated state.
-    const inputs = document.querySelectorAll('input[type="file"]');
-    expect(inputs.length).toBeGreaterThanOrEqual(1);
-    const clickSpy = vi.spyOn(inputs[0] as HTMLInputElement, 'click');
-    await userEvent.click(screen.getByRole('button', { name: /add file/i }));
-    expect(clickSpy).toHaveBeenCalled();
-  });
+	it('"Add file" button opens the hidden file input', async () => {
+		render(FilesSection, { props: { files: [file({})] } });
+		// The hidden input is the form's; the Dropzone is hidden in populated state.
+		const inputs = document.querySelectorAll('input[type="file"]');
+		expect(inputs.length).toBeGreaterThanOrEqual(1);
+		const clickSpy = vi.spyOn(inputs[0] as HTMLInputElement, 'click');
+		await userEvent.click(screen.getByRole('button', { name: /add file/i }));
+		expect(clickSpy).toHaveBeenCalled();
+	});
 
-  it('wraps the upload input in a form pointing at ?/uploadFile with multipart enctype', () => {
-    render(FilesSection, { props: { files: [] } });
-    const form = screen.getByRole('form', { name: /upload files/i });
-    expect(form).toHaveAttribute('action', '?/uploadFile');
-    expect(form).toHaveAttribute('enctype', 'multipart/form-data');
-  });
+	it('wraps the upload input in a form pointing at ?/uploadFile with multipart enctype', () => {
+		render(FilesSection, { props: { files: [] } });
+		const form = screen.getByRole('form', { name: /upload files/i });
+		expect(form).toHaveAttribute('action', '?/uploadFile');
+		expect(form).toHaveAttribute('enctype', 'multipart/form-data');
+	});
 
-  it('surfaces a server error message via the error prop', () => {
-    render(FilesSection, { props: { files: [], error: 'File "x" is too large — max 100 MB.' } });
-    expect(screen.getByText(/file "x" is too large/i)).toBeInTheDocument();
-  });
+	it('surfaces a server error message via the error prop', () => {
+		render(FilesSection, { props: { files: [], error: 'File "x" is too large — max 100 MB.' } });
+		expect(screen.getByText(/file "x" is too large/i)).toBeInTheDocument();
+	});
 });
 ```
 
@@ -1435,69 +1603,70 @@ Create `src/lib/matters/sections/FilesSection.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { enhance } from '$app/forms';
-  import type { components } from '$lib/api/backend';
-  import Dropzone from '$lib/matters/files/Dropzone.svelte';
-  import FileRow from '$lib/matters/files/FileRow.svelte';
+	import { enhance } from '$app/forms';
+	import type { components } from '$lib/api/backend';
+	import Dropzone from '$lib/matters/files/Dropzone.svelte';
+	import FileRow from '$lib/matters/files/FileRow.svelte';
 
-  type ProjectFile = components['schemas']['File'];
+	type ProjectFile = components['schemas']['File'];
 
-  let { files, error = '' }: { files: ProjectFile[]; error?: string } = $props();
+	let { files, error = '' }: { files: ProjectFile[]; error?: string } = $props();
 
-  let form = $state<HTMLFormElement>();
-  let input = $state<HTMLInputElement>();
+	let form = $state<HTMLFormElement>();
+	let input = $state<HTMLInputElement>();
 
-  function openPicker() {
-    input?.click();
-  }
-  function submitWith(droppedFiles: File[]) {
-    if (!form || !input) return;
-    const dt = new DataTransfer();
-    for (const f of droppedFiles) dt.items.add(f);
-    input.files = dt.files;
-    form.requestSubmit();
-  }
+	function openPicker() {
+		input?.click();
+	}
+	function submitWith(droppedFiles: File[]) {
+		if (!form || !input) return;
+		const dt = new DataTransfer();
+		for (const f of droppedFiles) dt.items.add(f);
+		input.files = dt.files;
+		form.requestSubmit();
+	}
 </script>
 
 <section class="mt-6">
-  <h2 class="mb-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Files</h2>
+	<h2 class="mb-2 text-xs font-medium tracking-wide text-mlq-muted uppercase">Files</h2>
 
-  <form
-    bind:this={form}
-    method="POST"
-    action="?/uploadFile"
-    enctype="multipart/form-data"
-    use:enhance
-    aria-label="Upload files"
-  >
-    <input
-      bind:this={input}
-      type="file"
-      name="file"
-      multiple
-      onchange={() => form?.requestSubmit()}
-      class="sr-only"
-    />
+	<form
+		bind:this={form}
+		method="POST"
+		action="?/uploadFile"
+		enctype="multipart/form-data"
+		use:enhance
+		aria-label="Upload files"
+	>
+		<input
+			bind:this={input}
+			type="file"
+			name="file"
+			multiple
+			onchange={() => form?.requestSubmit()}
+			class="sr-only"
+		/>
 
-    {#if files.length === 0}
-      <Dropzone onfiles={(fs) => submitWith(fs)} />
-    {:else}
-      <div class="rounded-mlq-control border border-mlq-subtle">
-        {#each files as f (f.id)}
-          <FileRow file={f} />
-        {/each}
-      </div>
-      <div class="mt-2">
-        <button
-          type="button"
-          onclick={openPicker}
-          class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
-        >+ Add file</button>
-      </div>
-    {/if}
+		{#if files.length === 0}
+			<Dropzone onfiles={(fs) => submitWith(fs)} />
+		{:else}
+			<div class="rounded-mlq-control border border-mlq-subtle">
+				{#each files as f (f.id)}
+					<FileRow file={f} />
+				{/each}
+			</div>
+			<div class="mt-2">
+				<button
+					type="button"
+					onclick={openPicker}
+					class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
+					>+ Add file</button
+				>
+			</div>
+		{/if}
 
-    {#if error}<p class="mt-2 text-xs text-mlq-error">{error}</p>{/if}
-  </form>
+		{#if error}<p class="mt-2 text-xs text-mlq-error">{error}</p>{/if}
+	</form>
 </section>
 ```
 
@@ -1534,6 +1703,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 11: `KnowledgeSection.svelte` — empty / linked + picker
 
 **Files:**
+
 - Create: `src/lib/matters/sections/KnowledgeSection.svelte`
 - Create: `src/lib/matters/sections/KnowledgeSection.svelte.test.ts`
 
@@ -1554,44 +1724,55 @@ vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
 type KnowledgeBase = components['schemas']['KnowledgeBase'];
 
 const kb = (over: Partial<KnowledgeBase>): KnowledgeBase => ({
-  id: 'k1', name: 'Standards', owner_id: 'u', hybrid_alpha: 0.5,
-  file_count: 3, chunk_count: 50,
-  created_at: '2026-05-28T00:00:00Z', updated_at: '2026-05-28T00:00:00Z',
-  ...over
+	id: 'k1',
+	name: 'Standards',
+	owner_id: 'u',
+	hybrid_alpha: 0.5,
+	file_count: 3,
+	chunk_count: 50,
+	created_at: '2026-05-28T00:00:00Z',
+	updated_at: '2026-05-28T00:00:00Z',
+	...over
 });
 
 describe('KnowledgeSection', () => {
-  it('renders the Knowledge heading', () => {
-    render(KnowledgeSection, { props: { kbs: { linked: [], available: [] } } });
-    expect(screen.getByRole('heading', { name: /knowledge/i })).toBeInTheDocument();
-  });
+	it('renders the Knowledge heading', () => {
+		render(KnowledgeSection, { props: { kbs: { linked: [], available: [] } } });
+		expect(screen.getByRole('heading', { name: /knowledge/i })).toBeInTheDocument();
+	});
 
-  it('empty linked state shows the helper line + Link button', () => {
-    render(KnowledgeSection, { props: { kbs: { linked: [], available: [kb({ id: 'a' })] } } });
-    expect(screen.getByText(/no knowledge bases linked/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /link a knowledge base/i })).toBeInTheDocument();
-  });
+	it('empty linked state shows the helper line + Link button', () => {
+		render(KnowledgeSection, { props: { kbs: { linked: [], available: [kb({ id: 'a' })] } } });
+		expect(screen.getByText(/no knowledge bases linked/i)).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /link a knowledge base/i })).toBeInTheDocument();
+	});
 
-  it('linked state shows rows with file_count and an Unlink form per row', () => {
-    render(KnowledgeSection, { props: { kbs: { linked: [kb({ id: 'k1', name: 'Linked KB', file_count: 5 })], available: [] } } });
-    expect(screen.getByText('Linked KB')).toBeInTheDocument();
-    expect(screen.getByText(/5 files/i)).toBeInTheDocument();
-    const form = screen.getByRole('form', { name: /unlink linked kb/i });
-    expect(form).toHaveAttribute('action', '?/unlinkKb');
-    expect((form.querySelector('input[name="kb_id"]') as HTMLInputElement).value).toBe('k1');
-  });
+	it('linked state shows rows with file_count and an Unlink form per row', () => {
+		render(KnowledgeSection, {
+			props: {
+				kbs: { linked: [kb({ id: 'k1', name: 'Linked KB', file_count: 5 })], available: [] }
+			}
+		});
+		expect(screen.getByText('Linked KB')).toBeInTheDocument();
+		expect(screen.getByText(/5 files/i)).toBeInTheDocument();
+		const form = screen.getByRole('form', { name: /unlink linked kb/i });
+		expect(form).toHaveAttribute('action', '?/unlinkKb');
+		expect((form.querySelector('input[name="kb_id"]') as HTMLInputElement).value).toBe('k1');
+	});
 
-  it('opens the picker and submits ?/linkKb with the chosen kb_id', async () => {
-    render(KnowledgeSection, { props: { kbs: { linked: [], available: [kb({ id: 'a', name: 'Alpha' })] } } });
-    await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
-    // Picker shows Alpha; click it. The component should populate a hidden link form and submit.
-    // We can verify by checking that a form for linkKb exists with the kb_id after the click.
-    const alpha = screen.getByText('Alpha');
-    await userEvent.click(alpha);
-    const linkForm = screen.getByTestId('link-kb-form') as HTMLFormElement;
-    expect(linkForm.getAttribute('action')).toBe('?/linkKb');
-    expect((linkForm.querySelector('input[name="kb_id"]') as HTMLInputElement).value).toBe('a');
-  });
+	it('opens the picker and submits ?/linkKb with the chosen kb_id', async () => {
+		render(KnowledgeSection, {
+			props: { kbs: { linked: [], available: [kb({ id: 'a', name: 'Alpha' })] } }
+		});
+		await userEvent.click(screen.getByRole('button', { name: /link a knowledge base/i }));
+		// Picker shows Alpha; click it. The component should populate a hidden link form and submit.
+		// We can verify by checking that a form for linkKb exists with the kb_id after the click.
+		const alpha = screen.getByText('Alpha');
+		await userEvent.click(alpha);
+		const linkForm = screen.getByTestId('link-kb-form') as HTMLFormElement;
+		expect(linkForm.getAttribute('action')).toBe('?/linkKb');
+		expect((linkForm.querySelector('input[name="kb_id"]') as HTMLInputElement).value).toBe('a');
+	});
 });
 ```
 
@@ -1606,72 +1787,78 @@ Create `src/lib/matters/sections/KnowledgeSection.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { enhance } from '$app/forms';
-  import { X } from '@lucide/svelte';
-  import type { components } from '$lib/api/backend';
-  import KbPicker from '$lib/matters/knowledge/KbPicker.svelte';
+	import { enhance } from '$app/forms';
+	import { X } from '@lucide/svelte';
+	import type { components } from '$lib/api/backend';
+	import KbPicker from '$lib/matters/knowledge/KbPicker.svelte';
 
-  type KnowledgeBase = components['schemas']['KnowledgeBase'];
+	type KnowledgeBase = components['schemas']['KnowledgeBase'];
 
-  let { kbs }: { kbs: { linked: KnowledgeBase[]; available: KnowledgeBase[] } } = $props();
+	let { kbs }: { kbs: { linked: KnowledgeBase[]; available: KnowledgeBase[] } } = $props();
 
-  let linkForm = $state<HTMLFormElement>();
-  let pendingKbId = $state('');
+	let linkForm = $state<HTMLFormElement>();
+	let pendingKbId = $state('');
 
-  function pick(kbId: string) {
-    pendingKbId = kbId;
-    // tick happens via Svelte's DOM update; requestSubmit fires the form once the value is in.
-    queueMicrotask(() => linkForm?.requestSubmit());
-  }
+	function pick(kbId: string) {
+		pendingKbId = kbId;
+		// tick happens via Svelte's DOM update; requestSubmit fires the form once the value is in.
+		queueMicrotask(() => linkForm?.requestSubmit());
+	}
 </script>
 
 <section class="mt-6">
-  <h2 class="mb-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Knowledge</h2>
+	<h2 class="mb-2 text-xs font-medium tracking-wide text-mlq-muted uppercase">Knowledge</h2>
 
-  {#if kbs.linked.length === 0}
-    <div class="flex items-center justify-between gap-3 rounded-mlq-control border border-mlq-subtle px-3 py-3">
-      <p class="text-xs text-mlq-muted">No knowledge bases linked. Linking a KB makes its documents available to chats in this matter.</p>
-      <KbPicker kbs={kbs.available} onpick={pick} />
-    </div>
-  {:else}
-    <div class="rounded-mlq-control border border-mlq-subtle">
-      {#each kbs.linked as k (k.id)}
-        <div class="flex items-center gap-3 border-b border-mlq-subtle px-3 py-2 last:border-b-0">
-          <span class="min-w-0 flex-1 truncate text-sm text-mlq-text">{k.name}</span>
-          <span class="shrink-0 text-xs text-mlq-muted">{k.file_count} files</span>
-          <form
-            method="POST"
-            action="?/unlinkKb"
-            use:enhance
-            aria-label={`Unlink ${k.name}`}
-            class="shrink-0"
-          >
-            <input type="hidden" name="kb_id" value={k.id} />
-            <button
-              type="submit"
-              aria-label={`Unlink ${k.name}`}
-              class="rounded-mlq-control p-1 text-mlq-muted hover:text-mlq-error"
-            ><X size={14} /></button>
-          </form>
-        </div>
-      {/each}
-    </div>
-    <div class="mt-2 flex justify-end">
-      <KbPicker kbs={kbs.available} onpick={pick} />
-    </div>
-  {/if}
+	{#if kbs.linked.length === 0}
+		<div
+			class="flex items-center justify-between gap-3 rounded-mlq-control border border-mlq-subtle px-3 py-3"
+		>
+			<p class="text-xs text-mlq-muted">
+				No knowledge bases linked. Linking a KB makes its documents available to chats in this
+				matter.
+			</p>
+			<KbPicker kbs={kbs.available} onpick={pick} />
+		</div>
+	{:else}
+		<div class="rounded-mlq-control border border-mlq-subtle">
+			{#each kbs.linked as k (k.id)}
+				<div class="flex items-center gap-3 border-b border-mlq-subtle px-3 py-2 last:border-b-0">
+					<span class="min-w-0 flex-1 truncate text-sm text-mlq-text">{k.name}</span>
+					<span class="shrink-0 text-xs text-mlq-muted">{k.file_count} files</span>
+					<form
+						method="POST"
+						action="?/unlinkKb"
+						use:enhance
+						aria-label={`Unlink ${k.name}`}
+						class="shrink-0"
+					>
+						<input type="hidden" name="kb_id" value={k.id} />
+						<button
+							type="submit"
+							aria-label={`Unlink ${k.name}`}
+							class="rounded-mlq-control p-1 text-mlq-muted hover:text-mlq-error"
+							><X size={14} /></button
+						>
+					</form>
+				</div>
+			{/each}
+		</div>
+		<div class="mt-2 flex justify-end">
+			<KbPicker kbs={kbs.available} onpick={pick} />
+		</div>
+	{/if}
 
-  <!-- Single hidden form for the picker; its kb_id is set just before requestSubmit. -->
-  <form
-    bind:this={linkForm}
-    method="POST"
-    action="?/linkKb"
-    use:enhance
-    data-testid="link-kb-form"
-    class="hidden"
-  >
-    <input type="hidden" name="kb_id" value={pendingKbId} />
-  </form>
+	<!-- Single hidden form for the picker; its kb_id is set just before requestSubmit. -->
+	<form
+		bind:this={linkForm}
+		method="POST"
+		action="?/linkKb"
+		use:enhance
+		data-testid="link-kb-form"
+		class="hidden"
+	>
+		<input type="hidden" name="kb_id" value={pendingKbId} />
+	</form>
 </section>
 ```
 
@@ -1707,6 +1894,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 **Why now:** SkillsSection needs this controller to drive the reused `SkillAttach.svelte` popover. Independent of the section, so test it standalone first.
 
 **Files:**
+
 - Create: `src/lib/matters/skills/createMatterSkillAttach.svelte.ts`
 - Create: `src/lib/matters/skills/createMatterSkillAttach.svelte.test.ts`
 
@@ -1720,39 +1908,48 @@ import { flushSync } from 'svelte';
 import { createMatterSkillAttach } from './createMatterSkillAttach.svelte';
 
 describe('createMatterSkillAttach', () => {
-  it('open() fetches /skills/autocomplete with empty q and exposes results', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [{ slug: 'r1', title: 'Redline', scope: 'builtin' }] }), { status: 200 }));
-    const c = createMatterSkillAttach({ onattach: vi.fn() });
-    await c.open(fetchFn);
-    flushSync();
-    expect(fetchFn).toHaveBeenCalledWith('/skills/autocomplete?q=&limit=8');
-    expect(c.results.map((r) => r.slug)).toEqual(['r1']);
-    expect(c.loading).toBe(false);
-    expect(c.error).toBe(false);
-  });
+	it('open() fetches /skills/autocomplete with empty q and exposes results', async () => {
+		const fetchFn = vi
+			.fn()
+			.mockResolvedValue(
+				new Response(
+					JSON.stringify({ results: [{ slug: 'r1', title: 'Redline', scope: 'builtin' }] }),
+					{ status: 200 }
+				)
+			);
+		const c = createMatterSkillAttach({ onattach: vi.fn() });
+		await c.open(fetchFn);
+		flushSync();
+		expect(fetchFn).toHaveBeenCalledWith('/skills/autocomplete?q=&limit=8');
+		expect(c.results.map((r) => r.slug)).toEqual(['r1']);
+		expect(c.loading).toBe(false);
+		expect(c.error).toBe(false);
+	});
 
-  it('search(q) fetches with the encoded q', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
-    const c = createMatterSkillAttach({ onattach: vi.fn() });
-    await c.search('contract redline', fetchFn);
-    expect(fetchFn).toHaveBeenCalledWith('/skills/autocomplete?q=contract%20redline&limit=8');
-  });
+	it('search(q) fetches with the encoded q', async () => {
+		const fetchFn = vi
+			.fn()
+			.mockResolvedValue(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+		const c = createMatterSkillAttach({ onattach: vi.fn() });
+		await c.search('contract redline', fetchFn);
+		expect(fetchFn).toHaveBeenCalledWith('/skills/autocomplete?q=contract%20redline&limit=8');
+	});
 
-  it('sets error: true and empties results on a non-ok response', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(new Response('boom', { status: 502 }));
-    const c = createMatterSkillAttach({ onattach: vi.fn() });
-    await c.open(fetchFn);
-    flushSync();
-    expect(c.error).toBe(true);
-    expect(c.results).toEqual([]);
-  });
+	it('sets error: true and empties results on a non-ok response', async () => {
+		const fetchFn = vi.fn().mockResolvedValue(new Response('boom', { status: 502 }));
+		const c = createMatterSkillAttach({ onattach: vi.fn() });
+		await c.open(fetchFn);
+		flushSync();
+		expect(c.error).toBe(true);
+		expect(c.results).toEqual([]);
+	});
 
-  it('attach(s) calls the onattach callback with the slug', () => {
-    const onattach = vi.fn();
-    const c = createMatterSkillAttach({ onattach });
-    c.attach({ slug: 'redline', title: 'Redline', scope: 'builtin' });
-    expect(onattach).toHaveBeenCalledWith('redline');
-  });
+	it('attach(s) calls the onattach callback with the slug', () => {
+		const onattach = vi.fn();
+		const c = createMatterSkillAttach({ onattach });
+		c.attach({ slug: 'redline', title: 'Redline', scope: 'builtin' });
+		expect(onattach).toHaveBeenCalledWith('redline');
+	});
 });
 ```
 
@@ -1775,36 +1972,42 @@ import type { SkillSuggestion } from '$lib/skills/types';
  *  attached state. The persistent 'attached' list comes from
  *  matter.attached_skill_names on every load. */
 export function createMatterSkillAttach({ onattach }: { onattach: (slug: string) => void }) {
-  let results = $state<SkillSuggestion[]>([]);
-  let loading = $state(false);
-  let error = $state(false);
+	let results = $state<SkillSuggestion[]>([]);
+	let loading = $state(false);
+	let error = $state(false);
 
-  async function fetchResults(q: string, fetchFn: typeof fetch) {
-    loading = true;
-    error = false;
-    try {
-      const res = await fetchFn(`/skills/autocomplete?q=${encodeURIComponent(q)}&limit=8`);
-      if (!res.ok) throw new Error(String(res.status));
-      const body = (await res.json()) as { results: SkillSuggestion[] };
-      results = body.results ?? [];
-    } catch {
-      error = true;
-      results = [];
-    } finally {
-      loading = false;
-    }
-  }
+	async function fetchResults(q: string, fetchFn: typeof fetch) {
+		loading = true;
+		error = false;
+		try {
+			const res = await fetchFn(`/skills/autocomplete?q=${encodeURIComponent(q)}&limit=8`);
+			if (!res.ok) throw new Error(String(res.status));
+			const body = (await res.json()) as { results: SkillSuggestion[] };
+			results = body.results ?? [];
+		} catch {
+			error = true;
+			results = [];
+		} finally {
+			loading = false;
+		}
+	}
 
-  return {
-    get results() { return results; },
-    get loading() { return loading; },
-    get error() { return error; },
-    open: (fetchFn: typeof fetch = fetch) => fetchResults('', fetchFn),
-    search: (q: string, fetchFn: typeof fetch = fetch) => fetchResults(q, fetchFn),
-    attach(s: SkillSuggestion) {
-      onattach(s.slug);
-    }
-  };
+	return {
+		get results() {
+			return results;
+		},
+		get loading() {
+			return loading;
+		},
+		get error() {
+			return error;
+		},
+		open: (fetchFn: typeof fetch = fetch) => fetchResults('', fetchFn),
+		search: (q: string, fetchFn: typeof fetch = fetch) => fetchResults(q, fetchFn),
+		attach(s: SkillSuggestion) {
+			onattach(s.slug);
+		}
+	};
 }
 ```
 
@@ -1838,6 +2041,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 13: `SkillsSection.svelte` — chips + reused `SkillAttach.svelte` popover
 
 **Files:**
+
 - Create: `src/lib/matters/sections/SkillsSection.svelte`
 - Create: `src/lib/matters/sections/SkillsSection.svelte.test.ts`
 
@@ -1855,43 +2059,54 @@ import SkillsSection from './SkillsSection.svelte';
 vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
 
 describe('SkillsSection', () => {
-  it('renders the Skills heading', () => {
-    render(SkillsSection, { props: { attached: [] } });
-    expect(screen.getByRole('heading', { name: /skills/i })).toBeInTheDocument();
-  });
+	it('renders the Skills heading', () => {
+		render(SkillsSection, { props: { attached: [] } });
+		expect(screen.getByRole('heading', { name: /skills/i })).toBeInTheDocument();
+	});
 
-  it('empty state shows the ⊕ Skill trigger and no chips', () => {
-    render(SkillsSection, { props: { attached: [] } });
-    expect(screen.getByRole('button', { name: /attach skill/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
-  });
+	it('empty state shows the ⊕ Skill trigger and no chips', () => {
+		render(SkillsSection, { props: { attached: [] } });
+		expect(screen.getByRole('button', { name: /attach skill/i })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
+	});
 
-  it('renders one chip per attached skill', () => {
-    render(SkillsSection, { props: { attached: ['redline', 'summarize'] } });
-    expect(screen.getByText('redline')).toBeInTheDocument();
-    expect(screen.getByText('summarize')).toBeInTheDocument();
-  });
+	it('renders one chip per attached skill', () => {
+		render(SkillsSection, { props: { attached: ['redline', 'summarize'] } });
+		expect(screen.getByText('redline')).toBeInTheDocument();
+		expect(screen.getByText('summarize')).toBeInTheDocument();
+	});
 
-  it('each chip has a Remove form that posts ?/detachSkill with the skill_name', () => {
-    render(SkillsSection, { props: { attached: ['redline'] } });
-    const form = screen.getByRole('form', { name: /remove redline/i });
-    expect(form).toHaveAttribute('action', '?/detachSkill');
-    expect((form.querySelector('input[name="skill_name"]') as HTMLInputElement).value).toBe('redline');
-  });
+	it('each chip has a Remove form that posts ?/detachSkill with the skill_name', () => {
+		render(SkillsSection, { props: { attached: ['redline'] } });
+		const form = screen.getByRole('form', { name: /remove redline/i });
+		expect(form).toHaveAttribute('action', '?/detachSkill');
+		expect((form.querySelector('input[name="skill_name"]') as HTMLInputElement).value).toBe(
+			'redline'
+		);
+	});
 
-  it('opening the picker fetches /skills/autocomplete; clicking a result populates the attach form and submits', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [{ slug: 'redline', title: 'Redline', scope: 'builtin' }] }), { status: 200 }));
-    vi.stubGlobal('fetch', fetchMock);
-    render(SkillsSection, { props: { attached: [] } });
-    await userEvent.click(screen.getByRole('button', { name: /attach skill/i }));
-    // The autocomplete fires; await a tick.
-    await new Promise((r) => setTimeout(r, 0));
-    await userEvent.click(screen.getByText('Redline'));
-    const attachForm = screen.getByTestId('attach-skill-form') as HTMLFormElement;
-    expect(attachForm.getAttribute('action')).toBe('?/attachSkill');
-    expect((attachForm.querySelector('input[name="skill_name"]') as HTMLInputElement).value).toBe('redline');
-    vi.unstubAllGlobals();
-  });
+	it('opening the picker fetches /skills/autocomplete; clicking a result populates the attach form and submits', async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValue(
+				new Response(
+					JSON.stringify({ results: [{ slug: 'redline', title: 'Redline', scope: 'builtin' }] }),
+					{ status: 200 }
+				)
+			);
+		vi.stubGlobal('fetch', fetchMock);
+		render(SkillsSection, { props: { attached: [] } });
+		await userEvent.click(screen.getByRole('button', { name: /attach skill/i }));
+		// The autocomplete fires; await a tick.
+		await new Promise((r) => setTimeout(r, 0));
+		await userEvent.click(screen.getByText('Redline'));
+		const attachForm = screen.getByTestId('attach-skill-form') as HTMLFormElement;
+		expect(attachForm.getAttribute('action')).toBe('?/attachSkill');
+		expect((attachForm.querySelector('input[name="skill_name"]') as HTMLInputElement).value).toBe(
+			'redline'
+		);
+		vi.unstubAllGlobals();
+	});
 });
 ```
 
@@ -1906,66 +2121,66 @@ Create `src/lib/matters/sections/SkillsSection.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { enhance } from '$app/forms';
-  import { X } from '@lucide/svelte';
-  import SkillAttach from '$lib/components/SkillAttach.svelte';
-  import { createMatterSkillAttach } from '$lib/matters/skills/createMatterSkillAttach.svelte';
+	import { enhance } from '$app/forms';
+	import { X } from '@lucide/svelte';
+	import SkillAttach from '$lib/components/SkillAttach.svelte';
+	import { createMatterSkillAttach } from '$lib/matters/skills/createMatterSkillAttach.svelte';
 
-  let { attached }: { attached: string[] } = $props();
+	let { attached }: { attached: string[] } = $props();
 
-  let attachForm = $state<HTMLFormElement>();
-  let pendingSlug = $state('');
+	let attachForm = $state<HTMLFormElement>();
+	let pendingSlug = $state('');
 
-  const controller = createMatterSkillAttach({
-    onattach: (slug) => {
-      pendingSlug = slug;
-      queueMicrotask(() => attachForm?.requestSubmit());
-    }
-  });
+	const controller = createMatterSkillAttach({
+		onattach: (slug) => {
+			pendingSlug = slug;
+			queueMicrotask(() => attachForm?.requestSubmit());
+		}
+	});
 </script>
 
 <section class="mt-6">
-  <h2 class="mb-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Skills</h2>
+	<h2 class="mb-2 text-xs font-medium tracking-wide text-mlq-muted uppercase">Skills</h2>
 
-  <div class="flex flex-wrap items-center gap-2">
-    {#each attached as slug (slug)}
-      <form
-        method="POST"
-        action="?/detachSkill"
-        use:enhance
-        aria-label={`Remove ${slug}`}
-        class="inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text"
-      >
-        <input type="hidden" name="skill_name" value={slug} />
-        <span>{slug}</span>
-        <button
-          type="submit"
-          aria-label={`Remove ${slug}`}
-          class="text-mlq-muted hover:text-mlq-text"
-        ><X size={12} /></button>
-      </form>
-    {/each}
-    <SkillAttach
-      results={controller.results}
-      loading={controller.loading}
-      error={controller.error}
-      onopen={controller.open}
-      onsearch={controller.search}
-      onattach={(s) => controller.attach(s)}
-    />
-  </div>
+	<div class="flex flex-wrap items-center gap-2">
+		{#each attached as slug (slug)}
+			<form
+				method="POST"
+				action="?/detachSkill"
+				use:enhance
+				aria-label={`Remove ${slug}`}
+				class="inline-flex items-center gap-1 rounded-full border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text"
+			>
+				<input type="hidden" name="skill_name" value={slug} />
+				<span>{slug}</span>
+				<button
+					type="submit"
+					aria-label={`Remove ${slug}`}
+					class="text-mlq-muted hover:text-mlq-text"><X size={12} /></button
+				>
+			</form>
+		{/each}
+		<SkillAttach
+			results={controller.results}
+			loading={controller.loading}
+			error={controller.error}
+			onopen={controller.open}
+			onsearch={controller.search}
+			onattach={(s) => controller.attach(s)}
+		/>
+	</div>
 
-  <!-- Single hidden form for picker-driven attaches. -->
-  <form
-    bind:this={attachForm}
-    method="POST"
-    action="?/attachSkill"
-    use:enhance
-    data-testid="attach-skill-form"
-    class="hidden"
-  >
-    <input type="hidden" name="skill_name" value={pendingSlug} />
-  </form>
+	<!-- Single hidden form for picker-driven attaches. -->
+	<form
+		bind:this={attachForm}
+		method="POST"
+		action="?/attachSkill"
+		use:enhance
+		data-testid="attach-skill-form"
+		class="hidden"
+	>
+		<input type="hidden" name="skill_name" value={pendingSlug} />
+	</form>
 </section>
 ```
 
@@ -1999,6 +2214,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 14: `ContextSection.svelte` — Markdown editor + byte counter
 
 **Files:**
+
 - Create: `src/lib/matters/sections/ContextSection.svelte`
 - Create: `src/lib/matters/sections/ContextSection.svelte.test.ts`
 
@@ -2015,52 +2231,58 @@ import ContextSection from './ContextSection.svelte';
 vi.mock('$app/forms', () => ({ enhance: () => ({}) }));
 
 describe('ContextSection', () => {
-  it('renders the Context heading and the helper line', () => {
-    render(ContextSection, { props: { value: '' } });
-    expect(screen.getByRole('heading', { name: /context/i })).toBeInTheDocument();
-    expect(screen.getByText(/markdown notes the assistant sees/i)).toBeInTheDocument();
-  });
+	it('renders the Context heading and the helper line', () => {
+		render(ContextSection, { props: { value: '' } });
+		expect(screen.getByRole('heading', { name: /context/i })).toBeInTheDocument();
+		expect(screen.getByText(/markdown notes the assistant sees/i)).toBeInTheDocument();
+	});
 
-  it('seeds the textarea from the value prop', () => {
-    render(ContextSection, { props: { value: '## Notes' } });
-    expect((screen.getByRole('textbox', { name: /matter context/i }) as HTMLTextAreaElement).value).toBe('## Notes');
-  });
+	it('seeds the textarea from the value prop', () => {
+		render(ContextSection, { props: { value: '## Notes' } });
+		expect(
+			(screen.getByRole('textbox', { name: /matter context/i }) as HTMLTextAreaElement).value
+		).toBe('## Notes');
+	});
 
-  it('Save button is disabled when the value equals the seeded value', () => {
-    render(ContextSection, { props: { value: 'init' } });
-    expect(screen.getByRole('button', { name: /save context/i })).toBeDisabled();
-  });
+	it('Save button is disabled when the value equals the seeded value', () => {
+		render(ContextSection, { props: { value: 'init' } });
+		expect(screen.getByRole('button', { name: /save context/i })).toBeDisabled();
+	});
 
-  it('Save button enables when the textarea changes', async () => {
-    render(ContextSection, { props: { value: 'init' } });
-    await fireEvent.input(screen.getByRole('textbox', { name: /matter context/i }), { target: { value: 'changed' } });
-    expect(screen.getByRole('button', { name: /save context/i })).toBeEnabled();
-  });
+	it('Save button enables when the textarea changes', async () => {
+		render(ContextSection, { props: { value: 'init' } });
+		await fireEvent.input(screen.getByRole('textbox', { name: /matter context/i }), {
+			target: { value: 'changed' }
+		});
+		expect(screen.getByRole('button', { name: /save context/i })).toBeEnabled();
+	});
 
-  it('shows a byte counter and goes red over the 102_400-byte cap', async () => {
-    render(ContextSection, { props: { value: '' } });
-    const ta = screen.getByRole('textbox', { name: /matter context/i });
-    await fireEvent.input(ta, { target: { value: 'A'.repeat(50) } });
-    const counter = screen.getByTestId('context-bytes');
-    expect(counter).toHaveTextContent('50 / 102400 bytes');
-    expect(counter.className).not.toMatch(/text-mlq-error/);
+	it('shows a byte counter and goes red over the 102_400-byte cap', async () => {
+		render(ContextSection, { props: { value: '' } });
+		const ta = screen.getByRole('textbox', { name: /matter context/i });
+		await fireEvent.input(ta, { target: { value: 'A'.repeat(50) } });
+		const counter = screen.getByTestId('context-bytes');
+		expect(counter).toHaveTextContent('50 / 102400 bytes');
+		expect(counter.className).not.toMatch(/text-mlq-error/);
 
-    await fireEvent.input(ta, { target: { value: 'A'.repeat(102_401) } });
-    expect(counter.className).toMatch(/text-mlq-error/);
-    expect(screen.getByRole('button', { name: /save context/i })).toBeDisabled();
-  });
+		await fireEvent.input(ta, { target: { value: 'A'.repeat(102_401) } });
+		expect(counter.className).toMatch(/text-mlq-error/);
+		expect(screen.getByRole('button', { name: /save context/i })).toBeDisabled();
+	});
 
-  it('counts UTF-8 bytes (not characters) for multi-byte input', async () => {
-    render(ContextSection, { props: { value: '' } });
-    await fireEvent.input(screen.getByRole('textbox', { name: /matter context/i }), { target: { value: '日' } }); // 3 UTF-8 bytes
-    expect(screen.getByTestId('context-bytes')).toHaveTextContent('3 / 102400 bytes');
-  });
+	it('counts UTF-8 bytes (not characters) for multi-byte input', async () => {
+		render(ContextSection, { props: { value: '' } });
+		await fireEvent.input(screen.getByRole('textbox', { name: /matter context/i }), {
+			target: { value: '日' }
+		}); // 3 UTF-8 bytes
+		expect(screen.getByTestId('context-bytes')).toHaveTextContent('3 / 102400 bytes');
+	});
 
-  it('wraps the form posting to ?/saveContext', () => {
-    render(ContextSection, { props: { value: '' } });
-    const form = screen.getByRole('form', { name: /matter context/i });
-    expect(form).toHaveAttribute('action', '?/saveContext');
-  });
+	it('wraps the form posting to ?/saveContext', () => {
+		render(ContextSection, { props: { value: '' } });
+		const form = screen.getByRole('form', { name: /matter context/i });
+		expect(form).toHaveAttribute('action', '?/saveContext');
+	});
 });
 ```
 
@@ -2075,46 +2297,54 @@ Create `src/lib/matters/sections/ContextSection.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { untrack } from 'svelte';
-  import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
+	import { enhance } from '$app/forms';
 
-  let { value: initial = '' }: { value?: string } = $props();
+	let { value: initial = '' }: { value?: string } = $props();
 
-  let value = $state(untrack(() => initial));
+	let value = $state(untrack(() => initial));
 
-  const bytes = $derived(new TextEncoder().encode(value).length);
-  const overCap = $derived(bytes > 102_400);
-  const dirty = $derived(value !== initial);
-  const canSave = $derived(dirty && !overCap);
+	const bytes = $derived(new TextEncoder().encode(value).length);
+	const overCap = $derived(bytes > 102_400);
+	const dirty = $derived(value !== initial);
+	const canSave = $derived(dirty && !overCap);
 </script>
 
 <section class="mt-6">
-  <h2 class="mb-2 text-xs font-medium uppercase tracking-wide text-mlq-muted">Context</h2>
-  <p class="mb-2 text-xs text-mlq-muted">Markdown notes the assistant sees on every chat in this matter. Optional, max 100 KiB.</p>
+	<h2 class="mb-2 text-xs font-medium tracking-wide text-mlq-muted uppercase">Context</h2>
+	<p class="mb-2 text-xs text-mlq-muted">
+		Markdown notes the assistant sees on every chat in this matter. Optional, max 100 KiB.
+	</p>
 
-  <form
-    method="POST"
-    action="?/saveContext"
-    use:enhance
-    aria-label="Matter context"
-    class="space-y-2"
-  >
-    <textarea
-      name="context_md"
-      bind:value
-      rows="4"
-      aria-label="Matter context"
-      class="block max-h-96 w-full resize-y rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text outline-none"
-    ></textarea>
-    <div class="flex items-center justify-between">
-      <p data-testid="context-bytes" class={overCap ? 'text-xs text-mlq-error' : 'text-xs text-mlq-muted'}>{bytes} / 102400 bytes</p>
-      <button
-        type="submit"
-        disabled={!canSave}
-        class="rounded-mlq-control bg-mlq-strong px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
-      >Save context</button>
-    </div>
-  </form>
+	<form
+		method="POST"
+		action="?/saveContext"
+		use:enhance
+		aria-label="Matter context"
+		class="space-y-2"
+	>
+		<textarea
+			name="context_md"
+			bind:value
+			rows="4"
+			aria-label="Matter context"
+			class="block max-h-96 w-full resize-y rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text outline-none"
+		></textarea>
+		<div class="flex items-center justify-between">
+			<p
+				data-testid="context-bytes"
+				class={overCap ? 'text-xs text-mlq-error' : 'text-xs text-mlq-muted'}
+			>
+				{bytes} / 102400 bytes
+			</p>
+			<button
+				type="submit"
+				disabled={!canSave}
+				class="rounded-mlq-control bg-mlq-strong px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+				>Save context</button
+			>
+		</div>
+	</form>
 </section>
 ```
 
@@ -2148,6 +2378,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 15: Wire the four sections into the matter detail page
 
 **Files:**
+
 - Modify: `src/routes/(app)/matters/[id]/+page.svelte`
 
 - [ ] **Step 1: Add imports**
@@ -2155,17 +2386,17 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 In `src/routes/(app)/matters/[id]/+page.svelte`, find the `<script lang="ts">` opening and the existing two component imports:
 
 ```svelte
-  import MatterForm from '$lib/matters/MatterForm.svelte';
-  import PrivilegedChip from '$lib/matters/PrivilegedChip.svelte';
+import MatterForm from '$lib/matters/MatterForm.svelte'; import PrivilegedChip from
+'$lib/matters/PrivilegedChip.svelte';
 ```
 
 Append the four section imports immediately below them:
 
 ```svelte
-  import FilesSection from '$lib/matters/sections/FilesSection.svelte';
-  import KnowledgeSection from '$lib/matters/sections/KnowledgeSection.svelte';
-  import SkillsSection from '$lib/matters/sections/SkillsSection.svelte';
-  import ContextSection from '$lib/matters/sections/ContextSection.svelte';
+import FilesSection from '$lib/matters/sections/FilesSection.svelte'; import KnowledgeSection from
+'$lib/matters/sections/KnowledgeSection.svelte'; import SkillsSection from
+'$lib/matters/sections/SkillsSection.svelte'; import ContextSection from
+'$lib/matters/sections/ContextSection.svelte';
 ```
 
 - [ ] **Step 2: Render the four sections between the existing buttons row and the chats list**
@@ -2233,6 +2464,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ## Task 16: Live e2e — `tests/matter-files.spec.ts`
 
 **Files:**
+
 - Create: `tests/matter-files.spec.ts`
 
 - [ ] **Step 1: Rebuild `donna-web`**
@@ -2260,76 +2492,103 @@ const API = process.env.DONNA_LQ_AI_API ?? 'http://localhost:18000/api/v1';
 const PDF = process.env.DONNA_SPIKE_PDF ?? '/tmp/spike.pdf';
 
 async function token(): Promise<string> {
-  return (await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: EMAIL, password: PASSWORD }) }).then((r) => r.json())).access_token;
+	return (
+		await fetch(`${API}/auth/login`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ email: EMAIL, password: PASSWORD })
+		}).then((r) => r.json())
+	).access_token;
 }
 async function api(tok: string, path: string, init: RequestInit = {}) {
-  return fetch(`${API}${path}`, { ...init, headers: { authorization: `Bearer ${tok}`, ...(init.headers || {}) } });
+	return fetch(`${API}${path}`, {
+		...init,
+		headers: { authorization: `Bearer ${tok}`, ...(init.headers || {}) }
+	});
 }
 async function login(page: Page) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
-test('matter docs surface — upload + list + remove a file, edit context, link/unlink a KB', async ({ page }) => {
-  test.setTimeout(180_000);
-  const tok = await token();
+test('matter docs surface — upload + list + remove a file, edit context, link/unlink a KB', async ({
+	page
+}) => {
+	test.setTimeout(180_000);
+	const tok = await token();
 
-  // Seed: a fresh matter + a fresh KB (the KB is the only "other KB to link" so the picker shows it).
-  const unique = `E2E Docs ${Date.now()}`;
-  const pid = (await api(tok, '/projects', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: unique }) }).then((r) => r.json())).id as string;
-  const kbName = `E2E KB ${Date.now()}`;
-  const kid = (await api(tok, '/knowledge-bases', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: kbName }) }).then((r) => r.json())).id as string;
+	// Seed: a fresh matter + a fresh KB (the KB is the only "other KB to link" so the picker shows it).
+	const unique = `E2E Docs ${Date.now()}`;
+	const pid = (
+		await api(tok, '/projects', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ name: unique })
+		}).then((r) => r.json())
+	).id as string;
+	const kbName = `E2E KB ${Date.now()}`;
+	const kid = (
+		await api(tok, '/knowledge-bases', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ name: kbName })
+		}).then((r) => r.json())
+	).id as string;
 
-  try {
-    await login(page);
-    await page.goto(`/matters/${pid}`);
+	try {
+		await login(page);
+		await page.goto(`/matters/${pid}`);
 
-    // All four section headings render.
-    await expect(page.getByRole('heading', { name: /files/i })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole('heading', { name: /knowledge/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /skills/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /context/i })).toBeVisible();
+		// All four section headings render.
+		await expect(page.getByRole('heading', { name: /files/i })).toBeVisible({ timeout: 15000 });
+		await expect(page.getByRole('heading', { name: /knowledge/i })).toBeVisible();
+		await expect(page.getByRole('heading', { name: /skills/i })).toBeVisible();
+		await expect(page.getByRole('heading', { name: /context/i })).toBeVisible();
 
-    // Files: empty state shows the Dropzone.
-    await expect(page.getByRole('button', { name: /upload files/i })).toBeVisible();
+		// Files: empty state shows the Dropzone.
+		await expect(page.getByRole('button', { name: /upload files/i })).toBeVisible();
 
-    // Upload spike.pdf via the hidden file input (which carries name="file").
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: /upload files/i }).click();
-    const chooser = await fileChooserPromise;
-    await chooser.setFiles(PDF);
+		// Upload spike.pdf via the hidden file input (which carries name="file").
+		const fileChooserPromise = page.waitForEvent('filechooser');
+		await page.getByRole('button', { name: /upload files/i }).click();
+		const chooser = await fileChooserPromise;
+		await chooser.setFiles(PDF);
 
-    // After the form submits + SvelteKit reloads, the row appears.
-    await expect(page.getByText(/spike\.pdf/i)).toBeVisible({ timeout: 30000 });
+		// After the form submits + SvelteKit reloads, the row appears.
+		await expect(page.getByText(/spike\.pdf/i)).toBeVisible({ timeout: 30000 });
 
-    // Remove the file: the Dropzone returns.
-    await page.getByRole('button', { name: /remove spike\.pdf/i }).click();
-    await expect(page.getByRole('button', { name: /upload files/i })).toBeVisible({ timeout: 15000 });
+		// Remove the file: the Dropzone returns.
+		await page.getByRole('button', { name: /remove spike\.pdf/i }).click();
+		await expect(page.getByRole('button', { name: /upload files/i })).toBeVisible({
+			timeout: 15000
+		});
 
-    // Edit + save context_md.
-    const ctx = page.getByRole('textbox', { name: /matter context/i });
-    await ctx.fill('# Matter notes\n- thing');
-    await page.getByRole('button', { name: /save context/i }).click();
-    // After reload, the textarea retains the value.
-    await page.reload();
-    await expect(page.getByRole('textbox', { name: /matter context/i })).toHaveValue('# Matter notes\n- thing');
+		// Edit + save context_md.
+		const ctx = page.getByRole('textbox', { name: /matter context/i });
+		await ctx.fill('# Matter notes\n- thing');
+		await page.getByRole('button', { name: /save context/i }).click();
+		// After reload, the textarea retains the value.
+		await page.reload();
+		await expect(page.getByRole('textbox', { name: /matter context/i })).toHaveValue(
+			'# Matter notes\n- thing'
+		);
 
-    // Link the seeded KB.
-    await page.getByRole('button', { name: /link a knowledge base/i }).click();
-    await page.getByText(kbName, { exact: true }).click();
-    await expect(page.getByText(kbName, { exact: true })).toBeVisible({ timeout: 15000 });
+		// Link the seeded KB.
+		await page.getByRole('button', { name: /link a knowledge base/i }).click();
+		await page.getByText(kbName, { exact: true }).click();
+		await expect(page.getByText(kbName, { exact: true })).toBeVisible({ timeout: 15000 });
 
-    // Unlink it.
-    await page.getByRole('button', { name: new RegExp(`unlink ${kbName}`, 'i') }).click();
-    await expect(page.getByText(kbName, { exact: true })).toHaveCount(0, { timeout: 15000 });
-  } finally {
-    // Unconditional cleanup.
-    await api(tok, `/projects/${pid}`, { method: 'DELETE' });
-    await api(tok, `/knowledge-bases/${kid}`, { method: 'DELETE' });
-  }
+		// Unlink it.
+		await page.getByRole('button', { name: new RegExp(`unlink ${kbName}`, 'i') }).click();
+		await expect(page.getByText(kbName, { exact: true })).toHaveCount(0, { timeout: 15000 });
+	} finally {
+		// Unconditional cleanup.
+		await api(tok, `/projects/${pid}`, { method: 'DELETE' });
+		await api(tok, `/knowledge-bases/${kid}`, { method: 'DELETE' });
+	}
 });
 ```
 
@@ -2500,19 +2759,19 @@ Expected: PR opened against `main`.
 
 ## Self-review — spec coverage check
 
-| Spec section | Implemented in |
-|---|---|
-| §1 Goal — four sections | Tasks 10 (Files), 11 (Knowledge), 13 (Skills), 14 (Context) + Task 15 (wiring) |
-| §2 Backend contract | Tasks 5 (load fan-out), 6 (files actions — 413 mapping), 7 (KB PATCH), 8 (skills POST/DELETE), 9 (context_md PATCH + 422) |
-| §3 Decisions (Q1–Q5) | Q1 split → spec only; Q2 dropzone-when-empty → Task 10; Q3 SkillAttach reuse → Tasks 12+13; Q4 plain textarea → Task 14; Q5 link-only → Tasks 4+7+11 (deferred-create copy in Task 4 picker) |
-| §4 Architecture — file structure | All Tasks 1–14 follow the file layout in §4.1/§4.2; Task 15 wires them in |
-| §5 Files section behavior | Task 1 (helpers) + Task 2 (Dropzone) + Task 3 (FileRow) + Task 6 (actions) + Task 10 (composer); 413 mapping (Task 6); 409 silent success (Task 6); detach idempotent (Task 6) |
-| §6 Knowledge section | Task 4 (picker) + Task 7 (actions) + Task 11 (composer); deferred-create copy in picker (Task 4); 404 friendly on link / silent on unlink (Task 7) |
-| §7 Skills section | Task 8 (actions) + Task 12 (controller) + Task 13 (composer); reuses composer `SkillAttach.svelte` directly (verified at plan time: it's purely presentational) |
-| §8 Context section | Task 9 (action with pre-check + 422 mapping) + Task 14 (UI with UTF-8 byte counter via TextEncoder) |
-| §9 File-level change map | Tasks 1–14 + 15 + 16 cover every file in §9 |
-| §10 Testing strategy | Per-section unit tests in Tasks 2–4, 10–14 + helper test in Task 1 + controller test in Task 12; load test extension in Task 5; per-action tests in Tasks 6–9; live e2e in Task 16; full quality bar in Task 17 |
-| §11 Risks & edges | N+1 file fetches (Task 5 — filtered for 404), no polling (acknowledged), skills POST body **verified literal `{ skill_name }` at plan time**, deferred-create explicit copy (Task 4), keyboard a11y on Dropzone (Task 2), abort-on-first-error in multi-file upload (Task 6), multipart in form action (Task 6) |
-| §12 Out of scope | Not implemented (correctly) |
+| Spec section                     | Implemented in                                                                                                                                                                                                                                                                                                  |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §1 Goal — four sections          | Tasks 10 (Files), 11 (Knowledge), 13 (Skills), 14 (Context) + Task 15 (wiring)                                                                                                                                                                                                                                  |
+| §2 Backend contract              | Tasks 5 (load fan-out), 6 (files actions — 413 mapping), 7 (KB PATCH), 8 (skills POST/DELETE), 9 (context_md PATCH + 422)                                                                                                                                                                                       |
+| §3 Decisions (Q1–Q5)             | Q1 split → spec only; Q2 dropzone-when-empty → Task 10; Q3 SkillAttach reuse → Tasks 12+13; Q4 plain textarea → Task 14; Q5 link-only → Tasks 4+7+11 (deferred-create copy in Task 4 picker)                                                                                                                    |
+| §4 Architecture — file structure | All Tasks 1–14 follow the file layout in §4.1/§4.2; Task 15 wires them in                                                                                                                                                                                                                                       |
+| §5 Files section behavior        | Task 1 (helpers) + Task 2 (Dropzone) + Task 3 (FileRow) + Task 6 (actions) + Task 10 (composer); 413 mapping (Task 6); 409 silent success (Task 6); detach idempotent (Task 6)                                                                                                                                  |
+| §6 Knowledge section             | Task 4 (picker) + Task 7 (actions) + Task 11 (composer); deferred-create copy in picker (Task 4); 404 friendly on link / silent on unlink (Task 7)                                                                                                                                                              |
+| §7 Skills section                | Task 8 (actions) + Task 12 (controller) + Task 13 (composer); reuses composer `SkillAttach.svelte` directly (verified at plan time: it's purely presentational)                                                                                                                                                 |
+| §8 Context section               | Task 9 (action with pre-check + 422 mapping) + Task 14 (UI with UTF-8 byte counter via TextEncoder)                                                                                                                                                                                                             |
+| §9 File-level change map         | Tasks 1–14 + 15 + 16 cover every file in §9                                                                                                                                                                                                                                                                     |
+| §10 Testing strategy             | Per-section unit tests in Tasks 2–4, 10–14 + helper test in Task 1 + controller test in Task 12; load test extension in Task 5; per-action tests in Tasks 6–9; live e2e in Task 16; full quality bar in Task 17                                                                                                 |
+| §11 Risks & edges                | N+1 file fetches (Task 5 — filtered for 404), no polling (acknowledged), skills POST body **verified literal `{ skill_name }` at plan time**, deferred-create explicit copy (Task 4), keyboard a11y on Dropzone (Task 2), abort-on-first-error in multi-file upload (Task 6), multipart in form action (Task 6) |
+| §12 Out of scope                 | Not implemented (correctly)                                                                                                                                                                                                                                                                                     |
 
 No gaps. No placeholders. Type/property names verified consistent: `files: File[]`, `kbs: { linked; available }`, `attached: string[]` (skills slugs), `value: string` (context_md), `skill_name`, `kb_id`, `file_id`, `context_md` all match across actions and components.

@@ -45,6 +45,7 @@ A wizard that turns a set of prior agreements into a saved playbook: pick docume
   - **Existing** `POST /files` + `GET /files/[id]` (slice B) — reused to upload+ingest the picker's uploaded documents.
 
 **Client controller — `src/lib/playbooks/genFlow.svelte.ts`** (rune controller; mirrors B's `runFlow`):
+
 - `generate(selections, contractType)` where each selection is `{ kind: 'matter'; documentId }` or `{ kind: 'upload'; file: File }`:
   - phase `preparing`: for each upload → `POST /files` → poll `GET /files/{id}` until `ready` (→ `document_id`) or `failed`; matter selections already carry a `document_id`. Collect all `document_ids`.
   - phase `generating`: `POST /playbooks/easy { document_ids, contract_type, persist_documents_after_generation: true }` → `generation.id`; push `?generation=<id>` (replaceState); poll `GET /playbooks/easy/{id}` every 2 s until `completed` (→ `draft`) / `error`; 5-min `stuck` flag.
@@ -56,14 +57,14 @@ A wizard that turns a set of prior agreements into a saved playbook: pick docume
 
 ## 5. Components (`src/lib/playbooks/`) — reuse A/B
 
-| Unit | Responsibility | Reuse |
-|---|---|---|
-| `types.ts` (extend) | Add `PlaybookCreate`, `PositionCreate`, `EasyPlaybookGeneration` (from contract) + a hand-typed `DraftPlaybook` = the `draft_playbook` shape (`PlaybookCreate`-equivalent; contract types it as `{[k]:unknown}`) | — |
-| `GenDocumentPicker.svelte` | Multi-select doc picker: Upload tab (`Dropzone`, accumulating) + matter tab (`MatterPicker` + ingested file checklist), maintains a selection list (`{kind,...}[]` + remove), emits it | reuses `Dropzone`, `MatterPicker`; sibling to B's single-select `DocumentChooser` (kept separate — different selection semantics) |
-| `genFlow.svelte.ts` | The generation state-machine (prepare → generate → poll → review), stuck flag, resume | mirrors B's `runFlow` |
-| `GenProgress.svelte` | Step-2 progress (preparing N docs → generating → done) + stuck hint | mirrors B's `RunProgress` |
-| `DraftReview.svelte` | Step-3 editable name/contract_type/description + position keep-list (each row a `PositionCard` + keep checkbox); emits the final `PlaybookCreate` (or binds it) | reuses A's `PositionCard` |
-| `new/+page.svelte` | Wizard composition (Step1 picker → Step2 progress → Step3 review), wires `genFlow` + the `?/save` form | — |
+| Unit                       | Responsibility                                                                                                                                                                                                   | Reuse                                                                                                                             |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `types.ts` (extend)        | Add `PlaybookCreate`, `PositionCreate`, `EasyPlaybookGeneration` (from contract) + a hand-typed `DraftPlaybook` = the `draft_playbook` shape (`PlaybookCreate`-equivalent; contract types it as `{[k]:unknown}`) | —                                                                                                                                 |
+| `GenDocumentPicker.svelte` | Multi-select doc picker: Upload tab (`Dropzone`, accumulating) + matter tab (`MatterPicker` + ingested file checklist), maintains a selection list (`{kind,...}[]` + remove), emits it                           | reuses `Dropzone`, `MatterPicker`; sibling to B's single-select `DocumentChooser` (kept separate — different selection semantics) |
+| `genFlow.svelte.ts`        | The generation state-machine (prepare → generate → poll → review), stuck flag, resume                                                                                                                            | mirrors B's `runFlow`                                                                                                             |
+| `GenProgress.svelte`       | Step-2 progress (preparing N docs → generating → done) + stuck hint                                                                                                                                              | mirrors B's `RunProgress`                                                                                                         |
+| `DraftReview.svelte`       | Step-3 editable name/contract_type/description + position keep-list (each row a `PositionCard` + keep checkbox); emits the final `PlaybookCreate` (or binds it)                                                  | reuses A's `PositionCard`                                                                                                         |
+| `new/+page.svelte`         | Wizard composition (Step1 picker → Step2 progress → Step3 review), wires `genFlow` + the `?/save` form                                                                                                           | —                                                                                                                                 |
 
 A "+ New playbook" entry is added to `/playbooks/+page.svelte` (links to `/playbooks/new`).
 
@@ -84,6 +85,7 @@ Donna serif/gray. `/playbooks/new`: a single scrolling page that advances Step 1
 ## 8. Testing
 
 **Unit (vitest)**
+
 - `genFlow.svelte.ts` — prepare (upload→ingest-poll→document_id; matter selection passes through), generate+poll→review with draft, generation-error branch, stuck flag, resume(running/completed). Mock fetch + fake timers (B's `runFlow` test is the template).
 - `GenDocumentPicker.svelte` — tab switch; checkbox multi-select of matter files; accumulating uploads; remove from selection; emits the selection list; "N selected" count.
 - `GenProgress.svelte` — preparing/generating/done labels; stuck hint; error message.

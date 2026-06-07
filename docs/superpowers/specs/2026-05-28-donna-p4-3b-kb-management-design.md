@@ -4,11 +4,12 @@
 
 ## 1. Goal
 
-Make Donna a first-class home for the user's knowledge bases. Today (post-P4-3a) the user can *link* an existing KB to a matter; KB *creation* is a "follow-up slice" disclaimer in the picker, and there is no way to put files into a KB from Donna at all. P4-3b removes both gaps: the user can create a KB inline from the matter Knowledge section, navigate to a dedicated KB management surface, upload PDFs to the KB with live ingestion-status feedback, and manage the KB (rename, archive, tune the hybrid-search alpha).
+Make Donna a first-class home for the user's knowledge bases. Today (post-P4-3a) the user can _link_ an existing KB to a matter; KB _creation_ is a "follow-up slice" disclaimer in the picker, and there is no way to put files into a KB from Donna at all. P4-3b removes both gaps: the user can create a KB inline from the matter Knowledge section, navigate to a dedicated KB management surface, upload PDFs to the KB with live ingestion-status feedback, and manage the KB (rename, archive, tune the hybrid-search alpha).
 
 Net delivery is the cohesive KB management surface that turns the P4-3a "Creating a KB lands in a follow-up slice." copy into a real action and removes the "must use the LQ_AI dev frontend to put files in a KB" friction described in memory `donna-product-direction`.
 
 **Out of scope (deferred):**
+
 - Chat-level file upload (composer attach) — separate near-term slice.
 - Skills authoring / playbooks — P5.
 - Folder tree / file versions / project sharing — upstream-blocked.
@@ -17,35 +18,35 @@ Net delivery is the cohesive KB management surface that turns the P4-3a "Creatin
 
 ## 2. Backend contract (verified 2026-05-28 against `src/lib/api/backend.d.ts` at pin `438198c`)
 
-| Surface | Endpoint | Notes |
-|---|---|---|
-| Create KB | `POST /api/v1/knowledge-bases` body `KnowledgeBaseCreate` | `{ name, description?, project_id?, hybrid_alpha (default 0.5) }`. Passing `project_id` creates **and pre-links** in a single round-trip — no follow-up `linkKb`. 201 + `KnowledgeBase`. 404 if `project_id` provided but the project is missing. |
-| List the user's KBs | `GET /api/v1/knowledge-bases` (optionally `?project_id`) | Already used by P4-3a. Returns `KnowledgeBase[]`. |
-| Get one KB | `GET /api/v1/knowledge-bases/{kb_id}` | Returns `KnowledgeBase`. 404 cross-user / unknown. |
-| Patch a KB | `PATCH /api/v1/knowledge-bases/{kb_id}` body `KnowledgeBaseUpdate` | Drives `rename` (name+description), `linkKb`/`unlinkKb` (project_id), `setHybridAlpha` (hybrid_alpha), and `archive` (`archived: true`). Same endpoint used by P4-3a's link/unlink. |
-| Soft-delete KB | `DELETE /api/v1/knowledge-bases/{kb_id}` | 204. Used by the Archive action. |
-| Upload a file | `POST /api/v1/files` (multipart) | Same endpoint P4-3a uses for matter files. 100 MB cap → 413 with `details.limit_bytes`/`received_bytes`. Returns 201 + `File` with `ingestion_status='pending'`. |
-| **Attach a file to a KB** | `POST /api/v1/knowledge-bases/{kb_id}/files` body `{ file_id }` | **Requires `ingestion_status='ready'`** — 422 otherwise. 204 success. 409 if already attached (idempotent treatment). 404 if KB or file missing. |
-| List KB files | `GET /api/v1/knowledge-bases/{kb_id}/files` | Returns `KBFile[]` (= `File` + `attached_at`, sorted by `attached_at DESC`). |
-| Detach file from KB | `DELETE /api/v1/knowledge-bases/{kb_id}/files/{file_id}` | 204. 404 idempotent treatment. |
-| Poll file status | `GET /api/v1/files/{file_id}` | Returns `File` with `ingestion_status` ∈ `pending|processing|ready|failed`. `ingestion_error` set on failure (e.g., `unsupported_type`, `parse_failed`). |
+| Surface                   | Endpoint                                                           | Notes                                                                                                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----- | ----------------------------------------------------------------------------------- |
+| Create KB                 | `POST /api/v1/knowledge-bases` body `KnowledgeBaseCreate`          | `{ name, description?, project_id?, hybrid_alpha (default 0.5) }`. Passing `project_id` creates **and pre-links** in a single round-trip — no follow-up `linkKb`. 201 + `KnowledgeBase`. 404 if `project_id` provided but the project is missing. |
+| List the user's KBs       | `GET /api/v1/knowledge-bases` (optionally `?project_id`)           | Already used by P4-3a. Returns `KnowledgeBase[]`.                                                                                                                                                                                                 |
+| Get one KB                | `GET /api/v1/knowledge-bases/{kb_id}`                              | Returns `KnowledgeBase`. 404 cross-user / unknown.                                                                                                                                                                                                |
+| Patch a KB                | `PATCH /api/v1/knowledge-bases/{kb_id}` body `KnowledgeBaseUpdate` | Drives `rename` (name+description), `linkKb`/`unlinkKb` (project_id), `setHybridAlpha` (hybrid_alpha), and `archive` (`archived: true`). Same endpoint used by P4-3a's link/unlink.                                                               |
+| Soft-delete KB            | `DELETE /api/v1/knowledge-bases/{kb_id}`                           | 204. Used by the Archive action.                                                                                                                                                                                                                  |
+| Upload a file             | `POST /api/v1/files` (multipart)                                   | Same endpoint P4-3a uses for matter files. 100 MB cap → 413 with `details.limit_bytes`/`received_bytes`. Returns 201 + `File` with `ingestion_status='pending'`.                                                                                  |
+| **Attach a file to a KB** | `POST /api/v1/knowledge-bases/{kb_id}/files` body `{ file_id }`    | **Requires `ingestion_status='ready'`** — 422 otherwise. 204 success. 409 if already attached (idempotent treatment). 404 if KB or file missing.                                                                                                  |
+| List KB files             | `GET /api/v1/knowledge-bases/{kb_id}/files`                        | Returns `KBFile[]` (= `File` + `attached_at`, sorted by `attached_at DESC`).                                                                                                                                                                      |
+| Detach file from KB       | `DELETE /api/v1/knowledge-bases/{kb_id}/files/{file_id}`           | 204. 404 idempotent treatment.                                                                                                                                                                                                                    |
+| Poll file status          | `GET /api/v1/files/{file_id}`                                      | Returns `File` with `ingestion_status` ∈ `pending                                                                                                                                                                                                 | processing | ready | failed`. `ingestion_error`set on failure (e.g.,`unsupported_type`, `parse_failed`). |
 
 **Key consequence:** the KB-files attach is the only surface in Donna that requires a backend state transition (`pending` → `processing` → `ready`) to happen between two client calls. That transition takes 5–30 seconds for an OCR'd PDF; it is the heart of the design.
 
 ## 3. Decisions log
 
-| # | Decision | Choice | Why |
-|---|---|---|---|
-| Q1 | KB management surface location | Dedicated route `/knowledge/[id]` | Mirrors `/matters/[id]`. KBs are first-class surfaces, can be linked from chats/citations later, have room for `hybrid_alpha` + future advanced controls. |
-| Q2 | Ingestion polling | Client-side `$effect` poll + auto-attach on `ready` | Form-action server-block holds the HTTP request open 5–30 s/file; client poll gives live Pending → Processing → Ready feedback. Manual-Attach-click was rejected as the worst UX (user expects the drop = upload). |
-| Q3 | Top-level `/knowledge` index | In scope | Without it, an unlinked KB becomes UI-orphaned. Cheap to add — reuses the same KB-row component. |
-| Q4 | Hybrid α slider on KB detail | In scope | One PATCH, one slider, debounced; makes the page feel complete and is product-relevant for tuning vector/FTS blend. |
-| Q5 | KB rename + archive on KB detail | In scope | Without it, only the LQ_AI frontend can rename/delete a KB — violates Donna's product thesis (friendly frontend exposing backend power). |
-| Q6 | KB create from matter Knowledge section | Inline `CreateKbForm` inside `KbPicker`, single round-trip via `project_id` in create body | One round-trip vs create-then-link; user stays on matter detail (no redirect); affordance lives where the picker already is. |
-| Q7 | Failed-row recovery | Show `ingestion_error` inline; only action is Remove (client-side dismiss) | No backend retry-ingest path; a Retry button would be misleading. M1 unsupported types tracked as upstream backlog. |
-| Q8 | Polling timeout | 5-min hard timeout → "Still processing — refresh to check" + manual Refresh | Spinner-of-doom is worse than a quiet "check back later." |
-| Q9 | Multi-file upload partial failure | Bail-on-first failure, report it, stop (matches P4-3a's matter-files behavior) | Simpler than "continue and report partial success"; consistent with the only existing pattern. |
-| Q10 | While-here bug fix | Fix `FileRow.svelte:26` download URL `/api/v1/files/{id}/content` → `/files/{id}/content` | Discovered during exploration: the existing URL 404s (no Donna route at `/api/v1/*`; pre-existing P4-3a bug). |
+| #   | Decision                                | Choice                                                                                     | Why                                                                                                                                                                                                                |
+| --- | --------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Q1  | KB management surface location          | Dedicated route `/knowledge/[id]`                                                          | Mirrors `/matters/[id]`. KBs are first-class surfaces, can be linked from chats/citations later, have room for `hybrid_alpha` + future advanced controls.                                                          |
+| Q2  | Ingestion polling                       | Client-side `$effect` poll + auto-attach on `ready`                                        | Form-action server-block holds the HTTP request open 5–30 s/file; client poll gives live Pending → Processing → Ready feedback. Manual-Attach-click was rejected as the worst UX (user expects the drop = upload). |
+| Q3  | Top-level `/knowledge` index            | In scope                                                                                   | Without it, an unlinked KB becomes UI-orphaned. Cheap to add — reuses the same KB-row component.                                                                                                                   |
+| Q4  | Hybrid α slider on KB detail            | In scope                                                                                   | One PATCH, one slider, debounced; makes the page feel complete and is product-relevant for tuning vector/FTS blend.                                                                                                |
+| Q5  | KB rename + archive on KB detail        | In scope                                                                                   | Without it, only the LQ_AI frontend can rename/delete a KB — violates Donna's product thesis (friendly frontend exposing backend power).                                                                           |
+| Q6  | KB create from matter Knowledge section | Inline `CreateKbForm` inside `KbPicker`, single round-trip via `project_id` in create body | One round-trip vs create-then-link; user stays on matter detail (no redirect); affordance lives where the picker already is.                                                                                       |
+| Q7  | Failed-row recovery                     | Show `ingestion_error` inline; only action is Remove (client-side dismiss)                 | No backend retry-ingest path; a Retry button would be misleading. M1 unsupported types tracked as upstream backlog.                                                                                                |
+| Q8  | Polling timeout                         | 5-min hard timeout → "Still processing — refresh to check" + manual Refresh                | Spinner-of-doom is worse than a quiet "check back later."                                                                                                                                                          |
+| Q9  | Multi-file upload partial failure       | Bail-on-first failure, report it, stop (matches P4-3a's matter-files behavior)             | Simpler than "continue and report partial success"; consistent with the only existing pattern.                                                                                                                     |
+| Q10 | While-here bug fix                      | Fix `FileRow.svelte:26` download URL `/api/v1/files/{id}/content` → `/files/{id}/content`  | Discovered during exploration: the existing URL 404s (no Donna route at `/api/v1/*`; pre-existing P4-3a bug).                                                                                                      |
 
 ## 4. Architecture
 
@@ -71,19 +72,19 @@ src/routes/(app)/
 
 **On `/knowledge/[id]/+page.server.ts` (new — 6 actions):**
 
-| Action | Method | Backend call | Failure modes |
-|---|---|---|---|
-| `uploadFile` | POST multipart | `POST /api/v1/files` per blob | 413 (size cap); 502; bail-on-first-failure |
-| `attachFile` | POST `{ file_id }` | `POST /knowledge-bases/{kb_id}/files` | 204; 409 → idempotent success; 422 → `{ retry: true }`; 404; 502 |
-| `detachFile` | POST `{ file_id }` | `DELETE /knowledge-bases/{kb_id}/files/{file_id}` | 204/404 idempotent; 502 |
-| `rename` | POST `{ name, description }` | `PATCH /knowledge-bases/{kb_id}` | 400 empty name; 404; 502 |
-| `archive` | POST | `DELETE /knowledge-bases/{kb_id}` → `throw redirect(303, '/knowledge')` | 502 |
-| `setHybridAlpha` | POST `{ hybrid_alpha }` | `PATCH /knowledge-bases/{kb_id}` | 422 out-of-range (defensive — slider client-constrains to [0,1] per ADR 0008); 502 |
+| Action           | Method                       | Backend call                                                            | Failure modes                                                                      |
+| ---------------- | ---------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `uploadFile`     | POST multipart               | `POST /api/v1/files` per blob                                           | 413 (size cap); 502; bail-on-first-failure                                         |
+| `attachFile`     | POST `{ file_id }`           | `POST /knowledge-bases/{kb_id}/files`                                   | 204; 409 → idempotent success; 422 → `{ retry: true }`; 404; 502                   |
+| `detachFile`     | POST `{ file_id }`           | `DELETE /knowledge-bases/{kb_id}/files/{file_id}`                       | 204/404 idempotent; 502                                                            |
+| `rename`         | POST `{ name, description }` | `PATCH /knowledge-bases/{kb_id}`                                        | 400 empty name; 404; 502                                                           |
+| `archive`        | POST                         | `DELETE /knowledge-bases/{kb_id}` → `throw redirect(303, '/knowledge')` | 502                                                                                |
+| `setHybridAlpha` | POST `{ hybrid_alpha }`      | `PATCH /knowledge-bases/{kb_id}`                                        | 422 out-of-range (defensive — slider client-constrains to [0,1] per ADR 0008); 502 |
 
 **On `/matters/[id]/+page.server.ts` (modified — add 1 action):**
 
-| Action | Method | Backend call | Failure modes |
-|---|---|---|---|
+| Action     | Method          | Backend call                                                               | Failure modes                        |
+| ---------- | --------------- | -------------------------------------------------------------------------- | ------------------------------------ |
 | `createKb` | POST `{ name }` | `POST /knowledge-bases { name, project_id: matter_id, hybrid_alpha: 0.5 }` | 400 empty name; 404 matter gone; 502 |
 
 ### 4.3 New component library — `src/lib/knowledge/`
@@ -107,15 +108,15 @@ src/lib/knowledge/
 
 ### 4.4 Per-component contract
 
-| Component | Props | Owns | Depends on |
-|---|---|---|---|
-| `KbHeader.svelte` | `kb: KnowledgeBase` | `renameOpen: boolean` | `KbRenameModal`; `$app/forms` (archive submit) |
-| `KbRenameModal.svelte` | `open, kb, onclose` | Backdrop click / Escape close | `use:enhance` for `?/rename` |
-| `KbFilesSection.svelte` | `files: KBFile[]`, `error?: string` | `pendingUploads: PendingUpload[]` state, form ref | `Dropzone`, `KbFileRow` |
-| `KbFileRow.svelte` | `row: KBFile \| PendingUpload` | local `status` snapshot, `attaching` guard, polling effect | `statusBadge`, `formatBytes`, `$app/forms`, `document.visibilityState` |
-| `HybridAlphaControl.svelte` | `kb: KnowledgeBase` | `value: number`, debounce timer | `use:enhance` for `?/setHybridAlpha` |
-| `CreateKbForm.svelte` | `projectId?: string`, `onsubmit: () => void` | `name: string` | `use:enhance` for parent route's `?/createKb` |
-| `KbPicker.svelte` (extended) | `kbs, onpick, projectId?` | `mode: 'list' \| 'create'`, `q: string`, `open` | `CreateKbForm` |
+| Component                    | Props                                        | Owns                                                       | Depends on                                                             |
+| ---------------------------- | -------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `KbHeader.svelte`            | `kb: KnowledgeBase`                          | `renameOpen: boolean`                                      | `KbRenameModal`; `$app/forms` (archive submit)                         |
+| `KbRenameModal.svelte`       | `open, kb, onclose`                          | Backdrop click / Escape close                              | `use:enhance` for `?/rename`                                           |
+| `KbFilesSection.svelte`      | `files: KBFile[]`, `error?: string`          | `pendingUploads: PendingUpload[]` state, form ref          | `Dropzone`, `KbFileRow`                                                |
+| `KbFileRow.svelte`           | `row: KBFile \| PendingUpload`               | local `status` snapshot, `attaching` guard, polling effect | `statusBadge`, `formatBytes`, `$app/forms`, `document.visibilityState` |
+| `HybridAlphaControl.svelte`  | `kb: KnowledgeBase`                          | `value: number`, debounce timer                            | `use:enhance` for `?/setHybridAlpha`                                   |
+| `CreateKbForm.svelte`        | `projectId?: string`, `onsubmit: () => void` | `name: string`                                             | `use:enhance` for parent route's `?/createKb`                          |
+| `KbPicker.svelte` (extended) | `kbs, onpick, projectId?`                    | `mode: 'list' \| 'create'`, `q: string`, `open`            | `CreateKbForm`                                                         |
 
 Each unit is independently testable: stub `fetch` for polling, mock `$app/forms` for actions, jsdom for component DOM.
 
@@ -267,6 +268,7 @@ Single self-cleaning spec, mirroring `tests/matter-files.spec.ts`:
 9. **`try/finally`**: cleanup. Archive the matter via API. Archive the KB via API as a safety net for test-failure cases. Use Playwright's `request` fixture with the admin cookie.
 
 **Flake guards** (handoff §8):
+
 - `getByRole('button', { name: 'Save', exact: true })` everywhere — KB detail has Save (rename) + α slider save indicator.
 - `Date.now()`-suffixed names for matter and KB; exact-name locators.
 - After enhance POSTs, wait on a state-derived assertion (e.g., disabled-Save) before any `page.reload()`.

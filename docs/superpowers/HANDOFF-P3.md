@@ -12,15 +12,15 @@ Orient with: `README.md`, the specs in `docs/superpowers/specs/` (foundation+roa
 
 ## 2. Phase status
 
-| Phase | Status |
-|---|---|
-| P0 Foundation, P1 Auth+Landing | ✅ merged (#1) |
-| P2a Core streaming chat | ✅ merged (#2) |
-| P2b Verified citation pills | ✅ merged (#3) |
-| P2c-A Provenance (Receipts drawer + anonymization) | ✅ merged (#4) |
-| P2c-B Composer power (B1 model · B2 skills · B3 enhance) | ✅ merged (#5, #6, #7, #8) |
-| **P3 — Document panel + highlighting** | ⬅️ **NEXT** |
-| P4 Projects/Matters · P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending |
+| Phase                                                                            | Status                     |
+| -------------------------------------------------------------------------------- | -------------------------- |
+| P0 Foundation, P1 Auth+Landing                                                   | ✅ merged (#1)             |
+| P2a Core streaming chat                                                          | ✅ merged (#2)             |
+| P2b Verified citation pills                                                      | ✅ merged (#3)             |
+| P2c-A Provenance (Receipts drawer + anonymization)                               | ✅ merged (#4)             |
+| P2c-B Composer power (B1 model · B2 skills · B3 enhance)                         | ✅ merged (#5, #6, #7, #8) |
+| **P3 — Document panel + highlighting**                                           | ⬅️ **NEXT**                |
+| P4 Projects/Matters · P5 Workflows · P6 Tabular · P7 Settings/Trust · P8 Redline | pending                    |
 
 P2c-B was split into three PR-sized slices during brainstorming (B1→B2→B3). **Continue the pattern:** decompose a large phase into PR-sized slices; if P3 is large, sub-slice it.
 
@@ -49,10 +49,12 @@ npm run check && npx vitest run && npx playwright test
 Roadmap deliverable: **"Tabbed resizable PDF.js/DOCX viewer, character-exact citation highlight."** A side/overlay panel that renders a document and highlights the exact span a verified citation points to.
 
 **Backend contracts to verify first (spike live):**
+
 - `GET /api/v1/files` (list), `GET /api/v1/files/{file_id}` (metadata + `ingestion_status`), `GET /api/v1/files/{file_id}/content` (bytes — confirm whether it returns the original PDF/DOCX or extracted text; this dictates PDF.js vs a text renderer).
 - The **`Citation`** shape (`src/lib/citations/types.ts` → `components['schemas']['Citation']`) is what drives highlighting — verify which fields locate the span in the source (document/file id, page, char offsets, quoted `source_text`). The P2b pills already fetch citations per message (`/chats/[id]/messages/[id]/citations`).
 
 **Likely open questions for the brainstorm (resolve before designing):**
+
 - **How does a document get into view at all?** Donna makes project-less chats and has no file/document attach yet (that's P4 territory; B2 deferred document-typed skill inputs for the same reason). Citations only appear on **project-backed chats** (seeded via API in the `citation-live` e2e). So P3 may need a seeded project+file to demonstrate, or P3 may precede a "view this document" affordance. **Spike whether `/files/{id}/content` gives renderable bytes and whether a citation carries enough to locate+highlight a span**, then decide scope (full PDF.js viewer vs. a focused "source viewer" that shows the cited passage). This is the key sequencing decision — don't design the viewer before confirming what data is available.
 - PDF.js vs DOCX rendering (different renderers); character-exact highlight mapping from citation offsets to rendered text.
 - Panel UX: tabbed + resizable, where it docks relative to the chat (the composer + Receipts drawer already occupy the chat page). **Use the visual companion.**

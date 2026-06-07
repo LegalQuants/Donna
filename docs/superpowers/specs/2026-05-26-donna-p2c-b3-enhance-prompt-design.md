@@ -8,7 +8,7 @@ Third and final P2c-B ("composer power") sub-slice, each its own PR:
 
 1. **B1 — Model / tier picker** ✅ merged (#5, #6)
 2. **B2 — Skill-attach** ✅ merged (#7)
-3. **B3 — Enhance Prompt** ← *this spec*
+3. **B3 — Enhance Prompt** ← _this spec_
 
 ## Goal
 
@@ -24,14 +24,14 @@ Add a `✦ Enhance` affordance to the in-chat composer that rewrites the user's 
 
 ## Decisions (from brainstorming)
 
-| Decision | Choice |
-|---|---|
-| Result UX | **Preview card above the composer** — shows `expanded_prompt` + collapsible `reasoning[]`; original draft stays in the textarea until **Use this** (applies, still editable) or **Discard**. Non-modal, transparent. |
-| Context sent | `raw_input` + **`chat_id`** + **`attached_skills`** (the B2 attached skill names → `[{name}]`). |
-| Scope | **In-chat only** — the `✦ Enhance` affordance is hidden on the landing composer (chat page owns the controller). |
-| Latency UX | Explicit **"Enhancing…"** state with **cancel** (AbortController). |
-| Telemetry | `accept` → PATCH `{used:true}`; `discard` → PATCH `{used:false}` (fire-and-forget). `edited_before_use` deferred. |
-| Architecture | **Dedicated `createEnhance` rune controller** + two thin proxies + presentational `EnhancePreview.svelte`; mirrors B1/B2. |
+| Decision     | Choice                                                                                                                                                                                                               |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Result UX    | **Preview card above the composer** — shows `expanded_prompt` + collapsible `reasoning[]`; original draft stays in the textarea until **Use this** (applies, still editable) or **Discard**. Non-modal, transparent. |
+| Context sent | `raw_input` + **`chat_id`** + **`attached_skills`** (the B2 attached skill names → `[{name}]`).                                                                                                                      |
+| Scope        | **In-chat only** — the `✦ Enhance` affordance is hidden on the landing composer (chat page owns the controller).                                                                                                     |
+| Latency UX   | Explicit **"Enhancing…"** state with **cancel** (AbortController).                                                                                                                                                   |
+| Telemetry    | `accept` → PATCH `{used:true}`; `discard` → PATCH `{used:false}` (fire-and-forget). `edited_before_use` deferred.                                                                                                    |
+| Architecture | **Dedicated `createEnhance` rune controller** + two thin proxies + presentational `EnhancePreview.svelte`; mirrors B1/B2.                                                                                            |
 
 ## Architecture & data flow
 

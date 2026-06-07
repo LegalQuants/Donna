@@ -40,12 +40,12 @@ path (overlapping DE-309), defaulting to the ensemble mode for ensemble columns.
 - Make the result **observable** on the cell: e.g. the cell's citations carry an `ensemble_*`
   `verification_method` (and/or the cell `confidence` reflects the ensemble outcome). This both lets the
   UI show that an ensemble-verified column was treated differently **and closes a related Donna gap**:
-  P6-B's read-side citation resolution (this same pin, `c22360a`) made tabular citations *navigable* but
+  P6-B's read-side citation resolution (this same pin, `c22360a`) made tabular citations _navigable_ but
   left them **unverified**, so Donna's doc panel currently shows an "Unverified" chip on every tabular
   citation. A real `verification_method` on the cell's citations lets Donna render the true state (the
   doc panel already does this for chat) — so this change also resolves Donna's P6-B.1 follow-up for
-  verified columns. **(Non-binding note:** if a lightweight *default* (non-ensemble) verification for
-  ordinary tabular columns is cheap to include alongside, it would close P6-B.1 for *all* columns, not
+  verified columns. **(Non-binding note:** if a lightweight _default_ (non-ensemble) verification for
+  ordinary tabular columns is cheap to include alongside, it would close P6-B.1 for _all_ columns, not
   just ensemble ones — but that's DE-309's full scope; ensemble-only is sufficient for this ask.)
 
 ## Cost
@@ -61,6 +61,7 @@ flat multiplier** is acceptable for v1 — just don't cost ensemble columns iden
 
 For a completed execution with one `ensemble_verification: true` column and one ordinary column on the
 same run:
+
 - the ensemble column's cells show evidence of ensemble verification (citations carry an `ensemble_*`
   `verification_method`, or an equivalent observable signal) while the ordinary column's do not; and
 - `preview-cost` returns a **higher** `estimated_cost_usd` (and/or a per-column/per-tier premium) when a
@@ -75,12 +76,13 @@ flag flip. Reuse surface is real: `citation/verification.py::verify(candidate, d
 judge_model, ensemble_config)` — with `ensemble_config`, Stage 4 ensemble replaces Stage 3 and yields
 `verification_method ∈ {ensemble_strict, ensemble_majority}`; chat calls it at `chats.py:1872` with
 `GatewayClient.get_citation_engine_ensemble_config`. The four parts:
+
 1. `nodes.py`: per cell, when the column's `ensemble_verification` is true (fallback to skill/deployment
    default when null), call `verify(...)` with `ensemble_config` for each cited chunk (extra async judge
    calls inside the LangGraph extraction node).
-2. **Design decision — what is verified.** `verify()` is built around a *verbatim quoted span*; a tabular
-   cell has an *extracted value + chunk refs*, not a span. **Donna's recommendation: semantic
-   affirmation** — the ensemble judges affirm *the cited chunk supports the cell's value*. That's the
+2. **Design decision — what is verified.** `verify()` is built around a _verbatim quoted span_; a tabular
+   cell has an _extracted value + chunk refs_, not a span. **Donna's recommendation: semantic
+   affirmation** — the ensemble judges affirm _the cited chunk supports the cell's value_. That's the
    trust question a grid reader has, and it maps onto Donna's existing citation-trust rendering. (Final
    call is the trust core's; this is the shape Donna can present meaningfully.)
 3. Surface `verification_method` on the cell's citations. **Frontend-preferred contract:** reuse chat's

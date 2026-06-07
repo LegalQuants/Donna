@@ -9,6 +9,7 @@
 **Tech Stack:** SvelteKit (Svelte 5 runes), TypeScript, Vitest + `@testing-library/svelte`, Playwright. Spec: `docs/superpowers/specs/2026-05-26-donna-p2c-b3-enhance-prompt-design.md`.
 
 **Conventions (match existing code):**
+
 - Commit per task. Branch is `p2c-b3-enhance-prompt` (already created off `main`; pin `438198c`).
 - After any task that changes `src/`, `npm run check` must report **0 errors, 0 warnings** (the vendor `ERR_MODULE_NOT_FOUND` stderr is harmless; exit 0 + the "0 errors and 0 warnings" line is the signal).
 - BFF tests mock `$lib/server/lqClient`; rune controllers are tested with an injected `fetch` mock (like `src/lib/skills/attach.svelte.ts`); component tests use `@testing-library/svelte`.
@@ -19,6 +20,7 @@
 ### Task 1: enhance-prompt BFF proxies (POST + PATCH)
 
 **Files:**
+
 - Create: `src/routes/(app)/enhance-prompt/+server.ts`
 - Test: `src/routes/(app)/enhance-prompt/server.test.ts`
 - Create: `src/routes/(app)/enhance-prompt/[interaction_id]/+server.ts`
@@ -36,29 +38,44 @@ vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(.
 import { POST } from './+server';
 
 const event = (body: unknown) =>
-  ({ request: new Request('http://x/enhance-prompt', { method: 'POST', body: JSON.stringify(body) }) }) as any;
+	({
+		request: new Request('http://x/enhance-prompt', { method: 'POST', body: JSON.stringify(body) })
+	}) as any;
 
 beforeEach(() => lqFetch.mockReset());
 
 describe('POST /enhance-prompt', () => {
-  it('proxies the body and returns the response', async () => {
-    lqFetch.mockResolvedValue(new Response(JSON.stringify({ interaction_id: 'i1', expansion_applied: true, expanded_prompt: 'X', reasoning: [] }), { status: 200 }));
-    const res = await POST(event({ raw_input: 'hi', chat_id: 'c1' }));
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/enhance-prompt');
-    expect((lqFetch.mock.calls[0][2] as { method: string }).method).toBe('POST');
-    expect(JSON.parse((lqFetch.mock.calls[0][2] as { body: string }).body)).toMatchObject({ raw_input: 'hi', chat_id: 'c1' });
-    expect((await res.json()).interaction_id).toBe('i1');
-  });
+	it('proxies the body and returns the response', async () => {
+		lqFetch.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					interaction_id: 'i1',
+					expansion_applied: true,
+					expanded_prompt: 'X',
+					reasoning: []
+				}),
+				{ status: 200 }
+			)
+		);
+		const res = await POST(event({ raw_input: 'hi', chat_id: 'c1' }));
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/enhance-prompt');
+		expect((lqFetch.mock.calls[0][2] as { method: string }).method).toBe('POST');
+		expect(JSON.parse((lqFetch.mock.calls[0][2] as { body: string }).body)).toMatchObject({
+			raw_input: 'hi',
+			chat_id: 'c1'
+		});
+		expect((await res.json()).interaction_id).toBe('i1');
+	});
 
-  it('passes through 503/504', async () => {
-    lqFetch.mockResolvedValue(new Response('no', { status: 504 }));
-    await expect(POST(event({ raw_input: 'hi' }))).rejects.toMatchObject({ status: 504 });
-  });
+	it('passes through 503/504', async () => {
+		lqFetch.mockResolvedValue(new Response('no', { status: 504 }));
+		await expect(POST(event({ raw_input: 'hi' }))).rejects.toMatchObject({ status: 504 });
+	});
 
-  it('maps other errors to 502', async () => {
-    lqFetch.mockResolvedValue(new Response('no', { status: 500 }));
-    await expect(POST(event({ raw_input: 'hi' }))).rejects.toMatchObject({ status: 502 });
-  });
+	it('maps other errors to 502', async () => {
+		lqFetch.mockResolvedValue(new Response('no', { status: 500 }));
+		await expect(POST(event({ raw_input: 'hi' }))).rejects.toMatchObject({ status: 502 });
+	});
 });
 ```
 
@@ -72,28 +89,44 @@ vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(.
 import { PATCH } from './+server';
 
 const event = (body: unknown) =>
-  ({ params: { interaction_id: 'i1' }, request: new Request('http://x/enhance-prompt/i1', { method: 'PATCH', body: JSON.stringify(body) }) }) as any;
+	({
+		params: { interaction_id: 'i1' },
+		request: new Request('http://x/enhance-prompt/i1', {
+			method: 'PATCH',
+			body: JSON.stringify(body)
+		})
+	}) as any;
 
 beforeEach(() => lqFetch.mockReset());
 
 describe('PATCH /enhance-prompt/[interaction_id]', () => {
-  it('proxies the body to the interaction path', async () => {
-    lqFetch.mockResolvedValue(new Response(JSON.stringify({ interaction_id: 'i1', expansion_applied: true, expanded_prompt: 'X', reasoning: [] }), { status: 200 }));
-    await PATCH(event({ used: true }));
-    expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/enhance-prompt/i1');
-    expect((lqFetch.mock.calls[0][2] as { method: string }).method).toBe('PATCH');
-    expect(JSON.parse((lqFetch.mock.calls[0][2] as { body: string }).body)).toEqual({ used: true });
-  });
+	it('proxies the body to the interaction path', async () => {
+		lqFetch.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					interaction_id: 'i1',
+					expansion_applied: true,
+					expanded_prompt: 'X',
+					reasoning: []
+				}),
+				{ status: 200 }
+			)
+		);
+		await PATCH(event({ used: true }));
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/enhance-prompt/i1');
+		expect((lqFetch.mock.calls[0][2] as { method: string }).method).toBe('PATCH');
+		expect(JSON.parse((lqFetch.mock.calls[0][2] as { body: string }).body)).toEqual({ used: true });
+	});
 
-  it('maps 404 to 404', async () => {
-    lqFetch.mockResolvedValue(new Response('no', { status: 404 }));
-    await expect(PATCH(event({ used: true }))).rejects.toMatchObject({ status: 404 });
-  });
+	it('maps 404 to 404', async () => {
+		lqFetch.mockResolvedValue(new Response('no', { status: 404 }));
+		await expect(PATCH(event({ used: true }))).rejects.toMatchObject({ status: 404 });
+	});
 
-  it('maps other errors to 502', async () => {
-    lqFetch.mockResolvedValue(new Response('no', { status: 500 }));
-    await expect(PATCH(event({ used: false }))).rejects.toMatchObject({ status: 502 });
-  });
+	it('maps other errors to 502', async () => {
+		lqFetch.mockResolvedValue(new Response('no', { status: 500 }));
+		await expect(PATCH(event({ used: false }))).rejects.toMatchObject({ status: 502 });
+	});
 });
 ```
 
@@ -112,12 +145,16 @@ import { lqFetch } from '$lib/server/lqClient';
 import { json, error } from '@sveltejs/kit';
 
 export const POST: RequestHandler = async (event) => {
-  const body = await event.request.text();
-  const res = await lqFetch(event, '/api/v1/enhance-prompt', { method: 'POST', body });
-  // 503/504 are the gateway's documented unreachable/timeout signals; pass them
-  // through; map anything else (incl. the endpoint's 502) to 502.
-  if (!res.ok) throw error(res.status === 503 || res.status === 504 ? res.status : 502, 'Could not enhance the prompt.');
-  return json(await res.json());
+	const body = await event.request.text();
+	const res = await lqFetch(event, '/api/v1/enhance-prompt', { method: 'POST', body });
+	// 503/504 are the gateway's documented unreachable/timeout signals; pass them
+	// through; map anything else (incl. the endpoint's 502) to 502.
+	if (!res.ok)
+		throw error(
+			res.status === 503 || res.status === 504 ? res.status : 502,
+			'Could not enhance the prompt.'
+		);
+	return json(await res.json());
 };
 ```
 
@@ -129,10 +166,14 @@ import { lqFetch } from '$lib/server/lqClient';
 import { json, error } from '@sveltejs/kit';
 
 export const PATCH: RequestHandler = async (event) => {
-  const body = await event.request.text();
-  const res = await lqFetch(event, `/api/v1/enhance-prompt/${event.params.interaction_id}`, { method: 'PATCH', body });
-  if (!res.ok) throw error(res.status === 404 ? 404 : 502, 'Could not record the enhancement outcome.');
-  return json(await res.json());
+	const body = await event.request.text();
+	const res = await lqFetch(event, `/api/v1/enhance-prompt/${event.params.interaction_id}`, {
+		method: 'PATCH',
+		body
+	});
+	if (!res.ok)
+		throw error(res.status === 404 ? 404 : 502, 'Could not record the enhancement outcome.');
+	return json(await res.json());
 };
 ```
 
@@ -155,6 +196,7 @@ git commit -m "feat(p2c-b3): enhance-prompt BFF proxies (POST + PATCH)"
 ### Task 2: enhance types + `createEnhance` controller
 
 **Files:**
+
 - Create: `src/lib/enhance/types.ts`
 - Create: `src/lib/enhance/enhance.svelte.ts`
 - Test: `src/lib/enhance/enhance.svelte.test.ts`
@@ -179,63 +221,82 @@ import { describe, it, expect, vi } from 'vitest';
 import { createEnhance } from './enhance.svelte';
 
 const okResp = (over: Record<string, unknown> = {}) =>
-  new Response(JSON.stringify({ interaction_id: 'i1', expansion_applied: true, expanded_prompt: 'BIG', reasoning: ['a'], ...over }), { status: 200 });
+	new Response(
+		JSON.stringify({
+			interaction_id: 'i1',
+			expansion_applied: true,
+			expanded_prompt: 'BIG',
+			reasoning: ['a'],
+			...over
+		}),
+		{ status: 200 }
+	);
 
 describe('createEnhance', () => {
-  it('run posts raw_input + chat_id + attached_skills and enters preview', async () => {
-    const f = vi.fn().mockResolvedValue(okResp());
-    const e = createEnhance('c1', () => ['nda-review']);
-    await e.run('review this nda', f);
-    expect(f.mock.calls[0][0]).toBe('/enhance-prompt');
-    const body = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
-    expect(body).toEqual({ raw_input: 'review this nda', chat_id: 'c1', attached_skills: [{ name: 'nda-review' }] });
-    expect(e.status).toBe('preview');
-    expect(e.result?.expanded_prompt).toBe('BIG');
-  });
+	it('run posts raw_input + chat_id + attached_skills and enters preview', async () => {
+		const f = vi.fn().mockResolvedValue(okResp());
+		const e = createEnhance('c1', () => ['nda-review']);
+		await e.run('review this nda', f);
+		expect(f.mock.calls[0][0]).toBe('/enhance-prompt');
+		const body = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+		expect(body).toEqual({
+			raw_input: 'review this nda',
+			chat_id: 'c1',
+			attached_skills: [{ name: 'nda-review' }]
+		});
+		expect(e.status).toBe('preview');
+		expect(e.result?.expanded_prompt).toBe('BIG');
+	});
 
-  it('enters skipped when expansion_applied is false', async () => {
-    const f = vi.fn().mockResolvedValue(okResp({ expansion_applied: false, expanded_prompt: 'review this nda' }));
-    const e = createEnhance('c1', () => []);
-    await e.run('review this nda', f);
-    expect(e.status).toBe('skipped');
-  });
+	it('enters skipped when expansion_applied is false', async () => {
+		const f = vi
+			.fn()
+			.mockResolvedValue(okResp({ expansion_applied: false, expanded_prompt: 'review this nda' }));
+		const e = createEnhance('c1', () => []);
+		await e.run('review this nda', f);
+		expect(e.status).toBe('skipped');
+	});
 
-  it('enters error on a non-ok response', async () => {
-    const f = vi.fn().mockResolvedValue(new Response('no', { status: 502 }));
-    const e = createEnhance('c1', () => []);
-    await e.run('hi', f);
-    expect(e.status).toBe('error');
-  });
+	it('enters error on a non-ok response', async () => {
+		const f = vi.fn().mockResolvedValue(new Response('no', { status: 502 }));
+		const e = createEnhance('c1', () => []);
+		await e.run('hi', f);
+		expect(e.status).toBe('error');
+	});
 
-  it('does not run on a blank draft', async () => {
-    const f = vi.fn();
-    const e = createEnhance('c1', () => []);
-    await e.run('   ', f);
-    expect(f).not.toHaveBeenCalled();
-    expect(e.status).toBe('idle');
-  });
+	it('does not run on a blank draft', async () => {
+		const f = vi.fn();
+		const e = createEnhance('c1', () => []);
+		await e.run('   ', f);
+		expect(f).not.toHaveBeenCalled();
+		expect(e.status).toBe('idle');
+	});
 
-  it('accept returns expanded_prompt, PATCHes used:true, and resets', async () => {
-    const e = createEnhance('c1', () => []);
-    await e.run('hi', vi.fn().mockResolvedValue(okResp()));
-    const patch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
-    const text = e.accept(patch);
-    expect(text).toBe('BIG');
-    expect(patch.mock.calls[0][0]).toBe('/enhance-prompt/i1');
-    expect((patch.mock.calls[0][1] as RequestInit).method).toBe('PATCH');
-    expect(JSON.parse((patch.mock.calls[0][1] as RequestInit).body as string)).toEqual({ used: true });
-    expect(e.status).toBe('idle');
-    expect(e.result).toBeNull();
-  });
+	it('accept returns expanded_prompt, PATCHes used:true, and resets', async () => {
+		const e = createEnhance('c1', () => []);
+		await e.run('hi', vi.fn().mockResolvedValue(okResp()));
+		const patch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+		const text = e.accept(patch);
+		expect(text).toBe('BIG');
+		expect(patch.mock.calls[0][0]).toBe('/enhance-prompt/i1');
+		expect((patch.mock.calls[0][1] as RequestInit).method).toBe('PATCH');
+		expect(JSON.parse((patch.mock.calls[0][1] as RequestInit).body as string)).toEqual({
+			used: true
+		});
+		expect(e.status).toBe('idle');
+		expect(e.result).toBeNull();
+	});
 
-  it('discard PATCHes used:false and resets', async () => {
-    const e = createEnhance('c1', () => []);
-    await e.run('hi', vi.fn().mockResolvedValue(okResp()));
-    const patch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
-    e.discard(patch);
-    expect(JSON.parse((patch.mock.calls[0][1] as RequestInit).body as string)).toEqual({ used: false });
-    expect(e.status).toBe('idle');
-  });
+	it('discard PATCHes used:false and resets', async () => {
+		const e = createEnhance('c1', () => []);
+		await e.run('hi', vi.fn().mockResolvedValue(okResp()));
+		const patch = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+		e.discard(patch);
+		expect(JSON.parse((patch.mock.calls[0][1] as RequestInit).body as string)).toEqual({
+			used: false
+		});
+		expect(e.status).toBe('idle');
+	});
 });
 ```
 
@@ -252,75 +313,79 @@ Create `src/lib/enhance/enhance.svelte.ts`:
 import type { EnhancePromptResponse } from './types';
 
 export function createEnhance(chatId: string, getSkills: () => string[]) {
-  let status = $state<'idle' | 'loading' | 'preview' | 'skipped' | 'error'>('idle');
-  let result = $state<EnhancePromptResponse | null>(null);
-  let controller: AbortController | null = null;
+	let status = $state<'idle' | 'loading' | 'preview' | 'skipped' | 'error'>('idle');
+	let result = $state<EnhancePromptResponse | null>(null);
+	let controller: AbortController | null = null;
 
-  function patchOutcome(id: string, used: boolean, fetchFn: typeof fetch) {
-    // Fire-and-forget telemetry — failures are non-blocking.
-    fetchFn(`/enhance-prompt/${id}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ used })
-    }).catch(() => {});
-  }
+	function patchOutcome(id: string, used: boolean, fetchFn: typeof fetch) {
+		// Fire-and-forget telemetry — failures are non-blocking.
+		fetchFn(`/enhance-prompt/${id}`, {
+			method: 'PATCH',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ used })
+		}).catch(() => {});
+	}
 
-  async function run(rawInput: string, fetchFn: typeof fetch = fetch) {
-    if (!rawInput.trim() || status === 'loading') return;
-    status = 'loading';
-    result = null;
-    controller = new AbortController();
-    try {
-      const res = await fetchFn('/enhance-prompt', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ raw_input: rawInput, chat_id: chatId, attached_skills: getSkills().map((name) => ({ name })) }),
-        signal: controller.signal
-      });
-      if (!res.ok) {
-        status = 'error';
-        return;
-      }
-      result = (await res.json()) as EnhancePromptResponse;
-      status = result.expansion_applied ? 'preview' : 'skipped';
-    } catch (e) {
-      status = (e as Error).name === 'AbortError' ? 'idle' : 'error';
-    } finally {
-      controller = null;
-    }
-  }
+	async function run(rawInput: string, fetchFn: typeof fetch = fetch) {
+		if (!rawInput.trim() || status === 'loading') return;
+		status = 'loading';
+		result = null;
+		controller = new AbortController();
+		try {
+			const res = await fetchFn('/enhance-prompt', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					raw_input: rawInput,
+					chat_id: chatId,
+					attached_skills: getSkills().map((name) => ({ name }))
+				}),
+				signal: controller.signal
+			});
+			if (!res.ok) {
+				status = 'error';
+				return;
+			}
+			result = (await res.json()) as EnhancePromptResponse;
+			status = result.expansion_applied ? 'preview' : 'skipped';
+		} catch (e) {
+			status = (e as Error).name === 'AbortError' ? 'idle' : 'error';
+		} finally {
+			controller = null;
+		}
+	}
 
-  function cancel() {
-    controller?.abort();
-  }
+	function cancel() {
+		controller?.abort();
+	}
 
-  /** Apply the enhancement: returns the expanded prompt and records used=true. */
-  function accept(fetchFn: typeof fetch = fetch): string {
-    const text = result?.expanded_prompt ?? '';
-    if (result?.interaction_id) patchOutcome(result.interaction_id, true, fetchFn);
-    status = 'idle';
-    result = null;
-    return text;
-  }
+	/** Apply the enhancement: returns the expanded prompt and records used=true. */
+	function accept(fetchFn: typeof fetch = fetch): string {
+		const text = result?.expanded_prompt ?? '';
+		if (result?.interaction_id) patchOutcome(result.interaction_id, true, fetchFn);
+		status = 'idle';
+		result = null;
+		return text;
+	}
 
-  function discard(fetchFn: typeof fetch = fetch) {
-    if (result?.interaction_id) patchOutcome(result.interaction_id, false, fetchFn);
-    status = 'idle';
-    result = null;
-  }
+	function discard(fetchFn: typeof fetch = fetch) {
+		if (result?.interaction_id) patchOutcome(result.interaction_id, false, fetchFn);
+		status = 'idle';
+		result = null;
+	}
 
-  return {
-    get status() {
-      return status;
-    },
-    get result() {
-      return result;
-    },
-    run,
-    cancel,
-    accept,
-    discard
-  };
+	return {
+		get status() {
+			return status;
+		},
+		get result() {
+			return result;
+		},
+		run,
+		cancel,
+		accept,
+		discard
+	};
 }
 ```
 
@@ -341,6 +406,7 @@ git commit -m "feat(p2c-b3): enhance types + createEnhance rune controller"
 ### Task 3: `EnhancePreview.svelte` (preview card)
 
 **Files:**
+
 - Create: `src/lib/components/EnhancePreview.svelte`
 - Test: `src/lib/components/EnhancePreview.svelte.test.ts`
 
@@ -357,30 +423,32 @@ import EnhancePreview from './EnhancePreview.svelte';
 import type { EnhancePromptResponse } from '$lib/enhance/types';
 
 const result: EnhancePromptResponse = {
-  interaction_id: 'i1',
-  expansion_applied: true,
-  expanded_prompt: 'You are in-house counsel reviewing an NDA…',
-  reasoning: ['Added role', 'Added scope']
+	interaction_id: 'i1',
+	expansion_applied: true,
+	expanded_prompt: 'You are in-house counsel reviewing an NDA…',
+	reasoning: ['Added role', 'Added scope']
 };
 
 describe('EnhancePreview', () => {
-  it('shows the expanded prompt and toggles the reasoning list', async () => {
-    const { getByTestId, getByText, queryByText } = render(EnhancePreview, { props: { result, onaccept: vi.fn(), ondiscard: vi.fn() } });
-    expect(getByTestId('enhance-expanded')).toHaveTextContent('in-house counsel');
-    expect(queryByText('Added role')).toBeNull();
-    await userEvent.click(getByText(/why these changes/i));
-    expect(getByText('Added role')).toBeInTheDocument();
-  });
+	it('shows the expanded prompt and toggles the reasoning list', async () => {
+		const { getByTestId, getByText, queryByText } = render(EnhancePreview, {
+			props: { result, onaccept: vi.fn(), ondiscard: vi.fn() }
+		});
+		expect(getByTestId('enhance-expanded')).toHaveTextContent('in-house counsel');
+		expect(queryByText('Added role')).toBeNull();
+		await userEvent.click(getByText(/why these changes/i));
+		expect(getByText('Added role')).toBeInTheDocument();
+	});
 
-  it('fires accept and discard', async () => {
-    const onaccept = vi.fn();
-    const ondiscard = vi.fn();
-    const { getByTestId } = render(EnhancePreview, { props: { result, onaccept, ondiscard } });
-    await userEvent.click(getByTestId('enhance-accept'));
-    expect(onaccept).toHaveBeenCalledTimes(1);
-    await userEvent.click(getByTestId('enhance-discard'));
-    expect(ondiscard).toHaveBeenCalledTimes(1);
-  });
+	it('fires accept and discard', async () => {
+		const onaccept = vi.fn();
+		const ondiscard = vi.fn();
+		const { getByTestId } = render(EnhancePreview, { props: { result, onaccept, ondiscard } });
+		await userEvent.click(getByTestId('enhance-accept'));
+		expect(onaccept).toHaveBeenCalledTimes(1);
+		await userEvent.click(getByTestId('enhance-discard'));
+		expect(ondiscard).toHaveBeenCalledTimes(1);
+	});
 });
 ```
 
@@ -395,43 +463,62 @@ Create `src/lib/components/EnhancePreview.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { Sparkles } from '@lucide/svelte';
-  import type { EnhancePromptResponse } from '$lib/enhance/types';
+	import { Sparkles } from '@lucide/svelte';
+	import type { EnhancePromptResponse } from '$lib/enhance/types';
 
-  let {
-    result,
-    onaccept,
-    ondiscard
-  }: {
-    result: EnhancePromptResponse;
-    onaccept: () => void;
-    ondiscard: () => void;
-  } = $props();
+	let {
+		result,
+		onaccept,
+		ondiscard
+	}: {
+		result: EnhancePromptResponse;
+		onaccept: () => void;
+		ondiscard: () => void;
+	} = $props();
 
-  let showReasoning = $state(false);
+	let showReasoning = $state(false);
 </script>
 
-<div class="mb-2 rounded-mlq-control border border-mlq-subtle border-l-2 border-l-mlq-strong bg-mlq-surface p-3">
-  <div class="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-mlq-muted">
-    <Sparkles size={12} /> Enhanced prompt
-  </div>
-  <p data-testid="enhance-expanded" class="whitespace-pre-wrap font-serif text-sm text-mlq-text">{result.expanded_prompt}</p>
+<div
+	class="mb-2 rounded-mlq-control border border-l-2 border-mlq-subtle border-l-mlq-strong bg-mlq-surface p-3"
+>
+	<div class="mb-1 flex items-center gap-1.5 text-[11px] tracking-wide text-mlq-muted uppercase">
+		<Sparkles size={12} /> Enhanced prompt
+	</div>
+	<p data-testid="enhance-expanded" class="font-serif text-sm whitespace-pre-wrap text-mlq-text">
+		{result.expanded_prompt}
+	</p>
 
-  {#if result.reasoning.length}
-    <button type="button" onclick={() => (showReasoning = !showReasoning)} class="mt-2 text-xs text-mlq-muted hover:text-mlq-text">
-      {showReasoning ? '▾' : '▸'} Why these changes ({result.reasoning.length})
-    </button>
-    {#if showReasoning}
-      <ul class="mt-1 list-disc space-y-1 pl-5 text-xs text-mlq-muted">
-        {#each result.reasoning as r}<li>{r}</li>{/each}
-      </ul>
-    {/if}
-  {/if}
+	{#if result.reasoning.length}
+		<button
+			type="button"
+			onclick={() => (showReasoning = !showReasoning)}
+			class="mt-2 text-xs text-mlq-muted hover:text-mlq-text"
+		>
+			{showReasoning ? '▾' : '▸'} Why these changes ({result.reasoning.length})
+		</button>
+		{#if showReasoning}
+			<ul class="mt-1 list-disc space-y-1 pl-5 text-xs text-mlq-muted">
+				{#each result.reasoning as r}<li>{r}</li>{/each}
+			</ul>
+		{/if}
+	{/if}
 
-  <div class="mt-3 flex gap-2">
-    <button type="button" data-testid="enhance-accept" onclick={onaccept} class="rounded-mlq-control bg-mlq-strong px-3 py-1 text-xs text-white">Use this</button>
-    <button type="button" data-testid="enhance-discard" onclick={ondiscard} class="rounded-mlq-control border border-mlq-subtle px-3 py-1 text-xs text-mlq-text">Discard</button>
-  </div>
+	<div class="mt-3 flex gap-2">
+		<button
+			type="button"
+			data-testid="enhance-accept"
+			onclick={onaccept}
+			class="rounded-mlq-control bg-mlq-strong px-3 py-1 text-xs text-white">Use this</button
+		>
+		<button
+			type="button"
+			data-testid="enhance-discard"
+			onclick={ondiscard}
+			class="rounded-mlq-control border border-mlq-subtle px-3 py-1 text-xs text-mlq-text"
+			>Discard</button
+		>
+	</div>
 </div>
 ```
 
@@ -457,6 +544,7 @@ git commit -m "feat(p2c-b3): EnhancePreview card (expanded prompt + reasoning to
 ### Task 4: Composer enhance button + preview wiring
 
 **Files:**
+
 - Modify: `src/lib/components/Composer.svelte`
 - Test: `src/lib/components/Composer.test.ts` (add cases)
 
@@ -465,34 +553,47 @@ git commit -m "feat(p2c-b3): EnhancePreview card (expanded prompt + reasoning to
 Append inside the existing `describe('Composer', …)` block in `src/lib/components/Composer.test.ts`:
 
 ```ts
-  it('hides the enhance button when no enhance controller is passed', () => {
-    const { queryByTestId } = render(Composer, { props: {} });
-    expect(queryByTestId('enhance-button')).toBeNull();
-  });
+it('hides the enhance button when no enhance controller is passed', () => {
+	const { queryByTestId } = render(Composer, { props: {} });
+	expect(queryByTestId('enhance-button')).toBeNull();
+});
 
-  it('shows the enhance button and runs it with the current draft', async () => {
-    const run = vi.fn();
-    const enhance = {
-      status: 'idle', result: null, run, cancel: vi.fn(), accept: vi.fn(), discard: vi.fn()
-    } as unknown as ReturnType<typeof import('$lib/enhance/enhance.svelte').createEnhance>;
-    const { getByRole, getByTestId } = render(Composer, { props: { enhance } });
-    await userEvent.type(getByRole('textbox'), 'review this');
-    await userEvent.click(getByTestId('enhance-button'));
-    expect(run).toHaveBeenCalledWith('review this');
-  });
+it('shows the enhance button and runs it with the current draft', async () => {
+	const run = vi.fn();
+	const enhance = {
+		status: 'idle',
+		result: null,
+		run,
+		cancel: vi.fn(),
+		accept: vi.fn(),
+		discard: vi.fn()
+	} as unknown as ReturnType<typeof import('$lib/enhance/enhance.svelte').createEnhance>;
+	const { getByRole, getByTestId } = render(Composer, { props: { enhance } });
+	await userEvent.type(getByRole('textbox'), 'review this');
+	await userEvent.click(getByTestId('enhance-button'));
+	expect(run).toHaveBeenCalledWith('review this');
+});
 
-  it('renders the preview and applies accepted text to the textarea', async () => {
-    const accept = vi.fn(() => 'EXPANDED TEXT');
-    const enhance = {
-      status: 'preview',
-      result: { interaction_id: 'i1', expansion_applied: true, expanded_prompt: 'EXPANDED TEXT', reasoning: [] },
-      run: vi.fn(), cancel: vi.fn(), accept, discard: vi.fn()
-    } as unknown as ReturnType<typeof import('$lib/enhance/enhance.svelte').createEnhance>;
-    const { getByRole, getByTestId } = render(Composer, { props: { enhance } });
-    await userEvent.click(getByTestId('enhance-accept'));
-    expect(accept).toHaveBeenCalled();
-    expect((getByRole('textbox') as HTMLTextAreaElement).value).toBe('EXPANDED TEXT');
-  });
+it('renders the preview and applies accepted text to the textarea', async () => {
+	const accept = vi.fn(() => 'EXPANDED TEXT');
+	const enhance = {
+		status: 'preview',
+		result: {
+			interaction_id: 'i1',
+			expansion_applied: true,
+			expanded_prompt: 'EXPANDED TEXT',
+			reasoning: []
+		},
+		run: vi.fn(),
+		cancel: vi.fn(),
+		accept,
+		discard: vi.fn()
+	} as unknown as ReturnType<typeof import('$lib/enhance/enhance.svelte').createEnhance>;
+	const { getByRole, getByTestId } = render(Composer, { props: { enhance } });
+	await userEvent.click(getByTestId('enhance-accept'));
+	expect(accept).toHaveBeenCalled();
+	expect((getByRole('textbox') as HTMLTextAreaElement).value).toBe('EXPANDED TEXT');
+});
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -538,38 +639,49 @@ Edit `src/lib/components/Composer.svelte`:
 2. Add the enhance preview / skip / error block ABOVE the skill chips block (immediately after the opening composer `<div ...>`):
 
 ```svelte
-  {#if enhance}
-    {#if enhance.status === 'preview' && enhance.result}
-      <EnhancePreview result={enhance.result} onaccept={() => (value = enhance.accept())} ondiscard={enhance.discard} />
-    {:else if enhance.status === 'skipped'}
-      <p class="mb-2 text-xs text-mlq-muted">No changes suggested.</p>
-    {:else if enhance.status === 'error'}
-      <p class="mb-2 text-xs text-mlq-muted">Couldn't enhance the prompt.</p>
-    {/if}
-  {/if}
+{#if enhance}
+	{#if enhance.status === 'preview' && enhance.result}
+		<EnhancePreview
+			result={enhance.result}
+			onaccept={() => (value = enhance.accept())}
+			ondiscard={enhance.discard}
+		/>
+	{:else if enhance.status === 'skipped'}
+		<p class="mb-2 text-xs text-mlq-muted">No changes suggested.</p>
+	{:else if enhance.status === 'error'}
+		<p class="mb-2 text-xs text-mlq-muted">Couldn't enhance the prompt.</p>
+	{/if}
+{/if}
 ```
 
 3. Add the Enhance control in the control row, immediately after the `{#if skillAttach}…{/if}` SkillAttach block and before the `<span class="flex-1">`:
 
 ```svelte
-    {#if enhance}
-      {#if enhance.status === 'loading'}
-        <span class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-muted">
-          Enhancing…
-          <button type="button" aria-label="Cancel enhance" onclick={enhance.cancel} class="hover:text-mlq-text"><X size={12} /></button>
-        </span>
-      {:else}
-        <button
-          type="button"
-          data-testid="enhance-button"
-          onclick={() => enhance.run(value)}
-          disabled={!value.trim()}
-          class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text disabled:opacity-40"
-        >
-          <Sparkles size={13} /> Enhance
-        </button>
-      {/if}
-    {/if}
+{#if enhance}
+	{#if enhance.status === 'loading'}
+		<span
+			class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-muted"
+		>
+			Enhancing…
+			<button
+				type="button"
+				aria-label="Cancel enhance"
+				onclick={enhance.cancel}
+				class="hover:text-mlq-text"><X size={12} /></button
+			>
+		</span>
+	{:else}
+		<button
+			type="button"
+			data-testid="enhance-button"
+			onclick={() => enhance.run(value)}
+			disabled={!value.trim()}
+			class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text disabled:opacity-40"
+		>
+			<Sparkles size={13} /> Enhance
+		</button>
+	{/if}
+{/if}
 ```
 
 (Everything else — model picker, skill chips/button, send/stop, `submit`, `onkeydown` — stays unchanged.)
@@ -596,6 +708,7 @@ git commit -m "feat(p2c-b3): composer enhance button + preview wiring"
 ### Task 5: Wire the chat page to own the enhance controller
 
 **Files:**
+
 - Modify: `src/routes/(app)/chats/[id]/+page.svelte`
 
 - [ ] **Step 1: Make these three edits.** Read the file first.
@@ -603,26 +716,26 @@ git commit -m "feat(p2c-b3): composer enhance button + preview wiring"
 1. Add the import beside the existing `createSkillAttach` import:
 
 ```svelte
-  import { createEnhance } from '$lib/enhance/enhance.svelte';
+import {createEnhance} from '$lib/enhance/enhance.svelte';
 ```
 
 2. Create the controller after the existing `const skillAttach = createSkillAttach();` line (it closes over the chat id and reuses the B2 attached-skill names):
 
 ```svelte
-  const enhance = createEnhance(data.chatId, () => skillAttach.names);
+const enhance = createEnhance(data.chatId, () => skillAttach.names);
 ```
 
 3. Pass it to the Composer — add `{enhance}` to the existing `<Composer ... />` (keep all existing props, including `{skillAttach}`):
 
 ```svelte
-    <Composer
-      bind:value={draftValue}
-      onsubmit={submit}
-      streaming={chat.status === 'streaming'}
-      onstop={chat.stop}
-      {skillAttach}
-      {enhance}
-    />
+<Composer
+	bind:value={draftValue}
+	onsubmit={submit}
+	streaming={chat.status === 'streaming'}
+	onstop={chat.stop}
+	{skillAttach}
+	{enhance}
+/>
 ```
 
 - [ ] **Step 2: Verify check + the full unit suite**
@@ -642,6 +755,7 @@ git commit -m "feat(p2c-b3): chat page owns enhance controller (chat_id + attach
 ### Task 6: Live e2e + full gate
 
 **Files:**
+
 - Create: `tests/enhance-prompt.spec.ts`
 
 **Prereqs (run once):**
@@ -664,37 +778,41 @@ const EMAIL = process.env.DONNA_E2E_EMAIL!;
 const PASSWORD = process.env.DONNA_E2E_PASSWORD!;
 
 async function login(page: any) {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', EMAIL);
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button:has-text("Sign in")');
-  await page.waitForURL('/');
+	await page.goto('/login');
+	await page.fill('input[name="email"]', EMAIL);
+	await page.fill('input[name="password"]', PASSWORD);
+	await page.click('button:has-text("Sign in")');
+	await page.waitForURL('/');
 }
 
-test('enhance rewrites the draft via a preview the user accepts, and records the outcome', async ({ page }) => {
-  test.setTimeout(90_000);
-  await login(page);
+test('enhance rewrites the draft via a preview the user accepts, and records the outcome', async ({
+	page
+}) => {
+	test.setTimeout(90_000);
+	await login(page);
 
-  // Start a chat (enhance is in-chat only).
-  await page.fill('textarea', 'In one short sentence, what is an NDA?');
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
-  await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
+	// Start a chat (enhance is in-chat only).
+	await page.fill('textarea', 'In one short sentence, what is an NDA?');
+	await page.keyboard.press('Enter');
+	await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
+	await expect(page.getByRole('button', { name: /copy/i })).toBeVisible({ timeout: 30000 });
 
-  // Type a short, vague draft and enhance it.
-  await page.fill('textarea', 'review this nda');
-  await page.getByTestId('enhance-button').click();
+	// Type a short, vague draft and enhance it.
+	await page.fill('textarea', 'review this nda');
+	await page.getByTestId('enhance-button').click();
 
-  // The ~20s call returns a preview card with the expanded prompt.
-  await expect(page.getByTestId('enhance-expanded')).toContainText(/in-house counsel/i, { timeout: 45000 });
+	// The ~20s call returns a preview card with the expanded prompt.
+	await expect(page.getByTestId('enhance-expanded')).toContainText(/in-house counsel/i, {
+		timeout: 45000
+	});
 
-  // Accept → the expanded prompt lands in the textarea, and a PATCH outcome is recorded.
-  const patchPromise = page.waitForRequest(
-    (r: any) => r.url().includes('/enhance-prompt/') && r.method() === 'PATCH'
-  );
-  await page.getByTestId('enhance-accept').click();
-  await patchPromise;
-  await expect(page.locator('textarea')).toHaveValue(/in-house counsel/i);
+	// Accept → the expanded prompt lands in the textarea, and a PATCH outcome is recorded.
+	const patchPromise = page.waitForRequest(
+		(r: any) => r.url().includes('/enhance-prompt/') && r.method() === 'PATCH'
+	);
+	await page.getByTestId('enhance-accept').click();
+	await patchPromise;
+	await expect(page.locator('textarea')).toHaveValue(/in-house counsel/i);
 });
 ```
 
@@ -720,6 +838,7 @@ git commit -m "test(p2c-b3): live e2e for enhance-prompt (preview, accept, appli
 ## Self-review
 
 **Spec coverage:**
+
 - `✦ Enhance` button → `POST /enhance-prompt` with raw_input+chat_id+attached_skills → Tasks 2 (controller builds the body), 4 (button), 5 (page supplies chatId + skill getter).
 - Preview card (expanded_prompt + collapsible reasoning + Use this/Discard) → Task 3 + Task 4 (renders it on `status==='preview'`).
 - Original untouched until accept; accept applies to textarea → Task 4 (`value = enhance.accept()`).

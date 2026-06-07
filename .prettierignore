@@ -11,3 +11,39 @@ bun.lockb
 # Vendored lq-ai backend (separate upstream monorepo) + generated API types
 /vendor/
 /src/lib/api/
+
+# Svelte files with eslint-disable-next-line comments on <a href> tags:
+# prettier reformats single-line <a> to multi-line, shifting the comment off
+# its target line and breaking the suppress. Excluded from one-time format run.
+src/lib/about/AboutRail.svelte
+src/lib/about/LqLearnSection.svelte
+src/lib/automations/AutomationsNav.svelte
+src/lib/automations/NotificationRow.svelte
+src/lib/automations/NotificationsInbox.svelte
+src/lib/automations/ScheduleRow.svelte
+src/lib/automations/SessionRow.svelte
+src/lib/automations/WatchRow.svelte
+src/lib/components/Sidebar.svelte
+src/lib/docpanel/UnsupportedFileCard.svelte
+src/lib/knowledge/KbFileRow.svelte
+src/lib/matters/files/FileRow.svelte
+src/lib/matters/MatterBadge.svelte
+src/lib/matters/sections/KnowledgeSection.svelte
+src/lib/settings/DataExportCard.svelte
+src/lib/settings/SettingsRail.svelte
+src/lib/workflows/WorkflowsNav.svelte
+src/routes/(app)/about/+layout.svelte
+src/routes/(app)/about/lq-ai/build/+page.svelte
+src/routes/(app)/about/workflows/+page.svelte
+src/routes/(app)/automations/+page.svelte
+src/routes/(app)/automations/schedules/*/+page.svelte
+src/routes/(app)/automations/watches/*/+page.svelte
+src/routes/(app)/knowledge/+page.svelte
+src/routes/(app)/matters/*/+page.svelte
+src/routes/(app)/matters/+page.svelte
+src/routes/(app)/playbooks/*/+page.svelte
+src/routes/(app)/playbooks/+page.svelte
+src/routes/(app)/settings/account/+page.svelte
+src/routes/(app)/settings/models/+page.svelte
+src/routes/(app)/tabular/+page.svelte
+src/routes/(app)/workflows/+page.svelte

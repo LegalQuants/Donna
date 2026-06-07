@@ -15,7 +15,7 @@ touching the server environment.
 
 - **`GET /api/v1/admin/provider-keys`** (admin-only; non-admin → 403) →
   `{ provider_keys: ProviderKeyStatus[] }` where `ProviderKeyStatus = { provider, type: string|null,
-  configured: boolean, last4: string|null, source: "env"|"runtime"|null }`. The full key is NEVER
+configured: boolean, last4: string|null, source: "env"|"runtime"|null }`. The full key is NEVER
   returned (`last4` at most; null when absent/unresolvable/<4 chars).
 - **`POST /api/v1/admin/provider-keys` `{ provider, api_key }`** → **set/REPLACE** a runtime key →
   returns the updated `ProviderKeyStatus`. **Hot-applied** (adapter swapped live, no gateway
@@ -50,7 +50,7 @@ touching the server environment.
 ### 1. Data layer — new `src/lib/inference/providerKeys.ts` (pure)
 
 - `ProviderKeyRow = { provider: string; type: string | null; configured: boolean; last4: string |
-  null; source: 'env' | 'runtime' | null }`.
+null; source: 'env' | 'runtime' | null }`.
 - `parseProviderKeys(raw): ProviderKeyRow[]` — defensive parse of the `provider_keys` envelope
   (house style: malformed rows dropped; `source` outside env/runtime → null).
 - `sourceLabel(row): string` — `'runtime'` / `'environment'` / `'no key'`.
@@ -108,15 +108,15 @@ validation (backend's job).
 
 ## Error handling summary
 
-| Failure | Behavior |
-|---|---|
-| GET fails / non-JSON | `providerKeys: null` → card degraded message; page otherwise fine |
-| POST 400 master-key detail | operator-actionable message on the row |
-| POST 400 other / 5xx | generic row-scoped failure |
-| POST/DELETE 404 | setKey: "Unknown provider." · revoke: success (idempotent) |
-| DELETE 409 (env) | env-managed explanation on the row |
-| 403 anywhere | admin-required message |
-| Malformed status row | dropped by parser |
+| Failure                    | Behavior                                                          |
+| -------------------------- | ----------------------------------------------------------------- |
+| GET fails / non-JSON       | `providerKeys: null` → card degraded message; page otherwise fine |
+| POST 400 master-key detail | operator-actionable message on the row                            |
+| POST 400 other / 5xx       | generic row-scoped failure                                        |
+| POST/DELETE 404            | setKey: "Unknown provider." · revoke: success (idempotent)        |
+| DELETE 409 (env)           | env-managed explanation on the row                                |
+| 403 anywhere               | admin-required message                                            |
+| Malformed status row       | dropped by parser                                                 |
 
 ## Testing
 

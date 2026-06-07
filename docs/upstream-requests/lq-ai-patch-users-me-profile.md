@@ -4,6 +4,7 @@
 **Status:** BLOCKED for the editable-profile part of Donna's Settings page (P7).
 
 > **File locations (absolute):**
+>
 > - This request doc lives in the **Donna** repo: `/Users/kevinkeller/Code/Donna/docs/upstream-requests/lq-ai-patch-users-me-profile.md`
 > - The work happens in the **lq-ai** repo rooted at `/Users/kevinkeller/Code/lq-ai`. Files to change:
 >   - Users router: `/Users/kevinkeller/Code/lq-ai/api/app/api/users.py` (add a `PATCH /users/me`)
@@ -15,7 +16,7 @@
 `GET /api/v1/users/me` returns a `User` with `display_name?: string | null` and `email`, and
 `PATCH /api/v1/users/me/preferences` exists for preferences — but there is **no** `PATCH
 /api/v1/users/me` to update the profile fields themselves. At `438198c`, `/api/v1/users/me` has
-`patch?: never` in the generated contract. So Donna's Settings page can *show* the profile but can't
+`patch?: never` in the generated contract. So Donna's Settings page can _show_ the profile but can't
 let the user **edit display name (or email)** — that part would be a permanent read-only stub.
 
 This is the only thing blocking the editable-profile slice of Donna's **P7 Settings/Account/Trust**.
@@ -31,12 +32,13 @@ Add `PATCH /api/v1/users/me` accepting a small `UserProfileUpdate`:
 ```jsonc
 // UserProfileUpdate (all optional; at least one required)
 {
-  "display_name": "Jane Counsel"
-  // "email": "jane@firm.com"   // include only if email changes are in scope for self-service
+	"display_name": "Jane Counsel"
+	// "email": "jane@firm.com"   // include only if email changes are in scope for self-service
 }
 ```
 
 Backend behavior we'd need:
+
 - Update the caller's own `users` row (caller-scoped; never another user).
 - `display_name`: trim + length-guard; allow clearing to null if desired.
 - **`email`**: your call whether self-service email change is allowed at all. If yes, decide
@@ -50,7 +52,7 @@ Backend behavior we'd need:
 - Empty/whitespace-only `display_name` → 422 (or documented clear-to-null behavior).
 - (If email in scope) duplicate email → 409, id-probing-safe.
 - Regenerated OpenAPI shows `PATCH /api/v1/users/me` + `UserProfileUpdate` so Donna's `npm run
-  gen:api` picks it up.
+gen:api` picks it up.
 
 ## Donna-side follow-up once this lands
 

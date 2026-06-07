@@ -24,7 +24,7 @@ resume, and cell→source citation nav. Slice C completes the builder's power su
    An **upstream request** (`docs/upstream-requests/lq-ai-tabular-ensemble-verification.md`) wires it
    through the executor + cost; the per-column toggle is a **pin-gated final task** folded in once the
    SHA lands (else a fast follow, P6-C.1). The toggle's frontend contract (`ColumnSpec.ensemble_
-   verification: boolean`) is already stable, so the rest of C does not depend on the pin.
+verification: boolean`) is already stable, so the rest of C does not depend on the pin.
 
 ## Spike results (live, 2026-06-03)
 
@@ -38,7 +38,7 @@ resume, and cell→source citation nav. Slice C completes the builder's power su
   existing run-page grid renders skill runs **unchanged**.
 - **No structured columns on skill detail:** `GET /api/v1/skills/{name}` returns `content_yaml` (raw
   frontmatter), **not** a structured `columns[]`. So the builder can't cheaply preview a skill's column
-  *names* pre-run. The **cost preview returns `cells_count`** (→ "≈ N columns" = cells ÷ docs) and the
+  _names_ pre-run. The **cost preview returns `cells_count`** (→ "≈ N columns" = cells ÷ docs) and the
   **run page shows the actual columns**. Column-name preview in the builder is **out of scope** (optional
   future upstream ask to populate `columns` on detail).
 - **`minimum_inference_tier` is honored** (`nodes.py` passes it to the gateway `ChatCompletionRequest`;
@@ -46,7 +46,7 @@ resume, and cell→source citation nav. Slice C completes the builder's power su
   average in v0.3, but `per_tier_breakdown` (already shown in `CostPreviewModal`) buckets by tier.
 - **`ensemble_verification` is a no-op** (only `state.py:30` stores it; `nodes.py` never reads it). →
   §5 + upstream request. **Backend-CC correction (2026-06-03):** the tabular cell path runs **no**
-  Citation-Engine verification *at all* (`nodes.py:298-320` just stores `cited_chunk_ids`; DE-309), so
+  Citation-Engine verification _at all_ (`nodes.py:298-320` just stores `cited_chunk_ids`; DE-309), so
   the ask is "wire verification into the tabular path, in ensemble mode" (overlaps DE-309), not "swap a
   default." Bonus: surfacing a real `verification_method` on tabular cells also **closes P6-B.1** (the
   doc panel's "Unverified" chip on tabular citations) for verified columns — the panel already renders
@@ -55,7 +55,9 @@ resume, and cell→source citation nav. Slice C completes the builder's power su
 ## Architecture & components
 
 ### 1. Builder mode toggle (ad-hoc ↔ table skill)
+
 `createTabularBuilder` gains:
+
 - `mode: 'adhoc' | 'skill'` (`$state`, default `'adhoc'`) + `setMode(m)`.
 - `selectedSkill: { name: string; title: string; description?: string } | null` + `selectSkill(s)` /
   `clearSkill()`.
@@ -72,6 +74,7 @@ the skill picker + a selected-skill summary card (title · description · "≈ N
 has run).
 
 ### 2. Table-skill picker (data via SSR)
+
 `/tabular/new/+page.server.ts` (already loads matters/files) **also** loads `GET /api/v1/skills` via
 `lqFetch`, filters to `output_format === 'table'`, and returns `tableSkills: { name, title, description? }[]`
 (empty array on non-2xx — the picker shows an empty state, the builder still works in ad-hoc mode). New
@@ -80,6 +83,7 @@ emitting the chosen skill to the builder. New type `TableSkillSummary` in `src/l
 (derived from the generated `SkillSummary`).
 
 ### 3. Advanced per-column option — `minimum_inference_tier` (ad-hoc mode)
+
 `ColumnDraft` gains `minimum_inference_tier?: number | null`. `ColumnBuilder` per-column UI gains a small
 **Advanced** disclosure with a tier `<select>` (None / 1–5, mirroring `MatterForm`). `setColumn` accepts
 the new field; `validColumns()` returns `ColumnSpec`-shaped objects including `minimum_inference_tier`
@@ -87,21 +91,24 @@ when set (omit/`undefined` when "None"). The existing `CostPreviewModal` per-tie
 real tiers.
 
 ### 4. Column reorder (ad-hoc mode)
+
 `createTabularBuilder` gains `moveColumn(id, dir: -1 | 1)` (array swap, boundary-guarded — mirror
 `PlaybookEditor.move()`). `ColumnBuilder` adds ↑/↓ buttons per column (disabled at boundaries, aria-
 labelled). Grid column order follows the request `columns[]` order (verified backend-side).
 
 ### 5. `ensemble_verification` — PIN-GATED final task
+
 Upstream request filed (`docs/upstream-requests/lq-ai-tabular-ensemble-verification.md`): wire the
 column's `ensemble_verification` through the tabular executor (route those cells through the Citation
 Engine ensemble stage) + reflect the premium in `preview-cost`. **Pin-gated task:** once the SHA lands →
 bump `vendor/lq-ai` + regen types, add a per-column **Ensemble verification** checkbox (thread through
 `ColumnDraft`/`setColumn`/`validColumns()` as `ensemble_verification: true`), and assert the cost premium
 live. The field is already in `ColumnSpec`, so this task's frontend code is contract-stable; only the
-*live-observe* assertion depends on the SHA. If the SHA isn't in by slice end, C ships without the toggle
+_live-observe_ assertion depends on the SHA. If the SHA isn't in by slice end, C ships without the toggle
 (fast follow P6-C.1) — we do not expose a no-op control.
 
 ### 6. Wiring & reuse
+
 No BFF proxy changes — `/tabular/{preview-cost,execute}` already forward the request body verbatim, so
 sending `skill_name` or extended `ColumnSpec`s "just works"; the builder constructs the body via
 `buildRequest()`. Run page, grid, `CellDetail`, export, history — all unchanged (skill runs resolve to
@@ -109,6 +116,7 @@ columns the grid already renders). Reuse: `MatterPicker`/`SkillAttach` (picker i
 select, `PlaybookEditor.move()` (reorder), `SegmentedControl` (mode toggle).
 
 ## Testing
+
 - **vitest:** builder mode switch + `buildRequest()` shape per mode; mode-aware `canRun`; `selectSkill`/
   `clearSkill`; `minimum_inference_tier` round-trip in `validColumns()` (set → included; None → omitted);
   `moveColumn` (swap + boundaries); `TableSkillPicker` render/search/select; `+page.server.ts` surfaces
@@ -120,6 +128,7 @@ select, `PlaybookEditor.move()` (reorder), `SegmentedControl` (mode toggle).
 - **Gate:** `npm run check` 0/0 · eslint clean · `npx vitest run` ≥ ~885 green.
 
 ## Risks & notes
+
 - **Rebuild `donna-web`** before live e2e (serves built code). `.txt` won't ingest — `.pdf` fixtures.
 - **0-warning bar:** no `any` / non-null `!`; seed reactive state via the established `untrack`/
   `$effect.pre` patterns.
