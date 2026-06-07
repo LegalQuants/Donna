@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
 import { isAutonomousEnabled } from '$lib/automations/optin.server';
+import { unreadCount } from '$lib/automations/unread.server';
 import { parseMemoryList, MEMORY_STATES } from '$lib/automations/memory';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -16,20 +17,20 @@ export const load: PageServerLoad = async (event) => {
 	const autonomousEnabled = await isAutonomousEnabled(event);
 
 	if (!autonomousEnabled) {
-		return { autonomousEnabled, state, offset, entries: [], total: 0 };
+		return { autonomousEnabled, unread: 0, state, offset, entries: [], total: 0 };
 	}
 
-	const res = await lqFetch(
-		event,
-		`/api/v1/autonomous/memory?state=${state}&limit=${LIMIT}&offset=${offset}`
-	);
+	const [unread, res] = await Promise.all([
+		unreadCount(event),
+		lqFetch(event, `/api/v1/autonomous/memory?state=${state}&limit=${LIMIT}&offset=${offset}`)
+	]);
 
 	if (!res.ok) {
-		return { autonomousEnabled, state, offset, error: true, entries: [], total: 0 };
+		return { autonomousEnabled, unread, state, offset, error: true, entries: [], total: 0 };
 	}
 
 	const { entries, total } = parseMemoryList(await res.json());
-	return { autonomousEnabled, state, offset, entries, total };
+	return { autonomousEnabled, unread, state, offset, entries, total };
 };
 
 export const actions: Actions = {
