@@ -151,6 +151,47 @@ describe('/automations/review page', () => {
 		expect(screen.queryByRole('link', { name: /next/i })).toBeNull();
 	});
 
+	it('page-level form error (no id) renders a page-level alert', () => {
+		render(Page, {
+			props: {
+				data: {
+					autonomousEnabled: true,
+					unread: 0,
+					state: 'proposed',
+					offset: 0,
+					entries: [],
+					total: 0
+				},
+				form: { error: 'Automations are turned off.' }
+			} as never
+		});
+		const alert = screen.getByRole('alert');
+		expect(alert).toHaveTextContent('Automations are turned off.');
+	});
+
+	it('row-scoped form error (with id) does NOT render a page-level alert', () => {
+		render(Page, {
+			props: {
+				data: {
+					autonomousEnabled: true,
+					unread: 0,
+					state: 'proposed',
+					offset: 0,
+					entries: [entry({ id: 'mA', content: 'Alpha' })],
+					total: 1
+				},
+				form: { id: 'mA', error: 'This memory no longer exists.' }
+			} as never
+		});
+		// The row-scoped alert from MemoryRow exists, but there is no additional
+		// page-level alert above the list.
+		const alerts = screen.getAllByRole('alert');
+		// Only 1 alert total — the row one; no duplicate page-level alert.
+		expect(alerts).toHaveLength(1);
+		// Confirm it's the row error, not some other text.
+		expect(alerts[0]).toHaveTextContent('This memory no longer exists.');
+	});
+
 	it('row-scoped error reaches the correct MemoryRow', () => {
 		render(Page, {
 			props: {

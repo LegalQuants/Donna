@@ -1,8 +1,8 @@
 <script lang="ts">
 	import WorkflowsNav from '$lib/workflows/WorkflowsNav.svelte';
 	import SessionDetail from '$lib/automations/SessionDetail.svelte';
-	import type { PageData } from './$types';
-	let { data }: { data: PageData } = $props();
+	import type { PageData, ActionData } from './$types';
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <svelte:head><title>Automation session — Donna</title></svelte:head>
@@ -13,6 +13,9 @@
 	<a href="/automations" class="mb-3 inline-block text-xs text-mlq-muted hover:text-mlq-text"
 		>← Sessions</a
 	>
+	{#if form?.error}
+		<p role="alert" class="mb-2 text-xs text-mlq-error">{form.error}</p>
+	{/if}
 	{#key data.session.id}
 		<SessionDetail
 			initialSession={data.session}

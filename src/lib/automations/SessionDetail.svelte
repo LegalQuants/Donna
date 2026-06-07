@@ -28,10 +28,14 @@
 	const live = createSessionPoll(untrack(() => initialSession.id));
 	const session = $derived(live.session ?? initialSession);
 	const receipt = $derived(live.session ? live.receipt : initialReceipt);
-	const findings = $derived(live.session ? live.findings : initialFindings);
-	const findingsTotal = $derived(live.session ? live.findingsTotal : initialFindingsTotal);
-	const memories = $derived(live.session ? live.memories : initialMemories);
-	const memoriesTotal = $derived(live.session ? live.memoriesTotal : initialMemoriesTotal);
+	const findings = $derived(live.session ? (live.findings ?? initialFindings) : initialFindings);
+	const findingsTotal = $derived(
+		live.session ? (live.findingsTotal ?? initialFindingsTotal) : initialFindingsTotal
+	);
+	const memories = $derived(live.session ? (live.memories ?? initialMemories) : initialMemories);
+	const memoriesTotal = $derived(
+		live.session ? (live.memoriesTotal ?? initialMemoriesTotal) : initialMemoriesTotal
+	);
 
 	$effect(() => {
 		if (initialSession.status === 'running') {
