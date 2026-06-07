@@ -39,7 +39,6 @@
 	}
 
 	function returnToLogin() {
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- post-delete sign-out
 		goto('/login');
 	}
 </script>

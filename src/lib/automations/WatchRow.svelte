@@ -24,7 +24,6 @@
     </button>
   </form>
 
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- edit watch link -->
   <a href="/automations/watches/{watch.id}" class="shrink-0 text-xs text-mlq-workflow hover:underline">Edit</a>
 
   {#if confirmingDelete}

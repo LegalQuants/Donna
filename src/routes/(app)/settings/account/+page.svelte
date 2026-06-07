@@ -36,7 +36,6 @@
       <div class="text-mlq-text">Password</div>
       <div class="text-xs text-mlq-muted">Changing your password signs you out of other sessions.</div>
     </div>
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app change-password link -->
     <a href="/change-password" class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:bg-mlq-subtle/50">Change</a>
   </div>
   <div class="flex items-center justify-between border-t border-mlq-subtle px-4 py-3 text-sm">

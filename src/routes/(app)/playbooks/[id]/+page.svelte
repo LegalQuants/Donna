@@ -20,17 +20,14 @@
 <svelte:head><title>{data.playbook.name} — Donna</title></svelte:head>
 
 <div class="mx-auto max-w-3xl px-4 py-6">
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app back link -->
   <a href="/playbooks" class="text-xs text-mlq-muted hover:underline">← Playbooks</a>
   <div class="mt-2 flex items-start justify-between gap-3">
     <h1 class="min-w-0 break-words font-serif text-2xl text-mlq-strong">{data.playbook.name}</h1>
     <div class="flex shrink-0 items-center gap-2">
       {#if data.isOwner}
-        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app edit link -->
         <a href="/playbooks/{data.playbook.id}/edit" class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:border-mlq-workflow">Edit</a>
         <button type="button" onclick={() => (confirmingDelete = true)} class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-error">Delete</button>
       {/if}
-      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app duplicate link -->
       <a href="/playbooks/new/manual?from={data.playbook.id}" class="rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text hover:border-mlq-workflow">Duplicate</a>
     </div>
   </div>
@@ -38,7 +35,6 @@
     {data.playbook.contract_type}{#if data.playbook.version} · v{data.playbook.version}{/if} · {positions.length} position{positions.length === 1 ? '' : 's'}
   </div>
   {#if data.isAdmin}
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app run link -->
     <a href="/playbooks/{data.playbook.id}/run" class="mt-3 inline-block rounded-mlq-control bg-mlq-text px-3 py-1.5 text-sm text-mlq-surface hover:opacity-90">Apply to a document</a>
   {:else}
     <p class="mt-3 text-xs text-mlq-muted">Running built-in playbooks requires an admin account in this version.</p>

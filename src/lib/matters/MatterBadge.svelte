@@ -6,7 +6,6 @@
 </script>
 
 {#if matter}
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app matter link -->
   <a href="/matters/{matter.id}"
      class="inline-flex items-center gap-1.5 rounded-full bg-mlq-surface-alt px-2.5 py-1 text-xs text-mlq-text hover:bg-mlq-subtle">
     <FolderKanban size={13} /> {matter.name}

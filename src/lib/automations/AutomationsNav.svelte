@@ -14,7 +14,6 @@
 
 <nav aria-label="Automations views" class="mb-4 inline-flex gap-1 rounded-mlq-control border border-mlq-subtle p-1">
   {#each tabs as tab (tab.id)}
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- automations sub-nav link -->
     <a href={tab.href}
        aria-current={active === tab.id ? 'page' : undefined}
        class="inline-flex items-center rounded-mlq-control px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow

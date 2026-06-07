@@ -4,7 +4,6 @@
   let { session }: { session: SessionSummary } = $props();
 </script>
 
-<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- automations session link -->
 <a href="/automations/{session.id}"
   aria-label="{triggerLabel(session.trigger_kind)} session, {session.status}"
   class="flex items-center gap-3 rounded-mlq-control border border-mlq-subtle p-3 hover:bg-mlq-subtle/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow"

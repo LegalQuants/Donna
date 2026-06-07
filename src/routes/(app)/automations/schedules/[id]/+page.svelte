@@ -25,7 +25,6 @@
   <h1 class="mb-4 text-xl font-medium text-mlq-text">Workflows</h1>
   <WorkflowsNav active="automations" />
   <AutomationsNav active="schedules" unread={data.unread} />
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- back link to schedules -->
   <a href="/automations/schedules" class="mb-3 inline-block text-xs text-mlq-muted hover:text-mlq-text">← Schedules</a>
 
   <h2 class="mb-3 text-lg font-medium text-mlq-text">Edit schedule</h2>

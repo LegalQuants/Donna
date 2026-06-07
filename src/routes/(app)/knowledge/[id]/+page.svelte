@@ -38,7 +38,6 @@
 
 <div class="mx-auto max-w-3xl px-4 py-6">
 	<nav class="mb-4 text-xs text-mlq-muted">
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app breadcrumb link -->
 		<a href="/knowledge" class="hover:text-mlq-text">Knowledge</a>
 		<span class="mx-1">·</span>
 		<span>{data.kb.name}</span>

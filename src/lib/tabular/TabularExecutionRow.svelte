@@ -17,7 +17,6 @@
 	);
 </script>
 
-<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app execution link -->
 <a href="/tabular/{summary.id}" class="flex items-center gap-3 px-4 py-3 hover:bg-mlq-surface-alt">
 	<span class="inline-flex shrink-0 items-center gap-1.5 text-xs text-mlq-muted">
 		<span class="inline-block h-2 w-2 rounded-full {badge[summary.status]}"></span>

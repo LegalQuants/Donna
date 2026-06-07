@@ -92,6 +92,5 @@
   The <strong>Automations</strong> tab is where Donna runs work on its own — one-off runs,
   cron-style schedules, and watches that fire when new documents arrive in a knowledge base, each
   with a full receipt of what the agent did and what it produced.
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
   See the dedicated <a href="/about/automations" class="font-medium text-mlq-strong hover:underline">Automations guide</a>.
 </p>

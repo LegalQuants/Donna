@@ -32,7 +32,6 @@
     <ul class="divide-y divide-mlq-subtle rounded-mlq-control border border-mlq-subtle">
       {#each data.matters as m (m.id)}
         <li>
-          <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- in-app matter link -->
           <a href="/matters/{m.id}" class="flex items-center gap-3 px-4 py-3 hover:bg-mlq-surface-alt">
             <div class="min-w-0">
               <div class="flex items-center gap-2 font-serif text-sm text-mlq-text">

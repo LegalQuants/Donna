@@ -5,10 +5,8 @@
 </script>
 
 <nav aria-label="Notification filters" class="mb-3 inline-flex gap-1 rounded-mlq-control border border-mlq-subtle p-1 text-sm">
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- notifications filter -->
   <a href="/automations/notifications" aria-current={!unreadOnly ? 'page' : undefined}
      class="rounded-mlq-control px-3 py-1 {!unreadOnly ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text hover:bg-mlq-subtle/50'}">All</a>
-  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- notifications filter -->
   <a href="/automations/notifications?unread=true" aria-current={unreadOnly ? 'page' : undefined}
      class="rounded-mlq-control px-3 py-1 {unreadOnly ? 'bg-mlq-subtle text-mlq-strong' : 'text-mlq-text hover:bg-mlq-subtle/50'}">Unread</a>
 </nav>

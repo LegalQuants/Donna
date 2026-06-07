@@ -9,7 +9,6 @@
 <div class="flex items-start gap-3 rounded-mlq-control border border-mlq-subtle p-3 {unread ? 'bg-mlq-subtle/30' : ''}">
   {#if unread}<span aria-hidden="true" class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-mlq-workflow"></span>{/if}
   <div class="min-w-0 flex-1">
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- notification → session receipt -->
     <a href="/automations/{notification.session_id}" class="text-sm font-medium text-mlq-text hover:underline">{notification.title}</a>
     <p class="truncate text-xs text-mlq-muted">{notification.body}</p>
     <span class="text-[11px] text-mlq-muted">{notification.channel} · {formatWhen(notification.created_at)}</span>

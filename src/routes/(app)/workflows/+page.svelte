@@ -17,7 +17,6 @@
   <WorkflowsNav active={null} />
   <div data-testid="workflows-cards" class="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
     {#each cards as c (c.href)}
-      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- workflows hub card link -->
       <a href={c.href} class="block rounded-mlq-control border border-mlq-subtle p-4 hover:bg-mlq-subtle/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mlq-workflow">
         <c.icon size={22} class="mb-2 text-mlq-workflow" />
         <span class="block text-sm font-medium text-mlq-text">{c.name}</span>

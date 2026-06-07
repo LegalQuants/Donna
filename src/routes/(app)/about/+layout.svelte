@@ -16,7 +16,6 @@
 <!-- The callout always sits full-width above the rail/content row (hence the outer flex-col). -->
 <div class="mx-auto flex flex-col gap-4 px-4 py-6 {wide ? 'max-w-6xl' : 'max-w-5xl'}">
   {#if showCallout}
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- powered-by callout -->
     <a href="/about/lq-ai"
        class="flex items-center justify-between gap-3 rounded-mlq-control border border-mlq-subtle bg-mlq-subtle/30 px-4 py-3 text-sm transition-colors hover:bg-mlq-subtle/60">
       <span class="text-mlq-text">Donna is powered by <span class="font-medium text-mlq-strong">LQ-AI</span>, an open-source legal operating system — learn how it works.</span>
