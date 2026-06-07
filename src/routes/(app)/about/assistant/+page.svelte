@@ -66,8 +66,9 @@
   To ground an answer in a specific document, click the <strong>paperclip</strong> button in the
   toolbar or drag a file directly onto the composer. You can attach up to <strong>16 files per
   message</strong>. Each file appears as a pill showing the filename and its upload status
-  ("uploading", "ready", or "failed"). The send button stays disabled until every attached file has
-  finished processing — a failed file must be removed before you can send. Remove any file at any
+  ("uploading" → "pending" → "processing" → "ready", or "failed"). The send button stays disabled
+  until every attached file has finished processing — a failed file must be removed before you can
+  send. Remove any file at any
   time with the <strong>×</strong> on its pill.
 </p>
 

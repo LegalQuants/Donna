@@ -10,7 +10,7 @@
   const nav: NavItem[] = [
     { href: '/', label: 'Assistant', icon: MessageSquare },
     { href: '/matters', label: 'Projects', icon: FolderKanban },
-    { href: '/workflows', label: 'Workflows', icon: Workflow, match: ['/workflows', '/skills', '/playbooks', '/prompts'] },
+    { href: '/workflows', label: 'Workflows', icon: Workflow, match: ['/workflows', '/skills', '/playbooks', '/prompts', '/automations'] },
     { href: '/tabular', label: 'Tabular', icon: Table }
   ];
 
