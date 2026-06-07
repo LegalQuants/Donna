@@ -28,6 +28,7 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 	let findings = $state<FindingItem[] | null>(null);
 	let findingsTotal = $state<number | null>(null);
 	let memories = $state<RunMemoryItem[] | null>(null);
+	let memoriesTotal = $state<number | null>(null);
 	let done = $state(false);
 	let error = $state<string | null>(null);
 	let running = false;
@@ -45,6 +46,7 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 			findings?: unknown;
 			findings_total?: unknown;
 			memories?: unknown;
+			memories_total?: unknown;
 		};
 		const parsed = parseSessionSummary(body.session);
 		if (!parsed) {
@@ -56,6 +58,7 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 		findings = Array.isArray(body.findings) ? (body.findings as FindingItem[]) : null;
 		findingsTotal = typeof body.findings_total === 'number' ? body.findings_total : null;
 		memories = Array.isArray(body.memories) ? (body.memories as RunMemoryItem[]) : null;
+		memoriesTotal = typeof body.memories_total === 'number' ? body.memories_total : null;
 		return TERMINAL.has(parsed.status);
 	}
 
@@ -94,6 +97,9 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 		},
 		get memories() {
 			return memories;
+		},
+		get memoriesTotal() {
+			return memoriesTotal;
 		},
 		get done() {
 			return done;

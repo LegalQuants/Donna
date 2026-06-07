@@ -33,7 +33,8 @@ function mockFetchSequence(statuses: string[]) {
 					},
 					findings: [{ id: 'f1', severity: 'info', title: 'T', content: 'C', created_at: 'x' }],
 					findings_total: 1,
-					memories: []
+					memories: [],
+					memories_total: 0
 				}),
 				{ status: 200 }
 			);
@@ -72,7 +73,7 @@ describe('createSessionPoll', () => {
 		expect(poll.error).toBeNull();
 	});
 
-	it('exposes findings, findingsTotal, and memories from the widened payload', async () => {
+	it('exposes findings, findingsTotal, memories, and memoriesTotal from the widened payload', async () => {
 		mockFetchSequence(['completed']);
 		const poll = createSessionPoll('s1', { pollMs: 1000 });
 		poll.start();
@@ -81,5 +82,6 @@ describe('createSessionPoll', () => {
 		expect(poll.findings?.[0].id).toBe('f1');
 		expect(poll.findingsTotal).toBe(1);
 		expect(poll.memories).toEqual([]);
+		expect(poll.memoriesTotal).toBe(0);
 	});
 });

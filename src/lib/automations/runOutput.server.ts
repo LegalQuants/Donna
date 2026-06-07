@@ -15,6 +15,7 @@ export interface RunOutput {
 	findings: FindingItem[] | null;
 	findings_total: number | null;
 	memories: RunMemoryItem[] | null;
+	memories_total: number | null;
 }
 
 export async function loadRunOutput(event: RequestEvent, sessionId: string): Promise<RunOutput> {
@@ -37,12 +38,15 @@ export async function loadRunOutput(event: RequestEvent, sessionId: string): Pro
 		}
 	}
 	let memories: RunMemoryItem[] | null = null;
+	let memories_total: number | null = null;
 	if (mRes.ok) {
 		try {
-			memories = parseRunMemories(await mRes.json());
+			const parsed = parseRunMemories(await mRes.json());
+			memories = parsed.memories;
+			memories_total = parsed.total;
 		} catch {
 			// non-JSON body → sub-section hidden
 		}
 	}
-	return { findings, findings_total, memories };
+	return { findings, findings_total, memories, memories_total };
 }
