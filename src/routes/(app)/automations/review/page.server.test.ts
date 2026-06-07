@@ -445,4 +445,16 @@ describe('/automations/review actions', () => {
 			data: { error: 'This item no longer exists.', id: 'prec1' }
 		});
 	});
+
+	it('acceptProposal success with project_id → { ok:true, accepted:true, projectId }', async () => {
+		lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'prop1' }), { status: 200 }));
+		const out = await actions.acceptProposal(formEvent({ id: 'prop1', project_id: 'proj1' }));
+		expect(out).toMatchObject({ ok: true, accepted: true, projectId: 'proj1' });
+	});
+
+	it('acceptProposal success without project_id → { ok:true, accepted:true, projectId:null }', async () => {
+		lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: 'prop1' }), { status: 200 }));
+		const out = await actions.acceptProposal(formEvent({ id: 'prop1' }));
+		expect(out).toMatchObject({ ok: true, accepted: true, projectId: null });
+	});
 });

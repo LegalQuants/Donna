@@ -112,6 +112,14 @@
 		{#if form && 'promoted' in form && form.promoted}
 			<p class="mb-2 text-sm text-mlq-success">Proposal created below.</p>
 		{/if}
+		{#if form && 'accepted' in form && form.accepted}
+			<p class="mb-2 text-sm text-mlq-success">
+				Added to the matter's context{#if 'projectId' in form && form.projectId}
+					— <a href="/matters/{form.projectId}" class="text-mlq-workflow hover:underline"
+						>view matter</a
+					>{/if}.
+			</p>
+		{/if}
 		{#if data.proposals === null}
 			<p role="alert" class="text-sm text-mlq-error">Couldn't load proposals — reload to retry.</p>
 		{:else if data.proposals.proposals.length === 0}

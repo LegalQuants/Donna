@@ -202,13 +202,15 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const id = String(form.get('id') ?? '');
 		if (!id) return fail(400, { error: 'Missing proposal id.' });
+		const rawProjectId = String(form.get('project_id') ?? '').trim();
+		const projectId = rawProjectId || null;
 
 		const res = await lqFetch(event, `/api/v1/autonomous/project-context-proposals/${id}/accept`, {
 			method: 'POST',
 			body: JSON.stringify({})
 		});
 
-		if (res.ok) return { ok: true };
+		if (res.ok) return { ok: true, accepted: true, projectId };
 		return mapPrecedentActionError(res, id, 'Could not apply the change.');
 	},
 
