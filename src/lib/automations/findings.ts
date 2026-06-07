@@ -62,22 +62,29 @@ export function parseFindingList(raw: unknown): FindingList {
 	return { findings, total };
 }
 
-export function parseRunMemories(raw: unknown): RunMemoryItem[] {
-	const arr = obj(raw).entries;
-	if (!Array.isArray(arr)) return [];
-	return arr
+export interface RunMemoryList {
+	memories: RunMemoryItem[];
+	total: number;
+}
+
+export function parseRunMemories(raw: unknown): RunMemoryList {
+	const r = obj(raw);
+	const arr = Array.isArray(r.entries) ? r.entries : [];
+	const memories = arr
 		.map((m) => {
-			const r = obj(m);
-			if (typeof r.id !== 'string') return null;
+			const item = obj(m);
+			if (typeof item.id !== 'string') return null;
 			return {
-				id: r.id,
-				state: str(r.state) ?? 'proposed',
-				category: str(r.category) ?? '',
-				content: str(r.content) ?? '',
-				created_at: str(r.created_at)
+				id: item.id,
+				state: str(item.state) ?? 'proposed',
+				category: str(item.category) ?? '',
+				content: str(item.content) ?? '',
+				created_at: str(item.created_at)
 			};
 		})
 		.filter((m): m is RunMemoryItem => m !== null);
+	const total = typeof r.total_count === 'number' ? r.total_count : 0;
+	return { memories, total };
 }
 
 /** One-line severity count summary in fixed kind order, zero kinds skipped:

@@ -60,7 +60,7 @@ describe('parseFindingList', () => {
 });
 
 describe('parseRunMemories', () => {
-	it('parses the entries envelope (NOT "memories")', () => {
+	it('parses the entries envelope (NOT "memories") and returns total', () => {
 		const out = parseRunMemories({
 			entries: [
 				{
@@ -73,7 +73,8 @@ describe('parseRunMemories', () => {
 			],
 			total_count: 1
 		});
-		expect(out).toEqual([
+		expect(out.total).toBe(1);
+		expect(out.memories).toEqual([
 			{
 				id: 'm1',
 				state: 'proposed',
@@ -90,12 +91,16 @@ describe('parseRunMemories', () => {
 				{ nope: 1 }
 			]
 		});
-		expect(out).toEqual([
+		expect(out.memories).toEqual([
 			{ id: 'm1', state: 'weird', category: '', content: '', created_at: null }
 		]);
 	});
-	it('returns [] for a non-object', () => {
-		expect(parseRunMemories('x')).toEqual([]);
+	it('returns { memories: [], total: 0 } for a non-object', () => {
+		expect(parseRunMemories('x')).toEqual({ memories: [], total: 0 });
+	});
+	it('falls back total to 0 when total_count is absent', () => {
+		const out = parseRunMemories({ entries: [] });
+		expect(out.total).toBe(0);
 	});
 });
 
