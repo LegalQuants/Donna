@@ -5,6 +5,9 @@ subdirectories as needed.
 
 ## Start here
 
+- **[GUIDE.md](GUIDE.md)** — the friendly, non-technical guide: what Donna is, what you can do with
+  it today, how it works in plain terms, and what else you could build on LQ-AI. Start here if you're
+  new to the project.
 - **[../README.md](../README.md)** — run it: prerequisites, setup, compose bring-up, verify.
 - **[PRODUCT.md](PRODUCT.md)** — what Donna is, who it's for, capabilities, principles, non-goals.
 - **[../CLAUDE.md](../CLAUDE.md)** — engineering guide: architecture, the build workflow,
