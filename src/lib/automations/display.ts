@@ -70,3 +70,12 @@ export function outcomeTone(outcome: string): string {
 			return 'text-mlq-caveats';
 	}
 }
+
+/** Human-readable size for an artifact row: B < 1 KiB, then one-decimal KB/MB.
+ *  Negative or non-finite input (defensive parse) renders an em dash. */
+export function formatBytes(n: number): string {
+	if (!Number.isFinite(n) || n < 0) return '—';
+	if (n < 1024) return `${n} B`;
+	if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+	return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
