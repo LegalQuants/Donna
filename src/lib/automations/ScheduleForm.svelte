@@ -19,6 +19,7 @@
 		project_id: string | null;
 		max_cost_usd: string | null;
 		enabled: boolean;
+		emit_artifacts: boolean;
 	}
 
 	let {
@@ -51,6 +52,7 @@
 	let name = $state(seed?.name ?? '');
 	let cronExpr = $state(seed?.cron_expr ?? '0 9 * * *');
 	let enabled = $state(seed?.enabled ?? true);
+	let emitArtifacts = $state(seed?.emit_artifacts ?? false);
 
 	const items = $derived(mode === 'playbook' ? playbookItems : skillItems);
 	const kbName = $derived(kbs.find((k) => k.id === kbId)?.name ?? null);
@@ -142,6 +144,17 @@
 		{/if}
 	</div>
 
+	<label class="flex items-start gap-2 text-sm text-mlq-text">
+		<input type="checkbox" bind:checked={emitArtifacts} class="mt-0.5 accent-mlq-workflow" />
+		<span>
+			Save run documents to the knowledge base
+			<span class="block text-xs text-mlq-muted">
+				When the run produces a document-grade result (a memo), save it to the target knowledge base
+				and link it on the run's receipt.
+			</span>
+		</span>
+	</label>
+
 	<div>
 		<div class="mb-1 text-xs font-medium text-mlq-muted">Matter (optional)</div>
 		<MatterPicker {matters} bind:selectedId={projectId} placement="down" />
@@ -189,6 +202,7 @@
 		/>{/if}
 	{#if maxCost.trim()}<input type="hidden" name="max_cost_usd" value={maxCost.trim()} />{/if}
 	<input type="hidden" name="enabled" value={enabled ? 'true' : 'false'} />
+	<input type="hidden" name="emit_artifacts" value={emitArtifacts ? 'true' : 'false'} />
 
 	<div>
 		<button

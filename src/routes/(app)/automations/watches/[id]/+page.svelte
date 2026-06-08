@@ -13,7 +13,8 @@
 		knowledge_base_id: data.watch.knowledge_base_id,
 		project_id: data.watch.project_id,
 		max_cost_usd: data.watch.max_cost_usd,
-		enabled: data.watch.enabled
+		enabled: data.watch.enabled,
+		emit_artifacts: data.watch.emit_artifacts
 	});
 </script>
 

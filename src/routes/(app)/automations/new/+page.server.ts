@@ -49,13 +49,17 @@ export const actions: Actions = {
 		const targetKbId = String(form.get('target_kb_id') ?? '');
 		const projectId = String(form.get('project_id') ?? '');
 		const maxCost = String(form.get('max_cost_usd') ?? '').trim();
+		const emitArtifacts = String(form.get('emit_artifacts') ?? 'false') === 'true';
 
 		const sourceOk = mode === 'skill' ? Boolean(skillRef) : Boolean(playbookId);
 		if (!sourceOk || !targetKbId) {
 			return fail(400, { error: 'Choose a source and a target knowledge base.' });
 		}
 
-		const body: Record<string, string> = { target_kb_id: targetKbId };
+		const body: Record<string, unknown> = {
+			target_kb_id: targetKbId,
+			emit_artifacts: emitArtifacts
+		};
 		if (mode === 'skill') body.skill_ref = skillRef;
 		else body.playbook_id = playbookId;
 		if (projectId) body.project_id = projectId;

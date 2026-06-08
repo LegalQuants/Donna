@@ -7,12 +7,16 @@ const ev = (id = 's1') => ({ params: { id } }) as never;
 beforeEach(() => lqFetch.mockReset());
 
 const okJson = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
-/** Queue the findings+memories responses that follow the session response. */
+/** Queue the findings+memories+artifacts responses that follow the session response. */
 function mockOutput(
 	findingsBody: unknown = { findings: [], total_count: 0 },
-	memoriesBody: unknown = { entries: [], total_count: 0 }
+	memoriesBody: unknown = { entries: [], total_count: 0 },
+	artifactsBody: unknown = { artifacts: [], total_count: 0 }
 ) {
-	lqFetch.mockResolvedValueOnce(okJson(findingsBody)).mockResolvedValueOnce(okJson(memoriesBody));
+	lqFetch
+		.mockResolvedValueOnce(okJson(findingsBody))
+		.mockResolvedValueOnce(okJson(memoriesBody))
+		.mockResolvedValueOnce(okJson(artifactsBody));
 }
 
 describe('/automations/[id] load', () => {
@@ -126,6 +130,7 @@ describe('/automations/[id] load', () => {
 				receipt: null
 			})
 		);
+		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		const out = (await load(ev())) as { findings: null; memories: null };

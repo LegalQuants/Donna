@@ -7204,11 +7204,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List a session's persisted findings (work-product, emission order)
+         * List a session's persisted findings (work-product, stable order)
          * @description Returns the run's persisted findings (the ``emit_finding`` chokepoint
-         *     work-product) ordered by ``created_at ASC`` — emission order, the
-         *     run's output sequence. This differs intentionally from the
-         *     newest-first autonomous lists: these are one run's sequential output.
+         *     work-product) ordered by ``created_at ASC, id ASC``. Rows a run
+         *     emits in its single executor commit typically share one
+         *     ``created_at`` (transaction-stable ``now()``), so ``id`` is the
+         *     deterministic tiebreaker that keeps pagination stable — a
+         *     repeatable order, not a guaranteed emission sequence. This differs
+         *     intentionally from the newest-first autonomous lists: these are one
+         *     run's output.
          *
          *     Owner-gated by loading the owned session first (the findings table
          *     has no ``user_id`` — authz is via the parent session). Another
@@ -7232,13 +7236,92 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Paginated list of the session's findings (emission order) */
+                /** @description Paginated list of the session's findings (stable created_at, id order) */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": components["schemas"]["AutonomousFindingListResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Session not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/autonomous/sessions/{session_id}/artifacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List a session's persisted document-grade artifacts (work-product, stable order)
+         * @description Returns the run's persisted artifact references (the
+         *     ``emit_artifact`` chokepoint work-product — markdown memos an
+         *     opted-in run saved into its target knowledge base as real
+         *     documents) ordered by ``created_at ASC, id ASC`` — one run's rows
+         *     typically share ``created_at`` (transaction-stable ``now()``), so
+         *     ``id`` is the deterministic tiebreaker that keeps pagination
+         *     stable; a repeatable order, not a guaranteed emission sequence.
+         *     Mirrors the findings read above.
+         *
+         *     Owner-gated by loading the owned session first (the artifacts
+         *     table has no ``user_id`` — authz is via the parent session).
+         *     Another user's ``session_id`` — or a missing one — returns 404
+         *     (not 403) to avoid existence disclosure. ``limit`` is clamped to
+         *     [1, 200]; ``offset`` to [0, ∞).
+         *
+         *     ``document_id`` is enriched at read time via the unique
+         *     ``documents.file_id``. Deletion semantics: a hard file-delete
+         *     SET-NULLs ``file_id`` (name/size metadata survives; both refs
+         *     return null); deleting the session removes these reference rows
+         *     but never the KB document — the document outlives the session.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of artifacts to return (clamped to [1, 200]). */
+                    limit?: number;
+                    /** @description Zero-based index of the first result to return. */
+                    offset?: number;
+                };
+                header?: never;
+                path: {
+                    session_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated list of the session's artifact references (stable created_at, id order) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AutonomousArtifactListResponse"];
                     };
                 };
                 /** @description Not authenticated */
@@ -9142,11 +9225,57 @@ export interface components {
             created_at: string;
         };
         /**
-         * @description Paginated list of a session's findings, in emission order
-         *     (``created_at ASC``) — one run's sequential output.
+         * @description Paginated list of a session's findings, in stable
+         *     ``created_at ASC, id ASC`` order — one run's rows typically
+         *     share ``created_at`` (transaction-stable ``now()``); ``id`` is
+         *     the pagination tiebreaker. Repeatable, not a guaranteed
+         *     emission sequence.
          */
         AutonomousFindingListResponse: {
             findings: components["schemas"]["AutonomousFindingRead"][];
+            total_count: number;
+            limit: number;
+            offset: number;
+        };
+        /**
+         * @description Read-only view of an ``autonomous_artifacts`` row — a reference to
+         *     one document-grade artifact (a markdown memo) an opted-in run
+         *     persisted into its target knowledge base via the ``emit_artifact``
+         *     chokepoint. ``name`` and ``mime`` are LLM-emitted free text (no
+         *     CHECK; the ``severity`` precedent).
+         */
+        AutonomousArtifactRead: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            mime: string;
+            size_bytes: number;
+            /**
+             * Format: uuid
+             * @description The backing ``files`` row. The FK is ``ON DELETE SET NULL`` —
+             *     null means the file was later hard-deleted; the name/size
+             *     metadata here survives. The KB document itself outlives the
+             *     session (deleting the session removes only this reference).
+             */
+            file_id?: string | null;
+            /**
+             * Format: uuid
+             * @description NOT a column on ``autonomous_artifacts`` — enriched at read
+             *     time via the unique ``documents.file_id`` (1:1) so a client
+             *     can deep-link the KB document. Null when ``file_id`` is null
+             *     or no ``documents`` row exists for the file.
+             */
+            document_id?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /**
+         * @description Paginated list of a session's artifact references, in the same
+         *     stable ``created_at ASC, id ASC`` order as the findings list —
+         *     repeatable, not a guaranteed emission sequence.
+         */
+        AutonomousArtifactListResponse: {
+            artifacts: components["schemas"]["AutonomousArtifactRead"][];
             total_count: number;
             limit: number;
             offset: number;
@@ -9278,6 +9407,12 @@ export interface components {
             /** Format: uuid */
             target_kb_id?: string | null;
             enabled: boolean;
+            /**
+             * @description Opt-in document-grade artifact emission (Donna #8) for the
+             *     schedule's sessions; default off so existing automations are
+             *     unchanged.
+             */
+            emit_artifacts: boolean;
             max_cost_usd?: string | null;
             /** Format: date-time */
             last_run_at?: string | null;
@@ -9308,6 +9443,13 @@ export interface components {
             project_id?: string | null;
             /** @default true */
             enabled: boolean;
+            /**
+             * @description Opt-in document-grade artifact emission (Donna #8) for the
+             *     schedule's sessions; default off so existing automations are
+             *     unchanged.
+             * @default false
+             */
+            emit_artifacts: boolean;
             max_cost_usd?: string | null;
         };
         /**
@@ -9321,6 +9463,11 @@ export interface components {
             name?: string | null;
             cron_expr?: string | null;
             enabled?: boolean | null;
+            /**
+             * @description Toggle opt-in document-grade artifact emission (Donna #8)
+             *     for the schedule's future sessions; omitted/null = unchanged.
+             */
+            emit_artifacts?: boolean | null;
             /** Format: uuid */
             playbook_id?: string | null;
             skill_ref?: string | null;
@@ -9335,7 +9482,9 @@ export interface components {
          *     ``trigger_kind='manual'`` session.  Exactly one of ``playbook_id``
          *     / ``skill_ref`` must be set (zero or both → 422).  ``target_kb_id``
          *     / ``project_id`` are optional scope.  ``max_cost_usd`` is the
-         *     per-run cap (NULL → fall back to the config default).
+         *     per-run cap (NULL → fall back to the config default).  A manual
+         *     run has no schedule/watch row to inherit ``emit_artifacts`` from,
+         *     so this body IS the opt-in source.
          */
         AutonomousManualRunRequest: {
             /** Format: uuid */
@@ -9346,6 +9495,12 @@ export interface components {
             /** Format: uuid */
             project_id?: string | null;
             max_cost_usd?: string | null;
+            /**
+             * @description Opt-in document-grade artifact emission (Donna #8) for this
+             *     one-off run; default off so existing callers are unchanged.
+             * @default false
+             */
+            emit_artifacts: boolean;
         };
         /** @description Paginated list of autonomous schedules (newest first). */
         AutonomousScheduleListResponse: {
@@ -9372,6 +9527,12 @@ export interface components {
             playbook_id?: string | null;
             skill_ref?: string | null;
             enabled: boolean;
+            /**
+             * @description Opt-in document-grade artifact emission (Donna #8) for the
+             *     watch's sessions; default off so existing automations are
+             *     unchanged.
+             */
+            emit_artifacts: boolean;
             max_cost_usd?: string | null;
             /** Format: date-time */
             deleted_at?: string | null;
@@ -9396,6 +9557,13 @@ export interface components {
             project_id?: string | null;
             /** @default true */
             enabled: boolean;
+            /**
+             * @description Opt-in document-grade artifact emission (Donna #8) for the
+             *     watch's sessions; default off so existing automations are
+             *     unchanged.
+             * @default false
+             */
+            emit_artifacts: boolean;
             max_cost_usd?: string | null;
         };
         /**
@@ -9408,6 +9576,11 @@ export interface components {
          */
         AutonomousWatchUpdate: {
             enabled?: boolean | null;
+            /**
+             * @description Toggle opt-in document-grade artifact emission (Donna #8)
+             *     for the watch's future sessions; omitted/null = unchanged.
+             */
+            emit_artifacts?: boolean | null;
             /** Format: uuid */
             playbook_id?: string | null;
             skill_ref?: string | null;
@@ -9428,7 +9601,9 @@ export interface components {
          *     marking read is the dismiss action. ``channel`` is one of
          *     ``in_app`` / ``email`` / ``webhook`` (``webhook`` reserved).
          *     ``body``/``payload`` carry counts/IDs + a receipt link — never raw
-         *     entity values.
+         *     entity values. A run-completion notification's ``payload`` carries
+         *     ``finding_count`` and ``artifact_count`` (``artifact_count`` is 0
+         *     unless the run opted in via ``emit_artifacts``).
          */
         AutonomousNotificationRead: {
             /** Format: uuid */

@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { X } from '@lucide/svelte';
 	import PdfViewer from './PdfViewer.svelte';
+	import TextViewer from './TextViewer.svelte';
 	import UnsupportedFileCard from './UnsupportedFileCard.svelte';
 	import type { DocPanel } from './docPanel.svelte';
 	import { citeState, tooltipFor } from '$lib/citations/types';
@@ -172,7 +173,13 @@
 				{/key}
 			{:else if docPanel.activeTab.status === 'ready'}
 				{@const tab = docPanel.activeTab}
-				<UnsupportedFileCard fileId={tab.fileId} filename={tab.filename} mime={tab.mime} />
+				{#if tab.mime === 'text/markdown' || tab.mime === 'text/plain'}
+					{#key tab.fileId}
+						<TextViewer fileId={tab.fileId} mime={tab.mime} filename={tab.filename} />
+					{/key}
+				{:else}
+					<UnsupportedFileCard fileId={tab.fileId} filename={tab.filename} mime={tab.mime} />
+				{/if}
 			{/if}
 		{/if}
 	</div>

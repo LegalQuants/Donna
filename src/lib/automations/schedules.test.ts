@@ -13,6 +13,7 @@ const raw = {
 	project_id: 'm1',
 	max_cost_usd: '2.50',
 	enabled: true,
+	emit_artifacts: true,
 	next_run_at: '2026-06-08T09:00:00Z',
 	last_run_at: null
 };
@@ -25,6 +26,13 @@ describe('parseSchedule / parseScheduleList', () => {
 		expect(s!.enabled).toBe(true);
 		expect(s!.max_cost_usd).toBe('2.50');
 		expect(s!.next_run_at).toBe('2026-06-08T09:00:00Z');
+		expect(s!.emit_artifacts).toBe(true);
+	});
+	it('emit_artifacts: true parses to true; missing field parses to false', () => {
+		expect(parseSchedule({ ...raw, emit_artifacts: true })!.emit_artifacts).toBe(true);
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { emit_artifacts: _ea, ...rawWithout } = raw;
+		expect(parseSchedule(rawWithout)!.emit_artifacts).toBe(false);
 	});
 	it('returns null when id or cron_expr is missing', () => {
 		expect(parseSchedule({ id: 's1' })).toBeNull();
@@ -82,6 +90,7 @@ describe('buildScheduleBody', () => {
 		expect(out.ok && out.body).toEqual({
 			cron_expr: '0 9 * * *',
 			enabled: true,
+			emit_artifacts: false,
 			playbook_id: 'p1',
 			name: 'Daily',
 			target_kb_id: 'kb1',
@@ -97,6 +106,7 @@ describe('buildScheduleBody', () => {
 		expect(out.ok && out.body).toEqual({
 			cron_expr: '0 9 * * *',
 			enabled: false,
+			emit_artifacts: false,
 			skill_ref: 'comms'
 		});
 	});
@@ -176,5 +186,25 @@ describe('buildScheduleBody', () => {
 			'create'
 		);
 		expect(out.ok && 'project_id' in out.body).toBe(false);
+	});
+	it('create: emit_artifacts defaults false and follows the checkbox', () => {
+		const fd2 = new FormData();
+		fd2.set('source_mode', 'playbook');
+		fd2.set('playbook_id', 'p1');
+		fd2.set('cron_expr', '0 9 * * *');
+		const off = buildScheduleBody(fd2, 'create');
+		expect(off.ok && off.body.emit_artifacts).toBe(false);
+		fd2.set('emit_artifacts', 'true');
+		const on = buildScheduleBody(fd2, 'create');
+		expect(on.ok && on.body.emit_artifacts).toBe(true);
+	});
+	it('update: emit_artifacts is always an explicit boolean (false persists, never null)', () => {
+		const fd2 = new FormData();
+		fd2.set('source_mode', 'playbook');
+		fd2.set('playbook_id', 'p1');
+		fd2.set('cron_expr', '0 9 * * *');
+		fd2.set('emit_artifacts', 'false');
+		const r = buildScheduleBody(fd2, 'update');
+		expect(r.ok && r.body.emit_artifacts).toBe(false);
 	});
 });

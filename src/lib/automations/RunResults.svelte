@@ -1,25 +1,34 @@
 <!-- src/lib/automations/RunResults.svelte -->
 <!-- The run's work-product: findings in emission order (created_at ASC — the
-     run's output sequence, intentionally not severity-grouped) + the memories
-     it proposed (inline keep/dismiss for proposed; overflow note to Review). -->
+     run's output sequence, intentionally not severity-grouped) + the documents
+     (artifacts) the run saved to its target KB + the memories it proposed
+     (inline keep/dismiss for proposed; overflow note to Review). -->
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { FileText, Download } from '@lucide/svelte';
 	import FindingCard from './FindingCard.svelte';
 	import { severitySummary, type FindingItem, type RunMemoryItem } from './findings';
-	import { stateChipClass } from './display';
+	import { stateChipClass, formatBytes } from './display';
+	import type { ArtifactItem } from './artifacts';
 
 	let {
 		findings,
 		findingsTotal,
 		memories,
 		memoriesTotal = null,
-		running
+		running,
+		artifacts = null,
+		artifactsTotal = null,
+		onopenartifact
 	}: {
 		findings: FindingItem[] | null;
 		findingsTotal: number | null;
 		memories: RunMemoryItem[] | null;
 		memoriesTotal?: number | null;
 		running: boolean;
+		artifacts?: ArtifactItem[] | null;
+		artifactsTotal?: number | null;
+		onopenartifact?: (artifact: ArtifactItem) => void;
 	} = $props();
 
 	const summary = $derived(findings && findings.length > 0 ? severitySummary(findings) : '');
@@ -33,6 +42,11 @@
 			? memoriesTotal - memories.length
 			: 0
 	);
+	const artifactsOverflow = $derived(
+		artifactsTotal !== null && artifacts !== null && artifactsTotal > artifacts.length
+			? artifactsTotal - artifacts.length
+			: 0
+	);
 </script>
 
 <section aria-label="Results" class="flex flex-col gap-2">
@@ -42,6 +56,46 @@
 			{running ? 'Results so far — the run is still working.' : 'What this run produced.'}
 		</p>
 	</div>
+
+	{#if artifacts && artifacts.length > 0}
+		<div class="mb-1">
+			<h3 class="mb-1 text-xs font-medium text-mlq-muted">Documents</h3>
+			<ul class="flex flex-col gap-1">
+				{#each artifacts as artifact (artifact.id)}
+					<li
+						class="flex items-center gap-2 rounded-mlq-control border border-mlq-subtle px-2 py-1.5"
+					>
+						<FileText size={14} class="shrink-0 text-mlq-muted" aria-hidden="true" />
+						<span class="min-w-0 flex-1 truncate text-sm text-mlq-text" title={artifact.name}
+							>{artifact.name}</span
+						>
+						<span class="shrink-0 text-xs text-mlq-muted">{formatBytes(artifact.size_bytes)}</span>
+						{#if artifact.file_id}
+							<button
+								type="button"
+								aria-label="Open {artifact.name}"
+								onclick={() => onopenartifact?.(artifact)}
+								class="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-mlq-workflow hover:underline"
+								>Open</button
+							>
+							<a
+								href="/files/{artifact.file_id}/content"
+								download={artifact.name || undefined}
+								aria-label="Download {artifact.name}"
+								class="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs text-mlq-muted hover:text-mlq-text"
+								><Download size={12} aria-hidden="true" /> Download</a
+							>
+						{:else}
+							<span class="shrink-0 text-xs text-mlq-muted italic">file deleted</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+			{#if artifactsOverflow > 0}
+				<p class="mt-1 text-xs text-mlq-muted">+{artifactsOverflow} more documents not shown.</p>
+			{/if}
+		</div>
+	{/if}
 
 	{#if findings === null}
 		<p class="text-xs text-mlq-muted">Results unavailable right now.</p>

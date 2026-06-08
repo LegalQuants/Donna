@@ -1,6 +1,6 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import SessionDetail from './SessionDetail.svelte';
 import type { SessionSummary } from './types';
 
@@ -218,5 +218,35 @@ describe('SessionDetail', () => {
 		// initialMemories; the unfixed ones would blank the section.
 		expect(screen.getByText('SSR finding')).toBeInTheDocument();
 		expect(screen.getByText('SSR memory')).toBeInTheDocument();
+	});
+
+	it('threads initial artifacts into the Documents block and bubbles open', async () => {
+		const onopenartifact = vi.fn();
+		render(SessionDetail, {
+			props: {
+				initialSession: session,
+				initialReceipt: null,
+				initialFindings: [],
+				initialFindingsTotal: 0,
+				initialMemories: [],
+				initialMemoriesTotal: null,
+				initialArtifacts: [
+					{
+						id: 'a1',
+						name: 'Memo.md',
+						mime: 'text/markdown',
+						size_bytes: 100,
+						file_id: 'f1',
+						document_id: 'd1',
+						created_at: 'x'
+					}
+				],
+				initialArtifactsTotal: 1,
+				onopenartifact
+			}
+		});
+		expect(screen.getByText('Documents')).toBeInTheDocument();
+		await fireEvent.click(screen.getByRole('button', { name: /open/i }));
+		expect(onopenartifact).toHaveBeenCalled();
 	});
 });

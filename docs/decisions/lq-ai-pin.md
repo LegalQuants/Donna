@@ -2,12 +2,42 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `0097b01` (bumped 2026-06-05 from `fc832ca`)
+- Pinned SHA: `c4d4482` (bumped 2026-06-07 from `0097b01`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
 
+- `0097b01` → `c4d4482` (2026-06-07): lq-ai **#138** + **#139** (Donna asks **#8** + **#9**,
+  migration head → 0047) —
+  - **#138 `338579e` — document-grade run artifacts** (ask `lq-ai-autonomous-run-artifacts.md`,
+    shape (a)): artifacts persist as **real Documents in the run's `target_kb_id`** (doc-panel /
+    download / RAG for free; v1 markdown-only, `mime` pinned `text/markdown` server-side). New
+    owner-gated paginated `GET /sessions/{id}/artifacts` → `AutonomousArtifactListResponse`
+    (`AutonomousArtifactRead`: `id, name, mime, size_bytes, file_id?, document_id?, created_at`;
+    `document_id` read-time-enriched → drives "Open", `file_id` → `/files/{id}/content` Download;
+    both SET-NULL on file hard-delete, metadata survives). **Emission is opt-in per automation**:
+    `emit_artifacts` (default false) on ScheduleCreate/Update/Read, WatchCreate/Update/Read, and
+    `AutonomousManualRunRequest` — REQUIRED (non-optional) in the create/run-now bodies, so Donna
+    call sites must pass it. Notification payload now always carries `artifact_count` next to
+    `finding_count`. Ordering is `created_at ASC, id ASC` (transaction-stable, NOT emission
+    sequence; same tiebreaker retrofitted to findings). Honest fallbacks arrive as ordinary
+    findings (opted-in-but-no-KB → one info finding; storage failure → one warn finding per
+    artifact). Session delete CASCADEs only the references — the KB documents outlive the session.
+    Loop/echo prevention closed upstream (artifacts don't re-trigger watches or next-tick
+    analysis). `npm run gen:api` → +183-line additive diff. **Unblocks the artifacts slice**
+    (ships with this bump): Documents block in RunResults + opt-in toggles + inbox copy.
+  - **#139 `c4d4482` — arq-worker skill registry init** (ask
+    `lq-ai-autonomous-skill-registry-init.md`, PR #70): registry bootstrap extracted to
+    `app/skills/bootstrap.py::install_skill_registry`, called from BOTH the FastAPI lifespan and
+    the arq worker `on_startup`; worker fails loudly at startup if the skills dir can't load.
+    Upstream corrections to our ask: (1) never a regression — worker-side `skill_ref` resolution
+    never worked on any image (our 06-05 "completed" tick was a `first_tick_no_baseline` baseline
+    tick that skips inference); (2) the fix alone wouldn't work in containers — vendor
+    `docker-compose.yml` now mounts `./skills:/skills:ro` + sets `LQ_AI_SKILLS_DIR` on
+    `arq-worker` (mount is REQUIRED; without it the worker exits at startup by design). The API
+    also now fails at startup on a missing/unreadable skills dir (was warn+empty). Donna verifies
+    by live `skill_ref` run (no Donna code).
 - `fc832ca` → `0097b01` (2026-06-05): lq-ai **#135** (Donna ask `lq-ai-autonomous-run-output.md`) —
   **run findings persisted + readable**: new `autonomous_findings` table (cascade-delete with the
   session) + paginated, owner-gated `GET /sessions/{id}/findings` (limit clamped [1,200],
