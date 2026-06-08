@@ -25,6 +25,7 @@ describe('parseWatch / parseWatchList', () => {
 	});
 	it('emit_artifacts: true parses to true; missing field parses to false', () => {
 		expect(parseWatch({ ...raw, emit_artifacts: true })!.emit_artifacts).toBe(true);
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { emit_artifacts: _removed, ...rawWithout } = raw;
 		expect(parseWatch(rawWithout)!.emit_artifacts).toBe(false);
 	});

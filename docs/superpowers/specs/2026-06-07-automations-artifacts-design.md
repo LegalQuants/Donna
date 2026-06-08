@@ -9,10 +9,10 @@ opens them rendered inline, or downloads them.
 ## Problem
 
 A run's document-grade work-product (markdown memos) was previously discarded — findings/memories
-shipped in #64/#66/#71/#72, but nothing carried a *document*. lq-ai #138 resolves our ask
+shipped in #64/#66/#71/#72, but nothing carried a _document_. lq-ai #138 resolves our ask
 (`docs/upstream-requests/lq-ai-autonomous-run-artifacts.md`, storage shape (a)): artifacts persist
 as **real Documents in the run's `target_kb_id`** (doc-panel / download / RAG for free), with
-artifact *references* on the session read surface. Donna must now surface them on the receipt —
+artifact _references_ on the session read surface. Donna must now surface them on the receipt —
 and expose the **opt-in flag** upstream added (without a toggle, users can't turn artifacts on).
 
 ## Upstream contract (verified against generated types @ `c4d4482`)
@@ -20,7 +20,7 @@ and expose the **opt-in flag** upstream added (without a toggle, users can't tur
 - **`GET /api/v1/autonomous/sessions/{session_id}/artifacts`** → `AutonomousArtifactListResponse`:
   `{ artifacts: [AutonomousArtifactRead], total_count, limit, offset }`.
   - `AutonomousArtifactRead = { id, name, mime, size_bytes, file_id?: uuid|null,
-    document_id?: uuid|null, created_at }`.
+document_id?: uuid|null, created_at }`.
   - Owner-gated via the parent session, 404 id-probing-safe, `?limit=` clamped **[1, 200]**.
   - Ordered **`created_at` ASC, id ASC** — stable/repeatable, **NOT** emission sequence (all of a
     run's artifacts share a transaction-stable `created_at`; deliberate upstream deviation from
@@ -35,8 +35,8 @@ and expose the **opt-in flag** upstream added (without a toggle, users can't tur
   semantics: explicit `false` persists; explicit `null` is a documented no-op. A manual run has no
   schedule/watch row to inherit from — the run-now body IS the opt-in source.
 - **Notification payload** now always carries `artifact_count` next to `finding_count` (0 is
-  honest); the backend-authored `body` says e.g. *"Session completed with 2 finding(s) and 1
-  document(s) saved to the knowledge base."*
+  honest); the backend-authored `body` says e.g. _"Session completed with 2 finding(s) and 1
+  document(s) saved to the knowledge base."_
 - **Honest fallbacks arrive as ordinary findings** (no special Donna handling): opted-in-but-no-KB
   → one `info` finding ("Artifact not persisted — no target knowledge base"); storage failure →
   one `warn` finding per failed artifact.
@@ -83,7 +83,7 @@ and expose the **opt-in flag** upstream added (without a toggle, users can't tur
 ### 2. Data: `$lib/automations/artifacts.ts` + `loadRunOutput` extension
 
 - New hand-parser module (the `findings.ts` pattern): `ArtifactItem { id, name, mime, size_bytes,
-  file_id: string | null, document_id: string | null, created_at }`; `parseArtifactList` tolerant
+file_id: string | null, document_id: string | null, created_at }`; `parseArtifactList` tolerant
   of unknown shapes (throw → caller degrades to null).
 - `runOutput.server.ts`: `RunOutput` gains `artifacts: ArtifactItem[] | null` +
   `artifacts_total: number | null`; third parallel `lqFetch` to

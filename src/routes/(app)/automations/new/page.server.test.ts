@@ -85,7 +85,12 @@ describe('/automations/new run action', () => {
 		).rejects.toMatchObject({ status: 303, location: '/automations/sess-9' });
 		const body = JSON.parse(lqFetch.mock.calls[0][2].body);
 		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/run-now');
-		expect(body).toEqual({ playbook_id: 'p1', target_kb_id: 'kb1', max_cost_usd: '2.00' });
+		expect(body).toEqual({
+			playbook_id: 'p1',
+			target_kb_id: 'kb1',
+			max_cost_usd: '2.00',
+			emit_artifacts: false
+		});
 	});
 	it('sends skill_ref when source_mode=skill', async () => {
 		lqFetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: 's2' }), { status: 201 }));
@@ -94,7 +99,8 @@ describe('/automations/new run action', () => {
 		).rejects.toMatchObject({ status: 303 });
 		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({
 			skill_ref: 'comms',
-			target_kb_id: 'kb1'
+			target_kb_id: 'kb1',
+			emit_artifacts: false
 		});
 	});
 	it('fails 400 when neither source nor KB is present', async () => {

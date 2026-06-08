@@ -17,6 +17,7 @@ describe('GET /automations/[id]', () => {
 		);
 		lqFetch.mockResolvedValueOnce(okJson({ findings: [], total_count: 0 }));
 		lqFetch.mockResolvedValueOnce(okJson({ entries: [], total_count: 0 }));
+		lqFetch.mockResolvedValueOnce(okJson({ artifacts: [], total_count: 0 }));
 		const res = await GET(ev());
 		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/sessions/s1');
 		const body = await res.json();
