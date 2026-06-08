@@ -73,6 +73,7 @@ describe('buildWatchBody', () => {
 		expect(out.ok).toBe(true);
 		expect(out.ok && out.body).toEqual({
 			enabled: true,
+			emit_artifacts: false,
 			playbook_id: 'p1',
 			knowledge_base_id: 'kb1',
 			project_id: 'm1',
@@ -103,6 +104,7 @@ describe('buildWatchBody', () => {
 		);
 		expect(out.ok && out.body).toEqual({
 			enabled: false,
+			emit_artifacts: false,
 			skill_ref: 'comms',
 			project_id: 'm1',
 			max_cost_usd: '1.50'
@@ -139,5 +141,24 @@ describe('buildWatchBody', () => {
 		);
 		expect(out.ok).toBe(true);
 		expect(out.ok && 'max_cost_usd' in out.body).toBe(false);
+	});
+	it('create: emit_artifacts defaults false and follows the checkbox', () => {
+		const fd2 = new FormData();
+		fd2.set('source_mode', 'playbook');
+		fd2.set('playbook_id', 'p1');
+		fd2.set('knowledge_base_id', 'kb1');
+		const off = buildWatchBody(fd2, 'create');
+		expect(off.ok && off.body.emit_artifacts).toBe(false);
+		fd2.set('emit_artifacts', 'true');
+		const on = buildWatchBody(fd2, 'create');
+		expect(on.ok && on.body.emit_artifacts).toBe(true);
+	});
+	it('update: emit_artifacts is always an explicit boolean (false persists, never null)', () => {
+		const fd2 = new FormData();
+		fd2.set('source_mode', 'playbook');
+		fd2.set('playbook_id', 'p1');
+		fd2.set('emit_artifacts', 'false');
+		const r = buildWatchBody(fd2, 'update');
+		expect(r.ok && r.body.emit_artifacts).toBe(false);
 	});
 });

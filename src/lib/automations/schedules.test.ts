@@ -82,6 +82,7 @@ describe('buildScheduleBody', () => {
 		expect(out.ok && out.body).toEqual({
 			cron_expr: '0 9 * * *',
 			enabled: true,
+			emit_artifacts: false,
 			playbook_id: 'p1',
 			name: 'Daily',
 			target_kb_id: 'kb1',
@@ -97,6 +98,7 @@ describe('buildScheduleBody', () => {
 		expect(out.ok && out.body).toEqual({
 			cron_expr: '0 9 * * *',
 			enabled: false,
+			emit_artifacts: false,
 			skill_ref: 'comms'
 		});
 	});
@@ -176,5 +178,25 @@ describe('buildScheduleBody', () => {
 			'create'
 		);
 		expect(out.ok && 'project_id' in out.body).toBe(false);
+	});
+	it('create: emit_artifacts defaults false and follows the checkbox', () => {
+		const fd2 = new FormData();
+		fd2.set('source_mode', 'playbook');
+		fd2.set('playbook_id', 'p1');
+		fd2.set('cron_expr', '0 9 * * *');
+		const off = buildScheduleBody(fd2, 'create');
+		expect(off.ok && off.body.emit_artifacts).toBe(false);
+		fd2.set('emit_artifacts', 'true');
+		const on = buildScheduleBody(fd2, 'create');
+		expect(on.ok && on.body.emit_artifacts).toBe(true);
+	});
+	it('update: emit_artifacts is always an explicit boolean (false persists, never null)', () => {
+		const fd2 = new FormData();
+		fd2.set('source_mode', 'playbook');
+		fd2.set('playbook_id', 'p1');
+		fd2.set('cron_expr', '0 9 * * *');
+		fd2.set('emit_artifacts', 'false');
+		const r = buildScheduleBody(fd2, 'update');
+		expect(r.ok && r.body.emit_artifacts).toBe(false);
 	});
 });

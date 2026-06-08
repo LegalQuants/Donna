@@ -55,7 +55,9 @@ export type ScheduleBodyResult = { ok: true; body: Record<string, unknown> } | {
  *  job (422). Shared by the list (?/create) and edit (?/update) actions.
  *  `project_id`: create omits it when empty; update always sends it —
  *  a value reassigns the matter, explicit null unassigns (omit = unchanged,
- *  per AutonomousScheduleUpdate's exclude_unset PATCH semantics). */
+ *  per AutonomousScheduleUpdate's exclude_unset PATCH semantics).
+ *  `emit_artifacts` is always sent as an explicit boolean — required on create
+ *  (lq-ai #138); on update an explicit false persists (null would be a no-op). */
 export function buildScheduleBody(form: FormData, mode: 'create' | 'update'): ScheduleBodyResult {
 	const sourceMode = String(form.get('source_mode') ?? 'playbook');
 	const playbookId = String(form.get('playbook_id') ?? '');
@@ -66,11 +68,16 @@ export function buildScheduleBody(form: FormData, mode: 'create' | 'update'): Sc
 	const projectId = String(form.get('project_id') ?? '');
 	const maxCost = String(form.get('max_cost_usd') ?? '').trim();
 	const enabled = String(form.get('enabled') ?? 'true') === 'true';
+	const emitArtifacts = String(form.get('emit_artifacts') ?? 'false') === 'true';
 
 	const sourceOk = sourceMode === 'skill' ? Boolean(skillRef) : Boolean(playbookId);
 	if (!sourceOk || !cronExpr) return { ok: false };
 
-	const body: Record<string, unknown> = { cron_expr: cronExpr, enabled };
+	const body: Record<string, unknown> = {
+		cron_expr: cronExpr,
+		enabled,
+		emit_artifacts: emitArtifacts
+	};
 	if (sourceMode === 'skill') body.skill_ref = skillRef;
 	else body.playbook_id = playbookId;
 	if (name) body.name = name;
