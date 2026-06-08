@@ -16,7 +16,7 @@ const memoriesBody = {
 };
 
 describe('loadRunOutput', () => {
-	it('fetches findings + memories in parallel and returns parsed output', async () => {
+	it('fetches findings + memories + artifacts in parallel and returns parsed output', async () => {
 		lqFetch
 			.mockResolvedValueOnce(new Response(JSON.stringify(findingsBody), { status: 200 }))
 			.mockResolvedValueOnce(new Response(JSON.stringify(memoriesBody), { status: 200 }))
