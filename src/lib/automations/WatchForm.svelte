@@ -15,6 +15,7 @@
 		project_id: string | null;
 		max_cost_usd: string | null;
 		enabled: boolean;
+		emit_artifacts: boolean;
 	}
 
 	let {
@@ -41,6 +42,7 @@
 	let projectId = $state<string | null>(seed?.project_id ?? null);
 	let maxCost = $state(seed?.max_cost_usd ?? '');
 	let enabled = $state(seed?.enabled ?? true);
+	let emitArtifacts = $state(seed?.emit_artifacts ?? false);
 
 	const items = $derived(mode === 'playbook' ? playbookItems : skillItems);
 	const kbName = $derived(kbs.find((k) => k.id === kbId)?.name ?? null);
@@ -123,6 +125,16 @@
 		{/if}
 	</div>
 
+	<label class="flex items-start gap-2 text-sm text-mlq-text">
+		<input type="checkbox" bind:checked={emitArtifacts} class="mt-0.5 accent-mlq-workflow" />
+		<span>
+			Save run documents to the knowledge base
+			<span class="block text-xs text-mlq-muted">
+				Documents are saved to the watched knowledge base.
+			</span>
+		</span>
+	</label>
+
 	<div>
 		<div class="mb-1 text-xs font-medium text-mlq-muted">Matter (optional)</div>
 		<MatterPicker {matters} bind:selectedId={projectId} placement="down" />
@@ -172,6 +184,7 @@
 		/>{/if}
 	{#if maxCost.trim()}<input type="hidden" name="max_cost_usd" value={maxCost.trim()} />{/if}
 	<input type="hidden" name="enabled" value={enabled ? 'true' : 'false'} />
+	<input type="hidden" name="emit_artifacts" value={emitArtifacts ? 'true' : 'false'} />
 
 	<div>
 		<button

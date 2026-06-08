@@ -15,6 +15,7 @@ const schedule: ScheduleSummary = {
 	project_id: null,
 	max_cost_usd: null,
 	enabled: true,
+	emit_artifacts: false,
 	next_run_at: '2026-06-08T09:00:00Z',
 	last_run_at: null
 };

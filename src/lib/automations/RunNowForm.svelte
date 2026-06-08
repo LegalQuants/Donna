@@ -23,6 +23,7 @@
 	let kbId = $state<string | null>(null);
 	let projectId = $state<string | null>(null);
 	let maxCost = $state('');
+	let emitArtifacts = $state(false);
 
 	const items = $derived(mode === 'playbook' ? playbookItems : skillItems);
 	const kbName = $derived(kbs.find((k) => k.id === kbId)?.name ?? null);
@@ -92,6 +93,17 @@
 		{/if}
 	</div>
 
+	<label class="flex items-start gap-2 text-sm text-mlq-text">
+		<input type="checkbox" bind:checked={emitArtifacts} class="mt-0.5 accent-mlq-workflow" />
+		<span>
+			Save run documents to the knowledge base
+			<span class="block text-xs text-mlq-muted">
+				When the run produces a document-grade result (a memo), save it to the target knowledge base
+				and link it on the run's receipt. Documents need a target knowledge base.
+			</span>
+		</span>
+	</label>
+
 	<div>
 		<div class="mb-1 text-xs font-medium text-mlq-muted">Matter (optional)</div>
 		<MatterPicker {matters} bind:selectedId={projectId} placement="down" />
@@ -127,6 +139,7 @@
 	{#if kbId}<input type="hidden" name="target_kb_id" value={kbId} />{/if}
 	{#if projectId}<input type="hidden" name="project_id" value={projectId} />{/if}
 	{#if maxCost.trim()}<input type="hidden" name="max_cost_usd" value={maxCost.trim()} />{/if}
+	<input type="hidden" name="emit_artifacts" value={emitArtifacts ? 'true' : 'false'} />
 
 	<div>
 		<button
