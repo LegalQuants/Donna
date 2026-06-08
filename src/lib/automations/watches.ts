@@ -51,7 +51,9 @@ export type WatchBodyResult = { ok: true; body: Record<string, unknown> } | { ok
  *  knowledge_base_id (and may carry project_id). Update omits knowledge_base_id
  *  (immutable) but always sends project_id — a value reassigns the matter,
  *  explicit null unassigns (omit = unchanged, per AutonomousWatchUpdate's
- *  exclude_unset PATCH semantics). */
+ *  exclude_unset PATCH semantics).
+ *  `emit_artifacts` is always sent as an explicit boolean — required on create
+ *  (lq-ai #138); on update an explicit false persists (null would be a no-op). */
 export function buildWatchBody(form: FormData, mode: 'create' | 'update'): WatchBodyResult {
 	const srcMode = String(form.get('source_mode') ?? 'playbook');
 	const playbookId = String(form.get('playbook_id') ?? '');
@@ -60,11 +62,12 @@ export function buildWatchBody(form: FormData, mode: 'create' | 'update'): Watch
 	const projectId = String(form.get('project_id') ?? '');
 	const maxCost = String(form.get('max_cost_usd') ?? '').trim();
 	const enabled = String(form.get('enabled') ?? 'true') === 'true';
+	const emitArtifacts = String(form.get('emit_artifacts') ?? 'false') === 'true';
 
 	const sourceOk = srcMode === 'skill' ? Boolean(skillRef) : Boolean(playbookId);
 	if (!sourceOk || (mode === 'create' && !kbId)) return { ok: false };
 
-	const body: Record<string, unknown> = { enabled };
+	const body: Record<string, unknown> = { enabled, emit_artifacts: emitArtifacts };
 	if (srcMode === 'skill') body.skill_ref = skillRef;
 	else body.playbook_id = playbookId;
 	if (mode === 'create') {
