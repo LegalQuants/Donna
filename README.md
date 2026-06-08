@@ -1,5 +1,7 @@
 # Donna
 
+**v0.1.0** · Apache-2.0 · a [LegalQuants](https://github.com/LegalQuants) project
+
 **A friendly, document-forward frontend for the [LQ.AI](https://github.com/LegalQuants/lq-ai) legal-AI backend** — conversational legal work with character-verified citations, transparent receipts, and autonomous runs, under a clean reading-first interface inspired by [MikeOSS](https://github.com/willchen96/mike).
 
 ![Donna — chat with character-verified citations and the document panel](docs/images/donna-hero.png)
@@ -15,7 +17,7 @@ Donna is a standalone SvelteKit app that talks to the lq-ai backend only through
   - **Skills**: reusable instruction blocks with typed inputs; author your own or fork built-ins, attach them per-message (slash aliases supported).
   - **Playbooks**: negotiation positions applied to a contract → verdict scorecard + consolidated redline view; generate a draft playbook from your own documents.
   - **Prompts**: saved snippets inserted at the cursor.
-  - **Automations**: runs Donna executes on its own — run-now, cron schedules, and KB-arrival watches — each leaving a transparency receipt (phases, tool calls, cost, terminal reason) plus its results (findings and proposed memories), with a notifications inbox.
+  - **Automations**: runs Donna executes on its own — run-now, cron schedules, and KB-arrival watches — each leaving a transparency receipt (phases, tool calls, cost, terminal reason) plus its results (findings, proposed memories, and recurring precedents), with a notifications inbox. Opted-in runs also produce **document-grade artifacts** — memos the run writes into its target knowledge base, openable inline or downloadable straight from the receipt.
 - **Tabular review** — the same questions across many documents → a cited, confidence-scored grid; per-column model-tier floors and ensemble verification; Excel/CSV export.
 - **Redlines** — consolidated change-set view of a playbook run with severity-ordered margin notes.
 - **Settings** — account & security, data export / scheduled deletion, preferences (incl. ambient trust pills), a read-only trust matrix, and model management: per-category routing, installed local (Ollama) models, and **bring-your-own provider keys** (admin, hot-applied, write-only).
@@ -33,11 +35,14 @@ The browser talks only to Donna's SvelteKit server (a **backend-for-frontend**).
 ## Setup
 
 ```bash
-# 1. Clone WITH submodules (pulls vendor/lq-ai)
+# 1. Clone WITH submodules (pulls vendor/lq-ai AND its nested skills corpus)
 git clone --recurse-submodules https://github.com/LegalQuants/Donna.git
 cd Donna
 #    (if already cloned without submodules:)
 git submodule update --init --recursive
+#    NOTE: the --recursive flag matters — the skills corpus (LegalQuants/lq-skills)
+#    is a submodule nested INSIDE vendor/lq-ai. Without it the arq-worker has no
+#    skills directory and exits at startup by design.
 
 # 2. Install deps
 npm install
@@ -108,11 +113,20 @@ tests/                Playwright e2e
 static/learn/         interactive playgrounds served by the /about guide
 ```
 
-Design specs and implementation plans for every shipped phase live under `docs/superpowers/`; the lq-ai submodule pin log is `docs/decisions/lq-ai-pin.md`. The richest documentation, though, is in the app itself: sign in and open **/about**.
+## Documentation
+
+- **[docs/PRODUCT.md](docs/PRODUCT.md)** — what Donna is, who it's for, the full capability set, design principles, and non-goals.
+- **[CHANGELOG.md](CHANGELOG.md)** — release history (start at v0.1.0).
+- **[CLAUDE.md](CLAUDE.md)** — the engineering guide: architecture, the build workflow, conventions, gotchas, and how to pick up a roadmap item. Written for a coding co-pilot (human or AI) joining the project.
+- **[docs/roadmap/donna-future-roadmap.md](docs/roadmap/donna-future-roadmap.md)** — what's deferred and why, with enough context to pick up cleanly.
+- **[docs/README.md](docs/README.md)** — index of the `docs/` tree (specs, plans, decisions, upstream requests, research).
+- The richest documentation, though, is **in the app itself**: sign in and open **/about** — a full guide with interactive playgrounds explaining how the LQ-AI engine works.
+
+Design specs and implementation plans for every shipped phase live under `docs/superpowers/`; the lq-ai submodule pin log is `docs/decisions/lq-ai-pin.md`.
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE). Copyright 2026 LegalQuants.
+Apache License 2.0 — see [LICENSE](LICENSE). Copyright (c) 2026 Kevin Keller.
 
 ## Acknowledgements
 
