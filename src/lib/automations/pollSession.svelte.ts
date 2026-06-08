@@ -5,6 +5,7 @@ import {
 	type SessionSummary
 } from './types';
 import type { FindingItem, RunMemoryItem } from './findings';
+import type { ArtifactItem } from './artifacts';
 
 const TERMINAL = new Set(['completed', 'halted', 'failed']);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -29,6 +30,8 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 	let findingsTotal = $state<number | null>(null);
 	let memories = $state<RunMemoryItem[] | null>(null);
 	let memoriesTotal = $state<number | null>(null);
+	let artifacts = $state<ArtifactItem[] | null>(null);
+	let artifactsTotal = $state<number | null>(null);
 	let done = $state(false);
 	let error = $state<string | null>(null);
 	let running = false;
@@ -47,6 +50,8 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 			findings_total?: unknown;
 			memories?: unknown;
 			memories_total?: unknown;
+			artifacts?: unknown;
+			artifacts_total?: unknown;
 		};
 		const parsed = parseSessionSummary(body.session);
 		if (!parsed) {
@@ -70,6 +75,11 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 		const incomingMemoriesTotal =
 			typeof body.memories_total === 'number' ? body.memories_total : null;
 		if (incomingMemoriesTotal !== null) memoriesTotal = incomingMemoriesTotal;
+		const incomingArtifacts = Array.isArray(body.artifacts) ? (body.artifacts as ArtifactItem[]) : null;
+		if (incomingArtifacts !== null) artifacts = incomingArtifacts;
+		const incomingArtifactsTotal =
+			typeof body.artifacts_total === 'number' ? body.artifacts_total : null;
+		if (incomingArtifactsTotal !== null) artifactsTotal = incomingArtifactsTotal;
 		return TERMINAL.has(parsed.status);
 	}
 
@@ -111,6 +121,12 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 		},
 		get memoriesTotal() {
 			return memoriesTotal;
+		},
+		get artifacts() {
+			return artifacts;
+		},
+		get artifactsTotal() {
+			return artifactsTotal;
 		},
 		get done() {
 			return done;
