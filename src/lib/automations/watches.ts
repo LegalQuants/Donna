@@ -11,6 +11,7 @@ export interface WatchSummary {
 	project_id: string | null;
 	max_cost_usd: string | null;
 	enabled: boolean;
+	emit_artifacts: boolean;
 }
 
 function str(v: unknown): string | null {
@@ -30,7 +31,8 @@ export function parseWatch(raw: unknown): WatchSummary | null {
 		skill_ref: str(r.skill_ref),
 		project_id: str(r.project_id),
 		max_cost_usd: str(r.max_cost_usd),
-		enabled: r.enabled === true
+		enabled: r.enabled === true,
+		emit_artifacts: r.emit_artifacts === true
 	};
 }
 

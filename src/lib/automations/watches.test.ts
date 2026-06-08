@@ -9,7 +9,8 @@ const raw = {
 	skill_ref: null,
 	project_id: 'm1',
 	max_cost_usd: '2.50',
-	enabled: true
+	enabled: true,
+	emit_artifacts: true
 };
 
 describe('parseWatch / parseWatchList', () => {
@@ -20,6 +21,12 @@ describe('parseWatch / parseWatchList', () => {
 		expect(w!.knowledge_base_id).toBe('kb1');
 		expect(w!.enabled).toBe(true);
 		expect(w!.max_cost_usd).toBe('2.50');
+		expect(w!.emit_artifacts).toBe(true);
+	});
+	it('emit_artifacts: true parses to true; missing field parses to false', () => {
+		expect(parseWatch({ ...raw, emit_artifacts: true })!.emit_artifacts).toBe(true);
+		const { emit_artifacts: _removed, ...rawWithout } = raw;
+		expect(parseWatch(rawWithout)!.emit_artifacts).toBe(false);
 	});
 	it('returns null when id or knowledge_base_id is missing', () => {
 		expect(parseWatch({ id: 'w1' })).toBeNull();

@@ -13,6 +13,7 @@ export interface ScheduleSummary {
 	project_id: string | null;
 	max_cost_usd: string | null;
 	enabled: boolean;
+	emit_artifacts: boolean;
 	next_run_at: string | null;
 	last_run_at: string | null;
 }
@@ -37,6 +38,7 @@ export function parseSchedule(raw: unknown): ScheduleSummary | null {
 		project_id: str(r.project_id),
 		max_cost_usd: str(r.max_cost_usd),
 		enabled: r.enabled === true,
+		emit_artifacts: r.emit_artifacts === true,
 		next_run_at: str(r.next_run_at),
 		last_run_at: str(r.last_run_at)
 	};

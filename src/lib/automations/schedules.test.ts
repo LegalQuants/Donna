@@ -13,6 +13,7 @@ const raw = {
 	project_id: 'm1',
 	max_cost_usd: '2.50',
 	enabled: true,
+	emit_artifacts: true,
 	next_run_at: '2026-06-08T09:00:00Z',
 	last_run_at: null
 };
@@ -25,6 +26,12 @@ describe('parseSchedule / parseScheduleList', () => {
 		expect(s!.enabled).toBe(true);
 		expect(s!.max_cost_usd).toBe('2.50');
 		expect(s!.next_run_at).toBe('2026-06-08T09:00:00Z');
+		expect(s!.emit_artifacts).toBe(true);
+	});
+	it('emit_artifacts: true parses to true; missing field parses to false', () => {
+		expect(parseSchedule({ ...raw, emit_artifacts: true })!.emit_artifacts).toBe(true);
+		const { emit_artifacts: _removed, ...rawWithout } = raw;
+		expect(parseSchedule(rawWithout)!.emit_artifacts).toBe(false);
 	});
 	it('returns null when id or cron_expr is missing', () => {
 		expect(parseSchedule({ id: 's1' })).toBeNull();

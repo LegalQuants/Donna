@@ -78,4 +78,13 @@ describe('RunNowForm', () => {
 			'2.50'
 		);
 	});
+
+	it('emit_artifacts toggle present with the KB hint, hidden field follows it', async () => {
+		render(RunNowForm, { props: { playbookItems, skillItems, kbs, matters } });
+		const checkbox = screen.getByRole('checkbox', { name: /save run documents/i });
+		expect(checkbox).not.toBeChecked();
+		expect(document.querySelector('input[name="emit_artifacts"]')).toHaveValue('false');
+		await fireEvent.click(checkbox);
+		expect(document.querySelector('input[name="emit_artifacts"]')).toHaveValue('true');
+	});
 });
