@@ -79,8 +79,11 @@
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
 	The <strong>Results</strong> section shows the run's work product: its findings, in the order the
-	run produced them, each with a severity badge and a severity summary up top. A run can also
-	propose <strong>memories</strong> — durable notes it suggests keeping — listed under
+	run produced them, each with a severity badge and a severity summary up top. Runs that opt in to
+	<strong>Save run documents</strong> can also produce document-grade results — memos saved to the
+	run's target knowledge base, listed under <strong>Documents</strong> on the receipt, where you can
+	open them inline or download them. A run can also propose <strong>memories</strong> — durable
+	notes it suggests keeping — listed under
 	<strong>Memories this run proposed</strong>. Proposed memories can be kept or dismissed right on
 	the receipt, or managed in the <strong>Review</strong> view. The Review view also lists
 	<strong>precedents</strong> — recurring patterns the agent noticed — which you can dismiss or promote

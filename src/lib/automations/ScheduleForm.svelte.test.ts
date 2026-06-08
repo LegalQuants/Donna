@@ -71,7 +71,8 @@ describe('ScheduleForm', () => {
 					target_kb_id: 'kb1',
 					project_id: null,
 					max_cost_usd: '2.50',
-					enabled: false
+					enabled: false,
+					emit_artifacts: false
 				}
 			}
 		});
@@ -120,12 +121,42 @@ describe('ScheduleForm', () => {
 					target_kb_id: null,
 					project_id: 'm1',
 					max_cost_usd: null,
-					enabled: true
+					enabled: true,
+					emit_artifacts: false
 				}
 			}
 		});
 		expect((container.querySelector('input[name="project_id"]') as HTMLInputElement).value).toBe(
 			'm1'
 		);
+	});
+
+	it('emit_artifacts toggle: off by default, hidden field follows the checkbox', async () => {
+		render(ScheduleForm, { props: { ...base } });
+		const checkbox = screen.getByRole('checkbox', { name: /save run documents/i });
+		expect(checkbox).not.toBeChecked();
+		expect(document.querySelector('input[name="emit_artifacts"]')).toHaveValue('false');
+		await fireEvent.click(checkbox);
+		expect(document.querySelector('input[name="emit_artifacts"]')).toHaveValue('true');
+	});
+
+	it('edit mode prefills emit_artifacts from initial', () => {
+		render(ScheduleForm, {
+			props: {
+				...base,
+				initial: {
+					name: null,
+					cron_expr: '0 9 * * *',
+					playbook_id: 'p1',
+					skill_ref: null,
+					target_kb_id: null,
+					project_id: null,
+					max_cost_usd: null,
+					enabled: true,
+					emit_artifacts: true
+				}
+			}
+		});
+		expect(screen.getByRole('checkbox', { name: /save run documents/i })).toBeChecked();
 	});
 });

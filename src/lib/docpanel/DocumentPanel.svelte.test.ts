@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import DocumentPanel from './DocumentPanel.svelte';
@@ -53,6 +53,8 @@ function stub(over: Partial<DocPanel> = {}): DocPanel {
 }
 
 describe('DocumentPanel', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
 	it('renders the active tab filename', () => {
 		render(DocumentPanel, { props: { docPanel: stub() } });
 		expect(screen.getByText('spike.pdf')).toBeInTheDocument();
@@ -261,5 +263,47 @@ describe('DocumentPanel', () => {
 		};
 		render(DocumentPanel, { props: { docPanel: stub({ tabs: [foundTab], activeTab: foundTab }) } });
 		expect(screen.getByText('✓ Verified')).toBeInTheDocument();
+	});
+
+	it('renders TextViewer for a ready text/markdown tab (not the unsupported card)', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url: string) => {
+				if (url.includes('/content')) return new Response('# Hello memo');
+				return new Response(JSON.stringify({ filename: 'memo.md', mime_type: 'text/markdown' }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			})
+		);
+		const mdTab: DocTab = {
+			fileId: 'f1',
+			filename: 'memo.md',
+			mime: 'text/markdown',
+			status: 'ready',
+			page: null,
+			quote: '',
+			cite: STUB_CITE,
+			highlightStatus: 'pending'
+		};
+		const docPanel = stub({ tabs: [mdTab], activeTab: mdTab, activeId: 'f1' });
+		render(DocumentPanel, { props: { docPanel } });
+		expect(await screen.findByRole('heading', { name: 'Hello memo' })).toBeInTheDocument();
+		expect(screen.queryByText(/preview isn't available/i)).not.toBeInTheDocument();
+	});
+
+	it('still renders the unsupported card for other mimes', () => {
+		const zipTab: DocTab = {
+			fileId: 'f1',
+			filename: 'x.zip',
+			mime: 'application/zip',
+			status: 'ready',
+			page: null,
+			quote: '',
+			cite: STUB_CITE,
+			highlightStatus: 'pending'
+		};
+		const docPanel = stub({ tabs: [zipTab], activeTab: zipTab, activeId: 'f1' });
+		render(DocumentPanel, { props: { docPanel } });
+		expect(screen.getByText(/preview isn't available/i)).toBeInTheDocument();
 	});
 });

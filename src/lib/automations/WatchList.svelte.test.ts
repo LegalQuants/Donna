@@ -12,7 +12,8 @@ const watch: WatchSummary = {
 	skill_ref: null,
 	project_id: null,
 	max_cost_usd: null,
-	enabled: true
+	enabled: true,
+	emit_artifacts: false
 };
 
 describe('WatchList', () => {

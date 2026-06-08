@@ -15,7 +15,8 @@
 		target_kb_id: data.schedule.target_kb_id,
 		project_id: data.schedule.project_id,
 		max_cost_usd: data.schedule.max_cost_usd,
-		enabled: data.schedule.enabled
+		enabled: data.schedule.enabled,
+		emit_artifacts: data.schedule.emit_artifacts
 	});
 </script>
 
