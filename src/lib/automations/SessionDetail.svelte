@@ -6,6 +6,7 @@
 	import { createSessionPoll } from './pollSession.svelte';
 	import type { SessionSummary, SessionReceipt } from './types';
 	import type { FindingItem, RunMemoryItem } from './findings';
+	import type { ArtifactItem } from './artifacts';
 
 	let {
 		initialSession,
@@ -13,7 +14,10 @@
 		initialFindings,
 		initialFindingsTotal,
 		initialMemories,
-		initialMemoriesTotal = null
+		initialMemoriesTotal = null,
+		initialArtifacts = null,
+		initialArtifactsTotal = null,
+		onopenartifact
 	}: {
 		initialSession: SessionSummary;
 		initialReceipt: SessionReceipt | null;
@@ -21,6 +25,9 @@
 		initialFindingsTotal: number | null;
 		initialMemories: RunMemoryItem[] | null;
 		initialMemoriesTotal?: number | null;
+		initialArtifacts?: ArtifactItem[] | null;
+		initialArtifactsTotal?: number | null;
+		onopenartifact?: (artifact: ArtifactItem) => void;
 	} = $props();
 
 	// Live-poll a running session to terminal; swap in fresh data as it arrives.
@@ -43,6 +50,8 @@
 	const findingsTotal = $derived(pick(live.findingsTotal, initialFindingsTotal));
 	const memories = $derived(pick(live.memories, initialMemories));
 	const memoriesTotal = $derived(pick(live.memoriesTotal, initialMemoriesTotal));
+	const artifacts = $derived(pick(live.artifacts, initialArtifacts));
+	const artifactsTotal = $derived(pick(live.artifactsTotal, initialArtifactsTotal));
 
 	$effect(() => {
 		if (initialSession.status === 'running') {
@@ -62,6 +71,9 @@
 		{findingsTotal}
 		{memories}
 		{memoriesTotal}
+		{artifacts}
+		{artifactsTotal}
+		{onopenartifact}
 		running={session.status === 'running'}
 	/>
 	<SessionTimeline {receipt} />
