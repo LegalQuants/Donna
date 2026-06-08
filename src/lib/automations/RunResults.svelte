@@ -73,6 +73,7 @@
 						{#if artifact.file_id}
 							<button
 								type="button"
+								aria-label="Open {artifact.name}"
 								onclick={() => onopenartifact?.(artifact)}
 								class="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-mlq-workflow hover:underline"
 								>Open</button
@@ -80,8 +81,9 @@
 							<a
 								href="/files/{artifact.file_id}/content"
 								download={artifact.name || undefined}
+								aria-label="Download {artifact.name}"
 								class="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs text-mlq-muted hover:text-mlq-text"
-								><Download size={12} /> Download</a
+								><Download size={12} aria-hidden="true" /> Download</a
 							>
 						{:else}
 							<span class="shrink-0 text-xs text-mlq-muted italic">file deleted</span>
