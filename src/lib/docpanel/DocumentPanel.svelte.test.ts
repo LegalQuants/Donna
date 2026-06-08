@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import DocumentPanel from './DocumentPanel.svelte';
@@ -53,6 +53,8 @@ function stub(over: Partial<DocPanel> = {}): DocPanel {
 }
 
 describe('DocumentPanel', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
 	it('renders the active tab filename', () => {
 		render(DocumentPanel, { props: { docPanel: stub() } });
 		expect(screen.getByText('spike.pdf')).toBeInTheDocument();
@@ -287,7 +289,6 @@ describe('DocumentPanel', () => {
 		render(DocumentPanel, { props: { docPanel } });
 		expect(await screen.findByRole('heading', { name: 'Hello memo' })).toBeInTheDocument();
 		expect(screen.queryByText(/preview isn't available/i)).not.toBeInTheDocument();
-		vi.unstubAllGlobals();
 	});
 
 	it('still renders the unsupported card for other mimes', () => {
