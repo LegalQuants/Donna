@@ -166,6 +166,60 @@ describe('createSessionPoll', () => {
 		expect(poll.memoriesTotal).toBe(5);
 	});
 
+	it('threads artifacts with last-known-good retention', async () => {
+		const bodies = [
+			{
+				session: {
+					id: 's1',
+					status: 'running',
+					trigger_kind: 'manual',
+					current_phase: 'analysis',
+					cost_total_usd: '0.1',
+					created_at: 'x'
+				},
+				receipt: null,
+				artifacts: [
+					{
+						id: 'a1',
+						name: 'Memo.md',
+						mime: 'text/markdown',
+						size_bytes: 5,
+						file_id: 'f1',
+						document_id: 'd1',
+						created_at: 'x'
+					}
+				],
+				artifacts_total: 1
+			},
+			// degraded tick: nulls must NOT blank the earlier data
+			{
+				session: {
+					id: 's1',
+					status: 'completed',
+					trigger_kind: 'manual',
+					current_phase: 'delivery',
+					cost_total_usd: '0.2',
+					created_at: 'x'
+				},
+				receipt: null,
+				artifacts: null,
+				artifacts_total: null
+			}
+		];
+		let i = 0;
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response(JSON.stringify(bodies[Math.min(i++, bodies.length - 1)])))
+		);
+		const poll = createSessionPoll('s1', { pollMs: 1 });
+		const p = poll.start();
+		await vi.advanceTimersByTimeAsync(10);
+		await p;
+		expect(poll.artifacts).toHaveLength(1);
+		expect(poll.artifacts?.[0].name).toBe('Memo.md');
+		expect(poll.artifactsTotal).toBe(1);
+	});
+
 	it('replaces findings/memories when tick 2 brings new non-null values', async () => {
 		const tick1 = {
 			session: {
