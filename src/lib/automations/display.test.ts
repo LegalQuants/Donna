@@ -6,7 +6,8 @@ import {
 	statusTone,
 	terminalReasonLabel,
 	outcomeTone,
-	stateChipClass
+	stateChipClass,
+	formatBytes
 } from './display';
 
 describe('display helpers', () => {
@@ -39,5 +40,20 @@ describe('display helpers', () => {
 	it('stateChipClass returns workflow class for proposed and neutral class for unknown', () => {
 		expect(stateChipClass('proposed')).toContain('mlq-workflow');
 		expect(stateChipClass('unknown-state')).toContain('mlq-muted');
+	});
+});
+
+describe('formatBytes', () => {
+	it('formats bytes, KB, and MB at sensible precision', () => {
+		expect(formatBytes(0)).toBe('0 B');
+		expect(formatBytes(842)).toBe('842 B');
+		expect(formatBytes(1024)).toBe('1.0 KB');
+		expect(formatBytes(4608)).toBe('4.5 KB');
+		expect(formatBytes(1048576)).toBe('1.0 MB');
+		expect(formatBytes(2621440)).toBe('2.5 MB');
+	});
+	it('tolerates negative/non-finite input with an em dash', () => {
+		expect(formatBytes(-1)).toBe('—');
+		expect(formatBytes(Number.NaN)).toBe('—');
 	});
 });
