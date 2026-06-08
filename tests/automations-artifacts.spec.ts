@@ -96,6 +96,7 @@ test('receipt shows seeded artifacts with Open + Download and a deleted-file row
 		const deleted = results.locator('li', { hasText: `${SEED_PREFIX}-deleted.md` });
 		await expect(deleted.getByText('file deleted')).toBeVisible();
 		await expect(deleted.getByRole('button', { name: /open/i })).toBeHidden();
+		await expect(deleted.getByRole('link', { name: /download/i })).toBeHidden();
 	} finally {
 		cleanupSeeds();
 	}
