@@ -19,7 +19,8 @@ describe('loadRunOutput', () => {
 	it('fetches findings + memories in parallel and returns parsed output', async () => {
 		lqFetch
 			.mockResolvedValueOnce(new Response(JSON.stringify(findingsBody), { status: 200 }))
-			.mockResolvedValueOnce(new Response(JSON.stringify(memoriesBody), { status: 200 }));
+			.mockResolvedValueOnce(new Response(JSON.stringify(memoriesBody), { status: 200 }))
+			.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		const out = await loadRunOutput(ev, 's1');
 		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/sessions/s1/findings?limit=200');
 		expect(lqFetch.mock.calls[1][1]).toBe(
@@ -33,7 +34,8 @@ describe('loadRunOutput', () => {
 	it('degrades a failed findings fetch to null without touching memories', async () => {
 		lqFetch
 			.mockResolvedValueOnce(new Response('boom', { status: 500 }))
-			.mockResolvedValueOnce(new Response(JSON.stringify(memoriesBody), { status: 200 }));
+			.mockResolvedValueOnce(new Response(JSON.stringify(memoriesBody), { status: 200 }))
+			.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		const out = await loadRunOutput(ev, 's1');
 		expect(out.findings).toBeNull();
 		expect(out.findings_total).toBeNull();
@@ -42,7 +44,8 @@ describe('loadRunOutput', () => {
 	it('degrades a failed memories fetch to null without touching findings', async () => {
 		lqFetch
 			.mockResolvedValueOnce(new Response(JSON.stringify(findingsBody), { status: 200 }))
-			.mockResolvedValueOnce(new Response('boom', { status: 502 }));
+			.mockResolvedValueOnce(new Response('boom', { status: 502 }))
+			.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		const out = await loadRunOutput(ev, 's1');
 		expect(out.findings).toHaveLength(1);
 		expect(out.memories).toBeNull();
@@ -51,9 +54,58 @@ describe('loadRunOutput', () => {
 	it('degrades non-JSON bodies to null', async () => {
 		lqFetch
 			.mockResolvedValueOnce(new Response('<html>', { status: 200 }))
-			.mockResolvedValueOnce(new Response('<html>', { status: 200 }));
+			.mockResolvedValueOnce(new Response('<html>', { status: 200 }))
+			.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		const out = await loadRunOutput(ev, 's1');
 		expect(out.findings).toBeNull();
 		expect(out.memories).toBeNull();
+	});
+});
+
+const artifactsBody = {
+	artifacts: [
+		{
+			id: 'a1',
+			name: 'Memo.md',
+			mime: 'text/markdown',
+			size_bytes: 100,
+			file_id: 'f9',
+			document_id: 'd9',
+			created_at: 'z'
+		}
+	],
+	total_count: 1
+};
+
+describe('loadRunOutput artifacts', () => {
+	it('fetches artifacts in the same parallel batch and returns parsed refs', async () => {
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify(findingsBody), { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify(memoriesBody), { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify(artifactsBody), { status: 200 }));
+		const out = await loadRunOutput(ev, 's1');
+		expect(lqFetch.mock.calls[2][1]).toBe('/api/v1/autonomous/sessions/s1/artifacts?limit=200');
+		expect(out.artifacts).toHaveLength(1);
+		expect(out.artifacts?.[0].name).toBe('Memo.md');
+		expect(out.artifacts_total).toBe(1);
+	});
+	it('degrades a failed artifacts fetch to null without touching findings/memories', async () => {
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify(findingsBody), { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify(memoriesBody), { status: 200 }))
+			.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+		const out = await loadRunOutput(ev, 's1');
+		expect(out.artifacts).toBeNull();
+		expect(out.artifacts_total).toBeNull();
+		expect(out.findings).toHaveLength(1);
+		expect(out.memories).toHaveLength(1);
+	});
+	it('degrades a non-JSON artifacts body to null', async () => {
+		lqFetch
+			.mockResolvedValueOnce(new Response(JSON.stringify(findingsBody), { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify(memoriesBody), { status: 200 }))
+			.mockResolvedValueOnce(new Response('<html>', { status: 200 }));
+		const out = await loadRunOutput(ev, 's1');
+		expect(out.artifacts).toBeNull();
 	});
 });
