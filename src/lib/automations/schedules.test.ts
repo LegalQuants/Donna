@@ -30,7 +30,8 @@ describe('parseSchedule / parseScheduleList', () => {
 	});
 	it('emit_artifacts: true parses to true; missing field parses to false', () => {
 		expect(parseSchedule({ ...raw, emit_artifacts: true })!.emit_artifacts).toBe(true);
-		const { emit_artifacts: _removed, ...rawWithout } = raw;
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { emit_artifacts: _ea, ...rawWithout } = raw;
 		expect(parseSchedule(rawWithout)!.emit_artifacts).toBe(false);
 	});
 	it('returns null when id or cron_expr is missing', () => {

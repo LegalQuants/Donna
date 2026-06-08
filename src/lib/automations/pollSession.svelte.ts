@@ -75,7 +75,9 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 		const incomingMemoriesTotal =
 			typeof body.memories_total === 'number' ? body.memories_total : null;
 		if (incomingMemoriesTotal !== null) memoriesTotal = incomingMemoriesTotal;
-		const incomingArtifacts = Array.isArray(body.artifacts) ? (body.artifacts as ArtifactItem[]) : null;
+		const incomingArtifacts = Array.isArray(body.artifacts)
+			? (body.artifacts as ArtifactItem[])
+			: null;
 		if (incomingArtifacts !== null) artifacts = incomingArtifacts;
 		const incomingArtifactsTotal =
 			typeof body.artifacts_total === 'number' ? body.artifacts_total : null;

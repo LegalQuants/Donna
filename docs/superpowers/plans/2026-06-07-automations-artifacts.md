@@ -13,6 +13,7 @@
 **Branch:** `feat/automations-artifacts` (pin bump + spec already committed).
 
 **House rules (apply to EVERY task):**
+
 - TDD: write the failing test first, watch it fail, implement, watch it pass.
 - Run a focused vitest per task: `npx vitest run <test-file> --reporter=basic` (full gates run at the end).
 - Tabs for indentation (prettier is configured that way — copy neighboring files).
@@ -24,6 +25,7 @@
 ### Task 1: `formatBytes` display helper
 
 **Files:**
+
 - Modify: `src/lib/automations/display.ts` (append)
 - Test: `src/lib/automations/display.test.ts` (append a describe block)
 
@@ -84,6 +86,7 @@ git push
 ### Task 2: `artifacts.ts` defensive parser
 
 **Files:**
+
 - Create: `src/lib/automations/artifacts.ts`
 - Test: `src/lib/automations/artifacts.test.ts`
 
@@ -223,6 +226,7 @@ git push
 ### Task 3: `loadRunOutput` gains the artifacts fetch
 
 **Files:**
+
 - Modify: `src/lib/automations/runOutput.server.ts`
 - Test: `src/lib/automations/runOutput.server.test.ts` (append cases; update existing call-order assertions if needed)
 
@@ -380,6 +384,7 @@ git push
 ### Task 4: `pollSession` threads artifacts
 
 **Files:**
+
 - Modify: `src/lib/automations/pollSession.svelte.ts`
 - Test: `src/lib/automations/pollSession.svelte.test.ts` (append)
 
@@ -498,6 +503,7 @@ git push
 ### Task 5: `TextViewer` — inline markdown/plain-text rendering
 
 **Files:**
+
 - Create: `src/lib/docpanel/TextViewer.svelte`
 - Test: `src/lib/docpanel/TextViewer.svelte.test.ts`
 
@@ -639,6 +645,7 @@ git push
 ### Task 6: `DocumentPanel` text-mime branch
 
 **Files:**
+
 - Modify: `src/lib/docpanel/DocumentPanel.svelte:173-176` (the non-PDF fallback)
 - Test: `src/lib/docpanel/DocumentPanel.svelte.test.ts` (append)
 
@@ -710,6 +717,7 @@ git push
 ### Task 7: `RunResults` Documents block
 
 **Files:**
+
 - Modify: `src/lib/automations/RunResults.svelte`
 - Test: `src/lib/automations/RunResults.svelte.test.ts` (append)
 
@@ -884,6 +892,7 @@ git push
 ### Task 8: `SessionDetail` + receipt page host the doc panel
 
 **Files:**
+
 - Modify: `src/lib/automations/SessionDetail.svelte`
 - Modify: `src/routes/(app)/automations/[id]/+page.svelte`
 - Test: `src/lib/automations/SessionDetail.svelte.test.ts` (append)
@@ -935,9 +944,7 @@ import type { ArtifactItem } from './artifacts';
 Extend props (after `initialMemoriesTotal`):
 
 ```ts
-initialArtifacts = null,
-initialArtifactsTotal = null,
-onopenartifact
+((initialArtifacts = null), (initialArtifactsTotal = null), onopenartifact);
 ```
 
 with types:
@@ -1047,6 +1054,7 @@ git push
 ### Task 9: `emit_artifacts` in body builders + run-now action
 
 **Files:**
+
 - Modify: `src/lib/automations/schedules.ts` (`buildScheduleBody`)
 - Modify: `src/lib/automations/watches.ts` (`buildWatchBody`)
 - Modify: `src/routes/(app)/automations/new/+page.server.ts` (the `run` action)
@@ -1097,7 +1105,11 @@ const emitArtifacts = String(form.get('emit_artifacts') ?? 'false') === 'true';
 and include it in the body construction line:
 
 ```ts
-const body: Record<string, unknown> = { cron_expr: cronExpr, enabled, emit_artifacts: emitArtifacts };
+const body: Record<string, unknown> = {
+	cron_expr: cronExpr,
+	enabled,
+	emit_artifacts: emitArtifacts
+};
 ```
 
 Update the function's doc comment: add a line ``emit_artifacts` is always sent as an explicit boolean — required on create (lq-ai #138), and on update an explicit false persists (null would be a no-op).`
@@ -1138,6 +1150,7 @@ git push
 ### Task 10: `emit_artifacts` form toggles
 
 **Files:**
+
 - Modify: `src/lib/automations/ScheduleForm.svelte` (+ its `ScheduleInitial` interface + parse seam)
 - Modify: `src/lib/automations/WatchForm.svelte` (+ its `WatchInitial` interface)
 - Modify: `src/lib/automations/RunNowForm.svelte`
@@ -1194,6 +1207,7 @@ Expected: FAIL — no such checkbox.
 `schedules.ts` — `ScheduleSummary` gains `emit_artifacts: boolean;` and `parseSchedule` returns `emit_artifacts: r.emit_artifacts === true`. Same for `watches.ts` (`WatchSummary` + `parseWatch`).
 
 `ScheduleForm.svelte`:
+
 - `ScheduleInitial` gains `emit_artifacts: boolean;`
 - seed state: `let emitArtifacts = $state(seed?.emit_artifacts ?? false);`
 - Insert the toggle directly after the "Target knowledge base (optional)" block (documents land in that KB — adjacency explains the dependency):
@@ -1204,8 +1218,8 @@ Expected: FAIL — no such checkbox.
 	<span>
 		Save run documents to the knowledge base
 		<span class="block text-xs text-mlq-muted">
-			When the run produces a document-grade result (a memo), save it to the target knowledge
-			base and link it on the run's receipt.
+			When the run produces a document-grade result (a memo), save it to the target knowledge base
+			and link it on the run's receipt.
 		</span>
 	</span>
 </label>
@@ -1223,8 +1237,8 @@ Expected: FAIL — no such checkbox.
 
 ```svelte
 <span class="block text-xs text-mlq-muted">
-	When the run produces a document-grade result (a memo), save it to the target knowledge base
-	and link it on the run's receipt. Documents need a target knowledge base.
+	When the run produces a document-grade result (a memo), save it to the target knowledge base and
+	link it on the run's receipt. Documents need a target knowledge base.
 </span>
 ```
 
@@ -1240,7 +1254,7 @@ Expected: 0/0.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/automations "src/routes/(app)/automations" 
+git add src/lib/automations "src/routes/(app)/automations"
 git commit -m "feat(automations): emit_artifacts opt-in toggles on schedule/watch/run-now forms"
 git push
 ```
@@ -1250,14 +1264,15 @@ git push
 ### Task 11: About touch
 
 **Files:**
+
 - Modify: `src/routes/(app)/about/automations/+page.svelte` (the "Results: what the run produced" paragraph, ~line 81)
 - Test: none (the about e2e asserts page renders; copy-only change)
 
 - [ ] **Step 1: Edit the paragraph** — in the Results `<p>`, after the findings sentence (before "A run can also propose <strong>memories</strong>"), insert:
 
 ```svelte
-Runs that opt in to <strong>Save run documents</strong> can also produce document-grade
-results — memos saved to the run's target knowledge base, listed under
+Runs that opt in to <strong>Save run documents</strong> can also produce document-grade results —
+memos saved to the run's target knowledge base, listed under
 <strong>Documents</strong> on the receipt, where you can open them inline or download them.
 ```
 
@@ -1279,6 +1294,7 @@ git push
 ### Task 12: Live e2e — seeded artifacts on a real receipt
 
 **Files:**
+
 - Create: `tests/automations-artifacts.spec.ts`
 
 Prereqs: full stack up on the new pin (api + arq-worker + donna-web rebuilt), `.env` loaded by the runner (`POSTGRES_USER=lq_ai`, db `lq_ai`, `DONNA_E2E_PASSWORD`). **Rebuild donna-web first** (`docker compose up -d --build donna-web`) so the container runs this branch's code.
