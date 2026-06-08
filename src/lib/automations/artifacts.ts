@@ -2,8 +2,10 @@
 // Defensively-parsed view models for a run's document-grade artifacts
 // (lq-ai #138: GET /sessions/{id}/artifacts — references to real KB documents).
 // Mirrors the parsing style of findings.ts. `file_id`/`document_id` are
-// nullable: a hard file-delete SET-NULLs the refs (name/size survive);
-// `document_id` is read-time-enriched upstream and drives "Open".
+// nullable: a hard file-delete SET-NULLs the refs (name/size survive).
+// "Open"/"Download" are driven by `file_id` (the doc panel fetches
+// /files/{file_id}); `document_id` is the read-time-enriched KB deep-link,
+// retained from the contract for a future "reveal in knowledge base" affordance.
 
 export interface ArtifactItem {
 	id: string;
