@@ -1,8 +1,9 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import RunResults from './RunResults.svelte';
 import type { FindingItem, RunMemoryItem } from './findings';
+import type { ArtifactItem } from './artifacts';
 
 const f = (id: string, severity: string, title: string): FindingItem => ({
 	id,
@@ -23,7 +24,9 @@ const base = {
 	findingsTotal: 0 as number | null,
 	memories: [] as RunMemoryItem[] | null,
 	memoriesTotal: null as number | null,
-	running: false
+	running: false,
+	artifacts: null as ArtifactItem[] | null,
+	artifactsTotal: null as number | null
 };
 
 describe('RunResults', () => {
@@ -119,5 +122,59 @@ describe('RunResults', () => {
 		});
 		expect(screen.queryByRole('button', { name: 'Keep' })).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+	});
+});
+
+const a = (id: string, over: Partial<ArtifactItem> = {}): ArtifactItem => ({
+	id,
+	name: 'DPA memo.md',
+	mime: 'text/markdown',
+	size_bytes: 4608,
+	file_id: 'f1',
+	document_id: 'd1',
+	created_at: '2026-06-07T10:00:00Z',
+	...over
+});
+
+describe('RunResults documents', () => {
+	it('hidden when artifacts are null or empty', () => {
+		render(RunResults, { props: { ...base, artifacts: null } });
+		expect(screen.queryByText('Documents')).not.toBeInTheDocument();
+		render(RunResults, { props: { ...base, artifacts: [] } });
+		expect(screen.queryByText('Documents')).not.toBeInTheDocument();
+	});
+	it('renders a row with name, size, Open, and Download', async () => {
+		const onopenartifact = vi.fn();
+		render(RunResults, {
+			props: { ...base, artifacts: [a('a1')], artifactsTotal: 1, onopenartifact }
+		});
+		expect(screen.getByText('Documents')).toBeInTheDocument();
+		expect(screen.getByText('DPA memo.md')).toBeInTheDocument();
+		expect(screen.getByText('4.5 KB')).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: /download/i })).toHaveAttribute(
+			'href',
+			'/files/f1/content'
+		);
+		await fireEvent.click(screen.getByRole('button', { name: /open/i }));
+		expect(onopenartifact).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
+	});
+	it('deleted-file row: metadata only, no actions', () => {
+		render(RunResults, {
+			props: {
+				...base,
+				artifacts: [a('a1', { file_id: null, document_id: null })],
+				artifactsTotal: 1
+			}
+		});
+		expect(screen.getByText('DPA memo.md')).toBeInTheDocument();
+		expect(screen.getByText(/file deleted/i)).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /open/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: /download/i })).not.toBeInTheDocument();
+	});
+	it('overflow note when total exceeds the fetched page', () => {
+		render(RunResults, {
+			props: { ...base, artifacts: [a('a1')], artifactsTotal: 3 }
+		});
+		expect(screen.getByText('+2 more documents not shown.')).toBeInTheDocument();
 	});
 });
