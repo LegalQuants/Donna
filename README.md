@@ -116,6 +116,7 @@ static/learn/         interactive playgrounds served by the /about guide
 ## Documentation
 
 - **[docs/GUIDE.md](docs/GUIDE.md)** — the friendly, non-technical guide: what Donna is, what you can do with it today, how it works in plain terms, and what else you could build on LQ-AI (for practitioners, firms, students, professors, and access-to-justice builders). Start here if you're new.
+- **[About Donna — v0.1.0 (PDF)](docs/About-Donna-v0.1.0.pdf)** — a downloadable export of the in-app **About** guide (v0.1.0 · June 8, 2026): a full visual overview of every feature, for readers who'd like the complete tour without standing up the app. The interactive version, with playgrounds, lives at **/about** once Donna is running.
 - **[docs/PRODUCT.md](docs/PRODUCT.md)** — what Donna is, who it's for, the full capability set, design principles, and non-goals.
 - **[CHANGELOG.md](CHANGELOG.md)** — release history (start at v0.1.0).
 - **[CLAUDE.md](CLAUDE.md)** — the engineering guide: architecture, the build workflow, conventions, gotchas, and how to pick up a roadmap item. Written for a coding co-pilot (human or AI) joining the project.
