@@ -109,6 +109,17 @@ npx playwright test  # live e2e — needs the stack up + the admin fixture
 > check/lint. **Rebuild `donna-web` (`docker compose up -d --build donna-web`) before any manual or
 > e2e check** — the running container serves built code, not your working tree.
 
+### Distribution (pre-built images)
+
+Releases publish three multi-arch images to `ghcr.io/legalquants/*` via
+`.github/workflows/release.yml` (on a `v*` tag or manual dispatch): `donna-web` (from `Dockerfile`)
+and two **wrappers** — `donna-api` (lq-ai api + baked `vendor/lq-ai/skills`) and `donna-gateway`
+(lq-ai gateway + baked `gateway.yaml.example`), built via `docker/*.Dockerfile` so the submodule stays
+untouched. `docker-compose.release.yml` is the image-only install stack — a **hand-maintained mirror**
+of the dev compose's service wiring; **re-sync it on a pin bump**. When LQ-AI publishes its own
+images, switch to Route 1 (see `docs/upstream-requests/lq-ai-publish-container-images.md`) and this
+maintenance goes away.
+
 ## 6. The build workflow (how every feature here was shipped)
 
 Donna is built with the **superpowers** skill loop. For any non-trivial change, follow it:
