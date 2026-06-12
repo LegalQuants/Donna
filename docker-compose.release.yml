@@ -9,6 +9,10 @@
 # Images are published from github.com/LegalQuants/Donna to ghcr.io/legalquants.
 # This file is a hand-maintained mirror of vendor/lq-ai/docker-compose.yml +
 # the donna-web service; re-sync it when the lq-ai pin bumps. (See CLAUDE.md.)
+#
+# Project name is "donna" (same as the build-from-source stack). If you ALSO run
+# the dev stack on the same Docker host, add `-p donna-release` to this command
+# (and shift the host ports in .env) to avoid a project-name collision.
 name: donna
 
 services:
