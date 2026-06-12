@@ -27,36 +27,6 @@ Donna is a standalone SvelteKit app that talks to the lq-ai backend only through
 
 The browser talks only to Donna's SvelteKit server (a **backend-for-frontend**). The SvelteKit server holds the lq-ai JWT access + refresh tokens in **httpOnly cookies**, attaches `Authorization: Bearer` when proxying to the lq-ai `api`, and transparently refreshes on `401`. This means no CORS, and the JWT never reaches client JavaScript. The lq-ai backend is vendored at `vendor/lq-ai` (pinned submodule) and brought up by this repo's `docker-compose.yml`, which `include`s lq-ai's compose and adds Donna's web service (`donna-web`).
 
-## Prerequisites
-
-- **Docker** + Docker Compose v2 (for the bundled backend).
-- **Node 22+** (for local dev / tooling).
-
-## Setup
-
-```bash
-# 1. Clone WITH submodules (pulls vendor/lq-ai AND its nested skills corpus)
-git clone --recurse-submodules https://github.com/LegalQuants/Donna.git
-cd Donna
-#    (if already cloned without submodules:)
-git submodule update --init --recursive
-#    NOTE: the --recursive flag matters — the skills corpus (LegalQuants/lq-skills)
-#    is a submodule nested INSIDE vendor/lq-ai. Without it the arq-worker has no
-#    skills directory and exits at startup by design.
-
-# 2. Install deps
-npm install
-
-# 3. Generate the typed API client from lq-ai's OpenAPI specs
-npm run gen:api
-
-# 4. Create your env file (dev secrets + host ports)
-cp .env.example .env
-#    Edit .env: set the required secrets (POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD,
-#    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). The *_HOST_PORT values are pre-shifted
-#    so Donna can run ALONGSIDE a separate lq-ai dev stack on the default ports.
-```
-
 ## Quick install (pre-built images)
 
 The fastest way to run Donna — no clone, no submodules, no build. You need only **Docker + Compose v2**.
@@ -83,7 +53,7 @@ docker compose -f docker-compose.release.yml exec api \
   --email admin@lq.ai --password 'DonnaE2ePassw0rd!' --no-force-change
 ```
 
-Open **http://localhost:13002** and sign in with `admin@lq.ai` / `DonnaE2ePassw0rd!`.
+Open **http://localhost:13002** — or whatever `DONNA_WEB_HOST_PORT` you set in `.env` (`13002` is the default in `.env.example`) — and sign in with `admin@lq.ai` / `DonnaE2ePassw0rd!`.
 
 Images are published from this repo to GHCR — `ghcr.io/legalquants/donna-web`, `donna-api`, and
 `donna-gateway` (multi-arch: Intel/AMD + Apple Silicon). This still needs a filled `.env`; it removes
@@ -92,6 +62,36 @@ a local model via Ollama. Deploying beyond `localhost` still requires TLS in fro
 the note under "Run the full stack").
 
 > **Prefer to build from source / develop on Donna?** Use the clone + build instructions below.
+
+## Prerequisites
+
+- **Docker** + Docker Compose v2 (for the bundled backend).
+- **Node 22+** — only for the build-from-source path below (local dev / tooling). The Quick install above needs just Docker.
+
+## Setup
+
+```bash
+# 1. Clone WITH submodules (pulls vendor/lq-ai AND its nested skills corpus)
+git clone --recurse-submodules https://github.com/LegalQuants/Donna.git
+cd Donna
+#    (if already cloned without submodules:)
+git submodule update --init --recursive
+#    NOTE: the --recursive flag matters — the skills corpus (LegalQuants/lq-skills)
+#    is a submodule nested INSIDE vendor/lq-ai. Without it the arq-worker has no
+#    skills directory and exits at startup by design.
+
+# 2. Install deps
+npm install
+
+# 3. Generate the typed API client from lq-ai's OpenAPI specs
+npm run gen:api
+
+# 4. Create your env file (dev secrets + host ports)
+cp .env.example .env
+#    Edit .env: set the required secrets (POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD,
+#    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). The *_HOST_PORT values are pre-shifted
+#    so Donna can run ALONGSIDE a separate lq-ai dev stack on the default ports.
+```
 
 ## Run the full stack
 
