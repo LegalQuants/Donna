@@ -15,7 +15,7 @@ fix is pre-built images published to a public registry plus a self-contained com
 This is **Route B** (Donna self-publishes everything) — chosen as a **one-off** for v0.1.0. The
 backend images are really LQ-AI's to own long-term; when LQ-AI publishes its own images, a future
 Donna can switch to **Route 1** (consume upstream images, drop Donna's wrapper images + their CI).
-This spec ships Route B *and* leaves the Route 1 path documented and ready to hand off (see §6).
+This spec ships Route B _and_ leaves the Route 1 path documented and ready to hand off (see §6).
 
 ## Constraints (carried from the project's rules)
 
@@ -23,7 +23,7 @@ This spec ships Route B *and* leaves the Route 1 path documented and ready to ha
   via thin Donna-side **wrapper Dockerfiles**, not by modifying the submodule.
 - **Multi-arch.** Publish `linux/amd64` + `linux/arm64` so Apple-Silicon users don't emulate.
 - **Same `.env` contract.** The release compose reads the existing `.env` variables; secrets are
-  still required (this removes the *build*, not the *config*).
+  still required (this removes the _build_, not the _config_).
 - **Registry namespace:** `ghcr.io/legalquants/*` (the canonical public repo), per user decision.
 
 ## Approach
@@ -44,7 +44,7 @@ All multi-arch, tagged `vX.Y.Z` + `latest`.
    `arq-worker`/`api` skills mount unnecessary (the worker exits at startup without a skills dir).
 3. **`ghcr.io/legalquants/donna-gateway`** — a wrapper image: `FROM` the lq-ai `gateway` image
    (built from `vendor/lq-ai/gateway`), then `COPY vendor/lq-ai/gateway.yaml.example →
-   /usr/share/lq-ai/gateway.yaml.example` (the path the gateway entrypoint seeds its runtime
+/usr/share/lq-ai/gateway.yaml.example` (the path the gateway entrypoint seeds its runtime
    `gateway.yaml` from). This removes the need to mount a config file.
 
 The upstream images that already need no build are used as-is in the release compose:
@@ -68,7 +68,7 @@ wrapper `FROM` to pull during the build).
 
 ### `docker-compose.release.yml`
 
-A standalone, **image-only** compose at the repo root — *not* using `include:` (which would pull in
+A standalone, **image-only** compose at the repo root — _not_ using `include:` (which would pull in
 build contexts and the relative `./skills` / `gateway.yaml` mounts). It mirrors the merged stack's
 service wiring (env, healthchecks, depends_on, ports) but with:
 
@@ -94,7 +94,7 @@ on a pin bump — a cost Route 1 later removes (called out in §6 + CLAUDE.md).
 
 ### README — "Quick install (pre-built)"
 
-A new section *above* the build-from-source instructions:
+A new section _above_ the build-from-source instructions:
 
 1. Download `docker-compose.release.yml` and `.env.example` (raw GitHub links).
 2. `cp .env.example .env` and fill the required secrets.
@@ -125,8 +125,8 @@ ideal for non-technical / access-to-justice users); the `Secure`-cookie TLS note
 - **Local (full):** build the three images locally (single-arch for speed; the wrapper Dockerfiles
   and the skills/config baking are arch-independent), stand the stack up via
   `docker-compose.release.yml` pointing at the locally-built tags, and confirm all 8 services healthy
-  + a real-browser login (the fresh-clone test's rigor) — proving the compose, the baked skills, and
-  the baked gateway config work end-to-end with **no clone-time mounts**.
+  - a real-browser login (the fresh-clone test's rigor) — proving the compose, the baked skills, and
+    the baked gateway config work end-to-end with **no clone-time mounts**.
 - **Workflow (static):** `release.yml` written to standard and lint-checked (`actionlint` if
   available; otherwise a careful self-review). The actual **multi-arch GHCR publish runs only in
   GitHub Actions** on a tag/dispatch — not verifiable from here; the first real publish is when the

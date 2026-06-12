@@ -41,7 +41,7 @@
 
 - [ ] **Step 1: Confirm the base images lack the files we're about to bake**
 
-The lq-ai compose *mounts* `./skills` into api/arq-worker and `gateway.yaml.example` into gateway — strong evidence the images don't already contain them. Confirm against the already-built dev images (the running `donna` stack built them from the pinned submodule), so we reuse them as bases instead of a slow rebuild:
+The lq-ai compose _mounts_ `./skills` into api/arq-worker and `gateway.yaml.example` into gateway — strong evidence the images don't already contain them. Confirm against the already-built dev images (the running `donna` stack built them from the pinned submodule), so we reuse them as bases instead of a slow rebuild:
 
 ```bash
 # Discover the dev-stack image names (compose names them <project>-<service>)
@@ -156,9 +156,9 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_BIND_ADDR:-127.0.0.1}:${POSTGRES_HOST_PORT:-5432}:5432"
+      - '${POSTGRES_BIND_ADDR:-127.0.0.1}:${POSTGRES_HOST_PORT:-5432}:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-lq_ai} -d $${POSTGRES_DB:-lq_ai}"]
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-lq_ai} -d $${POSTGRES_DB:-lq_ai}']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -166,13 +166,13 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ['redis-server', '--appendonly', 'yes']
     volumes:
       - redisdata:/data
     ports:
-      - "${REDIS_BIND_ADDR:-127.0.0.1}:${REDIS_HOST_PORT:-6379}:6379"
+      - '${REDIS_BIND_ADDR:-127.0.0.1}:${REDIS_HOST_PORT:-6379}:6379'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -187,10 +187,10 @@ services:
     volumes:
       - miniodata:/data
     ports:
-      - "${MINIO_BIND_ADDR:-127.0.0.1}:${MINIO_API_HOST_PORT:-9000}:9000"
-      - "${MINIO_BIND_ADDR:-127.0.0.1}:${MINIO_CONSOLE_HOST_PORT:-9001}:9001"
+      - '${MINIO_BIND_ADDR:-127.0.0.1}:${MINIO_API_HOST_PORT:-9000}:9000'
+      - '${MINIO_BIND_ADDR:-127.0.0.1}:${MINIO_CONSOLE_HOST_PORT:-9001}:9001'
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:9000/minio/health/live || exit 1']
       interval: 10s
       timeout: 5s
       retries: 6
@@ -226,9 +226,15 @@ services:
     volumes:
       - gateway-config:/etc/lq-ai
     ports:
-      - "${GATEWAY_BIND_ADDR:-127.0.0.1}:${GATEWAY_HOST_PORT:-8001}:8001"
+      - '${GATEWAY_BIND_ADDR:-127.0.0.1}:${GATEWAY_HOST_PORT:-8001}:8001'
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health', timeout=2).status == 200 else 1)"]
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health', timeout=2).status == 200 else 1)"
+        ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -266,9 +272,15 @@ services:
       LQ_AI_BRIDGE_TOKEN: ${LQ_AI_BRIDGE_TOKEN:-}
       LQ_AI_BRIDGE_MASTER_KEY: ${LQ_AI_BRIDGE_MASTER_KEY:-}
     ports:
-      - "${API_BIND_ADDR:-127.0.0.1}:${API_HOST_PORT:-8000}:8000"
+      - '${API_BIND_ADDR:-127.0.0.1}:${API_HOST_PORT:-8000}:8000'
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=2).status == 200 else 1)"]
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=2).status == 200 else 1)"
+        ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -288,7 +300,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-lq_ai}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lq_ai}}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      LQ_AI_SKIP_MIGRATIONS: "1"
+      LQ_AI_SKIP_MIGRATIONS: '1'
       S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-lq_ai}}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD}}
@@ -305,9 +317,15 @@ services:
     volumes:
       - ingest-hf-cache:/root/.cache/huggingface
       - ingest-easyocr-cache:/root/.EasyOCR
-    command: ["arq", "app.workers.document_pipeline.WorkerSettings"]
+    command: ['arq', 'app.workers.document_pipeline.WorkerSettings']
     healthcheck:
-      test: ["CMD", "python", "-c", "import os; from redis import Redis; r = Redis.from_url(os.environ['REDIS_URL']); r.ping()"]
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import os; from redis import Redis; r = Redis.from_url(os.environ['REDIS_URL']); r.ping()"
+        ]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -325,14 +343,20 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-lq_ai}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lq_ai}}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      LQ_AI_SKIP_MIGRATIONS: "1"
+      LQ_AI_SKIP_MIGRATIONS: '1'
       LQ_AI_GATEWAY_URL: ${LQ_AI_GATEWAY_URL:-http://gateway:8001}
       LQ_AI_GATEWAY_KEY: ${LQ_AI_GATEWAY_KEY:?LQ_AI_GATEWAY_KEY is required}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LQ_AI_SKILLS_DIR: ${LQ_AI_SKILLS_DIR:-/skills}
-    command: ["arq", "app.workers.arq_setup.WorkerSettings"]
+    command: ['arq', 'app.workers.arq_setup.WorkerSettings']
     healthcheck:
-      test: ["CMD", "python", "-c", "import os; from redis import Redis; r = Redis.from_url(os.environ['REDIS_URL']); r.ping()"]
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import os; from redis import Redis; r = Redis.from_url(os.environ['REDIS_URL']); r.ping()"
+        ]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -347,12 +371,12 @@ services:
       ORIGIN: ${ORIGIN:-http://localhost:3000}
       LQ_API_INTERNAL_URL: http://api:8000
     ports:
-      - "127.0.0.1:${DONNA_WEB_HOST_PORT:-3000}:3000"
+      - '127.0.0.1:${DONNA_WEB_HOST_PORT:-3000}:3000'
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "node -e \"fetch('http://localhost:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3000/login'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
         ]
       interval: 10s
       timeout: 5s
@@ -464,7 +488,7 @@ Expected: all 8 (`postgres, redis, minio, gateway, api, ingest-worker, arq-worke
 
 ```bash
 # baked skills present in the running api/arq-worker (no mount)
-docker compose -p donna_release_test exec -T arq-worker sh -c 'ls /skills | wc -l' 
+docker compose -p donna_release_test exec -T arq-worker sh -c 'ls /skills | wc -l'
 # gateway seeded its runtime config from the baked example
 docker compose -p donna_release_test exec -T gateway sh -c 'ls -la /etc/lq-ai/gateway.yaml'
 # mint the admin fixture, then a real-browser login
@@ -503,17 +527,17 @@ name: Release container images
 
 on:
   push:
-    tags: ["v*"]
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       ref:
-        description: "Git ref (tag/branch/SHA) to build from"
+        description: 'Git ref (tag/branch/SHA) to build from'
         required: true
-        default: "main"
+        default: 'main'
       tag:
-        description: "Image tag to publish (e.g. v0.1.0)"
+        description: 'Image tag to publish (e.g. v0.1.0)'
         required: true
-        default: "latest"
+        default: 'latest'
 
 permissions:
   contents: read
@@ -671,7 +695,7 @@ Open **http://localhost:13002** and sign in with `admin@lq.ai` / `DonnaE2ePassw0
 
 Images are published from this repo to GHCR — `ghcr.io/legalquants/donna-web`, `donna-api`, and
 `donna-gateway` (multi-arch: Intel/AMD + Apple Silicon). This still needs a filled `.env`; it removes
-the *build*, not the *config*. For a fully free, no-cloud setup, leave the provider keys blank and run
+the _build_, not the _config_. For a fully free, no-cloud setup, leave the provider keys blank and run
 a local model via Ollama. Deploying beyond `localhost` still requires TLS in front of `donna-web` (see
 the note under "Run the full stack").
 
@@ -831,4 +855,7 @@ git push
 - [ ] `docker compose -f docker-compose.release.yml config` parses; `release.yml` lints; `npm run lint` fully green across the new `.md`/`.yml` files.
 - [ ] PR description states the one honest limit: the **multi-arch GHCR publish runs only in CI** on a tag/dispatch; to mint `v0.1.0` images, run the workflow via `workflow_dispatch` (ref `v0.1.0`, tag `v0.1.0`) or push a new tag.
 - [ ] Whole-branch review (Opus) → PR with a **merge commit**.
+
+```
+
 ```
