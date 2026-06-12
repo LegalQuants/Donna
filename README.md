@@ -57,6 +57,42 @@ cp .env.example .env
 #    so Donna can run ALONGSIDE a separate lq-ai dev stack on the default ports.
 ```
 
+## Quick install (pre-built images)
+
+The fastest way to run Donna — no clone, no submodules, no build. You need only **Docker + Compose v2**.
+
+```bash
+# 1. Get the release compose file and an env template
+curl -O https://raw.githubusercontent.com/LegalQuants/Donna/main/docker-compose.release.yml
+curl -o .env https://raw.githubusercontent.com/LegalQuants/Donna/main/.env.example
+
+# 2. Edit .env — set the required secrets (POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD,
+#    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). Pin a release with DONNA_IMAGE_TAG=v0.1.0
+#    (default: latest). Add ANTHROPIC_API_KEY / OPENAI_API_KEY for cloud inference,
+#    or leave them blank and use a local Ollama model (see Models in the app).
+
+# 3. Start the stack (pulls pre-built images from ghcr.io/legalquants)
+docker compose -f docker-compose.release.yml up -d
+```
+
+Then create a login-ready admin and sign in (same as below):
+
+```bash
+docker compose -f docker-compose.release.yml exec api \
+  python -m app.cli reset-admin-password \
+  --email admin@lq.ai --password 'DonnaE2ePassw0rd!' --no-force-change
+```
+
+Open **http://localhost:13002** and sign in with `admin@lq.ai` / `DonnaE2ePassw0rd!`.
+
+Images are published from this repo to GHCR — `ghcr.io/legalquants/donna-web`, `donna-api`, and
+`donna-gateway` (multi-arch: Intel/AMD + Apple Silicon). This still needs a filled `.env`; it removes
+the _build_, not the _config_. For a fully free, no-cloud setup, leave the provider keys blank and run
+a local model via Ollama. Deploying beyond `localhost` still requires TLS in front of `donna-web` (see
+the note under "Run the full stack").
+
+> **Prefer to build from source / develop on Donna?** Use the clone + build instructions below.
+
 ## Run the full stack
 
 Donna runs as its own compose project (`donna`) on **shifted host ports**, so it won't collide with a separate lq-ai dev stack running on the defaults:
