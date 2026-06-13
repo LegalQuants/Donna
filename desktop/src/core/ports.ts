@@ -11,7 +11,11 @@ export function resolvePorts(preferred: PortConfig, isFree: IsPortFree): PortCon
 	const taken = new Set<number>()
 	const pick = (want: number): number => {
 		let port = want
-		while (taken.has(port) || !isFree(port)) port++
+		// Fail fast rather than hang if a pathological predicate never reports a free port.
+		while (taken.has(port) || !isFree(port)) {
+			port++
+			if (port > want + 1000) throw new Error(`No free port found near ${want}`)
+		}
 		taken.add(port)
 		return port
 	}

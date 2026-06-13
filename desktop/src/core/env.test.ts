@@ -58,11 +58,11 @@ describe('renderEnv', () => {
 		expect(env.OLLAMA_BASE_URL).toBe('http://host.docker.internal:11434')
 	})
 
-	it('round-trips with no shell-unsafe unescaped characters in values', () => {
+	it('emits KEY=VALUE lines whose values carry no whitespace (no newline-injection)', () => {
 		const text = renderEnv(base)
 		for (const line of text.split('\n')) {
 			if (!line || line.startsWith('#')) continue
-			expect(line).toMatch(/^[A-Z0-9_]+=/)
+			expect(line).toMatch(/^[A-Z0-9_]+=\S*$/)
 		}
 	})
 })
