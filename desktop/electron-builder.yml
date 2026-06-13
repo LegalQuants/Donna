@@ -17,10 +17,11 @@ mac:
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
-  # Native electron-builder notarization: signs + notarizes + staples BOTH the .app
-  # and the .dmg, using APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID from the
-  # CI env. This is what makes the downloaded dmg open with no Gatekeeper warning.
+  # Native electron-builder notarization via notarytool. teamId MUST be in the config
+  # (electron-builder does not read APPLE_TEAM_ID from env for this); APPLE_ID and
+  # APPLE_APP_SPECIFIC_PASSWORD still come from the CI env. Signs + notarizes + staples.
   # Automatically skipped on unsigned local builds (no signing identity present).
-  notarize: true
+  notarize:
+    teamId: MC8BT9Z8GD
 dmg:
   title: Install Donna
