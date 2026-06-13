@@ -26,7 +26,13 @@ function createWindow(): void {
 	win = new BrowserWindow({
 		width: 1100,
 		height: 760,
-		webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false }
+		webPreferences: {
+			preload: join(__dirname, '../preload/index.js'),
+			// contextIsolation stays on (Electron default) — the security boundary.
+			// sandbox is false because electron-vite emits an ESM preload, which sandboxed
+			// preloads cannot load. Revisit under a real Electron run (Phase 1 verification).
+			sandbox: false
+		}
 	})
 	if (process.env.ELECTRON_RENDERER_URL) win.loadURL(process.env.ELECTRON_RENDERER_URL)
 	else win.loadFile(join(__dirname, '../renderer/index.html'))
@@ -48,6 +54,13 @@ ipcMain.handle('config:isFirstRun', () => loadConfig() === null)
 
 ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 	try {
+		if (
+			typeof input?.adminEmail !== 'string' ||
+			typeof input?.adminPassword !== 'string' ||
+			!input?.inference
+		) {
+			return { ok: false, error: 'Invalid setup input.' }
+		}
 		const cfg: LauncherConfig = {
 			secrets: generateSecrets(),
 			ports: resolvePorts(DEFAULT_PORTS, isPortFreeSync),
@@ -79,9 +92,10 @@ ipcMain.handle('stack:openDonna', () => {
 app.whenReady().then(() => {
 	createWindow()
 	// Tail donna-web logs into the renderer (best-effort; ignored before the stack exists).
-	streamDocker(logsArgs(composeBaseArgs(composeFilePath(), PROJECT_NAME), 'donna-web'), (line) =>
+	const stopLogTail = streamDocker(logsArgs(base(), 'donna-web'), (line) =>
 		win?.webContents.send('stack:log', line)
 	)
+	app.on('before-quit', stopLogTail)
 })
 
 app.on('window-all-closed', () => {

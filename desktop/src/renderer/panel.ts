@@ -37,8 +37,11 @@ export function renderPanel(root: HTMLElement): void {
 	document.getElementById('start')!.addEventListener('click', () => window.donna.start())
 	document.getElementById('stop')!.addEventListener('click', () => window.donna.stop())
 
+	const MAX_LOG_LINES = 2000
 	window.donna.onLog((line) => {
-		logsEl.textContent += line + '\n'
+		const lines = (logsEl.textContent + line + '\n').split('\n')
+		if (lines.length > MAX_LOG_LINES) lines.splice(0, lines.length - MAX_LOG_LINES)
+		logsEl.textContent = lines.join('\n')
 		logsEl.scrollTop = logsEl.scrollHeight
 	})
 	window.donna.onState((snap) => apply(snap as Snapshot))
