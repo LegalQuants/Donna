@@ -23,5 +23,11 @@ mac:
   # Automatically skipped on unsigned local builds (no signing identity present).
   notarize:
     teamId: MC8BT9Z8GD
+# electron-builder notarizes only the .app, then builds a bare .dmg. notarize-dmg.cjs
+# (afterAllArtifactBuild) notarizes + staples the dmg itself; dmg.sign signs it first
+# (Gatekeeper needs the dmg signed for the stapled ticket to be usable). Together this
+# makes the *downloaded* dmg open with no warning. Hook no-ops without Apple creds.
+afterAllArtifactBuild: build/notarize-dmg.cjs
 dmg:
+  sign: true
   title: Install Donna
