@@ -118,7 +118,9 @@ and two **wrappers** — `donna-api` (lq-ai api + baked `vendor/lq-ai/skills`) a
 untouched. `docker-compose.release.yml` is the image-only install stack — a **hand-maintained mirror**
 of the dev compose's service wiring; **re-sync it on a pin bump**. When LQ-AI publishes its own
 images, switch to Route 1 (see `docs/upstream-requests/lq-ai-publish-container-images.md`) and this
-maintenance goes away.
+maintenance goes away. The build also publishes two `*-base` packages (`donna-api-base`,
+`donna-gateway-base`) — the raw lq-ai images the wrappers build `FROM`; they're public so the
+multi-arch wrapper build can pull them.
 
 ## 6. The build workflow (how every feature here was shipped)
 

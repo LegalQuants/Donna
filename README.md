@@ -39,7 +39,7 @@ curl -o .env https://raw.githubusercontent.com/LegalQuants/Donna/main/.env.examp
 # 2. Edit .env — set the required secrets (POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD,
 #    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). Pin a release with DONNA_IMAGE_TAG=v0.1.0
 #    (default: latest). Add ANTHROPIC_API_KEY / OPENAI_API_KEY for cloud inference,
-#    or leave them blank and use a local Ollama model (see Models in the app).
+#    or leave them blank and run Ollama on the host (set OLLAMA_BASE_URL=http://host.docker.internal:11434).
 
 # 3. Start the stack (pulls pre-built images from ghcr.io/legalquants)
 docker compose -f docker-compose.release.yml up -d
@@ -57,8 +57,7 @@ Open **http://localhost:13002** — or whatever `DONNA_WEB_HOST_PORT` you set in
 
 Images are published from this repo to GHCR — `ghcr.io/legalquants/donna-web`, `donna-api`, and
 `donna-gateway` (multi-arch: Intel/AMD + Apple Silicon). This still needs a filled `.env`; it removes
-the _build_, not the _config_. For a fully free, no-cloud setup, leave the provider keys blank and run
-a local model via Ollama. Deploying beyond `localhost` still requires TLS in front of `donna-web` (see
+the _build_, not the _config_. For a fully free, no-cloud setup, leave the provider keys blank and run **Ollama on your host**, then set `OLLAMA_BASE_URL=http://host.docker.internal:11434` in `.env` (the pre-built stack does not bundle an Ollama container) — then pick a local model in the app's Models settings. Deploying beyond `localhost` still requires TLS in front of `donna-web` (see
 the note under "Run the full stack").
 
 > **Prefer to build from source / develop on Donna?** Use the clone + build instructions below.
