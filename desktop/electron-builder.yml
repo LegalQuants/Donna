@@ -1,0 +1,23 @@
+appId: ai.lq.donna.desktop
+productName: Donna
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+extraResources:
+  - from: resources/docker-compose.release.yml
+    to: docker-compose.release.yml
+mac:
+  category: public.app-category.productivity
+  target:
+    - dmg
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  notarize: false
+afterSign: build/notarize.cjs
+dmg:
+  title: Install Donna
