@@ -17,11 +17,10 @@ mac:
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
-  notarize: false
-# afterSign notarizes+staples the .app; afterAllArtifactBuild notarizes+staples the
-# final .dmg so opening the DMG itself also passes Gatekeeper (no "Apple can't check
-# it for malware" warning on download). Both no-op locally without Apple creds.
-afterSign: build/notarize.cjs
-afterAllArtifactBuild: build/notarize-dmg.cjs
+  # Native electron-builder notarization: signs + notarizes + staples BOTH the .app
+  # and the .dmg, using APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID from the
+  # CI env. This is what makes the downloaded dmg open with no Gatekeeper warning.
+  # Automatically skipped on unsigned local builds (no signing identity present).
+  notarize: true
 dmg:
   title: Install Donna
