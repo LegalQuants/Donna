@@ -35,11 +35,14 @@ jobs:
 
       - name: Resolve image tag
         id: meta
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "$EVENT_NAME" = "push" ]; then
             echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: docker/setup-qemu-action@v3
@@ -51,6 +54,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Base images are tagged with the resolved version only (not :latest) —
+      # they exist solely as the FROM base for the wrappers below.
       - name: Build & push donna-api-base
         uses: docker/build-push-action@v6
         with:
