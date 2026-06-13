@@ -29,7 +29,16 @@ The browser talks only to Donna's SvelteKit server (a **backend-for-frontend**).
 
 ## Quick install (pre-built images)
 
-The fastest way to run Donna — no clone, no submodules, no build. You need only **Docker + Compose v2**.
+### Option A — Desktop app (macOS, easiest)
+
+Download **Donna.dmg** from the [latest desktop release](https://github.com/LegalQuants/Donna/releases),
+drag it to Applications, and open it. A one-time wizard creates your login and starts the engine
+(Docker required — the app links you to Docker Desktop if it's not installed). No terminal, no
+`.env`. Launcher source lives in [`desktop/`](desktop/).
+
+### Option B — Docker Compose (any platform with Docker)
+
+The fastest way to run Donna from the command line — no clone, no submodules, no build. You need only **Docker + Compose v2**.
 
 ```bash
 # 1. Get the release compose file and an env template
