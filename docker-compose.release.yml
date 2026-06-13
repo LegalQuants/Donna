@@ -6,7 +6,9 @@
 #   # edit .env: set the required secrets (and optionally DONNA_IMAGE_TAG=v0.1.0)
 #   docker compose -f docker-compose.release.yml up -d
 #
-# Images are published from github.com/LegalQuants/Donna to ghcr.io/legalquants.
+# Images are published from github.com/LegalQuants/Donna to ghcr.io/legalquants by
+# default. To pull from a different namespace (e.g. a fork/mirror that re-published
+# them), set DONNA_IMAGE_NAMESPACE in .env (default: legalquants).
 # This file is a hand-maintained mirror of vendor/lq-ai/docker-compose.yml +
 # the donna-web service; re-sync it when the lq-ai pin bumps. (See CLAUDE.md.)
 #
@@ -66,7 +68,7 @@ services:
       retries: 6
 
   gateway:
-    image: ghcr.io/legalquants/donna-gateway:${DONNA_IMAGE_TAG:-latest}
+    image: ghcr.io/${DONNA_IMAGE_NAMESPACE:-legalquants}/donna-gateway:${DONNA_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -110,7 +112,7 @@ services:
       retries: 10
 
   api:
-    image: ghcr.io/legalquants/donna-api:${DONNA_IMAGE_TAG:-latest}
+    image: ghcr.io/${DONNA_IMAGE_NAMESPACE:-legalquants}/donna-api:${DONNA_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -156,7 +158,7 @@ services:
       retries: 10
 
   ingest-worker:
-    image: ghcr.io/legalquants/donna-api:${DONNA_IMAGE_TAG:-latest}
+    image: ghcr.io/${DONNA_IMAGE_NAMESPACE:-legalquants}/donna-api:${DONNA_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -201,7 +203,7 @@ services:
       retries: 6
 
   arq-worker:
-    image: ghcr.io/legalquants/donna-api:${DONNA_IMAGE_TAG:-latest}
+    image: ghcr.io/${DONNA_IMAGE_NAMESPACE:-legalquants}/donna-api:${DONNA_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -232,7 +234,7 @@ services:
       retries: 6
 
   donna-web:
-    image: ghcr.io/legalquants/donna-web:${DONNA_IMAGE_TAG:-latest}
+    image: ghcr.io/${DONNA_IMAGE_NAMESPACE:-legalquants}/donna-web:${DONNA_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       api:

@@ -13,6 +13,10 @@ on:
         description: 'Image tag to publish (e.g. v0.1.0)'
         required: true
         default: 'latest'
+      namespace:
+        description: 'GHCR namespace/org to publish under (must match the repo owner whose GITHUB_TOKEN runs this)'
+        required: false
+        default: 'legalquants'
 
 permissions:
   contents: read
@@ -20,7 +24,10 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  NAMESPACE: legalquants
+  # Defaults to legalquants; override via the workflow_dispatch `namespace` input
+  # (e.g. publish under a namespace you own — run this from that org's fork/mirror
+  # so GITHUB_TOKEN has packages:write there). Tag-push events use the default.
+  NAMESPACE: ${{ github.event.inputs.namespace || 'legalquants' }}
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
