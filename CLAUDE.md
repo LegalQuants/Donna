@@ -122,6 +122,14 @@ maintenance goes away. The build also publishes two `*-base` packages (`donna-ap
 `donna-gateway-base`) — the raw lq-ai images the wrappers build `FROM`; they're public so the
 multi-arch wrapper build can pull them.
 
+**Desktop launcher (`desktop/`).** A macOS Electron app that orchestrates
+`docker-compose.release.yml` for non-technical users — generates secrets, writes a chmod-600 `.env`
+in app data, runs the stack + admin fixture, and opens `localhost:13002` in a native window. It
+**wraps** the release compose and the published images; it never forks `donna-web` or the backend
+(§1/§8 still hold). A pure, unit-tested core (`desktop/src/core/`) holds all logic; a thin Electron
+layer wires it. Built/signed/notarized by `.github/workflows/desktop-release.yml`. Phase 1 =
+detect-Docker; bundled engine is a later phase. Decision: `docs/decisions/desktop-launcher.md`.
+
 ## 6. The build workflow (how every feature here was shipped)
 
 Donna is built with the **superpowers** skill loop. For any non-trivial change, follow it:
