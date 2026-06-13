@@ -1,0 +1,43 @@
+name: Desktop launcher (macOS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag for the .dmg (e.g. desktop-v0.1.0)'
+        required: true
+  push:
+    tags: ['desktop-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Unit tests (core)
+        run: npm test
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build, sign, notarize .dmg
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run dist
+      - name: Publish .dmg to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: desktop/dist/*.dmg
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
