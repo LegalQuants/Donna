@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import { composeBaseArgs, logsArgs } from '../core/compose'
 import { resolvePorts } from '../core/ports'
@@ -27,10 +27,10 @@ function createWindow(): void {
 		width: 1100,
 		height: 760,
 		webPreferences: {
-			preload: join(__dirname, '../preload/index.js'),
+			preload: join(__dirname, '../preload/index.mjs'),
 			// contextIsolation stays on (Electron default) — the security boundary.
-			// sandbox is false because electron-vite emits an ESM preload, which sandboxed
-			// preloads cannot load. Revisit under a real Electron run (Phase 1 verification).
+			// sandbox is false because electron-vite emits an ESM preload (.mjs), which
+			// sandboxed preloads cannot load. Revisit under a real Electron run (Task 13).
 			sandbox: false
 		}
 	})
@@ -45,6 +45,8 @@ async function waitHealthy(b: string[], timeoutMs = 600_000): Promise<void> {
 		win?.webContents.send('stack:state', snap)
 		if (snap.state === 'HEALTHY') return
 		if (snap.state === 'FAILED') throw new Error('Stack failed to start; see logs.')
+		if (snap.state === 'NO_ENGINE')
+			throw new Error(snap.engineMessage ?? "Docker isn't running. Start Docker Desktop and try again.")
 		await new Promise((r) => setTimeout(r, 4000))
 	}
 	throw new Error('Timed out waiting for the stack to become healthy.')
@@ -88,6 +90,9 @@ ipcMain.handle('stack:openDonna', () => {
 	const port = cfg?.ports.donnaWeb ?? DEFAULT_PORTS.donnaWeb
 	win?.loadURL(`http://localhost:${port}`)
 })
+ipcMain.handle('engine:installDocker', () =>
+	shell.openExternal('https://www.docker.com/products/docker-desktop/')
+)
 
 app.whenReady().then(() => {
 	createWindow()

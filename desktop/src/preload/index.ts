@@ -9,6 +9,7 @@ const api = {
 	start: (): Promise<unknown> => ipcRenderer.invoke('stack:start'),
 	stop: (): Promise<unknown> => ipcRenderer.invoke('stack:stop'),
 	openDonna: (): Promise<void> => ipcRenderer.invoke('stack:openDonna'),
+	installDocker: (): Promise<void> => ipcRenderer.invoke('engine:installDocker'),
 	onLog: (cb: (line: string) => void): void => {
 		ipcRenderer.on('stack:log', (_e, line: string) => cb(line))
 	},
