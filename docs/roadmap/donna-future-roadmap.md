@@ -48,6 +48,12 @@ the consuming slice (workflow in [../../CLAUDE.md](../../CLAUDE.md) §8).
   the wrapper images + their CI and point the release compose at the upstream images — removing
   Donna's only backend-image maintenance. This is the cleaner long-term division of ownership; the
   hand-off instructions live in that upstream doc.
+- **Desktop launcher (`desktop/`).** Phase 1 shipped: signed/notarized macOS `.dmg` that wraps the
+  release compose (detect-Docker, first-run wizard, control panel). **Phase 2** — bundle/manage a
+  Linux container engine (Colima or Podman) so Docker is no longer a prerequisite (true
+  double-click). **Phase 3** — `electron-updater` auto-update, surface available image releases from
+  GHCR, resource/disk controls for the ML worker, menu-bar UX. **Windows** build (WSL2 engine
+  backend) is a follow-up. Design: `docs/superpowers/plans/20260613desktoplauncherappdesign.md`.
 
 ## Buildable now (no backend dependency)
 
