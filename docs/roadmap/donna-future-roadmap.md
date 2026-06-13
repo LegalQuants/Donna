@@ -37,6 +37,18 @@ the consuming slice (workflow in [../../CLAUDE.md](../../CLAUDE.md) §8).
   human-in-the-loop pause/resume mid-run). If upstream adds a `needs_input` status + a resume
   endpoint, Donna's receipt/poll chain can surface an approval step.
 
+## Distribution / container images
+
+- **Pre-built images shipped (Route B, v0.1.0).** Donna self-publishes `donna-web`, `donna-api`
+  (skills baked), and `donna-gateway` (config baked) to `ghcr.io/legalquants/*` via
+  `.github/workflows/release.yml`, with a `docker-compose.release.yml` for one-command install. The
+  `api`/`gateway` images are thin Donna wrappers over images built from the pinned `lq-ai` submodule.
+- **Route 1 — consume upstream images (future).** When LQ-AI publishes its own `api`/`gateway` images
+  to GHCR (ask filed at `docs/upstream-requests/lq-ai-publish-container-images.md`), Donna should drop
+  the wrapper images + their CI and point the release compose at the upstream images — removing
+  Donna's only backend-image maintenance. This is the cleaner long-term division of ownership; the
+  hand-off instructions live in that upstream doc.
+
 ## Buildable now (no backend dependency)
 
 - **Automations polish** (cosmetic, tracked from PR #72 review): the precedents list caps at 50 with

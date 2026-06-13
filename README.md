@@ -27,10 +27,45 @@ Donna is a standalone SvelteKit app that talks to the lq-ai backend only through
 
 The browser talks only to Donna's SvelteKit server (a **backend-for-frontend**). The SvelteKit server holds the lq-ai JWT access + refresh tokens in **httpOnly cookies**, attaches `Authorization: Bearer` when proxying to the lq-ai `api`, and transparently refreshes on `401`. This means no CORS, and the JWT never reaches client JavaScript. The lq-ai backend is vendored at `vendor/lq-ai` (pinned submodule) and brought up by this repo's `docker-compose.yml`, which `include`s lq-ai's compose and adds Donna's web service (`donna-web`).
 
+## Quick install (pre-built images)
+
+The fastest way to run Donna — no clone, no submodules, no build. You need only **Docker + Compose v2**.
+
+```bash
+# 1. Get the release compose file and an env template
+curl -O https://raw.githubusercontent.com/LegalQuants/Donna/main/docker-compose.release.yml
+curl -o .env https://raw.githubusercontent.com/LegalQuants/Donna/main/.env.example
+
+# 2. Edit .env — set the required secrets (POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD,
+#    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). Pin a release with DONNA_IMAGE_TAG=v0.1.0
+#    (default: latest). Add ANTHROPIC_API_KEY / OPENAI_API_KEY for cloud inference,
+#    or leave them blank and run Ollama on the host (set OLLAMA_BASE_URL=http://host.docker.internal:11434).
+
+# 3. Start the stack (pulls pre-built images from ghcr.io/legalquants)
+docker compose -f docker-compose.release.yml up -d
+```
+
+Then create a login-ready admin and sign in (same as below):
+
+```bash
+docker compose -f docker-compose.release.yml exec api \
+  python -m app.cli reset-admin-password \
+  --email admin@lq.ai --password 'DonnaE2ePassw0rd!' --no-force-change
+```
+
+Open **http://localhost:13002** — or whatever `DONNA_WEB_HOST_PORT` you set in `.env` (`13002` is the default in `.env.example`) — and sign in with `admin@lq.ai` / `DonnaE2ePassw0rd!`.
+
+Images are published from this repo to GHCR — `ghcr.io/legalquants/donna-web`, `donna-api`, and
+`donna-gateway` (multi-arch: Intel/AMD + Apple Silicon). This still needs a filled `.env`; it removes
+the _build_, not the _config_. For a fully free, no-cloud setup, leave the provider keys blank and run **Ollama on your host**, then set `OLLAMA_BASE_URL=http://host.docker.internal:11434` in `.env` (the pre-built stack does not bundle an Ollama container) — then pick a local model in the app's Models settings. Deploying beyond `localhost` still requires TLS in front of `donna-web` (see
+the note under "Run the full stack").
+
+> **Prefer to build from source / develop on Donna?** Use the clone + build instructions below.
+
 ## Prerequisites
 
 - **Docker** + Docker Compose v2 (for the bundled backend).
-- **Node 22+** (for local dev / tooling).
+- **Node 22+** — only for the build-from-source path below (local dev / tooling). The Quick install above needs just Docker.
 
 ## Setup
 
