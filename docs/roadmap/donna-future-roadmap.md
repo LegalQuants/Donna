@@ -48,12 +48,28 @@ the consuming slice (workflow in [../../CLAUDE.md](../../CLAUDE.md) §8).
   the wrapper images + their CI and point the release compose at the upstream images — removing
   Donna's only backend-image maintenance. This is the cleaner long-term division of ownership; the
   hand-off instructions live in that upstream doc.
-- **Desktop launcher (`desktop/`).** Phase 1 shipped: signed/notarized macOS `.dmg` that wraps the
-  release compose (detect-Docker, first-run wizard, control panel). **Phase 2** — bundle/manage a
-  Linux container engine (Colima or Podman) so Docker is no longer a prerequisite (true
-  double-click). **Phase 3** — `electron-updater` auto-update, surface available image releases from
-  GHCR, resource/disk controls for the ML worker, menu-bar UX. **Windows** build (WSL2 engine
-  backend) is a follow-up. Design: `docs/superpowers/plans/20260613desktoplauncherappdesign.md`.
+- **Desktop launcher (`desktop/`).** **Phase 1 SHIPPED & verified live (2026-06-13)** —
+  signed/notarized macOS `.dmg` (Developer ID: Tucuxi, Inc.) on the `desktop-v0.1.0` release that wraps
+  the release compose: detect-Docker, first-run wizard (set a password for the `admin@lq.ai` login),
+  control panel, isolated `donna-desktop` compose project. Illustrated install guide:
+  [`docs/INSTALL-MAC.md`](../INSTALL-MAC.md); design:
+  `docs/superpowers/plans/20260613desktoplauncherappdesign.md`; live evidence: `desktop/VERIFICATION.md`.
+  - **Phase 2 — bundled engine.** Bundle/manage a Linux container engine (Colima or Podman) so Docker
+    is no longer a prerequisite (the true double-click experience).
+  - **Phase 3 — polish.** `electron-updater` auto-update + surface available image releases from GHCR;
+    resource/disk controls for the ML worker; menu-bar UX. **Near-term follow-ups:** a
+    **Reset / Uninstall** control-panel action (clears app config **and** runs `down -v` — deleting
+    config alone leaves volumes whose old Postgres password collides with a re-run's fresh secrets); an
+    **x64 / universal** build for Intel Macs (arm64-only today); and control-panel live progress
+    (the wizard already has it).
+  - **Windows (defined follow-up phase).** The pure core + Electron shell are already cross-platform,
+    so this is a focused phase, not a rewrite. Work: an electron-builder **NSIS installer** + a
+    `windows-latest` CI job; a Windows **code-signing certificate** (OV/EV from a CA, or Azure Trusted
+    Signing) to avoid SmartScreen — **the long pole** (procurement + identity verification, the
+    Windows analog of Apple notarization); a Windows branch of the detect-Docker probe (Docker Desktop
+    needs WSL2/virtualization enabled); and minor glue (`chmod 600` is a Unix no-op on Windows; path
+    details). The bundled-engine path on Windows = manage a WSL2 distro or Podman machine
+    (Phase-2-equivalent, larger). Slots into the same `desktop/` project.
 
 ## Buildable now (no backend dependency)
 

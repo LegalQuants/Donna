@@ -31,10 +31,14 @@ The browser talks only to Donna's SvelteKit server (a **backend-for-frontend**).
 
 ### Option A — Desktop app (macOS, easiest)
 
-Download **Donna.dmg** from the [latest desktop release](https://github.com/LegalQuants/Donna/releases),
-drag it to Applications, and open it. A one-time wizard creates your login and starts the engine
-(Docker required — the app links you to Docker Desktop if it's not installed). No terminal, no
-`.env`. Launcher source lives in [`desktop/`](desktop/).
+Download **`Donna-0.1.0-arm64.dmg`** from the
+[latest desktop release](https://github.com/LegalQuants/Donna/releases/tag/desktop-v0.1.0), drag it to
+Applications, and open it (signed + notarized — no Gatekeeper warning). A one-time wizard sets your
+password and starts the engine; then sign in and you're working. No terminal, no GitHub, no `.env`.
+Docker Desktop is the one prerequisite — the app links you to it if it's not installed.
+
+📖 **Step‑by‑step with screenshots: [docs/INSTALL-MAC.md](docs/INSTALL-MAC.md).** Launcher source:
+[`desktop/`](desktop/). *(Apple Silicon today; an Intel build is on the roadmap.)*
 
 ### Option B — Docker Compose (any platform with Docker)
 
