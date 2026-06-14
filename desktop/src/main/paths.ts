@@ -19,4 +19,7 @@ export const composeFilePath = (): string =>
 		? join(process.resourcesPath, 'docker-compose.release.yml')
 		: join(app.getAppPath(), '..', 'docker-compose.release.yml')
 
-export const PROJECT_NAME = 'donna'
+// Distinct from the build-from-source / raw-lq-ai dev stacks (which use project "donna")
+// so the launcher gets its OWN isolated volumes and never collides on volumes/ports.
+// `-p` overrides the compose file's top-level `name:`.
+export const PROJECT_NAME = 'donna-desktop'

@@ -70,12 +70,15 @@ ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 			inference: input.inference,
 			adminEmail: input.adminEmail
 		}
-		saveConfig(cfg)
+		// Write the .env (needed before startStack) but DON'T persist the config blob yet —
+		// only mark the wizard complete after the stack is healthy and the admin exists, so a
+		// failed first run re-shows the wizard instead of stranding a half-configured install.
 		writeEnvFile(cfg)
 		const b = base()
 		await startStack(b, process.env)
 		await waitHealthy(b)
 		await runAdminFixture(b, input.adminEmail, input.adminPassword)
+		saveConfig(cfg)
 		return { ok: true }
 	} catch (err) {
 		return { ok: false, error: String(err) }
