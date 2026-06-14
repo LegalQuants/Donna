@@ -1,5 +1,5 @@
 import { safeStorage } from 'electron'
-import { writeFileSync, readFileSync, existsSync, chmodSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync, chmodSync, rmSync } from 'node:fs'
 import { configPath, envPath } from './paths'
 import { renderEnv } from '../core/env'
 import type { LauncherConfig } from '../core/config'
@@ -21,6 +21,13 @@ export function loadConfig(): LauncherConfig | null {
 	const blob = readFileSync(configPath())
 	const json = safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(blob) : blob.toString('utf8')
 	return JSON.parse(json) as LauncherConfig
+}
+
+/** Delete the persisted config + .env so the next launch re-runs the first-run wizard. */
+export function clearConfig(): void {
+	for (const p of [configPath(), envPath()]) {
+		if (existsSync(p)) rmSync(p)
+	}
 }
 
 /** Write the chmod-600 .env the compose command reads, into the app data dir. */

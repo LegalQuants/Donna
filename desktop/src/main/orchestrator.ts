@@ -1,5 +1,5 @@
 import { parseEngineProbe } from '../core/engine'
-import { parseComposePs, psArgs, upArgs, downArgs, adminFixtureArgs } from '../core/compose'
+import { parseComposePs, psArgs, upArgs, downArgs, downVArgs, adminFixtureArgs } from '../core/compose'
 import { deriveLauncherState } from '../core/state'
 import type { LauncherState, ServiceStatus } from '../core/types'
 import { runDocker, type RunResult } from './runner'
@@ -28,6 +28,9 @@ export const startStack = (base: string[], env: NodeJS.ProcessEnv): Promise<RunR
 	runDocker(upArgs(base), env)
 
 export const stopStack = (base: string[]): Promise<RunResult> => runDocker(downArgs(base))
+
+/** Reset: stop the stack AND remove its volumes (wipes all data) for a fresh setup. */
+export const resetStack = (base: string[]): Promise<RunResult> => runDocker(downVArgs(base))
 
 export const runAdminFixture = (
 	base: string[],

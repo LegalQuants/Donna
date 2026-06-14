@@ -6,8 +6,9 @@ terminal, no GitHub, no config files**. This guide walks through it with picture
 > **What you need**
 > - A **Mac with Apple Silicon** (M1/M2/M3/M4). *(An Intel build is coming.)*
 > - **Docker Desktop** installed and running — Donna uses it to run its private engine on your
->   machine. Get it free at [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
->   (If Docker isn't installed, Donna will tell you and link you to it.)
+>   machine. **[Download Docker Desktop for Apple Silicon →](https://desktop.docker.com/mac/main/arm64/Docker.dmg)**
+>   (or browse [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)).
+>   If Docker isn't installed, Donna links you straight to it.
 > - **~12 GB of free disk** for the engine images, and an internet connection for the first run.
 
 Everything Donna does runs **locally on your Mac**. Your documents never leave your computer unless
@@ -44,7 +45,8 @@ The first time you open Donna, a short **Welcome** screen appears. Two quick cho
 - **Use a cloud API key (recommended)** — paste an Anthropic API key for the best quality and speed.
   *(Optional — you can leave it blank and add a key later in Settings.)*
 - **Run fully local with Ollama** — keep everything on your Mac with no cloud at all. This needs
-  [Ollama](https://ollama.com) installed and running with a model pulled (e.g. `ollama pull qwen2.5`).
+  **[Ollama](https://ollama.com/download)** installed and running with a model pulled (e.g.
+  `ollama pull qwen2.5`).
 
 **2. Set your password** — your login is **`admin@lq.ai`** (shown on screen); choose a password of at
 least 12 characters. You can change the email and password later in **Settings → Account**.
@@ -85,6 +87,8 @@ The Donna app window is your **control panel**:
 - **Start / Stop** — start or stop the engine. Stopping frees up your Mac's resources; your data is
   kept and is there next time you Start.
 - **Logs** — a live view of what the engine is doing, handy if something looks stuck.
+- **Reset…** — erases all Donna data on this Mac and re‑runs first‑time setup (two clicks to confirm).
+  Use this only if you want to start completely fresh.
 
 You can quit the app when you're done. Re‑opening it goes straight to the control panel — the setup
 wizard only runs the very first time.
