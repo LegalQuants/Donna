@@ -5,9 +5,16 @@ import { resolvePorts } from '../core/ports'
 import { generateSecrets } from '../core/secrets'
 import { DEFAULT_PORTS } from '../core/types'
 import type { InferenceChoice, LauncherConfig } from '../core/config'
-import { loadConfig, saveConfig, writeEnvFile } from './store'
+import { loadConfig, saveConfig, writeEnvFile, clearConfig } from './store'
 import { composeFilePath, envPath, PROJECT_NAME } from './paths'
-import { snapshot, startStack, stopStack, runAdminFixture, type StackSnapshot } from './orchestrator'
+import {
+	snapshot,
+	startStack,
+	stopStack,
+	resetStack,
+	runAdminFixture,
+	type StackSnapshot
+} from './orchestrator'
 import { streamDocker } from './runner'
 import { isPortFreeSync } from './netcheck'
 
@@ -98,8 +105,20 @@ ipcMain.handle('stack:openDonna', () => {
 	const port = cfg?.ports.donnaWeb ?? DEFAULT_PORTS.donnaWeb
 	win?.loadURL(`http://localhost:${port}`)
 })
+// Reset: stop the stack, remove its volumes (down -v), and delete the stored config/.env
+// so the next launch re-runs the first-run wizard. down -v runs while .env still exists.
+ipcMain.handle('stack:reset', async () => {
+	try {
+		await resetStack(base())
+		clearConfig()
+		return { ok: true }
+	} catch (err) {
+		return { ok: false, error: String(err) }
+	}
+})
 ipcMain.handle('engine:installDocker', () =>
-	shell.openExternal('https://www.docker.com/products/docker-desktop/')
+	// Direct Apple-Silicon Docker Desktop download (this launcher is arm64-only).
+	shell.openExternal('https://desktop.docker.com/mac/main/arm64/Docker.dmg')
 )
 
 app.whenReady().then(() => {

@@ -8,6 +8,8 @@ export function composeBaseArgs(composeFile: string, projectName: string): strin
 export const psArgs = (base: string[]): string[] => [...base, 'ps', '--format', 'json']
 export const upArgs = (base: string[]): string[] => [...base, 'up', '-d']
 export const downArgs = (base: string[]): string[] => [...base, 'down']
+/** `down -v` — also removes volumes. Used by Reset to wipe all data for a fresh setup. */
+export const downVArgs = (base: string[]): string[] => [...base, 'down', '-v']
 export const logsArgs = (base: string[], service: string): string[] => [
 	...base,
 	'logs',
