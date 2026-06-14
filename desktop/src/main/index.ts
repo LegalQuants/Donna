@@ -77,7 +77,12 @@ ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 		const b = base()
 		await startStack(b, process.env)
 		await waitHealthy(b)
-		await runAdminFixture(b, input.adminEmail, input.adminPassword)
+		const admin = await runAdminFixture(b, input.adminEmail, input.adminPassword)
+		if (admin.code !== 0) {
+			throw new Error(
+				`Could not set up the login: ${admin.stderr.trim() || admin.stdout.trim() || 'admin fixture failed'}`
+			)
+		}
 		saveConfig(cfg)
 		return { ok: true }
 	} catch (err) {
