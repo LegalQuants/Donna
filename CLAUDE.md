@@ -129,6 +129,9 @@ in app data, runs the stack + admin fixture, and opens `localhost:13002` in a na
 (§1/§8 still hold). A pure, unit-tested core (`desktop/src/core/`) holds all logic; a thin Electron
 layer wires it. Built/signed/notarized by `.github/workflows/desktop-release.yml`. Phase 1 =
 detect-Docker; bundled engine is a later phase. Decision: `docs/decisions/desktop-launcher.md`.
+**To ship a release (images + the signed Mac app) — including the hard-won signing/notarization recipe
+and the first-real-launch gotchas — read `docs/BUILD-AND-RELEASE.md` first.** A self-contained playbook
+to give LQ-AI the same treatment is at `docs/upstream-requests/lq-ai-macos-launcher-playbook.md`.
 
 ## 6. The build workflow (how every feature here was shipped)
 
