@@ -25,15 +25,26 @@ export function renderPanel(root: HTMLElement): void {
 		</div>
 		<h3>Logs</h3>
 		<div id="logs"></div>
+		<p style="margin-top:24px">
+			<button id="reset" class="secondary">Reset…</button>
+			<span id="resethint" style="color:#555; margin-left:8px"></span>
+		</p>
 	`
 	const stateEl = document.getElementById('state')!
 	const logsEl = document.getElementById('logs')!
 	const open = document.getElementById('open') as HTMLButtonElement
 	const msgEl = document.getElementById('msg')!
 	const install = document.getElementById('install') as HTMLButtonElement
+	const reset = document.getElementById('reset') as HTMLButtonElement
+	const resetHint = document.getElementById('resethint')!
 
 	const apply = (snap: Snapshot): void => {
-		stateEl.textContent = LABELS[snap.state] ?? snap.state
+		let label = LABELS[snap.state] ?? snap.state
+		if (snap.state === 'STACK_STARTING') {
+			const healthy = (snap.services ?? []).filter((s) => s.health === 'healthy').length
+			label = `Starting… ${healthy}/8 services ready`
+		}
+		stateEl.textContent = label
 		open.disabled = snap.state !== 'HEALTHY'
 		const noEngine = snap.state === 'NO_ENGINE'
 		msgEl.textContent = noEngine ? (snap.engineMessage ?? '') : ''
@@ -41,9 +52,34 @@ export function renderPanel(root: HTMLElement): void {
 	}
 
 	document.getElementById('open')!.addEventListener('click', () => window.donna.openDonna())
-	document.getElementById('start')!.addEventListener('click', () => window.donna.start())
-	document.getElementById('stop')!.addEventListener('click', () => window.donna.stop())
+	document.getElementById('start')!.addEventListener('click', async () => {
+		await window.donna.start()
+		tick()
+	})
+	document.getElementById('stop')!.addEventListener('click', async () => {
+		await window.donna.stop()
+		tick()
+	})
 	install.addEventListener('click', () => window.donna.installDocker())
+
+	// Reset wipes the stack + all data and re-runs first-run setup — two-click confirm.
+	let resetArmed = false
+	reset.addEventListener('click', async () => {
+		if (!resetArmed) {
+			resetArmed = true
+			resetHint.textContent = 'This erases all Donna data on this Mac. Click again to confirm.'
+			return
+		}
+		reset.disabled = true
+		resetHint.textContent = 'Resetting…'
+		const res = await window.donna.reset()
+		if (res.ok) window.location.reload()
+		else {
+			reset.disabled = false
+			resetArmed = false
+			resetHint.textContent = res.error ?? 'Reset failed.'
+		}
+	})
 
 	const MAX_LOG_LINES = 2000
 	window.donna.onLog((line) => {

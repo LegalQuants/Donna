@@ -5,6 +5,7 @@ import {
 	psArgs,
 	upArgs,
 	downArgs,
+	downVArgs,
 	logsArgs,
 	adminFixtureArgs
 } from './compose'
@@ -32,6 +33,9 @@ describe('argv builders', () => {
 	})
 	it('down keeps volumes (no -v) so user data survives a stop', () => {
 		expect(downArgs(base)).toEqual([...base, 'down'])
+	})
+	it('down -v also removes volumes (Reset)', () => {
+		expect(downVArgs(base)).toEqual([...base, 'down', '-v'])
 	})
 	it('logs follow a single service', () => {
 		expect(logsArgs(base, 'donna-web')).toEqual([...base, 'logs', '-f', '--tail', '200', 'donna-web'])
