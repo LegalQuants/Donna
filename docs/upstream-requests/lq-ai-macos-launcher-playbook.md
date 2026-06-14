@@ -93,7 +93,23 @@ This took the most iterations on Donna. electron-builder (24.13) does **not** pr
 Gatekeeper-passing DMG out of the box. *(For Donna we signed as "Tucuxi, Inc."; LQ-AI can use the same
 Apple Developer team or its own — the mechanics are identical.)*
 
+### Fastest path: reuse the existing Developer ID (already on the build Mac)
+The Donna build Mac already has a **Developer ID Application** cert **with its private key** in the
+login Keychain — team **Tucuxi, Inc. (`MC8BT9Z8GD`)**, valid to **2030**. *(Team ID + org name are not
+secret — they're embedded in every notarized artifact.)* LQ-AI can sign under this same identity; the
+**only** new thing you need is a fresh app-specific password. From that Mac:
+```bash
+security find-identity -v -p codesigning | grep "Developer ID Application"   # confirms it's present
+# Keychain Access → My Certificates → right-click "Developer ID Application: Tucuxi, Inc." → Export → .p12
+base64 -i cert.p12 -o cert.b64                                               # → MAC_CSC_LINK
+```
+Then set the 5 secrets on the **LQ-AI** repo (below), with `APPLE_TEAM_ID=MC8BT9Z8GD` and a **new**
+app-specific password. *(Prefer to ship LQ-AI under a LegalQuants identity instead of Tucuxi? Create a
+separate "Developer ID Application" cert under that account and use its team ID — the steps are
+identical.)* The cert/key/passwords never go in the repo; only the team ID does.
+
 ### One-time setup → 5 GitHub Actions secrets
+*(Skip steps 1–2 if reusing the existing cert above — go straight to the app-specific password + secrets.)*
 1. **Developer ID Application certificate** (the only type for non-App-Store distribution — *not*
    "Apple Development", *not* "Developer ID Installer"). Xcode → Settings → Accounts → Manage
    Certificates → + → *Developer ID Application*. Then:
