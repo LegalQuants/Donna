@@ -1,78 +1,58 @@
 # Donna — Handoff for the next session
 
-**Date:** 2026-06-12 · **`main` @ `5ccf5d5`** (PR #76 merged) · **v0.1.0 tag @ `c18db35`** · **Pin:**
-`vendor/lq-ai` @ `c4d4482`.
-**Baseline gates:** `npm run check` 0/0 · vitest **1318** · `npm run lint` **fully green** (prettier +
-eslint 0 — keep it green). **Merge PRs with MERGE COMMITS** (a squash orphans the two format SHAs in
-`.git-blame-ignore-revs`).
+**Date:** 2026-06-14 · **`main` @ `17c1f99`** · **Pin:** `vendor/lq-ai` @ `c4d4482`.
+**Gates:** `npm run check` 0/0 · `npm run lint` green · root `npx vitest run` passing · `desktop/`:
+`npx vitest run` 45 · `npx tsc --noEmit` 0. **Merge PRs with MERGE COMMITS** (never squash —
+`.git-blame-ignore-revs`). Mirror `main` + tags to the `tucuxi` remote (`Tucuxi-Inc/Donna`).
 
-## Where things stand — v0.1.0 is SHIPPED and PUBLIC 🎉
+## Where things stand — v0.1.0 public + the macOS launcher shipped 🎉
 
-- **Every planned milestone is complete and merged.** P0–P8, Tabular, BYOK, About, docs-polish, the
-  full Automations segment, and document-grade run artifacts (lq-ai #138) are all on `main`.
-- **v0.1.0 tagged + public.** Annotated tag `v0.1.0` at `c18db35`, Copyright (c) 2026 Kevin Keller,
-  Apache-2.0. The repo is **public** (it has stars). **Mirrored** to the user's own remote
-  `Tucuxi-Inc/Donna` (git remote `tucuxi`; keep `main` + tags in sync). Note: tag predates PR #76, so
-  the pre-built-images feature is on `main` but NOT inside the `v0.1.0` tarball (fine; it's labeled).
-- **Pre-built container images (PR #76) is MERGED** — `docker/*.Dockerfile` wrappers,
-  `docker-compose.release.yml`, and `.github/workflows/release.yml` are on `main` (Route B: Donna
-  self-publishes multi-arch images to `ghcr.io/legalquants/*` for no-clone install). Local
-  end-to-end PASSED, Opus-reviewed.
-- **Docs buttoned up:** `README.md`, `docs/PRODUCT.md`, `CLAUDE.md` (engineering guide — read first),
-  `CHANGELOG.md`, `CONTRIBUTING.md`, `docs/README.md`, `docs/GUIDE.md` (friendly), and
-  `docs/About-Donna-v0.1.0.pdf`. Richest docs = in-app `/about`.
-- **Dev stack running locally** (project `donna`, app :13002, api :18000). Provider keys were
-  **rotated** this session and the `gateway` recreated to load them.
+- **v0.1.0 is shipped and PUBLIC.** All 5 `ghcr.io/legalquants/donna-*` images are **public** (anonymous
+  pull verified). Both README install paths work for anyone: **Option A** the desktop app, **Option B**
+  `docker-compose.release.yml`.
+- **"Donna for Mac" desktop launcher — Phase 1 COMPLETE & verified live.** Signed + notarized
+  `Donna-0.1.0-arm64.dmg` (Developer ID: **Tucuxi, Inc. `MC8BT9Z8GD`**) on the **`desktop-v0.1.0`**
+  release. A clean-Mac run passed end-to-end (install → wizard → isolated `donna-desktop` stack →
+  login → stop/relaunch/engine-absent). Lives in top-level `desktop/` (pure tested core + thin Electron
+  glue); wraps `docker-compose.release.yml`; never forks `donna-web`/backend.
+- **Docs are complete and current:**
+  - `docs/INSTALL-MAC.md` — illustrated end-user install guide (screenshots in `docs/images/desktop/`).
+  - **`docs/BUILD-AND-RELEASE.md` — READ THIS to cut any release** (images + signed Mac app): the full
+    notarization recipe + every first-real-launch gotcha. Generic on signing.
+  - `docs/upstream-requests/lq-ai-macos-launcher-playbook.md` — self-contained playbook for LQ-AI CC to
+    do the same for LQ-AI (it owns its code → publishes its own images, no wrappers).
+  - `desktop/VERIFICATION.md` — the live Task-13 evidence. `docs/decisions/desktop-launcher.md` — decisions.
+  - Design/plan: `docs/superpowers/plans/2026-06-13-desktop-launcher-phase1.md` (+ the design doc).
 
-## THE ONE OPEN THREAD — publish the pre-built images
+## How to ship the next release (the short version)
+- **Images:** `gh workflow run release.yml -R LegalQuants/Donna -f ref=main -f tag=vX.Y.Z` → flip the 5
+  GHCR packages public (org owner gate) → verify anonymous pull. Re-sync `docker-compose.release.yml` on
+  a pin bump.
+- **Mac app:** `gh workflow run desktop-release.yml -R LegalQuants/Donna -f tag=desktop-vX.Y.Z` → verify
+  the **published** dmg with `spctl -a -t open --context context:primary-signature` (trust this + `gh run
+  view --json conclusion`, **not** `gh run watch`, which can falsely report success).
+- The 5 signing secrets are already on `LegalQuants/Donna` (and `LegalQuants/lq-ai`). **Full recipe +
+  the four real-run bugs we fixed: `docs/BUILD-AND-RELEASE.md`.** Don't re-derive them.
 
-PR #76 added the machinery, but the **actual multi-arch GHCR publish only runs in GitHub Actions** —
-it could not be done from a local session. To make the no-clone install path live:
+## Open threads / what's next for Donna (all optional, nothing blocking)
+- **Desktop Phase 2** — bundle/manage Colima or Podman so Docker isn't a prerequisite (true
+  double-click). **Phase 3** — `electron-updater` auto-update + GHCR release surfacing; **x64/universal**
+  build for Intel (user deferred 2026-06-13); control-panel polish. **Windows** — a DEFINED phase in the
+  roadmap (NSIS + `windows-latest` CI; a Windows code-signing cert is THE long pole). See
+  `docs/roadmap/donna-future-roadmap.md`.
+- **Convenience:** ask a LegalQuants **org owner** (Jamie/Ray) to set the 5 signing secrets at the **org
+  level** (scoped to all repos) so per-repo setup never repeats. (Org-owner gate, like the package-public
+  flip.)
+- **Pre-existing roadmap items:** feature screenshots for README/About (hero-only today); PR #72 cosmetic
+  nits; richer autonomous-artifact rendering (upstream DE-332); matters depth (folder tree / versions /
+  sharing — needs a backend contract). All in `docs/roadmap/donna-future-roadmap.md`.
+- **New LQ-AI capabilities** as they ship: brainstorm → confirm contract via `gen:api` → mirror the
+  closest analog. Pin-bump recipe/log: `docs/decisions/lq-ai-pin.md`.
 
-1. **Run the publish workflow:** GitHub → Actions → **"Release container images" → Run workflow** with
-   `ref: v0.1.0` and `tag: v0.1.0` (or push a fresh `v*` tag). It builds + pushes `donna-web`,
-   `donna-api`, `donna-gateway` (+ `donna-api-base`/`donna-gateway-base`) multi-arch to GHCR.
-2. **Make the GHCR packages public:** Actions publishes packages **private** by default — flip each
-   package's visibility to public once (org → Packages → each `donna-*` → settings) so an
-   unauthenticated `docker pull` works for self-hosters. (All 5 packages, incl. the two `*-base`.)
-3. **Verify end-to-end (ideal):** on a clean machine — or an isolated project + shifted ports like the
-   fresh-clone/release tests this session — `curl` `docker-compose.release.yml` + `.env.example`, fill
-   secrets, `docker compose -f docker-compose.release.yml up -d`, confirm login. Proves the *published*
-   images the way a real user hits them. (Local validation this session used locally-built copies of
-   the same images — all 8 healthy, skills baked into the worker, login 5/5.)
-
-That's the only unfinished thread. After it, the README's Quick-install flow works for anyone.
-
-## Future / Route 1 (when the user wants it)
-
-- **Route 1 — LQ-AI owns the backend images.** Ready-to-relay ask:
-  `docs/upstream-requests/lq-ai-publish-container-images.md`. When LQ-AI publishes `api`/`gateway`
-  images to GHCR, Donna drops `docker/*.Dockerfile` + the base/wrapper builds from `release.yml` and
-  repoints `docker-compose.release.yml` at the upstream images — removing Donna's only backend-image
-  maintenance. **`docker-compose.release.yml` is a hand-maintained mirror of the dev compose — re-sync
-  it on any pin bump** until Route 1.
-- **Other open ends (all in `docs/roadmap/donna-future-roadmap.md`):** feature screenshots for
-  README/About (hero-only today); PR #72 cosmetic nits (precedents list cap, pattern_kind chip color,
-  proposal-created copy placement); the unfiled schedule/watch source-switch dual-key upstream ask;
-  richer artifact rendering (upstream DE-332, v1 is markdown/text); matters depth (folder tree / file
-  versions / sharing — needs a backend contract).
-- **New LQ-AI capabilities** as they ship: brainstorm fresh, confirm the contract via `gen:api`,
-  mirror the closest analog (Playbooks / Automations). Pin-bump recipe + log: `docs/decisions/lq-ai-pin.md`.
-
-## Workflow reminders (see [[donna-workflow]], [[donna-dev-stack]])
-
-- **The repo is PUBLIC** — be deliberate with anything outward-facing; avoid force-pushing tags
-  post-publish (we left `v0.1.0` in place rather than re-moving it for late docs).
-- **Always `git fetch` before committing to `main`** — the user merges PRs directly, so local `main`
-  goes stale fast (this bit us once at the end of the v0.1.0 session: a handoff commit landed on a
-  pre-#76-merge base and had to be reset onto `origin/main`).
-- **Loop:** brainstorm → spec → plan → subagent-driven execution (fresh implementer per task + two
-  stage review) → whole-branch Opus review → PR with a merge commit. Commit + push per task.
-- **Cold start:** `set -a; . ./.env; set +a; docker compose -p donna up -d --build postgres redis
-  minio gateway api donna-web ingest-worker arq-worker`. Admin `admin@lq.ai` /
-  `$DONNA_E2E_PASSWORD` (currently `DonnaE2ePassw0rd!`). **Rebuild `donna-web` before any manual/e2e
-  check.**
-- **Upstream-fix workflow:** never edit `vendor/lq-ai`; asks go to `docs/upstream-requests/`, the user
-  relays, pin-bump on the merged SHA.
-- **Mirror:** push copies to the user's remote with `git push tucuxi main` (+ tags). Keep both in sync
-  for anything on `main`.
+## Reminders
+- LQ-AI's own launcher/images/release (`LegalQuants/lq-ai`, `desktop-v0.4.0`, `lq-ai-*` images) are the
+  **LQ-AI CC session's** domain — not Donna's. Don't touch them from here.
+- Repo is PUBLIC. Build the loop: brainstorm → spec → plan → subagent-driven execution → whole-branch
+  review → PR (merge commit). Always `git fetch` before committing to `main`.
+- Memory: [[donna-desktop-launcher]] (the launcher, the notarization recipe, the real-run gotchas),
+  [[donna-phase-status]], [[donna-workflow]], [[donna-dev-stack]].
