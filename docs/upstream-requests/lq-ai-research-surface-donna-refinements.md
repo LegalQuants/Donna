@@ -88,6 +88,32 @@ the `html_*` family as "HTML-derived, formatting normalized") rather than displa
 
 ---
 
+## Follow-up (2026-06-17) — asks shipped in #163 (`38dbbb0`), but the OpenAPI spec drifted
+
+LQ-AI delivered all three asks in **#163 (`38dbbb0`)** as typed Pydantic models — thank you. One
+catch found when verifying for the pin bump: `docs/api/backend-openapi.yaml` is **hand-maintained and
+lags the typed models**, and Donna's `gen:api` reads *that yaml*, not the live FastAPI app. So two of
+the three asks don't reach Donna's generated types yet:
+
+| Ask | Pydantic model (✅ in code) | `docs/api/backend-openapi.yaml` (what Donna consumes) |
+|---|---|---|
+| 1 — capabilities | `ResearchCapabilities` | ✅ correct (`{enabled, providers:[{name,type}]}`) |
+| 2 — verify-citations | `VerifiedCitation` | ❌ still `citations: items: {type: object, additionalProperties: true}` |
+| 3 — `text_field_used` | `OpinionTextField` Literal | ❌ still `{type: string, nullable: true}` (no enum) |
+
+**Ask (small, schema-doc only):** update `backend-openapi.yaml` so the consumable contract matches the
+code —
+1. the `/research/verify-citations` 200 `citations[]` items reference the `VerifiedCitation` shape
+   (`{citation, normalized_citations[], status, error_message, clusters:[{id, case_name,
+   absolute_url}]}`);
+2. `text_field_used` (on the `/research/clusters/{id}` opinions list **and** `/research/opinions/{id}`)
+   becomes an `enum` of the 7 `OpinionTextField` values (`html_with_citations`, `html_columbia`,
+   `html_lawbox`, `xml_harvard`, `html_anon_2020`, `html`, `plain_text`).
+
+Ideally the spec is generated from the FastAPI app (`app.openapi()`) so it can't drift again — but if
+it stays hand-maintained, the two edits above are enough. Donna will pin + `gen:api` once the yaml
+carries the typed shapes, and gets the full refined contract in one clean bump.
+
 ## Conventions Donna will follow regardless
 
 - Donna consumes only the published API (re-runs `gen:api` after the pin bump; the merged shape wins
