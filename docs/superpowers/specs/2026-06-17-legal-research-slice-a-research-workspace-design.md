@@ -12,14 +12,20 @@ passage within it — inside the tool they already use. LQ-AI is building this o
 boundary (CourtListener as a tool-provider). Donna should surface it as a clean, reading-first
 **Research workspace**: search → read in the doc panel → find-in-case → verify citations.
 
-## Upstream contract (verified against `feat/research-api`, `6bc8b8e`; re-verify via `gen:api` after the pin bump — the merged shape wins)
+## Upstream contract (FINAL — pinned `e2cc311`, verified in `src/lib/api/backend.d.ts`)
 
 `/api/v1/research` — a **plain synchronous REST** surface (no SSE in PR3b; "SSE research events" from
-the proposal belong to Slice C's chat tool-loop). All routes require an active user.
+the proposal belong to Slice C's chat tool-loop). All routes require an active user. The three Donna
+refinement asks shipped (#163/#164) and are reflected in the generated types — see the **bold**
+deltas below.
 
-- **`POST /verify-citations`** `{ text: str (1..64000) }` → `{ citations: dict[] }`. The citations
-  array is **loosely typed** (`list[dict[str, Any]]`) → Donna hand-parses it with a defensive parser
-  (§2, §7 — the `parseFindingList` precedent).
+- **`GET /capabilities`** → `{ enabled: boolean, providers: [{ name, type }] }` — **the deterministic
+  feature-flag signal** (reads fresh from the gateway). When research is off, the *other* endpoints
+  return **503 `ResearchNotConfigured`**.
+- **`POST /verify-citations`** `{ text: str (1..64000) }` → `{ citations: VerifiedCitation[] }`,
+  **now fully typed**: `VerifiedCitation = { citation, normalized_citations: string[], status,
+  error_message, clusters: { id, case_name, absolute_url }[] }`. **No hand-parser needed** — derive
+  from `backend.d.ts`.
 - **`POST /search`** `{ q: str, court?: str, order_by?: str }` →
   `{ count: int|null, results: SearchResultItem[], next_cursor: str|null }` where
   `SearchResultItem = { cluster_id, case_name, court, date_filed, citation, absolute_url, snippet }`
@@ -32,9 +38,15 @@ the proposal belong to Slice C's chat tool-loop). All routes require an active u
 - **`POST /find-in-case`** `{ opinion_id, query, max_matches: 1..10 (default 3) }` →
   `{ opinion_id, matches: { position: int, snippet: str }[] }`.
 
-**Feature flag:** CourtListener is off until the operator sets `COURTLISTENER_API_TOKEN`. When
-unconfigured the surface yields errors/empty — Donna must detect this and show a friendly
-"not enabled" gate (the `AutomationsGate` precedent), never a broken page.
+**`text_field_used`** (on the clusters' opinion list and on `/opinions/{id}`) is **now a 7-member
+enum** — `html_with_citations | html_columbia | html_lawbox | xml_harvard | html_anon_2020 | html |
+plain_text | null` — so Donna maps it to honest source labels ("plain text" vs the `html_*`/`xml_*`
+family = "HTML/XML-derived, normalized").
+
+**Feature flag:** CourtListener is off until the operator wires a `courtlistener` tool-provider
+(`COURTLISTENER_API_TOKEN`). Donna reads **`GET /capabilities`** at page load — `enabled:false` →
+the friendly "not enabled" gate (the `AutomationsGate` precedent); a stray **503
+`ResearchNotConfigured`** on any action is treated the same way. Deterministic, not heuristic.
 
 ## Decisions (user-confirmed during brainstorming)
 
@@ -55,23 +67,24 @@ The browser never calls lq-ai. Donna's server proxies each research call with th
 beside the flat `/research` page — no route collision, since the page has no dynamic children (the
 `/prompts` + `/prompts/items` precedent):
 
-- `POST /research/search` · `GET /research/clusters/[id]` · `GET /research/opinions/[id]` ·
-  `POST /research/find-in-case` · `POST /research/verify-citations`
+- `GET /research/capabilities` · `POST /research/search` · `GET /research/clusters/[id]` ·
+  `GET /research/opinions/[id]` · `POST /research/find-in-case` · `POST /research/verify-citations`
 
-The page itself is client-interactive (typing, pagination, opening opinions), so search/read calls go
-through these proxies from the client rather than an SSR `load` (the initial page is a simple empty
-state; a `load` only checks the feature-enabled signal).
+The page's SSR `load` calls `GET /research/capabilities` once for the deterministic enabled/gate
+signal; everything else is client-interactive (typing, pagination, opening opinions) through the
+proxies.
 
 ## Changes
 
 ### 1. Data layer — `src/lib/research/` (pure, defensive)
 
-- Types derived from the generated `backend.d.ts` where strict; hand-typed parsers where the backend
-  is loose.
-- `parseSearchResponse(raw): { count, results: SearchResultItem[], nextCursor }` — drops malformed
-  rows rather than throwing (`str`/`obj` guards; the `findings.ts` template).
-- `parseClusterView(raw)`, `parseOpinionText(raw)`, `parseFindMatches(raw)`.
-- `parseCitations(raw): VerifiedCitation[]` — the loose `verify-citations` payload; tolerant parse.
+- Types derived from the generated `backend.d.ts` — the whole surface is now typed, so **no
+  verify-citations hand-parser** (the #163/#164 refinement removed that need). Keep light defensive
+  parsers only as a runtime guard at the boundary (the responses are LLM/CourtListener-sourced and
+  nullable): `parseSearchResponse`, `parseClusterView`, `parseOpinionText`, `parseFindMatches`,
+  `parseCitations` — each drops malformed rows rather than throwing (`str`/`obj` guards; the
+  `findings.ts` template). They consume/return the generated types rather than re-declaring shapes.
+- `parseCapabilities(raw): { enabled: boolean; providers: {name,type}[] }` for the gate.
 - `createResearch()` controller (Svelte 5 runes; `$state`/`$derived`) holding query, results,
   selected cluster, loading/error/not-enabled state, and `next_cursor` paging — seeded via `untrack`.
 
@@ -103,9 +116,10 @@ The one piece of new internal surface. Today `DocTab` keys on `source_file_id` a
 
 - Each proxy degrades independently. Search failure → inline "research unavailable" + retry; the page
   still renders. Opinion fetch failure → the doc panel tab shows its existing `'error'` status.
-- **Not-enabled gate:** when the backend signals CourtListener is unconfigured (error/empty
-  characteristic of a missing `COURTLISTENER_API_TOKEN`), show "Case-law research isn't enabled on
-  this server" with operator guidance — mirrors `AutomationsGate`.
+- **Not-enabled gate (deterministic):** the `load`'s `GET /capabilities` returns `enabled:false` →
+  render "Case-law research isn't enabled on this server" with operator guidance (mirrors
+  `AutomationsGate`). A **503 `ResearchNotConfigured`** on any subsequent action is mapped to the same
+  gate (covers the rare disable-mid-session window).
 - Defensive parsers drop malformed rows; never fabricate data.
 
 ## Testing
@@ -126,12 +140,22 @@ Matter-scoping / persistence; in-chat tool-calling and SSE research events (Slic
 citation provenance through the verification cascade (Slice D); MCP (Slice B). Bulk-data import is
 backend-only and not exposed (LQ-AI O3).
 
-## Open items to watch (relay to LQ-AI if they bite — §8)
+## Open items — all RESOLVED before implementation (pin `e2cc311`, #163/#164)
 
-- **Feature-enabled signal.** Slice A currently infers "not enabled" from error/empty responses. If
-  that proves ambiguous, ask LQ-AI for an explicit capability/health flag (e.g. a `research` entry in
-  a capabilities endpoint) so the gate is deterministic rather than heuristic.
-- **`verify-citations` payload shape.** It is `list[dict]` today. If the fields stabilize, a typed
-  response upstream would let Donna drop the hand-parser — note but do not block on it.
-- **`text_field_used` semantics** on opinions/clusters — confirm what values appear so the reader can
-  label the source (e.g. "plain text" vs "HTML-derived") honestly.
+All three asks from `docs/upstream-requests/lq-ai-research-surface-donna-refinements.md` shipped and
+are verified in `backend.d.ts`:
+
+- ✅ **Feature-enabled signal** → `GET /capabilities` (deterministic) + 503 `ResearchNotConfigured`.
+- ✅ **Typed `verify-citations`** → `VerifiedCitation` — no hand-parser.
+- ✅ **`text_field_used`** → 7-member enum (incl. `xml_harvard`) for honest source labels.
+
+Residual notes (non-blocking): multi-CourtListener configs resolve to `providers[0]` (display the
+effective provider if surfaced); LQ-AI filed **DE-337** to generate the spec from `app.openapi()` so
+it can't drift again.
+
+## Implementation prerequisite
+
+Before runtime/e2e: rebuild the stack so migration **0049** runs —
+`docker compose up -d --build api arq-worker ingest-worker donna-web` (§8) — and set
+`COURTLISTENER_API_TOKEN` in `.env` for the live (gated) e2e path. Not needed for `gen:api` /
+`npm run check` (done at the pin bump).
