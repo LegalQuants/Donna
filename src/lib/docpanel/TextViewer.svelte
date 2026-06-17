@@ -8,20 +8,27 @@
 	import { Download } from '@lucide/svelte';
 	import Markdown from '$lib/components/Markdown.svelte';
 
-	let { fileId, mime, filename }: { fileId: string; mime: string; filename: string } = $props();
+	let {
+		fileId,
+		mime,
+		filename,
+		contentUrl
+	}: { fileId: string; mime: string; filename: string; contentUrl?: string } = $props();
 
 	let status = $state<'loading' | 'ready' | 'error'>('loading');
 	let text = $state('');
 
 	// Re-fetch when the tab's file changes (the panel reuses one viewer per active tab).
+	// Reference both fileId and contentUrl so the effect re-runs when either changes.
 	$effect(() => {
 		const id = fileId;
+		const url = contentUrl ?? `/files/${id}/content`;
 		status = 'loading';
 		text = '';
 		let cancelled = false;
 		(async () => {
 			try {
-				const res = await fetch(`/files/${id}/content`);
+				const res = await fetch(url);
 				if (!res.ok) throw new Error(String(res.status));
 				const body = await res.text();
 				if (cancelled) return;
@@ -43,7 +50,7 @@
 	<div class="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
 		<p class="text-xs text-mlq-error">Could not load this document.</p>
 		<a
-			href="/files/{fileId}/content"
+			href={contentUrl ?? `/files/${fileId}/content`}
 			download={filename || undefined}
 			class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-xs text-mlq-text hover:bg-mlq-surface-alt"
 		>

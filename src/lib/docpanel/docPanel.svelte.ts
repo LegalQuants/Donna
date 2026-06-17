@@ -72,6 +72,31 @@ export function createDocPanel() {
 		}
 	}
 
+	function openOpinion(o: { opinionId: number; caseName: string }) {
+		const fileId = `opinion:${o.opinionId}`;
+		open_ = true;
+		const existing = tabs.find((t) => t.fileId === fileId);
+		if (existing) {
+			activeId = fileId;
+			return;
+		}
+		tabs = [
+			...tabs,
+			{
+				fileId,
+				filename: o.caseName,
+				mime: 'text/plain',
+				status: 'ready',
+				page: null,
+				quote: '',
+				cite: { source_file_id: fileId, verificationApplicable: false } as Citation,
+				highlightStatus: 'miss',
+				contentUrl: `/research/opinions/${o.opinionId}/text`
+			}
+		];
+		activeId = fileId;
+	}
+
 	function setActive(id: string) {
 		if (tabs.some((t) => t.fileId === id)) activeId = id;
 	}
@@ -121,6 +146,7 @@ export function createDocPanel() {
 			return width;
 		},
 		open,
+		openOpinion,
 		setActive,
 		close,
 		closePanel,
