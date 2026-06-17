@@ -175,7 +175,12 @@
 				{@const tab = docPanel.activeTab}
 				{#if tab.mime === 'text/markdown' || tab.mime === 'text/plain'}
 					{#key tab.fileId}
-						<TextViewer fileId={tab.fileId} mime={tab.mime} filename={tab.filename} />
+						<TextViewer
+							fileId={tab.fileId}
+							mime={tab.mime}
+							filename={tab.filename}
+							contentUrl={tab.contentUrl}
+						/>
 					{/key}
 				{:else}
 					<UnsupportedFileCard fileId={tab.fileId} filename={tab.filename} mime={tab.mime} />
