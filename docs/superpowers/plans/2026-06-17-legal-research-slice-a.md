@@ -12,13 +12,14 @@
 
 **Conventions to mirror:** parsers → `src/lib/automations/findings.ts`; proxy routes → `src/routes/(app)/prompts/items/+server.ts`; gate → `src/lib/automations/AutomationsGate.svelte`; auth → `src/lib/server/lqClient.ts` (`lqFetch`). Tabs for indent. `npm run check` 0/0 + `npm run lint` green + vitest pass after every task.
 
-> **Note on types:** the `/research` schemas are *inline* in the OpenAPI spec (not named `components['schemas']`), so we hand-declare matching interfaces in `research.ts` with a comment saying so (§2/§7 precedent). The shapes below are the verified `e2cc311` contract.
+> **Note on types:** the `/research` schemas are _inline_ in the OpenAPI spec (not named `components['schemas']`), so we hand-declare matching interfaces in `research.ts` with a comment saying so (§2/§7 precedent). The shapes below are the verified `e2cc311` contract.
 
 ---
 
 ### Task 1: Research data layer — types + defensive parsers
 
 **Files:**
+
 - Create: `src/lib/research/research.ts`
 - Test: `src/lib/research/research.test.ts`
 
@@ -38,8 +39,9 @@ import {
 
 describe('parseCapabilities', () => {
 	it('reads enabled + providers', () => {
-		expect(parseCapabilities({ enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] }))
-			.toEqual({ enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] });
+		expect(
+			parseCapabilities({ enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] })
+		).toEqual({ enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] });
 	});
 	it('defaults to disabled on junk', () => {
 		expect(parseCapabilities(null)).toEqual({ enabled: false, providers: [] });
@@ -90,8 +92,12 @@ describe('parseCitations', () => {
 	it('parses verified citations + nested clusters', () => {
 		const out = parseCitations({
 			citations: [
-				{ citation: '576 U.S. 644', normalized_citations: ['576 U.S. 644'], status: 200,
-				  clusters: [{ id: 1, case_name: 'Obergefell', absolute_url: '/o/1/' }] },
+				{
+					citation: '576 U.S. 644',
+					normalized_citations: ['576 U.S. 644'],
+					status: 200,
+					clusters: [{ id: 1, case_name: 'Obergefell', absolute_url: '/o/1/' }]
+				},
 				'junk'
 			]
 		});
@@ -230,7 +236,10 @@ function parseSearchItem(raw: unknown): SearchResultItem | null {
 		case_name: str(r.case_name),
 		court: str(r.court),
 		date_filed: str(r.date_filed),
-		citation: typeof r.citation === 'string' ? r.citation : str((obj(r.citation) as { cite?: unknown }).cite),
+		citation:
+			typeof r.citation === 'string'
+				? r.citation
+				: str((obj(r.citation) as { cite?: unknown }).cite),
 		absolute_url: str(r.absolute_url),
 		snippet: str(r.snippet)
 	};
@@ -254,7 +263,7 @@ export function parseClusterView(raw: unknown): ClusterView | null {
 			if (typeof oo.opinion_id !== 'number') return null;
 			return {
 				opinion_id: oo.opinion_id,
-				text_field_used: (str(oo.text_field_used) as OpinionTextField | null),
+				text_field_used: str(oo.text_field_used) as OpinionTextField | null,
 				char_length: num(oo.char_length) ?? 0
 			};
 		})
@@ -276,7 +285,9 @@ export function parseFindMatches(raw: unknown): FindMatch[] {
 	return (Array.isArray(r.matches) ? r.matches : [])
 		.map((m) => {
 			const o = obj(m);
-			return typeof o.position === 'number' ? { position: o.position, snippet: str(o.snippet) ?? '' } : null;
+			return typeof o.position === 'number'
+				? { position: o.position, snippet: str(o.snippet) ?? '' }
+				: null;
 		})
 		.filter((m): m is FindMatch => m !== null);
 }
@@ -339,6 +350,7 @@ git commit -m "feat(research): data layer — typed view-models + defensive pars
 ### Task 2: BFF proxy routes
 
 **Files:**
+
 - Create: `src/routes/(app)/research/capabilities/+server.ts`
 - Create: `src/routes/(app)/research/search/+server.ts`
 - Create: `src/routes/(app)/research/clusters/[id]/+server.ts`
@@ -382,14 +394,21 @@ describe('POST /research/search', () => {
 	it('forwards the body and returns results', async () => {
 		lqFetch.mockResolvedValue(res(200, { count: 0, results: [] }));
 		const { POST } = await import('./search/+server');
-		const out = await POST(ev(new Request('http://x/research/search', { method: 'POST', body: '{"q":"chevron"}' })));
-		expect(lqFetch).toHaveBeenCalledWith(expect.anything(), '/api/v1/research/search', { method: 'POST', body: '{"q":"chevron"}' });
+		const out = await POST(
+			ev(new Request('http://x/research/search', { method: 'POST', body: '{"q":"chevron"}' }))
+		);
+		expect(lqFetch).toHaveBeenCalledWith(expect.anything(), '/api/v1/research/search', {
+			method: 'POST',
+			body: '{"q":"chevron"}'
+		});
 		expect(out.status).toBe(200);
 	});
 	it('propagates a 503 not-configured', async () => {
 		lqFetch.mockResolvedValue(res(503, { detail: 'not configured' }));
 		const { POST } = await import('./search/+server');
-		const out = await POST(ev(new Request('http://x/research/search', { method: 'POST', body: '{"q":"x"}' })));
+		const out = await POST(
+			ev(new Request('http://x/research/search', { method: 'POST', body: '{"q":"x"}' }))
+		);
 		expect(out.status).toBe(503);
 	});
 });
@@ -418,14 +437,26 @@ describe('POST /research/find-in-case + /verify-citations', () => {
 	it('find-in-case forwards body', async () => {
 		lqFetch.mockResolvedValue(res(200, { opinion_id: 5, matches: [] }));
 		const { POST } = await import('./find-in-case/+server');
-		await POST(ev(new Request('http://x', { method: 'POST', body: '{"opinion_id":5,"query":"due process"}' })));
-		expect(lqFetch).toHaveBeenCalledWith(expect.anything(), '/api/v1/research/find-in-case', { method: 'POST', body: '{"opinion_id":5,"query":"due process"}' });
+		await POST(
+			ev(
+				new Request('http://x', { method: 'POST', body: '{"opinion_id":5,"query":"due process"}' })
+			)
+		);
+		expect(lqFetch).toHaveBeenCalledWith(expect.anything(), '/api/v1/research/find-in-case', {
+			method: 'POST',
+			body: '{"opinion_id":5,"query":"due process"}'
+		});
 	});
 	it('verify-citations forwards body', async () => {
 		lqFetch.mockResolvedValue(res(200, { citations: [] }));
 		const { POST } = await import('./verify-citations/+server');
-		await POST(ev(new Request('http://x', { method: 'POST', body: '{"text":"see 576 U.S. 644"}' })));
-		expect(lqFetch).toHaveBeenCalledWith(expect.anything(), '/api/v1/research/verify-citations', { method: 'POST', body: '{"text":"see 576 U.S. 644"}' });
+		await POST(
+			ev(new Request('http://x', { method: 'POST', body: '{"text":"see 576 U.S. 644"}' }))
+		);
+		expect(lqFetch).toHaveBeenCalledWith(expect.anything(), '/api/v1/research/verify-citations', {
+			method: 'POST',
+			body: '{"text":"see 576 U.S. 644"}'
+		});
 	});
 });
 ```
@@ -545,6 +576,7 @@ git commit -m "feat(research): BFF proxy routes (capabilities/search/clusters/op
 ### Task 3: Doc-panel — render an external opinion via `openOpinion`
 
 **Files:**
+
 - Modify: `src/lib/docpanel/types.ts` (add `contentUrl?`)
 - Modify: `src/lib/docpanel/docPanel.svelte.ts` (add `openOpinion`)
 - Modify: `src/lib/docpanel/TextViewer.svelte` (accept `contentUrl` prop)
@@ -608,30 +640,30 @@ In `src/lib/docpanel/types.ts`, inside `interface DocTab`, add after `mime: stri
 In `src/lib/docpanel/docPanel.svelte.ts`, add this function inside `createDocPanel` (next to `open`), and export it in the returned object:
 
 ```ts
-	function openOpinion(o: { opinionId: number; caseName: string }) {
-		const fileId = `opinion:${o.opinionId}`;
-		open_ = true;
-		const existing = tabs.find((t) => t.fileId === fileId);
-		if (existing) {
-			activeId = fileId;
-			return;
-		}
-		tabs = [
-			...tabs,
-			{
-				fileId,
-				filename: o.caseName,
-				mime: 'text/plain',
-				status: 'ready',
-				page: null,
-				quote: '',
-				cite: { source_file_id: fileId, verificationApplicable: false } as Citation,
-				highlightStatus: 'miss',
-				contentUrl: `/research/opinions/${o.opinionId}/text`
-			}
-		];
+function openOpinion(o: { opinionId: number; caseName: string }) {
+	const fileId = `opinion:${o.opinionId}`;
+	open_ = true;
+	const existing = tabs.find((t) => t.fileId === fileId);
+	if (existing) {
 		activeId = fileId;
+		return;
 	}
+	tabs = [
+		...tabs,
+		{
+			fileId,
+			filename: o.caseName,
+			mime: 'text/plain',
+			status: 'ready',
+			page: null,
+			quote: '',
+			cite: { source_file_id: fileId, verificationApplicable: false } as Citation,
+			highlightStatus: 'miss',
+			contentUrl: `/research/opinions/${o.opinionId}/text`
+		}
+	];
+	activeId = fileId;
+}
 ```
 
 Add `openOpinion` to the `return { … }` object (next to `open`).
@@ -641,21 +673,21 @@ Add `openOpinion` to the `return { … }` object (next to `open`).
 In `src/lib/docpanel/TextViewer.svelte`, change the props and fetch URL:
 
 ```ts
-	let {
-		fileId,
-		mime,
-		filename,
-		contentUrl
-	}: { fileId: string; mime: string; filename: string; contentUrl?: string } = $props();
+let {
+	fileId,
+	mime,
+	filename,
+	contentUrl
+}: { fileId: string; mime: string; filename: string; contentUrl?: string } = $props();
 ```
 
 Replace the two `/files/${id}/content` / `/files/{fileId}/content` references with the content URL:
 
 ```ts
-	// inside the $effect:
-	const url = contentUrl ?? `/files/${fileId}/content`;
-	// ...
-	const res = await fetch(url);
+// inside the $effect:
+const url = contentUrl ?? `/files/${fileId}/content`;
+// ...
+const res = await fetch(url);
 ```
 
 And the Download link `href`:
@@ -671,7 +703,12 @@ And the Download link `href`:
 In `src/lib/docpanel/DocumentPanel.svelte`, update the `TextViewer` usage:
 
 ```svelte
-					<TextViewer fileId={tab.fileId} mime={tab.mime} filename={tab.filename} contentUrl={tab.contentUrl} />
+<TextViewer
+	fileId={tab.fileId}
+	mime={tab.mime}
+	filename={tab.filename}
+	contentUrl={tab.contentUrl}
+/>
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -693,6 +730,7 @@ git commit -m "feat(docpanel): openOpinion — render external opinion text via 
 ### Task 4: Research page controller (runes)
 
 **Files:**
+
 - Create: `src/lib/research/researchStore.svelte.ts`
 - Test: `src/lib/research/researchStore.svelte.test.ts`
 
@@ -716,7 +754,11 @@ function fetchReturning(map: Record<string, unknown>) {
 describe('createResearch', () => {
 	it('search populates results and clears error', async () => {
 		const f = fetchReturning({
-			'POST /research/search': { count: 1, next_cursor: null, results: [{ cluster_id: 9, case_name: 'A v. B' }] }
+			'POST /research/search': {
+				count: 1,
+				next_cursor: null,
+				results: [{ cluster_id: 9, case_name: 'A v. B' }]
+			}
 		});
 		const r = createResearch(f);
 		await r.search('chevron');
@@ -734,7 +776,10 @@ describe('createResearch', () => {
 
 	it('openCluster loads the cluster view', async () => {
 		const f = fetchReturning({
-			'GET /research/clusters/9': { cluster: { cluster_id: 9, case_name: 'A v. B' }, opinions: [{ opinion_id: 1, text_field_used: 'plain_text', char_length: 5 }] }
+			'GET /research/clusters/9': {
+				cluster: { cluster_id: 9, case_name: 'A v. B' },
+				opinions: [{ opinion_id: 1, text_field_used: 'plain_text', char_length: 5 }]
+			}
 		});
 		const r = createResearch(f);
 		await r.openCluster(9);
@@ -744,7 +789,11 @@ describe('createResearch', () => {
 
 	it('verify populates citations', async () => {
 		const f = fetchReturning({
-			'POST /research/verify-citations': { citations: [{ citation: '576 U.S. 644', status: 200, normalized_citations: [], clusters: [] }] }
+			'POST /research/verify-citations': {
+				citations: [
+					{ citation: '576 U.S. 644', status: 200, normalized_citations: [], clusters: [] }
+				]
+			}
 		});
 		const r = createResearch(f);
 		await r.verify('see 576 U.S. 644');
@@ -834,7 +883,11 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 
 	async function findInCase(opinionId: number, q: string) {
 		if (!q.trim()) return;
-		const raw = await post('/research/find-in-case', { opinion_id: opinionId, query: q, max_matches: 10 });
+		const raw = await post('/research/find-in-case', {
+			opinion_id: opinionId,
+			query: q,
+			max_matches: 10
+		});
 		if (raw) matches = parseFindMatches(raw);
 	}
 
@@ -845,16 +898,36 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 	}
 
 	return {
-		get query() { return query; },
-		get results() { return results; },
-		get count() { return count; },
-		get nextCursor() { return nextCursor; },
-		get cluster() { return cluster; },
-		get matches() { return matches; },
-		get citations() { return citations; },
-		get loading() { return loading; },
-		get error() { return error; },
-		get notEnabled() { return notEnabled; },
+		get query() {
+			return query;
+		},
+		get results() {
+			return results;
+		},
+		get count() {
+			return count;
+		},
+		get nextCursor() {
+			return nextCursor;
+		},
+		get cluster() {
+			return cluster;
+		},
+		get matches() {
+			return matches;
+		},
+		get citations() {
+			return citations;
+		},
+		get loading() {
+			return loading;
+		},
+		get error() {
+			return error;
+		},
+		get notEnabled() {
+			return notEnabled;
+		},
 		search,
 		openCluster,
 		findInCase,
@@ -884,6 +957,7 @@ git commit -m "feat(research): runes controller for search/cluster/find/verify"
 ### Task 5: Not-enabled gate component
 
 **Files:**
+
 - Create: `src/lib/research/ResearchGate.svelte`
 - Test: `src/lib/research/ResearchGate.svelte.test.ts`
 
@@ -944,6 +1018,7 @@ git commit -m "feat(research): not-enabled gate card"
 ### Task 6: Research page + nav entry
 
 **Files:**
+
 - Create: `src/routes/(app)/research/+page.server.ts` (capabilities load)
 - Create: `src/routes/(app)/research/+page.svelte`
 - Modify: `src/lib/components/Sidebar.svelte` (add the Research nav item)
@@ -963,10 +1038,18 @@ beforeEach(() => lqFetch.mockReset());
 
 describe('research load', () => {
 	it('returns capabilities (enabled)', async () => {
-		lqFetch.mockResolvedValue(new Response(JSON.stringify({ enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] }), { status: 200 }));
+		lqFetch.mockResolvedValue(
+			new Response(
+				JSON.stringify({ enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] }),
+				{ status: 200 }
+			)
+		);
 		const { load } = await import('./+page.server');
 		const out = await load({} as never);
-		expect(out.capabilities).toEqual({ enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] });
+		expect(out.capabilities).toEqual({
+			enabled: true,
+			providers: [{ name: 'cl', type: 'courtlistener' }]
+		});
 	});
 	it('degrades to disabled when the check fails', async () => {
 		lqFetch.mockResolvedValue(new Response('nope', { status: 502 }));
@@ -989,7 +1072,9 @@ describe('research page', () => {
 		expect(screen.getByText(/isn’t enabled/i)).toBeInTheDocument();
 	});
 	it('shows the search box when enabled', () => {
-		render(Page, { data: { capabilities: { enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] } } });
+		render(Page, {
+			data: { capabilities: { enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] } }
+		});
 		expect(screen.getByRole('searchbox', { name: /search case law/i })).toBeInTheDocument();
 	});
 });
@@ -1046,7 +1131,13 @@ export const load: PageServerLoad = async (event) => {
 	{#if !data.capabilities.enabled}
 		<div class="mt-4"><ResearchGate /></div>
 	{:else}
-		<form class="mt-4 flex gap-2" onsubmit={(e) => { e.preventDefault(); r.search(q); }}>
+		<form
+			class="mt-4 flex gap-2"
+			onsubmit={(e) => {
+				e.preventDefault();
+				r.search(q);
+			}}
+		>
 			<input
 				type="search"
 				aria-label="Search case law"
@@ -1054,8 +1145,11 @@ export const load: PageServerLoad = async (event) => {
 				placeholder="Search case law (e.g. Chevron deference)"
 				class="flex-1 rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text"
 			/>
-			<button type="submit" disabled={r.loading}
-				class="rounded-mlq-control bg-mlq-workflow px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60">
+			<button
+				type="submit"
+				disabled={r.loading}
+				class="rounded-mlq-control bg-mlq-workflow px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+			>
 				{r.loading ? 'Searching…' : 'Search'}
 			</button>
 		</form>
@@ -1065,12 +1159,18 @@ export const load: PageServerLoad = async (event) => {
 		<div class="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
 			<!-- Results -->
 			<section>
-				<h2 class="text-xs font-medium tracking-wide text-mlq-muted uppercase">Results{#if r.count !== null} ({r.count}){/if}</h2>
+				<h2 class="text-xs font-medium tracking-wide text-mlq-muted uppercase">
+					Results{#if r.count !== null}
+						({r.count}){/if}
+				</h2>
 				<ul class="mt-2 space-y-2">
 					{#each r.results as item (item.cluster_id ?? item.case_name)}
 						<li>
-							<button type="button" onclick={() => item.cluster_id && r.openCluster(item.cluster_id)}
-								class="w-full rounded-mlq-control border border-mlq-subtle p-3 text-left hover:bg-mlq-surface-alt">
+							<button
+								type="button"
+								onclick={() => item.cluster_id && r.openCluster(item.cluster_id)}
+								class="w-full rounded-mlq-control border border-mlq-subtle p-3 text-left hover:bg-mlq-surface-alt"
+							>
 								<div class="text-sm font-medium text-mlq-text">{item.case_name ?? 'Untitled'}</div>
 								<div class="text-xs text-mlq-muted">{item.court ?? ''} {item.date_filed ?? ''}</div>
 								{#if item.snippet}<div class="mt-1 text-xs text-mlq-muted">{item.snippet}</div>{/if}
@@ -1083,17 +1183,28 @@ export const load: PageServerLoad = async (event) => {
 			<!-- Selected cluster -->
 			<section>
 				{#if r.cluster}
-					<h2 class="text-xs font-medium tracking-wide text-mlq-muted uppercase">{r.cluster.cluster.case_name ?? 'Case'}</h2>
+					<h2 class="text-xs font-medium tracking-wide text-mlq-muted uppercase">
+						{r.cluster.cluster.case_name ?? 'Case'}
+					</h2>
 					<ul class="mt-2 space-y-2">
 						{#each r.cluster.opinions as op (op.opinion_id)}
-							<li class="flex items-center justify-between rounded-mlq-control border border-mlq-subtle p-3">
+							<li
+								class="flex items-center justify-between rounded-mlq-control border border-mlq-subtle p-3"
+							>
 								<div class="text-xs text-mlq-muted">
 									Opinion #{op.opinion_id}
-									{#if textFieldLabel(op.text_field_used)} · {textFieldLabel(op.text_field_used)}{/if}
+									{#if textFieldLabel(op.text_field_used)}
+										· {textFieldLabel(op.text_field_used)}{/if}
 								</div>
-								<button type="button"
-									onclick={() => docPanel.openOpinion({ opinionId: op.opinion_id, caseName: r.cluster!.cluster.case_name ?? `Opinion #${op.opinion_id}` })}
-									class="rounded-mlq-control border border-mlq-subtle px-2 py-1 text-xs text-mlq-text hover:bg-mlq-surface-alt">
+								<button
+									type="button"
+									onclick={() =>
+										docPanel.openOpinion({
+											opinionId: op.opinion_id,
+											caseName: r.cluster!.cluster.case_name ?? `Opinion #${op.opinion_id}`
+										})}
+									class="rounded-mlq-control border border-mlq-subtle px-2 py-1 text-xs text-mlq-text hover:bg-mlq-surface-alt"
+								>
 									Open
 								</button>
 							</li>
@@ -1106,17 +1217,36 @@ export const load: PageServerLoad = async (event) => {
 		<!-- Verify citations -->
 		<section class="mt-8">
 			<h2 class="text-xs font-medium tracking-wide text-mlq-muted uppercase">Verify citations</h2>
-			<form class="mt-2" onsubmit={(e) => { e.preventDefault(); r.verify(citeText); }}>
-				<textarea bind:value={citeText} rows="3" placeholder="Paste text containing reporter citations…"
-					class="w-full rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text"></textarea>
-				<button type="submit" class="mt-2 rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-sm text-mlq-text hover:bg-mlq-surface-alt">Verify</button>
+			<form
+				class="mt-2"
+				onsubmit={(e) => {
+					e.preventDefault();
+					r.verify(citeText);
+				}}
+			>
+				<textarea
+					bind:value={citeText}
+					rows="3"
+					placeholder="Paste text containing reporter citations…"
+					class="w-full rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text"
+				></textarea>
+				<button
+					type="submit"
+					class="mt-2 rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-sm text-mlq-text hover:bg-mlq-surface-alt"
+					>Verify</button
+				>
 			</form>
 			<ul class="mt-3 space-y-1">
 				{#each r.citations as c (c.citation)}
 					<li class="text-xs text-mlq-text">
 						<span class="font-medium">{c.citation}</span>
 						{#if c.clusters.length}
-							— <button type="button" onclick={() => c.clusters[0].id && r.openCluster(c.clusters[0].id)} class="text-mlq-workflow hover:underline">{c.clusters[0].case_name ?? 'view'}</button>
+							— <button
+								type="button"
+								onclick={() => c.clusters[0].id && r.openCluster(c.clusters[0].id)}
+								class="text-mlq-workflow hover:underline"
+								>{c.clusters[0].case_name ?? 'view'}</button
+							>
 						{:else}<span class="text-mlq-muted"> — not found</span>{/if}
 					</li>
 				{/each}
@@ -1135,7 +1265,7 @@ export const load: PageServerLoad = async (event) => {
 In `src/lib/components/Sidebar.svelte`, import the icon and add the entry to `nav`:
 
 ```ts
-	import { /* …existing… */ Scale } from '@lucide/svelte';
+import { /* …existing… */ Scale } from '@lucide/svelte';
 ```
 
 Add after the `/tabular` entry:
@@ -1163,6 +1293,7 @@ git commit -m "feat(research): /research workspace page + nav entry"
 ### Task 7: Live e2e (token-gated) + not-enabled path
 
 **Files:**
+
 - Create: `tests/research.spec.ts`
 
 > **Prerequisite for the enabled path:** the local stack must have CourtListener wired — `COURTLISTENER_API_TOKEN` in `.env` (done) **and** the gateway's `tool_providers:` `courtlistener` block enabled, **and** `COURTLISTENER_API_TOKEN` passed through to the gateway container. If that wiring isn't in place, the enabled-flow test self-skips (see Step 1) and only the not-enabled gate is asserted. Validate the wiring live before claiming the enabled path passes (evidence, §2.5).
@@ -1179,7 +1310,10 @@ test('research page renders (gate or workspace)', async ({ page }) => {
 	await page.goto('/research');
 	await expect(page.getByRole('heading', { name: /case-law research/i })).toBeVisible();
 	// Either the not-enabled gate OR the search box is present — both are valid.
-	const enabled = await page.getByRole('searchbox', { name: /search case law/i }).isVisible().catch(() => false);
+	const enabled = await page
+		.getByRole('searchbox', { name: /search case law/i })
+		.isVisible()
+		.catch(() => false);
 	if (!enabled) {
 		await expect(page.getByText(/isn’t enabled/i)).toBeVisible();
 		test.skip(true, 'CourtListener not wired in this stack — gate asserted, search flow skipped');
@@ -1200,6 +1334,7 @@ docker compose up -d --build api arq-worker ingest-worker donna-web   # migratio
 docker compose up -d --build donna-web                                 # serve the new working tree
 npx playwright test tests/research.spec.ts
 ```
+
 Expected: PASS (gate path if CL unwired; full flow if wired).
 
 - [ ] **Step 3: Commit**
@@ -1215,11 +1350,12 @@ git commit -m "test(research): live e2e — gate path unconditional, search flow
 
 **Spec coverage:** search ✅(T2/T4/T6) · read opinion in doc panel ✅(T3/T6) · find-in-case ✅(T4 controller; surfaced in T6 — see note below) · verify-citations ✅(T4/T6) · capabilities gate ✅(T5/T6) · 7-member `text_field_used` labels ✅(T1/T6) · BFF + auth ✅(T2) · honest degradation ✅(T4 503→gate, T6 load degrade) · nav ✅(T6).
 
-**Known scope note (not a gap):** `findInCase` exists in the controller (T4) but the page (T6) wires the *Open*/verify flows; an in-opinion find-in-case input + result list is a thin follow-up on the controller method — left as a fast-follow to keep T6 reviewable. If required in this slice, add a find input bound to `r.findInCase(activeOpinionId, q)` rendering `r.matches` (snippets) beside the cluster section. Flagged so it isn't silently dropped.
+**Known scope note (not a gap):** `findInCase` exists in the controller (T4) but the page (T6) wires the _Open_/verify flows; an in-opinion find-in-case input + result list is a thin follow-up on the controller method — left as a fast-follow to keep T6 reviewable. If required in this slice, add a find input bound to `r.findInCase(activeOpinionId, q)` rendering `r.matches` (snippets) beside the cluster section. Flagged so it isn't silently dropped.
 
 **Placeholder scan:** none — every code step is complete.
 
 **Type consistency:** `parse*` names, `SearchResultItem`/`ClusterView`/`FindMatch`/`VerifiedCitation`, `createResearch` accessors, `openOpinion({opinionId, caseName})`, `contentUrl` — consistent across T1/T3/T4/T6.
 
 **One thing the implementer MUST verify against the live app (don't assume):**
+
 - Whether `Sidebar.svelte.test.ts` enumerates nav links (it asserts a set of paths) — add `/research` there if so, or its suite goes red. (Doc-panel access in T6 is already verified: per-page `createDocPanel()` + `<DocumentPanel {docPanel} />`, no context.)

@@ -5,5 +5,5 @@
  * runaway scan. A blocking async pre-check is a Phase 3 refinement (resource controls).
  */
 export function isPortFreeSync(_port: number): boolean {
-	return true
+	return true;
 }

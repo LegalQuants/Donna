@@ -15,18 +15,15 @@ Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
     `GET /opinions/{id}` (full opinion plaintext), `POST /find-in-case`. Plain synchronous REST.
   - **#163 `38dbbb0` + #164 `e2cc311`** — the three Donna-requested refinements
     (`docs/upstream-requests/lq-ai-research-surface-donna-refinements.md`), now reflected in the
-    consumable OpenAPI spec and verified in `backend.d.ts`:
-    - `GET /research/capabilities` → `{ enabled: boolean, providers: [{name, type}] }` — fresh from
-      the gateway (no api restart), so Donna's not-enabled gate is deterministic; the other endpoints
-      raise **503 `ResearchNotConfigured`** when off.
-    - Typed `VerifiedCitation` (`citation, normalized_citations[], status, error_message,
-      clusters:[{id, case_name, absolute_url}]`) — Donna drops the planned hand-parser.
-    - `text_field_used` is a **7-member enum** (`html_with_citations`, `html_columbia`,
-      `html_lawbox`, `xml_harvard`, `html_anon_2020`, `html`, `plain_text`).
+    consumable OpenAPI spec and verified in `backend.d.ts`: - `GET /research/capabilities` → `{ enabled: boolean, providers: [{name, type}] }` — fresh from
+    the gateway (no api restart), so Donna's not-enabled gate is deterministic; the other endpoints
+    raise **503 `ResearchNotConfigured`** when off. - Typed `VerifiedCitation` (`citation, normalized_citations[], status, error_message,
+clusters:[{id, case_name, absolute_url}]`) — Donna drops the planned hand-parser. - `text_field_used` is a **7-member enum** (`html_with_citations`, `html_columbia`,
+    `html_lawbox`, `xml_harvard`, `html_anon_2020`, `html`, `plain_text`).
   - Note: multi-CourtListener-provider configs resolve to `providers[0]` (process-cached). LQ-AI
     filed **DE-337** to generate the OpenAPI spec from `app.openapi()` so it can't drift again.
   - **Container rebuild still required before runtime/e2e** (§8): `docker compose up -d --build api
-    arq-worker ingest-worker donna-web` so migration **0049** runs on api boot. Not needed for
+arq-worker ingest-worker donna-web` so migration **0049** runs on api boot. Not needed for
     `gen:api` / `npm run check` (the spec is read from the committed yaml).
 
 - `0097b01` → `c4d4482` (2026-06-07): lq-ai **#138** + **#139** (Donna asks **#8** + **#9**,

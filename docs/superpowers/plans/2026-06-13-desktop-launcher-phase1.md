@@ -9,6 +9,7 @@
 **Tech Stack:** Electron + TypeScript, built with **electron-vite**, packaged/signed/notarized with **electron-builder**, auto-update via **electron-updater** (configured now, exercised in Phase 3). Unit tests with **vitest**. Secrets via Electron's built-in **`safeStorage`** (Keychain-backed). Process orchestration via Node `child_process`. macOS-only for v1.
 
 **Source of truth this plan was written against:**
+
 - `docker-compose.release.yml` — 8 services: `postgres`, `redis`, `minio`, `gateway`, `api`, `ingest-worker`, `arq-worker`, `donna-web`. Compose project `name: donna`.
 - `.env.example` — required (no-default) secrets: `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD` (+ `S3_SECRET_KEY` must match it), `LQ_AI_GATEWAY_KEY`, `JWT_SECRET`. `ORIGIN` must equal the host URL the browser uses for `donna-web` (default `http://localhost:13002`). `DONNA_IMAGE_TAG` selects the image release (pin to `v0.1.0`).
 - `donna-web` healthcheck = `GET /login` on internal port 3000, mapped to `DONNA_WEB_HOST_PORT` (default 13002), `start_period: 20s`.
@@ -66,6 +67,7 @@ desktop/
 ## Task 1: Scaffold the `desktop/` Electron + TypeScript project
 
 **Files:**
+
 - Create: `desktop/package.json`
 - Create: `desktop/tsconfig.json`
 - Create: `desktop/electron.vite.config.ts`
@@ -78,32 +80,32 @@ desktop/
 
 ```json
 {
-  "name": "donna-desktop",
-  "version": "0.1.0",
-  "description": "Donna for Mac — desktop launcher for the Donna release stack",
-  "author": "Kevin Keller",
-  "license": "Apache-2.0",
-  "main": "out/main/index.js",
-  "type": "module",
-  "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "dist": "npm run build && electron-builder --mac"
-  },
-  "devDependencies": {
-    "electron": "^31.0.0",
-    "electron-vite": "^2.3.0",
-    "electron-builder": "^24.13.3",
-    "typescript": "^5.5.0",
-    "vite": "^5.3.0",
-    "vitest": "^2.0.0"
-  },
-  "dependencies": {
-    "electron-updater": "^6.2.1"
-  }
+	"name": "donna-desktop",
+	"version": "0.1.0",
+	"description": "Donna for Mac — desktop launcher for the Donna release stack",
+	"author": "Kevin Keller",
+	"license": "Apache-2.0",
+	"main": "out/main/index.js",
+	"type": "module",
+	"scripts": {
+		"dev": "electron-vite dev",
+		"build": "electron-vite build",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"typecheck": "tsc --noEmit",
+		"dist": "npm run build && electron-builder --mac"
+	},
+	"devDependencies": {
+		"electron": "^31.0.0",
+		"electron-vite": "^2.3.0",
+		"electron-builder": "^24.13.3",
+		"typescript": "^5.5.0",
+		"vite": "^5.3.0",
+		"vitest": "^2.0.0"
+	},
+	"dependencies": {
+		"electron-updater": "^6.2.1"
+	}
 }
 ```
 
@@ -111,27 +113,27 @@ desktop/
 
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "types": ["node"],
-    "outDir": "out"
-  },
-  "include": ["src/**/*.ts"]
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"resolveJsonModule": true,
+		"types": ["node"],
+		"outDir": "out"
+	},
+	"include": ["src/**/*.ts"]
 }
 ```
 
 - [ ] **Step 3: Create `desktop/electron.vite.config.ts`**
 
 ```ts
-import { defineConfig } from 'electron-vite'
-import { resolve } from 'node:path'
+import { defineConfig } from 'electron-vite';
+import { resolve } from 'node:path';
 
 export default defineConfig({
 	main: { build: { rollupOptions: { input: resolve('src/main/index.ts') } } },
@@ -140,20 +142,20 @@ export default defineConfig({
 		root: 'src/renderer',
 		build: { rollupOptions: { input: resolve('src/renderer/index.html') } }
 	}
-})
+});
 ```
 
 - [ ] **Step 4: Create `desktop/vitest.config.ts`**
 
 ```ts
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	test: {
 		environment: 'node',
 		include: ['src/core/**/*.test.ts']
 	}
-})
+});
 ```
 
 - [ ] **Step 5: Create `desktop/.gitignore`**
@@ -168,8 +170,8 @@ dist/
 - [ ] **Step 6: Write the failing test for shared constants — `desktop/src/core/types.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { EXPECTED_SERVICES, DEFAULT_PORTS } from './types'
+import { describe, it, expect } from 'vitest';
+import { EXPECTED_SERVICES, DEFAULT_PORTS } from './types';
 
 describe('core constants', () => {
 	it('lists all 8 release-stack services', () => {
@@ -182,13 +184,13 @@ describe('core constants', () => {
 			'ingest-worker',
 			'arq-worker',
 			'donna-web'
-		])
-	})
+		]);
+	});
 
 	it('defaults donna-web to the shifted port 13002', () => {
-		expect(DEFAULT_PORTS.donnaWeb).toBe(13002)
-	})
-})
+		expect(DEFAULT_PORTS.donnaWeb).toBe(13002);
+	});
+});
 ```
 
 - [ ] **Step 7: Run the test to verify it fails**
@@ -209,18 +211,18 @@ export const EXPECTED_SERVICES = [
 	'ingest-worker',
 	'arq-worker',
 	'donna-web'
-] as const
+] as const;
 
-export type ServiceName = (typeof EXPECTED_SERVICES)[number]
+export type ServiceName = (typeof EXPECTED_SERVICES)[number];
 
 export interface PortConfig {
-	donnaWeb: number
-	api: number
-	gateway: number
-	postgres: number
-	redis: number
-	minioApi: number
-	minioConsole: number
+	donnaWeb: number;
+	api: number;
+	gateway: number;
+	postgres: number;
+	redis: number;
+	minioApi: number;
+	minioConsole: number;
 }
 
 /** Shifted defaults matching .env.example so Donna coexists with a raw lq-ai dev stack. */
@@ -232,15 +234,15 @@ export const DEFAULT_PORTS: PortConfig = {
 	redis: 26379,
 	minioApi: 29000,
 	minioConsole: 29001
-}
+};
 
-export type EngineStatus = 'absent' | 'present' | 'error'
+export type EngineStatus = 'absent' | 'present' | 'error';
 
 export interface EngineProbe {
-	status: EngineStatus
-	version?: string
+	status: EngineStatus;
+	version?: string;
 	/** Human-readable detail for the UI (why absent / what error). */
-	message?: string
+	message?: string;
 }
 
 export type ServiceHealth =
@@ -250,21 +252,16 @@ export type ServiceHealth =
 	| 'running'
 	| 'exited'
 	| 'created'
-	| 'unknown'
+	| 'unknown';
 
 export interface ServiceStatus {
-	name: string
+	name: string;
 	/** Raw compose State, e.g. "running" | "exited" | "created". */
-	state: string
-	health: ServiceHealth
+	state: string;
+	health: ServiceHealth;
 }
 
-export type LauncherState =
-	| 'NO_ENGINE'
-	| 'STACK_STARTING'
-	| 'HEALTHY'
-	| 'STOPPED'
-	| 'FAILED'
+export type LauncherState = 'NO_ENGINE' | 'STACK_STARTING' | 'HEALTHY' | 'STOPPED' | 'FAILED';
 ```
 
 > Note on the state set: the design doc lists `STACK_PROVISIONING` (pulling images) and `MODELS_DOWNLOADING` as states. Those are **not** reliably derivable from `docker compose ps` (image pulls happen before containers exist; the ingest-worker healthcheck pings redis and goes healthy while HF models still download in the background). To keep `deriveLauncherState` a pure, testable function of `ps` output, those two are surfaced to the user as **transient UI sub-states driven by command/log signals** in the orchestrator (Task 11), not by `ps`. The pure derivation handles the five states above honestly.
@@ -286,50 +283,51 @@ git commit -m "feat(desktop): scaffold Electron launcher project + core types"
 ## Task 2: Secret generation (pure)
 
 **Files:**
+
 - Create: `desktop/src/core/secrets.ts`
 - Test: `desktop/src/core/secrets.test.ts`
 
 - [ ] **Step 1: Write the failing test — `desktop/src/core/secrets.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { generateSecrets } from './secrets'
+import { describe, it, expect } from 'vitest';
+import { generateSecrets } from './secrets';
 
 describe('generateSecrets', () => {
 	it('mints all required release-stack secrets', () => {
-		const s = generateSecrets()
+		const s = generateSecrets();
 		expect(Object.keys(s).sort()).toEqual([
 			'JWT_SECRET',
 			'LQ_AI_GATEWAY_KEY',
 			'MINIO_ROOT_PASSWORD',
 			'POSTGRES_PASSWORD',
 			'S3_SECRET_KEY'
-		])
-	})
+		]);
+	});
 
 	it('makes S3_SECRET_KEY equal to MINIO_ROOT_PASSWORD (the compose requires the pair to match)', () => {
-		const s = generateSecrets()
-		expect(s.S3_SECRET_KEY).toBe(s.MINIO_ROOT_PASSWORD)
-	})
+		const s = generateSecrets();
+		expect(s.S3_SECRET_KEY).toBe(s.MINIO_ROOT_PASSWORD);
+	});
 
 	it('produces strong values: JWT >= 43 chars, minio password >= 8, no padding/url-unsafe chars', () => {
-		const s = generateSecrets()
-		expect(s.JWT_SECRET.length).toBeGreaterThanOrEqual(43)
-		expect(s.MINIO_ROOT_PASSWORD.length).toBeGreaterThanOrEqual(8)
+		const s = generateSecrets();
+		expect(s.JWT_SECRET.length).toBeGreaterThanOrEqual(43);
+		expect(s.MINIO_ROOT_PASSWORD.length).toBeGreaterThanOrEqual(8);
 		for (const v of Object.values(s)) {
-			expect(v).toMatch(/^[A-Za-z0-9_-]+$/) // base64url, env-safe (no =, +, /, quotes)
+			expect(v).toMatch(/^[A-Za-z0-9_-]+$/); // base64url, env-safe (no =, +, /, quotes)
 		}
-	})
+	});
 
 	it('is deterministic given an injected RNG (for reproducible tests)', () => {
-		const rng = (n: number) => Buffer.alloc(n, 7)
-		expect(generateSecrets(rng)).toEqual(generateSecrets(rng))
-	})
+		const rng = (n: number) => Buffer.alloc(n, 7);
+		expect(generateSecrets(rng)).toEqual(generateSecrets(rng));
+	});
 
 	it('is overwhelmingly likely to differ between real calls', () => {
-		expect(generateSecrets().JWT_SECRET).not.toBe(generateSecrets().JWT_SECRET)
-	})
-})
+		expect(generateSecrets().JWT_SECRET).not.toBe(generateSecrets().JWT_SECRET);
+	});
+});
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -340,31 +338,31 @@ Expected: FAIL — cannot resolve `./secrets`.
 - [ ] **Step 3: Implement `desktop/src/core/secrets.ts`**
 
 ```ts
-import { randomBytes } from 'node:crypto'
+import { randomBytes } from 'node:crypto';
 
 export interface GeneratedSecrets {
-	POSTGRES_PASSWORD: string
-	MINIO_ROOT_PASSWORD: string
+	POSTGRES_PASSWORD: string;
+	MINIO_ROOT_PASSWORD: string;
 	/** Must equal MINIO_ROOT_PASSWORD — the release compose pairs them. */
-	S3_SECRET_KEY: string
-	LQ_AI_GATEWAY_KEY: string
-	JWT_SECRET: string
+	S3_SECRET_KEY: string;
+	LQ_AI_GATEWAY_KEY: string;
+	JWT_SECRET: string;
 }
 
 /** Injectable RNG so tests can be deterministic; defaults to crypto.randomBytes. */
-export type Rng = (n: number) => Buffer
+export type Rng = (n: number) => Buffer;
 
-const token = (bytes: number, rng: Rng): string => rng(bytes).toString('base64url')
+const token = (bytes: number, rng: Rng): string => rng(bytes).toString('base64url');
 
 export function generateSecrets(rng: Rng = randomBytes): GeneratedSecrets {
-	const minio = token(18, rng) // 24 base64url chars, well over the 8-char minimum
+	const minio = token(18, rng); // 24 base64url chars, well over the 8-char minimum
 	return {
 		POSTGRES_PASSWORD: token(24, rng),
 		MINIO_ROOT_PASSWORD: minio,
 		S3_SECRET_KEY: minio,
 		LQ_AI_GATEWAY_KEY: token(24, rng),
 		JWT_SECRET: token(48, rng) // 64 base64url chars
-	}
+	};
 }
 ```
 
@@ -385,6 +383,7 @@ git commit -m "feat(desktop): generate strong release-stack secrets (S3/minio pa
 ## Task 3: `.env` rendering (pure)
 
 **Files:**
+
 - Create: `desktop/src/core/config.ts` (the `LauncherConfig` type used here and later)
 - Create: `desktop/src/core/env.ts`
 - Test: `desktop/src/core/env.test.ts`
@@ -392,34 +391,34 @@ git commit -m "feat(desktop): generate strong release-stack secrets (S3/minio pa
 - [ ] **Step 1: Create the config type — `desktop/src/core/config.ts`**
 
 ```ts
-import type { GeneratedSecrets } from './secrets'
-import type { PortConfig } from './types'
+import type { GeneratedSecrets } from './secrets';
+import type { PortConfig } from './types';
 
 export type InferenceChoice =
 	| { mode: 'cloud'; anthropicApiKey?: string; openaiApiKey?: string }
-	| { mode: 'ollama'; baseUrl: string }
+	| { mode: 'ollama'; baseUrl: string };
 
 export interface LauncherConfig {
-	secrets: GeneratedSecrets
-	ports: PortConfig
+	secrets: GeneratedSecrets;
+	ports: PortConfig;
 	/** Pinned image release, e.g. "v0.1.0". Never "latest" by default. */
-	imageTag: string
-	inference: InferenceChoice
-	adminEmail: string
+	imageTag: string;
+	inference: InferenceChoice;
+	adminEmail: string;
 }
 
 /** First run = no persisted config blob exists yet. */
 export function isFirstRun(persisted: LauncherConfig | null): boolean {
-	return persisted === null
+	return persisted === null;
 }
 ```
 
 - [ ] **Step 2: Write the failing test — `desktop/src/core/env.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { renderEnv, parseEnv } from './env'
-import type { LauncherConfig } from './config'
+import { describe, it, expect } from 'vitest';
+import { renderEnv, parseEnv } from './env';
+import type { LauncherConfig } from './config';
 
 const base: LauncherConfig = {
 	secrets: {
@@ -441,51 +440,54 @@ const base: LauncherConfig = {
 	imageTag: 'v0.1.0',
 	inference: { mode: 'cloud', anthropicApiKey: 'sk-ant-123' },
 	adminEmail: 'admin@example.com'
-}
+};
 
 describe('renderEnv', () => {
 	it('emits every required secret and the paired S3 key', () => {
-		const env = parseEnv(renderEnv(base))
-		expect(env.POSTGRES_PASSWORD).toBe('pg-secret')
-		expect(env.MINIO_ROOT_PASSWORD).toBe('minio-secret')
-		expect(env.S3_SECRET_KEY).toBe('minio-secret')
-		expect(env.LQ_AI_GATEWAY_KEY).toBe('gw-secret')
-		expect(env.JWT_SECRET).toBe('jwt-secret')
-	})
+		const env = parseEnv(renderEnv(base));
+		expect(env.POSTGRES_PASSWORD).toBe('pg-secret');
+		expect(env.MINIO_ROOT_PASSWORD).toBe('minio-secret');
+		expect(env.S3_SECRET_KEY).toBe('minio-secret');
+		expect(env.LQ_AI_GATEWAY_KEY).toBe('gw-secret');
+		expect(env.JWT_SECRET).toBe('jwt-secret');
+	});
 
 	it('keeps ORIGIN in lockstep with the donna-web host port (adapter-node 403s otherwise)', () => {
-		const env = parseEnv(renderEnv({ ...base, ports: { ...base.ports, donnaWeb: 14444 } }))
-		expect(env.ORIGIN).toBe('http://localhost:14444')
-		expect(env.DONNA_WEB_HOST_PORT).toBe('14444')
-	})
+		const env = parseEnv(renderEnv({ ...base, ports: { ...base.ports, donnaWeb: 14444 } }));
+		expect(env.ORIGIN).toBe('http://localhost:14444');
+		expect(env.DONNA_WEB_HOST_PORT).toBe('14444');
+	});
 
 	it('pins the image tag (never latent latest)', () => {
-		expect(parseEnv(renderEnv(base)).DONNA_IMAGE_TAG).toBe('v0.1.0')
-	})
+		expect(parseEnv(renderEnv(base)).DONNA_IMAGE_TAG).toBe('v0.1.0');
+	});
 
 	it('cloud inference writes the API key and leaves OLLAMA at the host default', () => {
-		const env = parseEnv(renderEnv(base))
-		expect(env.ANTHROPIC_API_KEY).toBe('sk-ant-123')
-		expect(env.OLLAMA_BASE_URL).toBe('http://host.docker.internal:11434')
-	})
+		const env = parseEnv(renderEnv(base));
+		expect(env.ANTHROPIC_API_KEY).toBe('sk-ant-123');
+		expect(env.OLLAMA_BASE_URL).toBe('http://host.docker.internal:11434');
+	});
 
 	it('ollama inference omits cloud keys and points OLLAMA at the chosen URL', () => {
 		const env = parseEnv(
-			renderEnv({ ...base, inference: { mode: 'ollama', baseUrl: 'http://host.docker.internal:11434' } })
-		)
-		expect(env.ANTHROPIC_API_KEY ?? '').toBe('')
-		expect(env.OLLAMA_BASE_URL).toBe('http://host.docker.internal:11434')
-	})
+			renderEnv({
+				...base,
+				inference: { mode: 'ollama', baseUrl: 'http://host.docker.internal:11434' }
+			})
+		);
+		expect(env.ANTHROPIC_API_KEY ?? '').toBe('');
+		expect(env.OLLAMA_BASE_URL).toBe('http://host.docker.internal:11434');
+	});
 
 	it('round-trips with no shell-unsafe unescaped characters in values', () => {
-		const text = renderEnv(base)
+		const text = renderEnv(base);
 		// every non-comment, non-blank line is KEY=VALUE
 		for (const line of text.split('\n')) {
-			if (!line || line.startsWith('#')) continue
-			expect(line).toMatch(/^[A-Z0-9_]+=/)
+			if (!line || line.startsWith('#')) continue;
+			expect(line).toMatch(/^[A-Z0-9_]+=/);
 		}
-	})
-})
+	});
+});
 ```
 
 - [ ] **Step 3: Run the test to verify it fails**
@@ -496,19 +498,19 @@ Expected: FAIL — cannot resolve `./env`.
 - [ ] **Step 4: Implement `desktop/src/core/env.ts`**
 
 ```ts
-import type { LauncherConfig } from './config'
+import type { LauncherConfig } from './config';
 
 /** Minimal KEY=VALUE parser for tests/round-trips (ignores comments + blanks). */
 export function parseEnv(text: string): Record<string, string> {
-	const out: Record<string, string> = {}
+	const out: Record<string, string> = {};
 	for (const raw of text.split('\n')) {
-		const line = raw.trim()
-		if (!line || line.startsWith('#')) continue
-		const eq = line.indexOf('=')
-		if (eq === -1) continue
-		out[line.slice(0, eq)] = line.slice(eq + 1)
+		const line = raw.trim();
+		if (!line || line.startsWith('#')) continue;
+		const eq = line.indexOf('=');
+		if (eq === -1) continue;
+		out[line.slice(0, eq)] = line.slice(eq + 1);
 	}
-	return out
+	return out;
 }
 
 /**
@@ -518,10 +520,11 @@ export function parseEnv(text: string): Record<string, string> {
  * token charset (no spaces/newlines) and is validated upstream in the wizard.
  */
 export function renderEnv(cfg: LauncherConfig): string {
-	const { secrets: s, ports: p, inference } = cfg
-	const anthropic = inference.mode === 'cloud' ? (inference.anthropicApiKey ?? '') : ''
-	const openai = inference.mode === 'cloud' ? (inference.openaiApiKey ?? '') : ''
-	const ollama = inference.mode === 'ollama' ? inference.baseUrl : 'http://host.docker.internal:11434'
+	const { secrets: s, ports: p, inference } = cfg;
+	const anthropic = inference.mode === 'cloud' ? (inference.anthropicApiKey ?? '') : '';
+	const openai = inference.mode === 'cloud' ? (inference.openaiApiKey ?? '') : '';
+	const ollama =
+		inference.mode === 'ollama' ? inference.baseUrl : 'http://host.docker.internal:11434';
 
 	return [
 		'# Generated by Donna for Mac — do not edit by hand.',
@@ -557,7 +560,7 @@ export function renderEnv(cfg: LauncherConfig): string {
 		`OPENAI_API_KEY=${openai}`,
 		`OLLAMA_BASE_URL=${ollama}`,
 		''
-	].join('\n')
+	].join('\n');
 }
 ```
 
@@ -578,35 +581,36 @@ git commit -m "feat(desktop): render release .env from config (ORIGIN/port locks
 ## Task 4: Port collision resolution (pure)
 
 **Files:**
+
 - Create: `desktop/src/core/ports.ts`
 - Test: `desktop/src/core/ports.test.ts`
 
 - [ ] **Step 1: Write the failing test — `desktop/src/core/ports.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { resolvePorts } from './ports'
-import { DEFAULT_PORTS } from './types'
+import { describe, it, expect } from 'vitest';
+import { resolvePorts } from './ports';
+import { DEFAULT_PORTS } from './types';
 
 describe('resolvePorts', () => {
 	it('returns the defaults unchanged when every port is free', () => {
-		const out = resolvePorts(DEFAULT_PORTS, () => true)
-		expect(out).toEqual(DEFAULT_PORTS)
-	})
+		const out = resolvePorts(DEFAULT_PORTS, () => true);
+		expect(out).toEqual(DEFAULT_PORTS);
+	});
 
 	it('bumps a busy port to the next free one', () => {
-		const busy = new Set([13002, 13003])
-		const out = resolvePorts(DEFAULT_PORTS, (port) => !busy.has(port))
-		expect(out.donnaWeb).toBe(13004)
-	})
+		const busy = new Set([13002, 13003]);
+		const out = resolvePorts(DEFAULT_PORTS, (port) => !busy.has(port));
+		expect(out.donnaWeb).toBe(13004);
+	});
 
 	it('never assigns the same port to two services', () => {
 		// pretend everything from defaults..+1 is busy so each must hunt upward
-		const out = resolvePorts(DEFAULT_PORTS, (port) => port % 2 === 0)
-		const values = Object.values(out)
-		expect(new Set(values).size).toBe(values.length)
-	})
-})
+		const out = resolvePorts(DEFAULT_PORTS, (port) => port % 2 === 0);
+		const values = Object.values(out);
+		expect(new Set(values).size).toBe(values.length);
+	});
+});
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -617,9 +621,9 @@ Expected: FAIL — cannot resolve `./ports`.
 - [ ] **Step 3: Implement `desktop/src/core/ports.ts`**
 
 ```ts
-import type { PortConfig } from './types'
+import type { PortConfig } from './types';
 
-export type IsPortFree = (port: number) => boolean
+export type IsPortFree = (port: number) => boolean;
 
 /**
  * Resolve a port map against a free-port predicate. Each service's preferred port
@@ -627,13 +631,13 @@ export type IsPortFree = (port: number) => boolean
  * assigned port so two services never collide. Pure given the injected predicate.
  */
 export function resolvePorts(preferred: PortConfig, isFree: IsPortFree): PortConfig {
-	const taken = new Set<number>()
+	const taken = new Set<number>();
 	const pick = (want: number): number => {
-		let port = want
-		while (taken.has(port) || !isFree(port)) port++
-		taken.add(port)
-		return port
-	}
+		let port = want;
+		while (taken.has(port) || !isFree(port)) port++;
+		taken.add(port);
+		return port;
+	};
 	// Order matters only for determinism; donna-web first since it's the user-facing one.
 	return {
 		donnaWeb: pick(preferred.donnaWeb),
@@ -643,7 +647,7 @@ export function resolvePorts(preferred: PortConfig, isFree: IsPortFree): PortCon
 		redis: pick(preferred.redis),
 		minioApi: pick(preferred.minioApi),
 		minioConsole: pick(preferred.minioConsole)
-	}
+	};
 }
 ```
 
@@ -664,13 +668,14 @@ git commit -m "feat(desktop): resolve host ports around collisions (no double-as
 ## Task 5: Compose `ps` parsing + command argv (pure)
 
 **Files:**
+
 - Create: `desktop/src/core/compose.ts`
 - Test: `desktop/src/core/compose.test.ts`
 
 - [ ] **Step 1: Write the failing test — `desktop/src/core/compose.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest';
 import {
 	parseComposePs,
 	composeBaseArgs,
@@ -679,35 +684,36 @@ import {
 	downArgs,
 	logsArgs,
 	adminFixtureArgs
-} from './compose'
+} from './compose';
 
-const base = composeBaseArgs('/data/docker-compose.release.yml', 'donna')
+const base = composeBaseArgs('/data/docker-compose.release.yml', 'donna');
 
 describe('composeBaseArgs', () => {
 	it('targets the file and project name', () => {
-		expect(base).toEqual([
-			'compose',
-			'-f',
-			'/data/docker-compose.release.yml',
-			'-p',
-			'donna'
-		])
-	})
-})
+		expect(base).toEqual(['compose', '-f', '/data/docker-compose.release.yml', '-p', 'donna']);
+	});
+});
 
 describe('argv builders', () => {
 	it('ps requests JSON', () => {
-		expect(psArgs(base)).toEqual([...base, 'ps', '--format', 'json'])
-	})
+		expect(psArgs(base)).toEqual([...base, 'ps', '--format', 'json']);
+	});
 	it('up is detached', () => {
-		expect(upArgs(base)).toEqual([...base, 'up', '-d'])
-	})
+		expect(upArgs(base)).toEqual([...base, 'up', '-d']);
+	});
 	it('down keeps volumes (no -v) so user data survives a stop', () => {
-		expect(downArgs(base)).toEqual([...base, 'down'])
-	})
+		expect(downArgs(base)).toEqual([...base, 'down']);
+	});
 	it('logs follow a single service', () => {
-		expect(logsArgs(base, 'donna-web')).toEqual([...base, 'logs', '-f', '--tail', '200', 'donna-web'])
-	})
+		expect(logsArgs(base, 'donna-web')).toEqual([
+			...base,
+			'logs',
+			'-f',
+			'--tail',
+			'200',
+			'donna-web'
+		]);
+	});
 	it('admin fixture runs the CLI in the api container without a TTY', () => {
 		expect(adminFixtureArgs(base, 'me@x.com', 'pw123')).toEqual([
 			...base,
@@ -723,54 +729,54 @@ describe('argv builders', () => {
 			'--password',
 			'pw123',
 			'--no-force-change'
-		])
-	})
-})
+		]);
+	});
+});
 
 describe('parseComposePs', () => {
 	it('parses JSONL (one object per line — modern docker)', () => {
 		const raw =
 			'{"Name":"donna-postgres-1","Service":"postgres","State":"running","Health":"healthy"}\n' +
-			'{"Name":"donna-donna-web-1","Service":"donna-web","State":"running","Health":"starting"}'
-		const out = parseComposePs(raw)
+			'{"Name":"donna-donna-web-1","Service":"donna-web","State":"running","Health":"starting"}';
+		const out = parseComposePs(raw);
 		expect(out).toEqual([
 			{ name: 'postgres', state: 'running', health: 'healthy' },
 			{ name: 'donna-web', state: 'running', health: 'starting' }
-		])
-	})
+		]);
+	});
 
 	it('parses a JSON array (older docker) too', () => {
 		const raw = JSON.stringify([
 			{ Service: 'redis', State: 'running', Health: '' },
 			{ Service: 'api', State: 'exited', Health: '' }
-		])
-		const out = parseComposePs(raw)
+		]);
+		const out = parseComposePs(raw);
 		expect(out).toEqual([
 			{ name: 'redis', state: 'running', health: 'running' },
 			{ name: 'api', state: 'exited', health: 'exited' }
-		])
-	})
+		]);
+	});
 
 	it('maps unhealthy and created states', () => {
 		const raw =
 			'{"Service":"gateway","State":"running","Health":"unhealthy"}\n' +
-			'{"Service":"arq-worker","State":"created","Health":""}'
+			'{"Service":"arq-worker","State":"created","Health":""}';
 		expect(parseComposePs(raw)).toEqual([
 			{ name: 'gateway', state: 'running', health: 'unhealthy' },
 			{ name: 'arq-worker', state: 'created', health: 'created' }
-		])
-	})
+		]);
+	});
 
 	it('returns [] for empty output (stack never started)', () => {
-		expect(parseComposePs('')).toEqual([])
-		expect(parseComposePs('   \n')).toEqual([])
-	})
+		expect(parseComposePs('')).toEqual([]);
+		expect(parseComposePs('   \n')).toEqual([]);
+	});
 
 	it('skips malformed lines rather than throwing (defensive boundary)', () => {
-		const raw = 'not json\n{"Service":"redis","State":"running","Health":"healthy"}'
-		expect(parseComposePs(raw)).toEqual([{ name: 'redis', state: 'running', health: 'healthy' }])
-	})
-})
+		const raw = 'not json\n{"Service":"redis","State":"running","Health":"healthy"}';
+		expect(parseComposePs(raw)).toEqual([{ name: 'redis', state: 'running', health: 'healthy' }]);
+	});
+});
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -781,16 +787,16 @@ Expected: FAIL — cannot resolve `./compose`.
 - [ ] **Step 3: Implement `desktop/src/core/compose.ts`**
 
 ```ts
-import type { ServiceHealth, ServiceStatus } from './types'
+import type { ServiceHealth, ServiceStatus } from './types';
 
 /** `docker <base...>` — the shared prefix for every compose call. */
 export function composeBaseArgs(composeFile: string, projectName: string): string[] {
-	return ['compose', '-f', composeFile, '-p', projectName]
+	return ['compose', '-f', composeFile, '-p', projectName];
 }
 
-export const psArgs = (base: string[]): string[] => [...base, 'ps', '--format', 'json']
-export const upArgs = (base: string[]): string[] => [...base, 'up', '-d']
-export const downArgs = (base: string[]): string[] => [...base, 'down']
+export const psArgs = (base: string[]): string[] => [...base, 'ps', '--format', 'json'];
+export const upArgs = (base: string[]): string[] => [...base, 'up', '-d'];
+export const downArgs = (base: string[]): string[] => [...base, 'down'];
 export const logsArgs = (base: string[], service: string): string[] => [
 	...base,
 	'logs',
@@ -798,7 +804,7 @@ export const logsArgs = (base: string[], service: string): string[] => [
 	'--tail',
 	'200',
 	service
-]
+];
 
 /** First-run admin fixture: create the login the user chose, without a TTY (-T). */
 export function adminFixtureArgs(base: string[], email: string, password: string): string[] {
@@ -816,36 +822,36 @@ export function adminFixtureArgs(base: string[], email: string, password: string
 		'--password',
 		password,
 		'--no-force-change'
-	]
+	];
 }
 
 function mapHealth(state: string, health: string): ServiceHealth {
-	if (health === 'healthy' || health === 'starting' || health === 'unhealthy') return health
+	if (health === 'healthy' || health === 'starting' || health === 'unhealthy') return health;
 	switch (state) {
 		case 'running':
-			return 'running'
+			return 'running';
 		case 'exited':
-			return 'exited'
+			return 'exited';
 		case 'created':
-			return 'created'
+			return 'created';
 		default:
-			return 'unknown'
+			return 'unknown';
 	}
 }
 
 interface RawPs {
-	Service?: string
-	Name?: string
-	State?: string
-	Health?: string
+	Service?: string;
+	Name?: string;
+	State?: string;
+	Health?: string;
 }
 
 function toStatus(row: RawPs): ServiceStatus | null {
-	const name = row.Service ?? row.Name
-	if (!name || typeof name !== 'string') return null
-	const state = typeof row.State === 'string' ? row.State : 'unknown'
-	const health = typeof row.Health === 'string' ? row.Health : ''
-	return { name, state, health: mapHealth(state, health) }
+	const name = row.Service ?? row.Name;
+	if (!name || typeof name !== 'string') return null;
+	const state = typeof row.State === 'string' ? row.State : 'unknown';
+	const health = typeof row.Health === 'string' ? row.Health : '';
+	return { name, state, health: mapHealth(state, health) };
 }
 
 /**
@@ -854,32 +860,32 @@ function toStatus(row: RawPs): ServiceStatus | null {
  * the same defensive-parser discipline as the app's parseXList helpers.
  */
 export function parseComposePs(raw: string): ServiceStatus[] {
-	const text = raw.trim()
-	if (!text) return []
+	const text = raw.trim();
+	if (!text) return [];
 
 	// Try whole-string array first.
 	try {
-		const arr = JSON.parse(text)
+		const arr = JSON.parse(text);
 		if (Array.isArray(arr)) {
-			return arr.map(toStatus).filter((s): s is ServiceStatus => s !== null)
+			return arr.map(toStatus).filter((s): s is ServiceStatus => s !== null);
 		}
 	} catch {
 		// fall through to JSONL
 	}
 
-	const out: ServiceStatus[] = []
+	const out: ServiceStatus[] = [];
 	for (const line of text.split('\n')) {
-		const t = line.trim()
-		if (!t) continue
+		const t = line.trim();
+		if (!t) continue;
 		try {
-			const row = JSON.parse(t) as RawPs
-			const status = toStatus(row)
-			if (status) out.push(status)
+			const row = JSON.parse(t) as RawPs;
+			const status = toStatus(row);
+			if (status) out.push(status);
 		} catch {
 			// skip malformed line
 		}
 	}
-	return out
+	return out;
 }
 ```
 
@@ -900,38 +906,39 @@ git commit -m "feat(desktop): compose argv builders + defensive ps parser (JSONL
 ## Task 6: Engine probe interpretation (pure)
 
 **Files:**
+
 - Create: `desktop/src/core/engine.ts`
 - Test: `desktop/src/core/engine.test.ts`
 
 - [ ] **Step 1: Write the failing test — `desktop/src/core/engine.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { parseEngineProbe } from './engine'
+import { describe, it, expect } from 'vitest';
+import { parseEngineProbe } from './engine';
 
 describe('parseEngineProbe', () => {
 	it('present when `docker info` exits 0', () => {
-		const probe = parseEngineProbe(0, 'Server Version: 27.0.3\n', '')
-		expect(probe.status).toBe('present')
-		expect(probe.version).toBe('27.0.3')
-	})
+		const probe = parseEngineProbe(0, 'Server Version: 27.0.3\n', '');
+		expect(probe.status).toBe('present');
+		expect(probe.version).toBe('27.0.3');
+	});
 
 	it('absent when the docker binary is missing (ENOENT-style)', () => {
-		const probe = parseEngineProbe(127, '', 'command not found: docker')
-		expect(probe.status).toBe('absent')
-		expect(probe.message).toMatch(/not found|install/i)
-	})
+		const probe = parseEngineProbe(127, '', 'command not found: docker');
+		expect(probe.status).toBe('absent');
+		expect(probe.message).toMatch(/not found|install/i);
+	});
 
 	it('error when docker exists but the daemon is not reachable', () => {
 		const probe = parseEngineProbe(
 			1,
 			'',
 			'Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?'
-		)
-		expect(probe.status).toBe('error')
-		expect(probe.message).toMatch(/daemon/i)
-	})
-})
+		);
+		expect(probe.status).toBe('error');
+		expect(probe.message).toMatch(/daemon/i);
+	});
+});
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -942,7 +949,7 @@ Expected: FAIL — cannot resolve `./engine`.
 - [ ] **Step 3: Implement `desktop/src/core/engine.ts`**
 
 ```ts
-import type { EngineProbe } from './types'
+import type { EngineProbe } from './types';
 
 /**
  * Interpret the result of `docker info` (or a spawn failure). Pure: the caller does
@@ -951,24 +958,24 @@ import type { EngineProbe } from './types'
  */
 export function parseEngineProbe(exitCode: number, stdout: string, stderr: string): EngineProbe {
 	if (exitCode === 0) {
-		const m = /Server Version:\s*([^\s]+)/.exec(stdout)
-		return { status: 'present', version: m?.[1] }
+		const m = /Server Version:\s*([^\s]+)/.exec(stdout);
+		return { status: 'present', version: m?.[1] };
 	}
 
-	const err = stderr.toLowerCase()
+	const err = stderr.toLowerCase();
 	if (exitCode === 127 || err.includes('not found') || err.includes('enoent')) {
 		return {
 			status: 'absent',
 			message: 'Docker is not installed. Install Docker Desktop to run Donna.'
-		}
+		};
 	}
 	if (err.includes('daemon') || err.includes('docker.sock')) {
 		return {
 			status: 'error',
 			message: 'Docker is installed but not running. Start Docker Desktop and try again.'
-		}
+		};
 	}
-	return { status: 'error', message: stderr.trim() || 'Could not reach the Docker engine.' }
+	return { status: 'error', message: stderr.trim() || 'Could not reach the Docker engine.' };
 }
 ```
 
@@ -989,63 +996,64 @@ git commit -m "feat(desktop): interpret docker engine probe (absent/error/presen
 ## Task 7: Launcher state derivation (pure — the heart)
 
 **Files:**
+
 - Create: `desktop/src/core/state.ts`
 - Test: `desktop/src/core/state.test.ts`
 
 - [ ] **Step 1: Write the failing test — `desktop/src/core/state.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { deriveLauncherState } from './state'
-import { EXPECTED_SERVICES } from './types'
-import type { EngineProbe, ServiceStatus } from './types'
+import { describe, it, expect } from 'vitest';
+import { deriveLauncherState } from './state';
+import { EXPECTED_SERVICES } from './types';
+import type { EngineProbe, ServiceStatus } from './types';
 
-const present: EngineProbe = { status: 'present', version: '27.0.3' }
+const present: EngineProbe = { status: 'present', version: '27.0.3' };
 
 function allHealthy(): ServiceStatus[] {
-	return EXPECTED_SERVICES.map((name) => ({ name, state: 'running', health: 'healthy' }))
+	return EXPECTED_SERVICES.map((name) => ({ name, state: 'running', health: 'healthy' }));
 }
 
 describe('deriveLauncherState', () => {
 	it('NO_ENGINE when the engine is absent (regardless of stale service data)', () => {
-		expect(deriveLauncherState({ status: 'absent' }, [])).toBe('NO_ENGINE')
-	})
+		expect(deriveLauncherState({ status: 'absent' }, [])).toBe('NO_ENGINE');
+	});
 
 	it('NO_ENGINE when the engine errors (daemon down)', () => {
-		expect(deriveLauncherState({ status: 'error', message: 'daemon down' }, [])).toBe('NO_ENGINE')
-	})
+		expect(deriveLauncherState({ status: 'error', message: 'daemon down' }, [])).toBe('NO_ENGINE');
+	});
 
 	it('STOPPED when the engine is up but no services exist', () => {
-		expect(deriveLauncherState(present, [])).toBe('STOPPED')
-	})
+		expect(deriveLauncherState(present, [])).toBe('STOPPED');
+	});
 
 	it('HEALTHY only when all 8 services are healthy', () => {
-		expect(deriveLauncherState(present, allHealthy())).toBe('HEALTHY')
-	})
+		expect(deriveLauncherState(present, allHealthy())).toBe('HEALTHY');
+	});
 
 	it('STACK_STARTING when some services are present but not all healthy', () => {
-		const services = allHealthy()
-		services[7] = { name: 'donna-web', state: 'running', health: 'starting' }
-		expect(deriveLauncherState(present, services)).toBe('STACK_STARTING')
-	})
+		const services = allHealthy();
+		services[7] = { name: 'donna-web', state: 'running', health: 'starting' };
+		expect(deriveLauncherState(present, services)).toBe('STACK_STARTING');
+	});
 
 	it('STACK_STARTING when only some of the 8 services have come up yet', () => {
-		const partial = allHealthy().slice(0, 3)
-		expect(deriveLauncherState(present, partial)).toBe('STACK_STARTING')
-	})
+		const partial = allHealthy().slice(0, 3);
+		expect(deriveLauncherState(present, partial)).toBe('STACK_STARTING');
+	});
 
 	it('FAILED when any service has exited', () => {
-		const services = allHealthy()
-		services[4] = { name: 'api', state: 'exited', health: 'exited' }
-		expect(deriveLauncherState(present, services)).toBe('FAILED')
-	})
+		const services = allHealthy();
+		services[4] = { name: 'api', state: 'exited', health: 'exited' };
+		expect(deriveLauncherState(present, services)).toBe('FAILED');
+	});
 
 	it('FAILED when any service is unhealthy', () => {
-		const services = allHealthy()
-		services[3] = { name: 'gateway', state: 'running', health: 'unhealthy' }
-		expect(deriveLauncherState(present, services)).toBe('FAILED')
-	})
-})
+		const services = allHealthy();
+		services[3] = { name: 'gateway', state: 'running', health: 'unhealthy' };
+		expect(deriveLauncherState(present, services)).toBe('FAILED');
+	});
+});
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -1056,8 +1064,8 @@ Expected: FAIL — cannot resolve `./state`.
 - [ ] **Step 3: Implement `desktop/src/core/state.ts`**
 
 ```ts
-import { EXPECTED_SERVICES } from './types'
-import type { EngineProbe, LauncherState, ServiceStatus } from './types'
+import { EXPECTED_SERVICES } from './types';
+import type { EngineProbe, LauncherState, ServiceStatus } from './types';
 
 /**
  * Derive the launcher state from a real engine probe + `docker compose ps` snapshot.
@@ -1071,16 +1079,16 @@ import type { EngineProbe, LauncherState, ServiceStatus } from './types'
  * orchestrator from command/log signals; they are not decidable from `ps` alone.
  */
 export function deriveLauncherState(engine: EngineProbe, services: ServiceStatus[]): LauncherState {
-	if (engine.status !== 'present') return 'NO_ENGINE'
+	if (engine.status !== 'present') return 'NO_ENGINE';
 
-	const failed = services.some((s) => s.health === 'exited' || s.health === 'unhealthy')
-	if (failed) return 'FAILED'
+	const failed = services.some((s) => s.health === 'exited' || s.health === 'unhealthy');
+	if (failed) return 'FAILED';
 
-	if (services.length === 0) return 'STOPPED'
+	if (services.length === 0) return 'STOPPED';
 
-	const healthyNames = new Set(services.filter((s) => s.health === 'healthy').map((s) => s.name))
-	const allHealthy = EXPECTED_SERVICES.every((name) => healthyNames.has(name))
-	return allHealthy ? 'HEALTHY' : 'STACK_STARTING'
+	const healthyNames = new Set(services.filter((s) => s.health === 'healthy').map((s) => s.name));
+	const allHealthy = EXPECTED_SERVICES.every((name) => healthyNames.has(name));
+	return allHealthy ? 'HEALTHY' : 'STACK_STARTING';
 }
 ```
 
@@ -1106,6 +1114,7 @@ git commit -m "feat(desktop): derive launcher state from engine+ps (the tested c
 ## Task 8: Docker runner + config store (Electron-side glue)
 
 **Files:**
+
 - Create: `desktop/src/main/paths.ts`
 - Create: `desktop/src/main/runner.ts`
 - Create: `desktop/src/main/store.ts`
@@ -1115,17 +1124,17 @@ git commit -m "feat(desktop): derive launcher state from engine+ps (the tested c
 - [ ] **Step 1: Create `desktop/src/main/paths.ts`**
 
 ```ts
-import { app } from 'electron'
-import { join } from 'node:path'
+import { app } from 'electron';
+import { join } from 'node:path';
 
 /** Per-user app data dir (e.g. ~/Library/Application Support/donna-desktop). */
-export const dataDir = (): string => app.getPath('userData')
+export const dataDir = (): string => app.getPath('userData');
 
 /** Where we persist the encrypted config blob. */
-export const configPath = (): string => join(dataDir(), 'config.enc')
+export const configPath = (): string => join(dataDir(), 'config.enc');
 
 /** The chmod-600 .env handed to docker compose (lives in app data, NOT the repo). */
-export const envPath = (): string => join(dataDir(), '.env')
+export const envPath = (): string => join(dataDir(), '.env');
 
 /**
  * The release compose file. Bundled into the app at build time under resources/.
@@ -1134,76 +1143,82 @@ export const envPath = (): string => join(dataDir(), '.env')
 export const composeFilePath = (): string =>
 	app.isPackaged
 		? join(process.resourcesPath, 'docker-compose.release.yml')
-		: join(app.getAppPath(), '..', 'docker-compose.release.yml')
+		: join(app.getAppPath(), '..', 'docker-compose.release.yml');
 
-export const PROJECT_NAME = 'donna'
+export const PROJECT_NAME = 'donna';
 ```
 
 - [ ] **Step 2: Create `desktop/src/main/runner.ts`**
 
 ```ts
-import { spawn } from 'node:child_process'
+import { spawn } from 'node:child_process';
 
 export interface RunResult {
-	code: number
-	stdout: string
-	stderr: string
+	code: number;
+	stdout: string;
+	stderr: string;
 }
 
 /** Run `docker <args>` to completion, capturing output. Never throws on non-zero. */
 export function runDocker(args: string[], env?: NodeJS.ProcessEnv): Promise<RunResult> {
 	return new Promise((resolve) => {
-		const child = spawn('docker', args, { env: { ...process.env, ...env } })
-		let stdout = ''
-		let stderr = ''
-		child.stdout.on('data', (d) => (stdout += d.toString()))
-		child.stderr.on('data', (d) => (stderr += d.toString()))
-		child.on('error', (err) => resolve({ code: 127, stdout, stderr: stderr + String(err) }))
-		child.on('close', (code) => resolve({ code: code ?? 1, stdout, stderr }))
-	})
+		const child = spawn('docker', args, { env: { ...process.env, ...env } });
+		let stdout = '';
+		let stderr = '';
+		child.stdout.on('data', (d) => (stdout += d.toString()));
+		child.stderr.on('data', (d) => (stderr += d.toString()));
+		child.on('error', (err) => resolve({ code: 127, stdout, stderr: stderr + String(err) }));
+		child.on('close', (code) => resolve({ code: code ?? 1, stdout, stderr }));
+	});
 }
 
 /** Stream `docker <args>` lines to a callback (for `logs -f`). Returns a kill fn. */
 export function streamDocker(args: string[], onLine: (line: string) => void): () => void {
-	const child = spawn('docker', args)
-	const pump = (buf: Buffer) => buf.toString().split('\n').forEach((l) => l && onLine(l))
-	child.stdout.on('data', pump)
-	child.stderr.on('data', pump)
-	return () => child.kill()
+	const child = spawn('docker', args);
+	const pump = (buf: Buffer) =>
+		buf
+			.toString()
+			.split('\n')
+			.forEach((l) => l && onLine(l));
+	child.stdout.on('data', pump);
+	child.stderr.on('data', pump);
+	return () => child.kill();
 }
 ```
 
 - [ ] **Step 3: Create `desktop/src/main/store.ts`**
 
 ```ts
-import { safeStorage } from 'electron'
-import { writeFileSync, readFileSync, existsSync, chmodSync } from 'node:fs'
-import { configPath, envPath } from './paths'
-import { renderEnv } from '../core/env'
-import type { LauncherConfig } from '../core/config'
+import { safeStorage } from 'electron';
+import { writeFileSync, readFileSync, existsSync, chmodSync } from 'node:fs';
+import { configPath, envPath } from './paths';
+import { renderEnv } from '../core/env';
+import type { LauncherConfig } from '../core/config';
 
 /** Persist config encrypted at rest via the OS keychain-backed safeStorage. */
 export function saveConfig(cfg: LauncherConfig): void {
-	const json = Buffer.from(JSON.stringify(cfg), 'utf8')
+	const json = Buffer.from(JSON.stringify(cfg), 'utf8');
 	const blob = safeStorage.isEncryptionAvailable()
 		? safeStorage.encryptString(json.toString('utf8'))
-		: json
-	writeFileSync(configPath(), blob)
+		: json;
+	writeFileSync(configPath(), blob);
 }
 
 export function loadConfig(): LauncherConfig | null {
-	if (!existsSync(configPath())) return null
-	const blob = readFileSync(configPath())
-	const json = safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(blob) : blob.toString('utf8')
-	return JSON.parse(json) as LauncherConfig
+	if (!existsSync(configPath())) return null;
+	const blob = readFileSync(configPath());
+	const json = safeStorage.isEncryptionAvailable()
+		? safeStorage.decryptString(blob)
+		: blob.toString('utf8');
+	return JSON.parse(json) as LauncherConfig;
 }
 
 /** Write the chmod-600 .env the compose command reads, into the app data dir. */
 export function writeEnvFile(cfg: LauncherConfig): string {
-	const path = envPath()
-	writeFileSync(path, renderEnv(cfg), { mode: 0o600 })
-	chmodSync(path, 0o600) // belt-and-suspenders if the file pre-existed
-	return path
+	const path = envPath();
+	writeFileSync(path, renderEnv(cfg), { mode: 0o600 });
+	chmodSync(path, 0o600); // belt-and-suspenders if the file pre-existed
+	return path;
 }
 ```
 
@@ -1224,22 +1239,23 @@ git commit -m "feat(desktop): docker runner + safeStorage config store + chmod-6
 ## Task 9: Orchestrator (wires core + runner + store)
 
 **Files:**
+
 - Create: `desktop/src/main/orchestrator.ts`
 - Test: `desktop/src/main/orchestrator.test.ts` (tests only the pure status-snapshot assembly via injected runner)
 
 - [ ] **Step 1: Write the failing test — `desktop/src/main/orchestrator.test.ts`**
 
 ```ts
-import { describe, it, expect } from 'vitest'
-import { snapshot } from './orchestrator'
+import { describe, it, expect } from 'vitest';
+import { snapshot } from './orchestrator';
 
 // Inject a fake runner so this stays a pure unit test (no real docker).
 function fakeRunner(map: Record<string, { code: number; stdout: string; stderr: string }>) {
 	return async (args: string[]) => {
-		if (args.includes('info')) return map.info
-		if (args.includes('ps')) return map.ps
-		return { code: 0, stdout: '', stderr: '' }
-	}
+		if (args.includes('info')) return map.info;
+		if (args.includes('ps')) return map.ps;
+		return { code: 0, stdout: '', stderr: '' };
+	};
 }
 
 describe('snapshot', () => {
@@ -1252,41 +1268,41 @@ describe('snapshot', () => {
 			'{"Service":"api","State":"running","Health":"healthy"}\n' +
 			'{"Service":"ingest-worker","State":"running","Health":"healthy"}\n' +
 			'{"Service":"arq-worker","State":"running","Health":"healthy"}\n' +
-			'{"Service":"donna-web","State":"running","Health":"healthy"}'
+			'{"Service":"donna-web","State":"running","Health":"healthy"}';
 		const runner = fakeRunner({
 			info: { code: 0, stdout: 'Server Version: 27.0.3', stderr: '' },
 			ps: { code: 0, stdout: ps, stderr: '' }
-		})
-		const snap = await snapshot(['compose', '-f', 'x', '-p', 'donna'], runner)
-		expect(snap.state).toBe('HEALTHY')
-		expect(snap.services).toHaveLength(8)
-	})
+		});
+		const snap = await snapshot(['compose', '-f', 'x', '-p', 'donna'], runner);
+		expect(snap.state).toBe('HEALTHY');
+		expect(snap.services).toHaveLength(8);
+	});
 
 	it('reports NO_ENGINE when docker info fails', async () => {
 		const runner = fakeRunner({
 			info: { code: 127, stdout: '', stderr: 'not found' },
 			ps: { code: 1, stdout: '', stderr: '' }
-		})
-		const snap = await snapshot(['compose', '-f', 'x', '-p', 'donna'], runner)
-		expect(snap.state).toBe('NO_ENGINE')
-	})
-})
+		});
+		const snap = await snapshot(['compose', '-f', 'x', '-p', 'donna'], runner);
+		expect(snap.state).toBe('NO_ENGINE');
+	});
+});
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `cd desktop && npx vitest run --config vitest.config.ts src/main/orchestrator.test.ts`
-First broaden the vitest include so main/*.test.ts is picked up — edit `desktop/vitest.config.ts`:
+First broaden the vitest include so main/\*.test.ts is picked up — edit `desktop/vitest.config.ts`:
 
 ```ts
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	test: {
 		environment: 'node',
 		include: ['src/core/**/*.test.ts', 'src/main/orchestrator.test.ts']
 	}
-})
+});
 ```
 
 Re-run: `cd desktop && npx vitest run src/main/orchestrator.test.ts`
@@ -1295,42 +1311,42 @@ Expected: FAIL — cannot resolve `./orchestrator`.
 - [ ] **Step 3: Implement `desktop/src/main/orchestrator.ts`**
 
 ```ts
-import { parseEngineProbe } from '../core/engine'
-import { parseComposePs, psArgs, upArgs, downArgs, adminFixtureArgs } from '../core/compose'
-import { deriveLauncherState } from '../core/state'
-import type { LauncherState, ServiceStatus } from '../core/types'
-import { runDocker, type RunResult } from './runner'
+import { parseEngineProbe } from '../core/engine';
+import { parseComposePs, psArgs, upArgs, downArgs, adminFixtureArgs } from '../core/compose';
+import { deriveLauncherState } from '../core/state';
+import type { LauncherState, ServiceStatus } from '../core/types';
+import { runDocker, type RunResult } from './runner';
 
 export interface StackSnapshot {
-	state: LauncherState
-	services: ServiceStatus[]
-	engineMessage?: string
+	state: LauncherState;
+	services: ServiceStatus[];
+	engineMessage?: string;
 }
 
-type Runner = (args: string[]) => Promise<RunResult>
+type Runner = (args: string[]) => Promise<RunResult>;
 
 /** Probe engine + compose ps and derive the snapshot. Runner is injectable for tests. */
 export async function snapshot(base: string[], runner: Runner = runDocker): Promise<StackSnapshot> {
-	const info = await runner(['info'])
-	const engine = parseEngineProbe(info.code, info.stdout, info.stderr)
+	const info = await runner(['info']);
+	const engine = parseEngineProbe(info.code, info.stdout, info.stderr);
 	if (engine.status !== 'present') {
-		return { state: 'NO_ENGINE', services: [], engineMessage: engine.message }
+		return { state: 'NO_ENGINE', services: [], engineMessage: engine.message };
 	}
-	const ps = await runner(psArgs(base))
-	const services = parseComposePs(ps.stdout)
-	return { state: deriveLauncherState(engine, services), services }
+	const ps = await runner(psArgs(base));
+	const services = parseComposePs(ps.stdout);
+	return { state: deriveLauncherState(engine, services), services };
 }
 
 export const startStack = (base: string[], env: NodeJS.ProcessEnv): Promise<RunResult> =>
-	runDocker(upArgs(base), env)
+	runDocker(upArgs(base), env);
 
-export const stopStack = (base: string[]): Promise<RunResult> => runDocker(downArgs(base))
+export const stopStack = (base: string[]): Promise<RunResult> => runDocker(downArgs(base));
 
 export const runAdminFixture = (
 	base: string[],
 	email: string,
 	password: string
-): Promise<RunResult> => runDocker(adminFixtureArgs(base, email, password))
+): Promise<RunResult> => runDocker(adminFixtureArgs(base, email, password));
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
@@ -1350,6 +1366,7 @@ git commit -m "feat(desktop): orchestrator snapshot/start/stop/admin-fixture (in
 ## Task 10: Preload IPC surface + Electron main process
 
 **Files:**
+
 - Create: `desktop/src/preload/index.ts`
 - Create: `desktop/src/main/index.ts`
 - Create: `desktop/build/entitlements.mac.plist`
@@ -1359,7 +1376,7 @@ git commit -m "feat(desktop): orchestrator snapshot/start/stop/admin-fixture (in
 - [ ] **Step 1: Create `desktop/src/preload/index.ts`**
 
 ```ts
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron';
 
 /** Typed bridge the renderer uses; no Node/Electron exposed beyond these calls. */
 const api = {
@@ -1371,15 +1388,15 @@ const api = {
 	stop: (): Promise<unknown> => ipcRenderer.invoke('stack:stop'),
 	openDonna: (): Promise<void> => ipcRenderer.invoke('stack:openDonna'),
 	onLog: (cb: (line: string) => void): void => {
-		ipcRenderer.on('stack:log', (_e, line: string) => cb(line))
+		ipcRenderer.on('stack:log', (_e, line: string) => cb(line));
 	},
 	onState: (cb: (snap: unknown) => void): void => {
-		ipcRenderer.on('stack:state', (_e, snap: unknown) => cb(snap))
+		ipcRenderer.on('stack:state', (_e, snap: unknown) => cb(snap));
 	}
-}
+};
 
-contextBridge.exposeInMainWorld('donna', api)
-export type DonnaBridge = typeof api
+contextBridge.exposeInMainWorld('donna', api);
+export type DonnaBridge = typeof api;
 ```
 
 - [ ] **Step 2: Create `desktop/build/entitlements.mac.plist`**
@@ -1399,106 +1416,112 @@ export type DonnaBridge = typeof api
 - [ ] **Step 3: Create `desktop/src/main/index.ts`**
 
 ```ts
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { join } from 'node:path'
-import { composeBaseArgs } from '../core/compose'
-import { resolvePorts } from '../core/ports'
-import { generateSecrets } from '../core/secrets'
-import { DEFAULT_PORTS } from '../core/types'
-import type { InferenceChoice, LauncherConfig } from '../core/config'
-import { loadConfig, saveConfig, writeEnvFile } from './store'
-import { composeFilePath, envPath, PROJECT_NAME } from './paths'
-import { snapshot, startStack, stopStack, runAdminFixture, type StackSnapshot } from './orchestrator'
-import { streamDocker } from './runner'
-import { logsArgs } from '../core/compose'
-import { isPortFreeSync } from './netcheck'
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { join } from 'node:path';
+import { composeBaseArgs } from '../core/compose';
+import { resolvePorts } from '../core/ports';
+import { generateSecrets } from '../core/secrets';
+import { DEFAULT_PORTS } from '../core/types';
+import type { InferenceChoice, LauncherConfig } from '../core/config';
+import { loadConfig, saveConfig, writeEnvFile } from './store';
+import { composeFilePath, envPath, PROJECT_NAME } from './paths';
+import {
+	snapshot,
+	startStack,
+	stopStack,
+	runAdminFixture,
+	type StackSnapshot
+} from './orchestrator';
+import { streamDocker } from './runner';
+import { logsArgs } from '../core/compose';
+import { isPortFreeSync } from './netcheck';
 
-let win: BrowserWindow | null = null
+let win: BrowserWindow | null = null;
 
-const base = (): string[] => composeBaseArgs(composeFilePath(), PROJECT_NAME)
-const composeEnv = (): NodeJS.ProcessEnv => ({ ENV_FILE: envPath() })
+const base = (): string[] => composeBaseArgs(composeFilePath(), PROJECT_NAME);
+const composeEnv = (): NodeJS.ProcessEnv => ({ ENV_FILE: envPath() });
 
 function createWindow(): void {
 	win = new BrowserWindow({
 		width: 1100,
 		height: 760,
 		webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false }
-	})
-	if (process.env.ELECTRON_RENDERER_URL) win.loadURL(process.env.ELECTRON_RENDERER_URL)
-	else win.loadFile(join(__dirname, '../renderer/index.html'))
+	});
+	if (process.env.ELECTRON_RENDERER_URL) win.loadURL(process.env.ELECTRON_RENDERER_URL);
+	else win.loadFile(join(__dirname, '../renderer/index.html'));
 }
 
 interface WizardInput {
-	inference: InferenceChoice
-	adminEmail: string
-	adminPassword: string
+	inference: InferenceChoice;
+	adminEmail: string;
+	adminPassword: string;
 }
 
-ipcMain.handle('config:isFirstRun', () => loadConfig() === null)
+ipcMain.handle('config:isFirstRun', () => loadConfig() === null);
 
 ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 	try {
-		const ports = resolvePorts(DEFAULT_PORTS, isPortFreeSync)
+		const ports = resolvePorts(DEFAULT_PORTS, isPortFreeSync);
 		const cfg: LauncherConfig = {
 			secrets: generateSecrets(),
 			ports,
 			imageTag: 'v0.1.0',
 			inference: input.inference,
 			adminEmail: input.adminEmail
-		}
-		saveConfig(cfg)
-		writeEnvFile(cfg)
+		};
+		saveConfig(cfg);
+		writeEnvFile(cfg);
 		// compose reads --env-file; pass it explicitly so the app-data .env is used.
-		const b = [...base(), '--env-file', envPath()]
-		await startStack(b, process.env)
-		await waitHealthy(b)
-		await runAdminFixture(b, input.adminEmail, input.adminPassword)
-		return { ok: true }
+		const b = [...base(), '--env-file', envPath()];
+		await startStack(b, process.env);
+		await waitHealthy(b);
+		await runAdminFixture(b, input.adminEmail, input.adminPassword);
+		return { ok: true };
 	} catch (err) {
-		return { ok: false, error: String(err) }
+		return { ok: false, error: String(err) };
 	}
-})
+});
 
-ipcMain.handle('stack:status', () => snapshot([...base(), '--env-file', envPath()]))
-ipcMain.handle('stack:start', () => startStack([...base(), '--env-file', envPath()], process.env))
-ipcMain.handle('stack:stop', () => stopStack(base()))
+ipcMain.handle('stack:status', () => snapshot([...base(), '--env-file', envPath()]));
+ipcMain.handle('stack:start', () => startStack([...base(), '--env-file', envPath()], process.env));
+ipcMain.handle('stack:stop', () => stopStack(base()));
 ipcMain.handle('stack:openDonna', () => {
-	const cfg = loadConfig()
-	const port = cfg?.ports.donnaWeb ?? DEFAULT_PORTS.donnaWeb
-	win?.loadURL(`http://localhost:${port}`)
-})
+	const cfg = loadConfig();
+	const port = cfg?.ports.donnaWeb ?? DEFAULT_PORTS.donnaWeb;
+	win?.loadURL(`http://localhost:${port}`);
+});
 
 async function waitHealthy(b: string[], timeoutMs = 600_000): Promise<void> {
-	const started = Date.now()
+	const started = Date.now();
 	// Date.now is allowed at runtime in the Electron app (this is not a Workflow script).
 	while (Date.now() - started < timeoutMs) {
-		const snap: StackSnapshot = await snapshot(b)
-		win?.webContents.send('stack:state', snap)
-		if (snap.state === 'HEALTHY') return
-		if (snap.state === 'FAILED') throw new Error('Stack failed to start; see logs.')
-		await new Promise((r) => setTimeout(r, 4000))
+		const snap: StackSnapshot = await snapshot(b);
+		win?.webContents.send('stack:state', snap);
+		if (snap.state === 'HEALTHY') return;
+		if (snap.state === 'FAILED') throw new Error('Stack failed to start; see logs.');
+		await new Promise((r) => setTimeout(r, 4000));
 	}
-	throw new Error('Timed out waiting for the stack to become healthy.')
+	throw new Error('Timed out waiting for the stack to become healthy.');
 }
 
 // Tail donna-web logs into the renderer once a window exists.
 app.whenReady().then(() => {
-	createWindow()
-	streamDocker(logsArgs(base(), 'donna-web'), (line) => win?.webContents.send('stack:log', line))
-})
+	createWindow();
+	streamDocker(logsArgs(base(), 'donna-web'), (line) => win?.webContents.send('stack:log', line));
+});
 
 app.on('window-all-closed', () => {
-	if (process.platform !== 'darwin') app.quit()
-})
+	if (process.platform !== 'darwin') app.quit();
+});
 
 // Avoid unused import lint on shell in Phase 1 (used by wizard's "install Docker" link path).
-export const _openExternal = shell.openExternal
+export const _openExternal = shell.openExternal;
 ```
 
 - [ ] **Step 4: Create `desktop/src/main/netcheck.ts`** (the sync free-port probe used above)
 
 ```ts
-import { createServer } from 'node:net'
+import { createServer } from 'node:net';
 
 /**
  * Best-effort synchronous-ish port check used at wizard time. We attempt a listen on
@@ -1506,22 +1529,22 @@ import { createServer } from 'node:net'
  * (Resolve runs once at first-run, so a short blocking probe is acceptable.)
  */
 export function isPortFreeSync(port: number): boolean {
-	const srv = createServer()
+	const srv = createServer();
 	try {
-		let free = false
-		srv.listen(port, '127.0.0.1')
+		let free = false;
+		srv.listen(port, '127.0.0.1');
 		srv.on('listening', () => {
-			free = true
-			srv.close()
-		})
+			free = true;
+			srv.close();
+		});
 		// Synchronously we cannot truly block; default to true and let compose surface a
 		// genuine bind clash as FAILED, which the UI reports honestly. The async refinement
 		// is deferred to Phase 3 (resource controls).
-		return free || true
+		return free || true;
 	} catch {
-		return false
+		return false;
 	} finally {
-		srv.removeAllListeners()
+		srv.removeAllListeners();
 	}
 }
 ```
@@ -1547,6 +1570,7 @@ git commit -m "feat(desktop): electron main process, IPC surface, lifecycle wiri
 ## Task 11: Renderer — first-run wizard + control panel
 
 **Files:**
+
 - Create: `desktop/src/renderer/index.html`
 - Create: `desktop/src/renderer/style.css`
 - Create: `desktop/src/renderer/app.ts`
@@ -1562,7 +1586,10 @@ git commit -m "feat(desktop): electron main process, IPC surface, lifecycle wiri
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="default-src 'self'; style-src 'self' 'unsafe-inline'"
+		/>
 		<title>Donna for Mac</title>
 		<link rel="stylesheet" href="./style.css" />
 	</head>
@@ -1636,25 +1663,25 @@ input[type='password'] {
 - [ ] **Step 3: Create `desktop/src/renderer/app.ts`** (router)
 
 ```ts
-import { renderWizard } from './wizard'
-import { renderPanel } from './panel'
-import type { DonnaBridge } from '../preload'
+import { renderWizard } from './wizard';
+import { renderPanel } from './panel';
+import type { DonnaBridge } from '../preload';
 
 declare global {
 	interface Window {
-		donna: DonnaBridge
+		donna: DonnaBridge;
 	}
 }
 
-const root = document.getElementById('root')!
+const root = document.getElementById('root')!;
 
 async function main(): Promise<void> {
-	const firstRun = await window.donna.isFirstRun()
-	if (firstRun) renderWizard(root, () => renderPanel(root))
-	else renderPanel(root)
+	const firstRun = await window.donna.isFirstRun();
+	if (firstRun) renderWizard(root, () => renderPanel(root));
+	else renderPanel(root);
 }
 
-main()
+main();
 ```
 
 - [ ] **Step 4: Create `desktop/src/renderer/wizard.ts`**
@@ -1690,33 +1717,37 @@ export function renderWizard(root: HTMLElement, onDone: () => void): void {
 			<button id="go">Start Donna</button>
 			<p id="err" style="color:#c00"></p>
 		</div>
-	`
+	`;
 
-	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
+	const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 	$('go').addEventListener('click', async () => {
-		const mode = (document.querySelector('input[name="inf"]:checked') as HTMLInputElement).value
-		const email = $<HTMLInputElement>('email').value.trim()
-		const password = $<HTMLInputElement>('password').value
-		const err = $('err')
+		const mode = (document.querySelector('input[name="inf"]:checked') as HTMLInputElement).value;
+		const email = $<HTMLInputElement>('email').value.trim();
+		const password = $<HTMLInputElement>('password').value;
+		const err = $('err');
 
 		if (!email || password.length < 12) {
-			err.textContent = 'Enter an email and a password of at least 12 characters.'
-			return
+			err.textContent = 'Enter an email and a password of at least 12 characters.';
+			return;
 		}
 		const inference =
 			mode === 'cloud'
 				? { mode: 'cloud' as const, anthropicApiKey: $<HTMLInputElement>('apikey').value.trim() }
-				: { mode: 'ollama' as const, baseUrl: 'http://host.docker.internal:11434' }
+				: { mode: 'ollama' as const, baseUrl: 'http://host.docker.internal:11434' };
 
-		;($('go') as HTMLButtonElement).disabled = true
-		err.textContent = 'Starting… downloading models on first run; this can take a few minutes.'
-		const res = await window.donna.completeWizard({ inference, adminEmail: email, adminPassword: password })
-		if (res.ok) onDone()
+		($('go') as HTMLButtonElement).disabled = true;
+		err.textContent = 'Starting… downloading models on first run; this can take a few minutes.';
+		const res = await window.donna.completeWizard({
+			inference,
+			adminEmail: email,
+			adminPassword: password
+		});
+		if (res.ok) onDone();
 		else {
-			err.textContent = res.error ?? 'Setup failed.'
-			;($('go') as HTMLButtonElement).disabled = false
+			err.textContent = res.error ?? 'Setup failed.';
+			($('go') as HTMLButtonElement).disabled = false;
 		}
-	})
+	});
 }
 ```
 
@@ -1724,9 +1755,9 @@ export function renderWizard(root: HTMLElement, onDone: () => void): void {
 
 ```ts
 interface Snapshot {
-	state: string
-	services: { name: string; health: string }[]
-	engineMessage?: string
+	state: string;
+	services: { name: string; health: string }[];
+	engineMessage?: string;
 }
 
 const LABELS: Record<string, string> = {
@@ -1735,7 +1766,7 @@ const LABELS: Record<string, string> = {
 	STACK_STARTING: 'Starting…',
 	HEALTHY: 'Running',
 	FAILED: 'Something went wrong'
-}
+};
 
 export function renderPanel(root: HTMLElement): void {
 	root.innerHTML = `
@@ -1748,33 +1779,33 @@ export function renderPanel(root: HTMLElement): void {
 		</div>
 		<h3>Logs</h3>
 		<div id="logs"></div>
-	`
-	const stateEl = document.getElementById('state')!
-	const logsEl = document.getElementById('logs')!
-	const open = document.getElementById('open') as HTMLButtonElement
+	`;
+	const stateEl = document.getElementById('state')!;
+	const logsEl = document.getElementById('logs')!;
+	const open = document.getElementById('open') as HTMLButtonElement;
 
 	const apply = (snap: Snapshot) => {
-		stateEl.textContent = LABELS[snap.state] ?? snap.state
-		open.disabled = snap.state !== 'HEALTHY'
-	}
+		stateEl.textContent = LABELS[snap.state] ?? snap.state;
+		open.disabled = snap.state !== 'HEALTHY';
+	};
 
-	document.getElementById('open')!.addEventListener('click', () => window.donna.openDonna())
-	document.getElementById('start')!.addEventListener('click', () => window.donna.start())
-	document.getElementById('stop')!.addEventListener('click', () => window.donna.stop())
+	document.getElementById('open')!.addEventListener('click', () => window.donna.openDonna());
+	document.getElementById('start')!.addEventListener('click', () => window.donna.start());
+	document.getElementById('stop')!.addEventListener('click', () => window.donna.stop());
 
 	window.donna.onLog((line) => {
-		logsEl.textContent += line + '\n'
-		logsEl.scrollTop = logsEl.scrollHeight
-	})
-	window.donna.onState((snap) => apply(snap as Snapshot))
+		logsEl.textContent += line + '\n';
+		logsEl.scrollTop = logsEl.scrollHeight;
+	});
+	window.donna.onState((snap) => apply(snap as Snapshot));
 
 	// Initial + periodic poll (keep last-known-good on transient nulls).
 	const tick = async () => {
-		const snap = (await window.donna.status()) as Snapshot
-		if (snap) apply(snap)
-	}
-	tick()
-	setInterval(tick, 5000)
+		const snap = (await window.donna.status()) as Snapshot;
+		if (snap) apply(snap);
+	};
+	tick();
+	setInterval(tick, 5000);
 }
 ```
 
@@ -1797,6 +1828,7 @@ git commit -m "feat(desktop): first-run wizard + control-panel renderer (vanilla
 ## Task 12: Packaging, signing, notarization config + CI
 
 **Files:**
+
 - Create: `desktop/electron-builder.yml`
 - Create: `desktop/build/notarize.cjs` (afterSign hook)
 - Create: `desktop/resources/.gitkeep` (compose is copied in at build time)
@@ -1845,24 +1877,24 @@ dmg:
 ```js
 // Notarize the signed .app via notarytool when Apple creds are in the env (CI).
 // No-op locally so `npm run dist` works unsigned for smoke tests.
-const { notarize } = require('@electron/notarize')
+const { notarize } = require('@electron/notarize');
 
 exports.default = async function notarizing(context) {
-	if (context.electronPlatformName !== 'darwin') return
-	const { APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID } = process.env
+	if (context.electronPlatformName !== 'darwin') return;
+	const { APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID } = process.env;
 	if (!APPLE_ID || !APPLE_APP_SPECIFIC_PASSWORD || !APPLE_TEAM_ID) {
-		console.log('Skipping notarization — Apple creds not set.')
-		return
+		console.log('Skipping notarization — Apple creds not set.');
+		return;
 	}
-	const appName = context.packager.appInfo.productFilename
+	const appName = context.packager.appInfo.productFilename;
 	await notarize({
 		appBundleId: 'ai.lq.donna.desktop',
 		appPath: `${context.appOutDir}/${appName}.app`,
 		appleId: APPLE_ID,
 		appleIdPassword: APPLE_APP_SPECIFIC_PASSWORD,
 		teamId: APPLE_TEAM_ID
-	})
-}
+	});
+};
 ```
 
 Add the dev dep: in `desktop/package.json` devDependencies add `"@electron/notarize": "^2.3.0"`.
@@ -1949,6 +1981,7 @@ Expected: a `.dmg` in `desktop/dist/`.
 Open the `.dmg`, drag to Applications, launch. Walk the wizard: pick cloud key (paste a real `ANTHROPIC_API_KEY`), set an admin email + 12-char password, click "Start Donna".
 
 Expected (observe + record):
+
 - The control panel shows `STACK_STARTING`, then the logs pane streams `donna-web` output.
 - First run downloads models (ingest-worker) — the status stays honest (`STACK_STARTING`), not a fake "ready".
 - State reaches `HEALTHY`; "Open Donna" enables.
@@ -1979,6 +2012,7 @@ git commit -m "docs(desktop): record Phase 1 fresh-Mac verification run"
 ## Task 14: Docs — roadmap, README, CLAUDE.md, decision note
 
 **Files:**
+
 - Modify: `docs/roadmap/donna-future-roadmap.md`
 - Modify: `README.md`
 - Modify: `CLAUDE.md`
@@ -2084,5 +2118,7 @@ Open with a **merge commit** (never squash — `.git-blame-ignore-revs`). Title:
 `feat(desktop): Phase 1 macOS launcher — wrap the release stack in a double-click app`.
 Body: link the design doc + this plan; note Phase 1 scope (detect-Docker), the tested pure core,
 and the recorded fresh-Mac verification run. Mirror to `tucuxi` after merge.
+
 ```
 
+```

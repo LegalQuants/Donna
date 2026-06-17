@@ -8,18 +8,18 @@ export const EXPECTED_SERVICES = [
 	'ingest-worker',
 	'arq-worker',
 	'donna-web'
-] as const
+] as const;
 
-export type ServiceName = (typeof EXPECTED_SERVICES)[number]
+export type ServiceName = (typeof EXPECTED_SERVICES)[number];
 
 export interface PortConfig {
-	donnaWeb: number
-	api: number
-	gateway: number
-	postgres: number
-	redis: number
-	minioApi: number
-	minioConsole: number
+	donnaWeb: number;
+	api: number;
+	gateway: number;
+	postgres: number;
+	redis: number;
+	minioApi: number;
+	minioConsole: number;
 }
 
 /** Shifted defaults matching .env.example so Donna coexists with a raw lq-ai dev stack. */
@@ -31,14 +31,14 @@ export const DEFAULT_PORTS: PortConfig = {
 	redis: 26379,
 	minioApi: 29000,
 	minioConsole: 29001
-}
+};
 
-export type EngineStatus = 'absent' | 'present' | 'error'
+export type EngineStatus = 'absent' | 'present' | 'error';
 
 export interface EngineProbe {
-	status: EngineStatus
-	version?: string
-	message?: string
+	status: EngineStatus;
+	version?: string;
+	message?: string;
 }
 
 export type ServiceHealth =
@@ -48,17 +48,12 @@ export type ServiceHealth =
 	| 'running'
 	| 'exited'
 	| 'created'
-	| 'unknown'
+	| 'unknown';
 
 export interface ServiceStatus {
-	name: string
-	state: string
-	health: ServiceHealth
+	name: string;
+	state: string;
+	health: ServiceHealth;
 }
 
-export type LauncherState =
-	| 'NO_ENGINE'
-	| 'STACK_STARTING'
-	| 'HEALTHY'
-	| 'STOPPED'
-	| 'FAILED'
+export type LauncherState = 'NO_ENGINE' | 'STACK_STARTING' | 'HEALTHY' | 'STOPPED' | 'FAILED';

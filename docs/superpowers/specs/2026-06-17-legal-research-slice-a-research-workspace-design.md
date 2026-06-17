@@ -20,18 +20,18 @@ refinement asks shipped (#163/#164) and are reflected in the generated types —
 deltas below.
 
 - **`GET /capabilities`** → `{ enabled: boolean, providers: [{ name, type }] }` — **the deterministic
-  feature-flag signal** (reads fresh from the gateway). When research is off, the *other* endpoints
+  feature-flag signal** (reads fresh from the gateway). When research is off, the _other_ endpoints
   return **503 `ResearchNotConfigured`**.
 - **`POST /verify-citations`** `{ text: str (1..64000) }` → `{ citations: VerifiedCitation[] }`,
   **now fully typed**: `VerifiedCitation = { citation, normalized_citations: string[], status,
-  error_message, clusters: { id, case_name, absolute_url }[] }`. **No hand-parser needed** — derive
+error_message, clusters: { id, case_name, absolute_url }[] }`. **No hand-parser needed** — derive
   from `backend.d.ts`.
 - **`POST /search`** `{ q: str, court?: str, order_by?: str }` →
   `{ count: int|null, results: SearchResultItem[], next_cursor: str|null }` where
   `SearchResultItem = { cluster_id, case_name, court, date_filed, citation, absolute_url, snippet }`
   (all nullable). Pagination via `next_cursor`.
 - **`GET /clusters/{cluster_id}`** → `{ cluster: { cluster_id, case_name, court, date_filed,
-  absolute_url }, opinions: { opinion_id, text_field_used, char_length }[] }`.
+absolute_url }, opinions: { opinion_id, text_field_used, char_length }[] }`.
 - **`GET /opinions/{opinion_id}`** → `{ opinion_id, cluster_id, text_field_used, text }` — **full
   opinion plaintext** (backend strips HTML → plaintext; read-through object-storage cache + DB
   metadata + live-API fallback, all backend-side).
@@ -94,7 +94,7 @@ The one piece of new internal surface. Today `DocTab` keys on `source_file_id` a
 `/files/{id}` (`docPanel.svelte.ts:29,60`). Opinions have no Donna file.
 
 - Give `DocTab` an optional source discriminant: `{ kind: 'file', fileId } | { kind: 'opinion',
-  opinionId }` (default `'file'` — existing callers unchanged).
+opinionId }` (default `'file'` — existing callers unchanged).
 - Add `docPanel.openOpinion({ opinion_id, cluster_id, case_name })` — parallel to `open()`. Creates a
   tab keyed `opinion:${opinion_id}`, fetches text from `/research/opinions/{opinion_id}`, sets
   `mime = 'text/plain'` and `filename = case_name`, renders via the **existing `TextViewer`**.

@@ -25,16 +25,18 @@
   - Design/plan: `docs/superpowers/plans/2026-06-13-desktop-launcher-phase1.md` (+ the design doc).
 
 ## How to ship the next release (the short version)
+
 - **Images:** `gh workflow run release.yml -R LegalQuants/Donna -f ref=main -f tag=vX.Y.Z` → flip the 5
   GHCR packages public (org owner gate) → verify anonymous pull. Re-sync `docker-compose.release.yml` on
   a pin bump.
 - **Mac app:** `gh workflow run desktop-release.yml -R LegalQuants/Donna -f tag=desktop-vX.Y.Z` → verify
   the **published** dmg with `spctl -a -t open --context context:primary-signature` (trust this + `gh run
-  view --json conclusion`, **not** `gh run watch`, which can falsely report success).
+view --json conclusion`, **not** `gh run watch`, which can falsely report success).
 - The 5 signing secrets are already on `LegalQuants/Donna` (and `LegalQuants/lq-ai`). **Full recipe +
   the four real-run bugs we fixed: `docs/BUILD-AND-RELEASE.md`.** Don't re-derive them.
 
 ## Open threads / what's next for Donna (all optional, nothing blocking)
+
 - **Desktop Phase 2** — bundle/manage Colima or Podman so Docker isn't a prerequisite (true
   double-click). **Phase 3** — `electron-updater` auto-update + GHCR release surfacing; **x64/universal**
   build for Intel (user deferred 2026-06-13); control-panel polish. **Windows** — a DEFINED phase in the
@@ -50,6 +52,7 @@
   closest analog. Pin-bump recipe/log: `docs/decisions/lq-ai-pin.md`.
 
 ## Reminders
+
 - LQ-AI's own launcher/images/release (`LegalQuants/lq-ai`, `desktop-v0.4.0`, `lq-ai-*` images) are the
   **LQ-AI CC session's** domain — not Donna's. Don't touch them from here.
 - Repo is PUBLIC. Build the loop: brainstorm → spec → plan → subagent-driven execution → whole-branch
