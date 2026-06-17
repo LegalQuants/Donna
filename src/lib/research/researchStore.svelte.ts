@@ -43,14 +43,19 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 		if (!q.trim()) return;
 		loading = true;
 		error = null;
-		const raw = await post('/research/search', { q });
-		if (raw) {
-			const parsed = parseSearchResponse(raw);
-			results = parsed.results;
-			count = parsed.count;
-			nextCursor = parsed.nextCursor;
+		try {
+			const raw = await post('/research/search', { q });
+			if (raw) {
+				const parsed = parseSearchResponse(raw);
+				results = parsed.results;
+				count = parsed.count;
+				nextCursor = parsed.nextCursor;
+			}
+		} finally {
+			// Always clear the spinner — a thrown fetch must not leave the Search
+			// button permanently disabled (`disabled={r.loading}` on the page).
+			loading = false;
 		}
-		loading = false;
 	}
 
 	async function openCluster(id: number) {

@@ -57,4 +57,32 @@ describe('createResearch', () => {
 		await r.verify('see 576 U.S. 644');
 		expect(r.citations).toHaveLength(1);
 	});
+
+	it('findInCase populates matches with the snake_case payload', async () => {
+		const f = vi.fn(async (_url: string, init?: RequestInit) => {
+			expect(JSON.parse(String(init?.body))).toEqual({
+				opinion_id: 1,
+				query: 'due process',
+				max_matches: 10
+			});
+			return new Response(
+				JSON.stringify({ opinion_id: 1, matches: [{ position: 3, snippet: 'x' }] }),
+				{
+					status: 200
+				}
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.findInCase(1, 'due process');
+		expect(r.matches).toEqual([{ position: 3, snippet: 'x' }]);
+	});
+
+	it('clears the loading spinner even when the fetch throws', async () => {
+		const f = vi.fn(async () => {
+			throw new Error('network down');
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await expect(r.search('x')).rejects.toThrow('network down');
+		expect(r.loading).toBe(false);
+	});
 });
