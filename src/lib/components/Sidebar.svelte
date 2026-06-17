@@ -5,6 +5,7 @@
 		FolderKanban,
 		Workflow,
 		Table,
+		Scale,
 		PanelLeft,
 		LogOut,
 		Settings,
@@ -25,7 +26,8 @@
 			icon: Workflow,
 			match: ['/workflows', '/skills', '/playbooks', '/prompts', '/automations']
 		},
-		{ href: '/tabular', label: 'Tabular', icon: Table }
+		{ href: '/tabular', label: 'Tabular', icon: Table },
+		{ href: '/research', label: 'Research', icon: Scale }
 	];
 
 	function toggle() {
