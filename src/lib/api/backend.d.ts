@@ -8624,6 +8624,412 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Report whether case-law research is enabled on this server
+         * @description WS3b. Returns a positive "research enabled?" signal derived from the
+         *     gateway's sanitised config.  ``enabled`` is ``true`` when at least one
+         *     ``courtlistener`` tool-provider is declared in ``gateway.yaml``;
+         *     ``false`` otherwise.  The UI uses this to render a calm "not configured"
+         *     gate rather than treating an absent CourtListener as an outage.
+         *     Requires an authenticated user (bearer token).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Research capability status */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            enabled: boolean;
+                            providers: {
+                                name: string;
+                                type: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/verify-citations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify citations found in a text block
+         * @description WS3b. Passes the supplied text to the CourtListener gateway tool
+         *     ``verify_citations`` and returns the per-citation verification
+         *     results (HTTP status, matching cluster ids). Stateless — no DB
+         *     write. Requires an authenticated user (bearer token).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        text: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Citation verification results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            citations?: {
+                                citation?: string | null;
+                                normalized_citations?: string[];
+                                status?: number | null;
+                                error_message?: string | null;
+                                clusters?: {
+                                    id?: number | null;
+                                    case_name?: string | null;
+                                    absolute_url?: string | null;
+                                }[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search case law via CourtListener
+         * @description WS3b. Proxies a full-text case-law search to the CourtListener
+         *     gateway tool ``search_case_law``. Returns a paginated result set
+         *     with case metadata. Stateless — no DB write. Requires an
+         *     authenticated user (bearer token).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        q: string;
+                        court?: string | null;
+                        order_by?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Search results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            count?: number | null;
+                            results?: {
+                                [key: string]: unknown;
+                            }[];
+                            next_cursor?: string | null;
+                        };
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/clusters/{cluster_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fetch and cache a CourtListener opinion cluster
+         * @description WS3b. Read-through cache: if the cluster is already in the DB
+         *     the cached metadata is returned immediately; otherwise the
+         *     gateway tool ``get_cases`` is called, the opinion plaintext is
+         *     stored in object storage, and the metadata is persisted in the
+         *     DB. Requires an authenticated user (bearer token).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    cluster_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cluster metadata with opinion list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cluster: {
+                                cluster_id: number;
+                                case_name?: string | null;
+                                court?: string | null;
+                                date_filed?: string | null;
+                                absolute_url?: string | null;
+                            };
+                            opinions: {
+                                opinion_id: number;
+                                /** @enum {string|null} */
+                                text_field_used?: "html_with_citations" | "html_columbia" | "html_lawbox" | "xml_harvard" | "html_anon_2020" | "html" | "plain_text" | null;
+                                char_length: number;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/opinions/{opinion_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read cached opinion plaintext
+         * @description WS3b. Returns the full plaintext of a previously fetched opinion
+         *     from object storage. Returns 404 if the cluster containing this
+         *     opinion was never fetched (call
+         *     ``GET /api/v1/research/clusters/{cluster_id}`` first). Requires
+         *     an authenticated user (bearer token).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    opinion_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Opinion plaintext */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            opinion_id: number;
+                            cluster_id: number;
+                            /** @enum {string|null} */
+                            text_field_used?: "html_with_citations" | "html_columbia" | "html_lawbox" | "xml_harvard" | "html_anon_2020" | "html" | "plain_text" | null;
+                            text: string;
+                        };
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Opinion not yet fetched; call GET /clusters/{id} first */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/find-in-case": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find keyword matches within a cached opinion
+         * @description WS3b. Performs a case-insensitive substring search over the
+         *     cached plaintext of ``opinion_id``, returning up to
+         *     ``max_matches`` snippets with character positions. Returns 404
+         *     if the opinion was never fetched. Requires an authenticated
+         *     user (bearer token).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        opinion_id: number;
+                        query: string;
+                        /** @default 3 */
+                        max_matches?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Match snippets */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            opinion_id: number;
+                            matches: {
+                                position: number;
+                                snippet: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Opinion not yet fetched; call GET /clusters/{id} first */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
