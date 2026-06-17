@@ -2,7 +2,7 @@
 
 **Filed:** 2026-06-17 · **From:** Donna (consumer) · **For:** Donna Slice A — the case-law research
 workspace (frontend for the legal-research milestone). · **Timing:** ideally folded into **PR3b**
-(branch `feat/research-api`, where the surface is being built) *before* it merges, so Donna builds
+(branch `feat/research-api`, where the surface is being built) _before_ it merges, so Donna builds
 against the final shape; otherwise a small fast-follow. None of these block the merge.
 
 The LQ-AI session works in `/Users/kevinkeller/Code/lq-ai` (absolute paths below; it can't see Donna
@@ -22,7 +22,7 @@ hand-parser. Listed in priority order.
 ## Ask 1 (most valuable) — an explicit "is research enabled?" signal
 
 **The gap.** CourtListener is feature-flagged off until the operator declares a `courtlistener`
-tool-provider (with `COURTLISTENER_API_TOKEN`) in `gateway.yaml`. When it's *not* configured, a Donna
+tool-provider (with `COURTLISTENER_API_TOKEN`) in `gateway.yaml`. When it's _not_ configured, a Donna
 user hitting `/research` should see a calm "Case-law research isn't enabled on this server" gate — not
 an error. But today Donna can only **infer** that from a failed/empty response, which is
 indistinguishable from a transient gateway/network failure. There is no capabilities or health
@@ -54,11 +54,11 @@ outage as "not enabled" (or vice-versa). A positive capability signal makes the 
 
 ```jsonc
 {
-  "citation": "576 U.S. 644",
-  "normalized_citations": ["576 U.S. 644"],
-  "status": 200,                       // CourtListener citation-lookup status (200 found, 404 not, …)
-  "error_message": null,
-  "clusters": [{ "id": 123, "case_name": "Obergefell v. Hodges", "absolute_url": "/opinion/…/" }]
+	"citation": "576 U.S. 644",
+	"normalized_citations": ["576 U.S. 644"],
+	"status": 200, // CourtListener citation-lookup status (200 found, 404 not, …)
+	"error_message": null,
+	"clusters": [{ "id": 123, "case_name": "Obergefell v. Hodges", "absolute_url": "/opinion/…/" }]
 }
 ```
 
@@ -92,20 +92,21 @@ the `html_*` family as "HTML-derived, formatting normalized") rather than displa
 
 LQ-AI delivered all three asks in **#163 (`38dbbb0`)** as typed Pydantic models — thank you. One
 catch found when verifying for the pin bump: `docs/api/backend-openapi.yaml` is **hand-maintained and
-lags the typed models**, and Donna's `gen:api` reads *that yaml*, not the live FastAPI app. So two of
+lags the typed models**, and Donna's `gen:api` reads _that yaml_, not the live FastAPI app. So two of
 the three asks don't reach Donna's generated types yet:
 
-| Ask | Pydantic model (✅ in code) | `docs/api/backend-openapi.yaml` (what Donna consumes) |
-|---|---|---|
-| 1 — capabilities | `ResearchCapabilities` | ✅ correct (`{enabled, providers:[{name,type}]}`) |
-| 2 — verify-citations | `VerifiedCitation` | ❌ still `citations: items: {type: object, additionalProperties: true}` |
-| 3 — `text_field_used` | `OpinionTextField` Literal | ❌ still `{type: string, nullable: true}` (no enum) |
+| Ask                   | Pydantic model (✅ in code) | `docs/api/backend-openapi.yaml` (what Donna consumes)                   |
+| --------------------- | --------------------------- | ----------------------------------------------------------------------- |
+| 1 — capabilities      | `ResearchCapabilities`      | ✅ correct (`{enabled, providers:[{name,type}]}`)                       |
+| 2 — verify-citations  | `VerifiedCitation`          | ❌ still `citations: items: {type: object, additionalProperties: true}` |
+| 3 — `text_field_used` | `OpinionTextField` Literal  | ❌ still `{type: string, nullable: true}` (no enum)                     |
 
 **Ask (small, schema-doc only):** update `backend-openapi.yaml` so the consumable contract matches the
 code —
+
 1. the `/research/verify-citations` 200 `citations[]` items reference the `VerifiedCitation` shape
    (`{citation, normalized_citations[], status, error_message, clusters:[{id, case_name,
-   absolute_url}]}`);
+absolute_url}]}`);
 2. `text_field_used` (on the `/research/clusters/{id}` opinions list **and** `/research/opinions/{id}`)
    becomes an `enum` of the 7 `OpinionTextField` values (`html_with_citations`, `html_columbia`,
    `html_lawbox`, `xml_harvard`, `html_anon_2020`, `html`, `plain_text`).
@@ -122,25 +123,25 @@ The research paths use inline schemas (no `#/components/schemas/*`), so these st
 (lines **4821–4823**):
 
 ```yaml
-                  citations:
-                    type: array
-                    items:                       # <-- was: {type: object, additionalProperties: true}
-                      type: object
-                      properties:
-                        citation: {type: string, nullable: true}
-                        normalized_citations:
-                          type: array
-                          items: {type: string}
-                        status: {type: integer, nullable: true}
-                        error_message: {type: string, nullable: true}
-                        clusters:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              id: {type: integer, nullable: true}
-                              case_name: {type: string, nullable: true}
-                              absolute_url: {type: string, nullable: true}
+citations:
+  type: array
+  items: # <-- was: {type: object, additionalProperties: true}
+    type: object
+    properties:
+      citation: { type: string, nullable: true }
+      normalized_citations:
+        type: array
+        items: { type: string }
+      status: { type: integer, nullable: true }
+      error_message: { type: string, nullable: true }
+      clusters:
+        type: array
+        items:
+          type: object
+          properties:
+            id: { type: integer, nullable: true }
+            case_name: { type: string, nullable: true }
+            absolute_url: { type: string, nullable: true }
 ```
 
 **Edit 2 — `text_field_used` enum, BOTH occurrences** (line **4926**, the `/clusters/{id}` opinions
@@ -148,10 +149,11 @@ list, at its 24-space indent; and line **4963**, `/opinions/{id}`, at its 18-spa
 `text_field_used: {type: string, nullable: true}` with (re-indent per location):
 
 ```yaml
-                        text_field_used:
-                          type: string
-                          nullable: true
-                          enum: [html_with_citations, html_columbia, html_lawbox, xml_harvard, html_anon_2020, html, plain_text]
+text_field_used:
+  type: string
+  nullable: true
+  enum:
+    [html_with_citations, html_columbia, html_lawbox, xml_harvard, html_anon_2020, html, plain_text]
 ```
 
 That's it — three spots, no structural change. `openapi-typescript` then emits a structured

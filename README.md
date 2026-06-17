@@ -38,7 +38,7 @@ password and starts the engine; then sign in and you're working. No terminal, no
 Docker Desktop is the one prerequisite — the app links you to it if it's not installed.
 
 📖 **Step‑by‑step with screenshots: [docs/INSTALL-MAC.md](docs/INSTALL-MAC.md).** Launcher source:
-[`desktop/`](desktop/). *(Apple Silicon today; an Intel build is on the roadmap.)*
+[`desktop/`](desktop/). _(Apple Silicon today; an Intel build is on the roadmap.)_
 
 ### Option B — Docker Compose (any platform with Docker)
 

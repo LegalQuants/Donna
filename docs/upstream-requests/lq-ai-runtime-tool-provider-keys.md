@@ -41,7 +41,7 @@ When a runtime CL key is set, `GET /api/v1/research/capabilities` should flip to
 without an api/gateway restart (it already reads fresh from the gateway — confirmed in
 `api/app/research/service.py::get_capabilities`).
 
-## Ask 2 — the gateway must tolerate a configured tool provider with an *unset* key (enables shipping the entry on by default)
+## Ask 2 — the gateway must tolerate a configured tool provider with an _unset_ key (enables shipping the entry on by default)
 
 For the desktop/release path, Donna wants the baked `gateway.yaml` (the `donna-gateway` image) to
 **ship the `courtlistener` `tool_providers` entry enabled** (today it's commented out in
