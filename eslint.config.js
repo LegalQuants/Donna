@@ -13,7 +13,9 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
 	// The vendored lq-ai backend is a separate upstream monorepo — never lint it.
-	{ ignores: ['vendor/'] },
+	// desktop/{out,dist} are electron-builder artifacts (ignored by desktop/.gitignore,
+	// which the root includeIgnoreFile can't see — so ignore them explicitly here).
+	{ ignores: ['vendor/', 'desktop/out/', 'desktop/dist/'] },
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,
@@ -24,8 +26,19 @@ export default defineConfig(
 		rules: {
 			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
 			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
-			'no-undef': 'off'
+			'no-undef': 'off',
+			// Honor the `_`-prefix convention for intentionally-unused params/vars/catches.
+			'@typescript-eslint/no-unused-vars': [
+				'error',
+				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
+			]
 		}
+	},
+	{
+		// CommonJS build helpers (electron-builder hooks) legitimately use require().
+		files: ['**/*.cjs'],
+		languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
+		rules: { '@typescript-eslint/no-require-imports': 'off' }
 	},
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
