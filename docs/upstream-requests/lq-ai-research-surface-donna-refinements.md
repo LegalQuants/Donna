@@ -111,8 +111,54 @@ code —
    `html_lawbox`, `xml_harvard`, `html_anon_2020`, `html`, `plain_text`).
 
 Ideally the spec is generated from the FastAPI app (`app.openapi()`) so it can't drift again — but if
-it stays hand-maintained, the two edits above are enough. Donna will pin + `gen:api` once the yaml
+it stays hand-maintained, the two edits below are enough. Donna will pin + `gen:api` once the yaml
 carries the typed shapes, and gets the full refined contract in one clean bump.
+
+### Precise fix (against `docs/api/backend-openapi.yaml` @ `38dbbb0`)
+
+The research paths use inline schemas (no `#/components/schemas/*`), so these stay inline to match.
+
+**Edit 1 — `/api/v1/research/verify-citations`, the `200` response.** Replace the loose `items`
+(lines **4821–4823**):
+
+```yaml
+                  citations:
+                    type: array
+                    items:                       # <-- was: {type: object, additionalProperties: true}
+                      type: object
+                      properties:
+                        citation: {type: string, nullable: true}
+                        normalized_citations:
+                          type: array
+                          items: {type: string}
+                        status: {type: integer, nullable: true}
+                        error_message: {type: string, nullable: true}
+                        clusters:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id: {type: integer, nullable: true}
+                              case_name: {type: string, nullable: true}
+                              absolute_url: {type: string, nullable: true}
+```
+
+**Edit 2 — `text_field_used` enum, BOTH occurrences** (line **4926**, the `/clusters/{id}` opinions
+list, at its 24-space indent; and line **4963**, `/opinions/{id}`, at its 18-space indent). Replace
+`text_field_used: {type: string, nullable: true}` with (re-indent per location):
+
+```yaml
+                        text_field_used:
+                          type: string
+                          nullable: true
+                          enum: [html_with_citations, html_columbia, html_lawbox, xml_harvard, html_anon_2020, html, plain_text]
+```
+
+That's it — three spots, no structural change. `openapi-typescript` then emits a structured
+`VerifiedCitation`-shaped type and a 7-member string union for `text_field_used`, so both asks reach
+Donna's `backend.d.ts`. (If you'd rather kill the drift permanently: dump `app.openapi()` to this file
+in CI/a make target instead of hand-editing — the `EXPECTED_PATHS`/`test_openapi.py` machinery is
+already the natural home for that check.)
 
 ## Conventions Donna will follow regardless
 
