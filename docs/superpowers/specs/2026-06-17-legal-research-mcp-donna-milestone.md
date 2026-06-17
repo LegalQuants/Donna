@@ -30,7 +30,8 @@ gated on a specific backend PR.
 
 | Slice | What Donna builds | Backend gate | Gate status | Contract |
 |---|---|---|---|---|
-| **A — Case-law research workspace** | Top-level `/research` page: search → read opinions in the doc panel → find-in-case → verify-citations | PR3b `/api/v1/research/*` | 🟡 in branch, ~landing | plain synchronous REST |
+| **A — Case-law research workspace** | Top-level `/research` page: search → read opinions in the doc panel → find-in-case → verify-citations | PR3b `/api/v1/research/*` | ✅ pinned `e2cc311` | plain synchronous REST |
+| **A2 — In-app CourtListener key** | Admin/user UI to add their own CL token (BYOK-style card, hot-applied) — so CL can be enabled without editing `gateway.yaml`. **CL is user-provided, never shipped.** | **NEW upstream ask** — runtime tool-provider key API (today `/admin/provider-keys` is inference-only) | 🔴 upstream-blocked | mirrors `byok-provider-keys` |
 | **B — MCP admin config** | Admin surface to list/refresh MCP connectors + tools, per-tool enable/disable, status badges | PR4 `/api/v1/admin/mcp` | ⚪ not started | mirrors the provider-keys admin card |
 | **C — Governed tool-calling in chat** | Tool-call rendering in chat, **destructive-tool confirmation gate** (SSE pause→approve→resume), provenance pills, per-turn cap surfacing; SSE research events live here | PR5 (WS4) | ⚪ not started | chat tool-loop + SSE frames |
 | **D — Transparency & automations** | External-source citations through the existing citation UI; the new `retrieve_caselaw` / `call_mcp_tool` ToolIntents surfaced in Automations receipts | PR6 (WS5) | ⚪ not started | citation source-kind + audit/receipt fields |
@@ -54,7 +55,15 @@ depends on both research (A's data) and the tool-loop (C). E rides last.
 - **A new Mac app for non-technical users.** The desktop launcher *wraps* `docker-compose.release.yml`
   + the published images — it does not fork `donna-web` or the backend (§1). So "a new Mac app" =
   cut a fresh release (likely `desktop-v0.2.0`) once the new images are published, following
-  `docs/BUILD-AND-RELEASE.md`. A release, not a rebuild.
+  `docs/BUILD-AND-RELEASE.md`. A release, not a rebuild. **Plus (new):** the first-run wizard offers an
+  **optional CourtListener token** field alongside the Anthropic key — skippable, add-later — written
+  into the generated chmod-600 `.env` (never bundled). Requires the release-side wiring below.
+- **Release-side CL wiring (new, gates the desktop CL option).** `docker-compose.release.yml` must
+  pass `COURTLISTENER_API_TOKEN` to the gateway, and the baked `gateway.yaml` (donna-gateway image)
+  must carry the `courtlistener` `tool_providers` entry (today it ships **commented out**) gated on
+  `api_key_env: COURTLISTENER_API_TOKEN`. **Open question to confirm upstream:** the gateway must
+  tolerate an *unset* `api_key_env` (provider simply absent / `capabilities.enabled=false`) so stacks
+  with no CL token still boot — otherwise enabling the entry would break tokenless installs.
 
 ## Working agreement with the LQ-AI session
 
