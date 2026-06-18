@@ -91,4 +91,14 @@ describe('POST /research/find-in-case + /verify-citations', () => {
 			body: '{"text":"see 576 U.S. 644"}'
 		});
 	});
+	it('find-in-case passes a 503 through', async () => {
+		lqFetch.mockResolvedValue(res(503, { detail: 'research_not_configured' }));
+		const { POST } = await import('./find-in-case/+server');
+		const out = await POST(
+			ev(
+				new Request('http://x', { method: 'POST', body: '{"opinion_id":5,"query":"due process"}' })
+			)
+		);
+		expect(out.status).toBe(503);
+	});
 });

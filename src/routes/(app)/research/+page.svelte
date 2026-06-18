@@ -10,7 +10,11 @@
 	const r = createResearch();
 	const docPanel = createDocPanel();
 	let q = $state('');
+	let court = $state('');
+	let orderBy = $state('');
 	let citeText = $state('');
+	let activeOpinion = $state<{ id: number; name: string } | null>(null);
+	let findQuery = $state('');
 </script>
 
 <svelte:head><title>Research · Donna</title></svelte:head>
@@ -22,26 +26,46 @@
 		<div class="mt-4"><ResearchGate /></div>
 	{:else}
 		<form
-			class="mt-4 flex gap-2"
+			class="mt-4 flex flex-col gap-2"
 			onsubmit={(e) => {
 				e.preventDefault();
-				r.search(q);
+				r.search(q, { court, order_by: orderBy });
 			}}
 		>
-			<input
-				type="search"
-				aria-label="Search case law"
-				bind:value={q}
-				placeholder="Search case law (e.g. Chevron deference)"
-				class="flex-1 rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text"
-			/>
-			<button
-				type="submit"
-				disabled={r.loading}
-				class="rounded-mlq-control bg-mlq-workflow px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
-			>
-				{r.loading ? 'Searching…' : 'Search'}
-			</button>
+			<div class="flex gap-2">
+				<input
+					type="search"
+					aria-label="Search case law"
+					bind:value={q}
+					placeholder="Search case law (e.g. Chevron deference)"
+					class="flex-1 rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text"
+				/>
+				<button
+					type="submit"
+					disabled={r.loading}
+					class="rounded-mlq-control bg-mlq-workflow px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+				>
+					{r.loading ? 'Searching…' : 'Search'}
+				</button>
+			</div>
+			<div class="flex gap-2">
+				<input
+					type="text"
+					aria-label="Court filter"
+					bind:value={court}
+					placeholder="Court (e.g. scotus)"
+					class="flex-1 rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text"
+				/>
+				<select
+					aria-label="Sort order"
+					bind:value={orderBy}
+					class="rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text"
+				>
+					<option value="">Relevance</option>
+					<option value="dateFiled desc">Newest first</option>
+					<option value="dateFiled asc">Oldest first</option>
+				</select>
+			</div>
 		</form>
 
 		{#if r.error}<p role="alert" class="mt-3 text-xs text-mlq-error">{r.error}</p>{/if}
@@ -86,11 +110,12 @@
 								</div>
 								<button
 									type="button"
-									onclick={() =>
-										docPanel.openOpinion({
-											opinionId: op.opinion_id,
-											caseName: r.cluster!.cluster.case_name ?? `Opinion #${op.opinion_id}`
-										})}
+									onclick={() => {
+										const caseName = r.cluster!.cluster.case_name ?? `Opinion #${op.opinion_id}`;
+										docPanel.openOpinion({ opinionId: op.opinion_id, caseName });
+										activeOpinion = { id: op.opinion_id, name: caseName };
+										findQuery = '';
+									}}
 									class="rounded-mlq-control border border-mlq-subtle px-2 py-1 text-xs text-mlq-text hover:bg-mlq-surface-alt"
 								>
 									Open
@@ -101,6 +126,43 @@
 				{/if}
 			</section>
 		</div>
+
+		{#if activeOpinion}
+			<section class="mt-8">
+				<h2 class="text-xs font-medium tracking-wide text-mlq-muted uppercase">Find in opinion</h2>
+				<p class="mt-0.5 text-xs text-mlq-muted">{activeOpinion.name}</p>
+				<form
+					class="mt-2 flex gap-2"
+					onsubmit={(e) => {
+						e.preventDefault();
+						r.findInCase(activeOpinion!.id, findQuery);
+					}}
+				>
+					<input
+						type="text"
+						aria-label="Find in opinion"
+						bind:value={findQuery}
+						placeholder="Search within this opinion…"
+						class="flex-1 rounded-mlq-control border border-mlq-subtle bg-mlq-surface px-3 py-2 text-sm text-mlq-text"
+					/>
+					<button
+						type="submit"
+						class="rounded-mlq-control border border-mlq-subtle px-3 py-2 text-sm text-mlq-text hover:bg-mlq-surface-alt"
+						>Find</button
+					>
+				</form>
+				{#if r.matches.length}
+					<ul class="mt-3 space-y-2">
+						{#each r.matches as m (m.position)}
+							<li class="rounded-mlq-control border border-mlq-subtle p-3">
+								<span class="block text-xs text-mlq-muted">Position {m.position}</span>
+								<span class="mt-0.5 block text-sm text-mlq-text">{m.snippet}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
+		{/if}
 
 		<section class="mt-8">
 			<h2 class="text-xs font-medium tracking-wide text-mlq-muted uppercase">Verify citations</h2>
