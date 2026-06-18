@@ -49,7 +49,13 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 	) {
 		query = q;
 		if (!q.trim()) return;
-		if (!opts.append) lastFilters = filters;
+		if (!opts.append) {
+			// Start a fresh search: remember its filters and drop any prior page's
+			// cursor so a failed/empty result can't leave a stale "Load more" that
+			// would page the previous query.
+			lastFilters = filters;
+			nextCursor = null;
+		}
 		loading = true;
 		error = null;
 		try {
@@ -63,8 +69,9 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 				if (opts.append) {
 					// Append the next page, skipping any row already shown — keeps the
 					// keyed list unique even if the backend repeats a result. Dedup on
-					// the same composite the page keys by (cluster_id, else case_name).
-					const rowKey = (x: SearchResultItem) => x.cluster_id ?? x.case_name;
+					// the same composite the page keys by (cluster_id, else case_name,
+					// else absolute_url) so even a cluster_id-less row stays distinct.
+					const rowKey = (x: SearchResultItem) => x.cluster_id ?? x.case_name ?? x.absolute_url;
 					const seen = new Set(results.map(rowKey));
 					results = [...results, ...parsed.results.filter((x) => !seen.has(rowKey(x)))];
 				} else {
