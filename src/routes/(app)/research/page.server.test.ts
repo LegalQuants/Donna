@@ -28,4 +28,12 @@ describe('research load', () => {
 		const out = (await load({} as never)) as { capabilities: { enabled: boolean } };
 		expect(out.capabilities.enabled).toBe(false);
 	});
+	it('degrades to disabled when the response body is unreadable (catch path)', async () => {
+		// A 200 with a non-JSON body makes `await res.json()` reject inside the
+		// load's try — exercising the catch → disabled fallback.
+		lqFetch.mockResolvedValue(new Response('not json{', { status: 200 }));
+		const { load } = await import('./+page.server');
+		const out = (await load({} as never)) as { capabilities: { enabled: boolean } };
+		expect(out.capabilities.enabled).toBe(false);
+	});
 });
