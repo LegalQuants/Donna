@@ -63,7 +63,13 @@ export default defineConfig(
 	},
 	{
 		// Tests routinely cast mocks/fixtures; `any` is acceptable there.
+		// `@ts-nocheck` is also allowed: some test files suppress void-union return-type
+		// errors that come from SvelteKit's `PageServerLoad` generic without breaking the
+		// runtime assertions that vitest verifies.
 		files: ['**/*.test.ts', '**/*.spec.ts', 'tests/**'],
-		rules: { '@typescript-eslint/no-explicit-any': 'off' }
+		rules: {
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/ban-ts-comment': 'off'
+		}
 	}
 );
