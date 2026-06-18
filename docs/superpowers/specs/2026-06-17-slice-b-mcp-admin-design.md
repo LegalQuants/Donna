@@ -10,7 +10,7 @@ pin + runs `gen:api` **before implementation starts**.
 
 An operator who has wired MCP servers into LQ-AI (via the operator-controlled `mcp.yaml`) needs a
 way, inside Donna, to **see which servers/tools are available, re-discover a server's tools, and
-enable/disable individual tools** — without editing YAML or reading logs. This is the *configuration*
+enable/disable individual tools** — without editing YAML or reading logs. This is the _configuration_
 surface; actually letting the chat model call an enabled MCP tool (with the destructive-confirmation
 gate) is **Slice C**, not here.
 
@@ -27,9 +27,10 @@ unlike research it should land in `backend.d.ts` directly; still verify the Open
   `MCPToolView`.
 
 Shapes:
+
 - `MCPServerView = { name, type, tools: MCPToolView[] }`
 - `MCPToolView = { name, description: str|null, parameters: dict (JSON-Schema),
-  read_only: bool, destructive: bool, requires_confirmation: bool, enabled: bool }`
+read_only: bool, destructive: bool, requires_confirmation: bool, enabled: bool }`
 
 No connector-creation, no auth/OAuth fields in the admin views (operator-allowlisted in `mcp.yaml`;
 per-user OAuth is a later concern). So Donna's surface is **list + refresh + per-tool toggle** only.
