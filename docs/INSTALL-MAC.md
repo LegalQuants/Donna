@@ -4,7 +4,8 @@ Donna for Mac is a one‑app install: download it, open it, set a password, and 
 terminal, no GitHub, no config files**. This guide walks through it with pictures.
 
 > **What you need**
-> - A **Mac with Apple Silicon** (M1/M2/M3/M4). *(An Intel build is coming.)*
+>
+> - A **Mac with Apple Silicon** (M1/M2/M3/M4). _(An Intel build is coming.)_
 > - **Docker Desktop** installed and running — Donna uses it to run its private engine on your
 >   machine. **[Download Docker Desktop for Apple Silicon →](https://desktop.docker.com/mac/main/arm64/Docker.dmg)**
 >   (or browse [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)).
@@ -42,8 +43,9 @@ notarized by Apple**, it opens normally — no "unidentified developer" warning.
 The first time you open Donna, a short **Welcome** screen appears. Two quick choices:
 
 **1. How should Donna think?** — pick how Donna answers questions:
+
 - **Use a cloud API key (recommended)** — paste an Anthropic API key for the best quality and speed.
-  *(Optional — you can leave it blank and add a key later in Settings.)*
+  _(Optional — you can leave it blank and add a key later in Settings.)_
 - **Run fully local with Ollama** — keep everything on your Mac with no cloud at all. This needs
   **[Ollama](https://ollama.com/download)** installed and running with a model pulled (e.g.
   `ollama pull qwen2.5`).
@@ -52,8 +54,8 @@ The first time you open Donna, a short **Welcome** screen appears. Two quick cho
 least 12 characters. You can change the email and password later in **Settings → Account**.
 
 Click **Start Donna**. The first start **downloads the engine and document‑processing models** — this
-takes a few minutes the first time only, and Donna shows live progress (e.g. *"5/8 services
-ready"*). When it reaches **Running**, you're set.
+takes a few minutes the first time only, and Donna shows live progress (e.g. _"5/8 services
+ready"_). When it reaches **Running**, you're set.
 
 > **Note:** those first‑run downloads are Donna's **document‑reading models** (for search,
 > highlighting and OCR) — not the chat AI. You don't have to wait for them to finish to start using
@@ -67,12 +69,12 @@ Click **Open Donna** and sign in with **`admin@lq.ai`** and the password you set
 **Assistant**, Donna's home base — ask questions, open Projects, run Workflows, or build Tabular
 reviews.
 
-The pill under the question box shows which AI is answering. With a **cloud** key it reads *Cloud ·
-Tier 4*:
+The pill under the question box shows which AI is answering. With a **cloud** key it reads _Cloud ·
+Tier 4_:
 
 ![Donna Assistant using a cloud model](images/desktop/03-assistant-cloud.png)
 
-…and with **local** Ollama it reads *Self‑hosted · Local* — fully private, no cloud:
+…and with **local** Ollama it reads _Self‑hosted · Local_ — fully private, no cloud:
 
 ![Donna Assistant using a local Ollama model](images/desktop/04-assistant-local.png)
 
@@ -83,6 +85,7 @@ The richest tour of every feature lives **inside the app** — open **About** in
 ## Everyday use
 
 The Donna app window is your **control panel**:
+
 - **Open Donna** — opens the workspace (once the engine is Running).
 - **Start / Stop** — start or stop the engine. Stopping frees up your Mac's resources; your data is
   kept and is there next time you Start.
@@ -98,7 +101,7 @@ wizard only runs the very first time.
 ## Troubleshooting
 
 - **"Docker is not running."** Start **Docker Desktop** (look for the whale icon in your menu bar),
-  wait until it says *Running*, then click **Start** in Donna.
+  wait until it says _Running_, then click **Start** in Donna.
 - **First start is slow.** Normal — the engine images and document models download once. Watch the
   live progress; you can sign in as soon as it says **Running**.
 - **Local (Ollama) answers fail or are missing models.** Make sure Ollama is running and you've

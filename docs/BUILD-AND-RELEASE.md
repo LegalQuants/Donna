@@ -10,10 +10,10 @@ them.
 
 **TL;DR of the two pipelines**
 
-| What | Workflow | Trigger | Output |
-|---|---|---|---|
-| Container images | `.github/workflows/release.yml` | `gh workflow run release.yml -f ref=main -f tag=vX.Y.Z` (or push a `v*` tag) | 5 multi-arch images → `ghcr.io/<namespace>/donna-*` |
-| macOS app | `.github/workflows/desktop-release.yml` | `gh workflow run desktop-release.yml -f tag=desktop-vX.Y.Z` (or push a `desktop-v*` tag) | signed+notarized `.dmg` on a GitHub Release |
+| What             | Workflow                                | Trigger                                                                                  | Output                                              |
+| ---------------- | --------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Container images | `.github/workflows/release.yml`         | `gh workflow run release.yml -f ref=main -f tag=vX.Y.Z` (or push a `v*` tag)             | 5 multi-arch images → `ghcr.io/<namespace>/donna-*` |
+| macOS app        | `.github/workflows/desktop-release.yml` | `gh workflow run desktop-release.yml -f tag=desktop-vX.Y.Z` (or push a `desktop-v*` tag) | signed+notarized `.dmg` on a GitHub Release         |
 
 ---
 
@@ -21,11 +21,11 @@ them.
 
 - **`donna-web`** is a normal `adapter-node` SvelteKit server — built straight from the repo `Dockerfile`.
 - The legal-AI backend lives in the pinned **`vendor/lq-ai`** submodule, which we must **never edit**.
-  So we publish two **wrapper images** that add Donna's bits *on top of* the upstream images without
+  So we publish two **wrapper images** that add Donna's bits _on top of_ the upstream images without
   touching the submodule: **`donna-api`** (= lq-ai `api` + baked `vendor/lq-ai/skills`) and
   **`donna-gateway`** (= lq-ai `gateway` + baked `gateway.yaml.example`). The wrappers `FROM` two
   base images we also publish (`donna-api-base`, `donna-gateway-base`) = the raw lq-ai images.
-  *(When LQ-AI publishes its own images, this wrapper layer goes away — see `docs/upstream-requests/lq-ai-publish-container-images.md`.)*
+  _(When LQ-AI publishes its own images, this wrapper layer goes away — see `docs/upstream-requests/lq-ai-publish-container-images.md`.)_
 - **`docker-compose.release.yml`** is the image-only install stack — a **hand-maintained mirror** of
   the dev compose's wiring. Re-sync it on every pin bump.
 - **The macOS launcher** (`desktop/`) is a thin **Electron** app that shells out to that release
@@ -37,6 +37,7 @@ them.
 ## Part 1 — Container images (`release.yml`)
 
 ### What it builds
+
 In order: `donna-api-base` and `donna-gateway-base` (raw lq-ai, from `vendor/lq-ai/api` and
 `vendor/lq-ai/gateway`), then the wrappers `donna-api` / `donna-gateway` (build-arg `BASE=` points at
 the just-built base), then `donna-web`. All `linux/amd64,linux/arm64`. The wrapper Dockerfiles
@@ -44,33 +45,38 @@ the just-built base), then `donna-web`. All `linux/amd64,linux/arm64`. The wrapp
 namespace.
 
 ### Namespace is configurable
+
 `release.yml` has a `namespace` `workflow_dispatch` input (default `legalquants`); the compose reads
 `ghcr.io/${DONNA_IMAGE_NAMESPACE:-legalquants}/donna-*`. To publish under a namespace you own, run the
 workflow **from a fork/mirror in that org** (so `GITHUB_TOKEN` has `packages:write` there) with
 `namespace=<your-org>`, and set `DONNA_IMAGE_NAMESPACE` in the installer `.env`.
 
 ### Cut an image release
+
 ```bash
 gh workflow run release.yml -R <org>/Donna -f ref=main -f tag=v0.2.0
 gh run watch <run-id> -R <org>/Donna --exit-status      # NB: see the watch-lies gotcha below
 ```
 
-> ⚠️ **Build from a ref that actually contains `docker/` + `release.yml`.** The `v0.1.0` *source
-> tag* predates the pre-built-images feature, so building from `ref: v0.1.0` fails (no Dockerfiles).
+> ⚠️ **Build from a ref that actually contains `docker/` + `release.yml`.** The `v0.1.0` _source
+> tag_ predates the pre-built-images feature, so building from `ref: v0.1.0` fails (no Dockerfiles).
 > Build from **`main`** (or a tag that includes the docker infra) and pass `tag:` for the image tag.
 > The app code in `main` vs the tag was identical, so `ref=main, tag=v0.1.0` produced correct images.
 
 ### Make the packages public (one-time, easy to miss)
+
 Actions publishes packages **private**. Two layers:
+
 1. **Org policy.** If "Change visibility → Public" is **greyed out** ("disabled by organization
    administrators"), an **org owner** must enable public packages at
-   `github.com/organizations/<org>/settings/packages` → *Package creation* → allow **Public**. A plain
+   `github.com/organizations/<org>/settings/packages` → _Package creation_ → allow **Public**. A plain
    member can't do this. (We hit this — only org owners could flip it.)
 2. **Per-package.** Then for each of the 5 packages (`donna-web`, `donna-api`, `donna-gateway`,
-   `donna-api-base`, `donna-gateway-base`): org → Packages → package → *Package settings* → *Change
-   visibility* → **Public**. (There is **no reliable REST API** for this — it's a UI action.)
+   `donna-api-base`, `donna-gateway-base`): org → Packages → package → _Package settings_ → _Change
+   visibility_ → **Public**. (There is **no reliable REST API** for this — it's a UI action.)
 
 ### Verify they're anonymously pullable
+
 ```bash
 for img in donna-web donna-api donna-gateway donna-api-base donna-gateway-base; do
   TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:<org>/$img:pull" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
@@ -81,6 +87,7 @@ done
 ```
 
 ### On a pin bump, re-sync the release compose
+
 `docker-compose.release.yml` is a hand-maintained mirror of `vendor/lq-ai/docker-compose.yml` + the
 `donna-web` service. After `cd vendor/lq-ai && git checkout <sha>`, diff the upstream compose and
 re-apply any service/env changes to `docker-compose.release.yml`. Record the bump in
@@ -91,6 +98,7 @@ re-apply any service/env changes to `docker-compose.release.yml`. Record the bum
 ## Part 2 — The macOS app (`desktop/`)
 
 ### Layout (keep this split)
+
 ```
 desktop/
   src/core/      PURE, unit-tested (vitest), NO electron import:
@@ -102,16 +110,20 @@ desktop/
   src/renderer/  vanilla-TS wizard + control panel
   electron.vite.config.ts · electron-builder.yml · build/ (entitlements) · resources/ (compose copied in)
 ```
+
 Rule of thumb: **all decidable logic goes in `core/` with a test**; `main/`/`renderer/` are thin I/O
-+ DOM and are verified by `tsc` + `npm run build` + the real run (they need an Electron runtime).
+
+- DOM and are verified by `tsc` + `npm run build` + the real run (they need an Electron runtime).
 
 Gates: `cd desktop && npx vitest run` (45 tests) · `npx tsc --noEmit` · `npm run build` (3 bundles).
 Local unsigned smoke build: `CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist` → an unsigned `.dmg`.
 
 ### Cut a desktop release
+
 ```bash
 gh workflow run desktop-release.yml -R <org>/Donna -f tag=desktop-v0.2.0
 ```
+
 The workflow runs on `macos-14`, runs the core tests + typecheck, then `npm run dist` (sign + notarize)
 and publishes the `.dmg` to a `desktop-v0.2.0` Release. Needs the signing secrets from Part 3.
 
@@ -122,8 +134,9 @@ and publishes the `.dmg` to a `desktop-v0.2.0` Release. Needs the signing secret
 This is the part that took the most iterations. Read it before you touch `electron-builder.yml`.
 
 ### One-time: get a Developer ID + the 5 secrets
+
 1. **Developer ID Application certificate** (the only type that works for distributing a `.app`/`.dmg`
-   outside the App Store — *not* "Apple Development", *not* "Developer ID Installer"). Easiest via
+   outside the App Store — _not_ "Apple Development", _not_ "Developer ID Installer"). Easiest via
    **Xcode → Settings → Accounts → Manage Certificates → + → Developer ID Application**. Verify +
    read your Team ID:
    ```bash
@@ -150,33 +163,37 @@ This is the part that took the most iterations. Read it before you touch `electr
    Then **delete the local key material** (`rm cert.p12 cert.b64`).
 
 ### The notarization recipe — what actually works (and the 3 traps)
+
 electron-builder (24.13) does **not** make a Gatekeeper-passing DMG out of the box. The working config
 (`desktop/electron-builder.yml`) is:
+
 ```yaml
 mac:
   hardenedRuntime: true
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   notarize:
-    teamId: <TEAMID>        # TRAP 1
-afterAllArtifactBuild: build/notarize-dmg.cjs   # TRAP 2
+    teamId: <TEAMID> # TRAP 1
+afterAllArtifactBuild: build/notarize-dmg.cjs # TRAP 2
 dmg:
-  sign: true               # TRAP 2
+  sign: true # TRAP 2
 ```
-- **Trap 1 — `notarize: true` fails with "teamId property is required."** electron-builder does *not*
+
+- **Trap 1 — `notarize: true` fails with "teamId property is required."** electron-builder does _not_
   read `APPLE_TEAM_ID` from the env for native notarization; `teamId` **must** be in the config.
 - **Trap 2 — native notarize only signs+notarizes the `.app`,** then builds a **bare `.dmg`** that is
-  neither signed nor stapled → the *downloaded* dmg fails Gatekeeper ("Apple cannot check it for
+  neither signed nor stapled → the _downloaded_ dmg fails Gatekeeper ("Apple cannot check it for
   malicious software"). Fix: `dmg.sign: true` (sign the dmg) **plus** an `afterAllArtifactBuild` hook
   (`build/notarize-dmg.cjs`) that runs `xcrun notarytool submit <dmg> --apple-id … --team-id … --wait`
-  then `xcrun stapler staple <dmg>`. A *stapled but unsigned* dmg still fails ("no usable signature") —
+  then `xcrun stapler staple <dmg>`. A _stapled but unsigned_ dmg still fails ("no usable signature") —
   it needs **both** signing and notarization+stapling.
 - **Trap 3 — the `.app` preload must be `.mjs`.** electron-vite emits the preload as
   `out/preload/index.mjs` (the package is `"type": "module"`); the main process must reference
   `../preload/index.mjs` or `window.donna` is `undefined` at runtime. `sandbox: false` is kept because
   a sandboxed preload can't be ESM; `contextIsolation` (on by default) is the real security boundary.
 
-### Verify the *published* artifact (not the CI exit code)
+### Verify the _published_ artifact (not the CI exit code)
+
 ```bash
 gh release download desktop-v0.2.0 -R <org>/Donna -p '*.dmg' -D /tmp --clobber
 spctl -a -vvv -t open --context context:primary-signature /tmp/Donna-*.dmg
@@ -200,12 +217,12 @@ they're there.
    main process with an uncaught exception.
 2. **Compose project isolation.** The launcher must use its **own** project name (`donna-desktop`),
    **not** `donna` — which collides with the build-from-source / raw-lq-ai dev stacks and **reuses
-   their `donna_pgdata` volume**. Postgres only applies `POSTGRES_PASSWORD` on first init of an *empty*
-   volume, so a reused volume keeps the *old* password → `api` "password authentication failed"
+   their `donna_pgdata` volume**. Postgres only applies `POSTGRES_PASSWORD` on first init of an _empty_
+   volume, so a reused volume keeps the _old_ password → `api` "password authentication failed"
    crash-loop. (`-p` overrides the compose file's top-level `name:`.)
 3. **Don't strand config on failure.** Persist the config blob **only after** the stack is healthy AND
    the admin is created. (We first saved it before starting the stack, so a failed run skipped the
-   wizard on next launch.) The `.env` must still be written *before* `up` (the stack needs it).
+   wizard on next launch.) The `.env` must still be written _before_ `up` (the stack needs it).
 4. **Backend admin model.** The lq-ai api auto-bootstraps a **fixed** admin **`admin@lq.ai`** on first
    run; the only CLI is `reset-admin-password` (resets an existing user — **no create-user**). So the
    wizard must **set a password for `admin@lq.ai`** (not invent a custom email), and `completeWizard`
@@ -214,7 +231,7 @@ they're there.
 5. **A "Reset" must run `down -v`.** Deleting the app config alone leaves the volumes — whose old
    Postgres password collides with the next wizard's freshly-generated secrets. The Reset action does
    `down -v` + clears config.
-6. **`gh run watch --exit-status` can report exit 0 on a *failed* run.** Always confirm with
+6. **`gh run watch --exit-status` can report exit 0 on a _failed_ run.** Always confirm with
    `gh run view <id> --json conclusion` AND verify the actual artifact (`spctl`). This bit us once (a
    build failed on the teamId trap but the watch said success).
 7. **First-run "downloading models" ≠ chat LLMs.** Those are the ingest-worker's document-processing
@@ -228,7 +245,7 @@ App data lives at `~/Library/Application Support/donna-desktop/` (`config.enc` +
 
 ## Part 5 — Verifying a release
 
-1. **Automated isolated boot test** (proves the *published images* stand up to a login, no GUI) — use
+1. **Automated isolated boot test** (proves the _published images_ stand up to a login, no GUI) — use
    a **distinct `-p` project + shifted ports** so it can't touch any dev stack, pull `vX.Y.Z`, wait for
    all 8 healthy, run the admin fixture, then `POST /login?/login` with an `Origin` header and confirm
    the `donna_at`/`donna_rt` session cookies come back. Tear down with `down -v`. (See the steps

@@ -1,5 +1,5 @@
-import { defineConfig } from 'electron-vite'
-import { resolve } from 'node:path'
+import { defineConfig } from 'electron-vite';
+import { resolve } from 'node:path';
 
 export default defineConfig({
 	main: { build: { rollupOptions: { input: resolve('src/main/index.ts') } } },
@@ -8,4 +8,4 @@ export default defineConfig({
 		root: 'src/renderer',
 		build: { rollupOptions: { input: resolve('src/renderer/index.html') } }
 	}
-})
+});

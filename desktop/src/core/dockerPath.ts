@@ -8,7 +8,7 @@ export const DOCKER_BIN_DIRS = [
 	'/usr/local/bin', // Docker Desktop CLI symlink (Intel + Apple Silicon)
 	'/opt/homebrew/bin', // Homebrew on Apple Silicon
 	'/Applications/Docker.app/Contents/Resources/bin' // Docker Desktop bundled CLI
-]
+];
 
 /**
  * Merge a base PATH with the known docker bin dirs. Extra dirs come first so a
@@ -16,13 +16,13 @@ export const DOCKER_BIN_DIRS = [
  * Pure: the caller passes process.env.PATH.
  */
 export function dockerSearchPath(currentPath = '', extraDirs: string[] = DOCKER_BIN_DIRS): string {
-	const seen = new Set<string>()
-	const out: string[] = []
+	const seen = new Set<string>();
+	const out: string[] = [];
 	for (const dir of [...extraDirs, ...currentPath.split(':')]) {
 		if (dir && !seen.has(dir)) {
-			seen.add(dir)
-			out.push(dir)
+			seen.add(dir);
+			out.push(dir);
 		}
 	}
-	return out.join(':')
+	return out.join(':');
 }

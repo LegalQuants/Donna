@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron';
 
 /** Typed bridge the renderer uses; no Node/Electron exposed beyond these calls. */
 const api = {
@@ -12,12 +12,12 @@ const api = {
 	openDonna: (): Promise<void> => ipcRenderer.invoke('stack:openDonna'),
 	installDocker: (): Promise<void> => ipcRenderer.invoke('engine:installDocker'),
 	onLog: (cb: (line: string) => void): void => {
-		ipcRenderer.on('stack:log', (_e, line: string) => cb(line))
+		ipcRenderer.on('stack:log', (_e, line: string) => cb(line));
 	},
 	onState: (cb: (snap: unknown) => void): void => {
-		ipcRenderer.on('stack:state', (_e, snap: unknown) => cb(snap))
+		ipcRenderer.on('stack:state', (_e, snap: unknown) => cb(snap));
 	}
-}
+};
 
-contextBridge.exposeInMainWorld('donna', api)
-export type DonnaBridge = typeof api
+contextBridge.exposeInMainWorld('donna', api);
+export type DonnaBridge = typeof api;

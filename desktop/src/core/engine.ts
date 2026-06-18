@@ -1,4 +1,4 @@
-import type { EngineProbe } from './types'
+import type { EngineProbe } from './types';
 
 /**
  * Interpret the result of `docker info` (or a spawn failure). Pure: the caller does
@@ -7,22 +7,22 @@ import type { EngineProbe } from './types'
  */
 export function parseEngineProbe(exitCode: number, stdout: string, stderr: string): EngineProbe {
 	if (exitCode === 0) {
-		const m = /Server Version:\s*([^\s]+)/.exec(stdout)
-		return { status: 'present', version: m?.[1] }
+		const m = /Server Version:\s*([^\s]+)/.exec(stdout);
+		return { status: 'present', version: m?.[1] };
 	}
 
-	const err = stderr.toLowerCase()
+	const err = stderr.toLowerCase();
 	if (exitCode === 127 || err.includes('not found') || err.includes('enoent')) {
 		return {
 			status: 'absent',
 			message: 'Docker is not installed. Install Docker Desktop to run Donna.'
-		}
+		};
 	}
 	if (err.includes('daemon') || err.includes('docker.sock')) {
 		return {
 			status: 'error',
 			message: 'Docker daemon is not running. Start Docker Desktop and try again.'
-		}
+		};
 	}
-	return { status: 'error', message: stderr.trim() || 'Could not reach the Docker engine.' }
+	return { status: 'error', message: stderr.trim() || 'Could not reach the Docker engine.' };
 }

@@ -25,9 +25,10 @@ working login (isolated project `donna-reltest`, shifted ports, fresh anonymous 
   (`donna_at` + `donna_rt`, HttpOnly/Secure) = real end-to-end auth against gateway/api.
 
 This confirms the backend the launcher drives works for a fresh install. The GUI steps below
-exercise the launcher *chrome* (wizard, lifecycle, window) on top of that proven backend.
+exercise the launcher _chrome_ (wizard, lifecycle, window) on top of that proven backend.
 
 ## Environment (run 2026-06-13)
+
 - Mac: Apple Silicon (arm64), MacBook Pro.
 - Docker Desktop installed and running.
 - Clean slate: the `donna-desktop` containers + volumes and the launcher app-data
@@ -47,11 +48,13 @@ exercise the launcher *chrome* (wizard, lifecycle, window) on top of that proven
 - [x] **Relaunch** — reopened → **no wizard** (config reused) → **Start** back to **Running**.
 - [x] **Engine-absent** — quit Docker → panel reads **Docker is not running** with install guidance (no crash, no fake ready).
 
-User confirmation (2026-06-13): *"Works great all steps check out."*
+User confirmation (2026-06-13): _"Works great all steps check out."_
 
 ## Bugs found by THIS live run and fixed before sign-off
+
 The signed-dmg's first real Finder launch surfaced four issues the automated/CI tests could
 not (CI runs `docker` from a full-PATH shell), all fixed and merged (PRs #80, #81):
+
 1. **GUI PATH** — Finder apps omit `/usr/local/bin`, so `spawn('docker')` ENOENT'd even with
    Docker installed → crash + false "Docker is not installed". (`dockerSearchPath` + a missing
    `streamDocker` error handler.)
@@ -64,9 +67,11 @@ not (CI runs `docker` from a full-PATH shell), all fixed and merged (PRs #80, #8
    now sets the `admin@lq.ai` password and fails loudly on error.)
 
 ## Verdict
+
 ✅ **Phase 1 launcher delivers "no terminal, no GitHub, no `.env`" on a clean Mac.** Verified live.
 
 ## Known follow-ups (non-blocking)
+
 - A **Reset / Uninstall** control-panel action that also runs `down -v` — deleting app config
   alone leaves volumes whose old Postgres password collides with a re-run's fresh secrets.
 - `x64` / universal build for Intel Macs (arm64-only today).

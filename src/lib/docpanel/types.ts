@@ -7,6 +7,9 @@ export interface DocTab {
 	fileId: string;
 	filename: string;
 	mime: string;
+	/** When set, the text viewer fetches this URL instead of /files/{fileId}/content
+	 *  (used for external opinions, which are not Donna files). */
+	contentUrl?: string;
 	status: DocTabStatus;
 	/** 1-based page the cited span lives on. */
 	page: number | null;
