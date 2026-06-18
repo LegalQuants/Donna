@@ -356,6 +356,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tools/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Discover a tool provider's available tools
+         * @description Returns the live ``list_tools()`` response from the named tool provider.
+         *     Callers use this to discover available tools and their parameter schemas
+         *     before invoking via ``POST /v1/tools/{provider}/{tool}``.
+         *
+         *     The per-user OAuth token for ``auth: oauth`` MCP servers is supplied via
+         *     the ``X-LQ-AI-User-Token`` request header (PR4c supplies it). A header
+         *     is used instead of a query parameter because query strings are written
+         *     to uvicorn access logs in plaintext; this token must never appear in
+         *     logs. For ``none`` / ``bearer`` providers the token is ignored and
+         *     **never logged**.
+         *
+         *     Gated by the gateway key (same as the invoke transport).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /**
+                     * @description Optional per-user OAuth token forwarded to the adapter for
+                     *     ``auth: oauth`` MCP servers. Carried as a header (not a query
+                     *     param) so it is never written to access logs. Ignored for
+                     *     ``none`` / ``bearer`` auth providers. Never logged.
+                     */
+                    "X-LQ-AI-User-Token"?: string;
+                };
+                path: {
+                    /** @description Name of a configured tool provider (e.g. ``courtlistener``). */
+                    provider: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tool list returned successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ToolDiscoveryResponse"];
+                    };
+                };
+                /** @description Missing or invalid X-LQ-AI-Gateway-Key */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Provider name not in the tool-provider registry */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Upstream tool provider returned an error during list_tools */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/tools/{provider}/{tool}": {
         parameters: {
             query?: never;
@@ -383,7 +471,16 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /**
+                     * @description Optional per-user OAuth token forwarded to the adapter for
+                     *     ``auth: oauth`` MCP servers. Carried as a header (not a query
+                     *     param or request body field) so it is never written to access
+                     *     logs. Ignored for ``none`` / ``bearer`` auth providers. Never
+                     *     logged.
+                     */
+                    "X-LQ-AI-User-Token"?: string;
+                };
                 path: {
                     /** @description Name of a configured tool provider (e.g. ``courtlistener``). */
                     provider: string;
@@ -1695,6 +1792,33 @@ export interface components {
              */
             max_allowed_tier?: number | null;
         };
+        ToolDiscoveryResponse: {
+            /** @description The configured tool provider name. */
+            provider: string;
+            tools: components["schemas"]["ToolSpec"][];
+        };
+        ToolSpec: {
+            /** @description Tool name, unique within the provider. */
+            name: string;
+            /** @description Human-readable description of what the tool does. */
+            description: string;
+            /**
+             * @description JSON Schema describing the tool's argument object. Callers
+             *     use this to validate args before invoking via POST.
+             */
+            parameters: {
+                [key: string]: unknown;
+            };
+            /** @description True if the tool only reads data (no side-effects). */
+            read_only: boolean;
+            /** @description True if the tool may permanently destroy or modify data. */
+            destructive: boolean;
+            /**
+             * @description True if the tool should prompt the user for confirmation before
+             *     invoking (e.g. filing a document, sending a message).
+             */
+            requires_confirmation: boolean;
+        };
         ToolCallResponse: {
             /** @description The configured tool provider name that handled the call. */
             provider: string;
@@ -1723,7 +1847,7 @@ export interface components {
                  *     routing happens.
                  * @enum {string}
                  */
-                code: "tier_below_minimum" | "tier_disallowed_globally" | "anonymization_failed" | "invalid_model" | "provider_unavailable" | "rate_limit_exceeded" | "invalid_request" | "not_implemented" | "unauthorized" | "skill_not_found" | "skill_fetch_failed" | "skill_input_missing" | "not_found" | "conflict" | "internal_error" | "failed_precondition";
+                code: "tier_below_minimum" | "tier_disallowed_globally" | "anonymization_failed" | "invalid_model" | "provider_unavailable" | "rate_limit_exceeded" | "invalid_request" | "not_implemented" | "unauthorized" | "skill_not_found" | "skill_fetch_failed" | "skill_input_missing" | "not_found" | "conflict" | "internal_error" | "failed_precondition" | "egress_refused" | "unknown_provider" | "tool_provider_unavailable";
                 message: string;
                 details?: {
                     [key: string]: unknown;

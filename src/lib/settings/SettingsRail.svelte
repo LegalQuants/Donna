@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
-	// Built sections only (no dead UI); later P7 slices add their entry.
-	const sections: { href: string; label: string }[] = [
+	let { isAdmin = false }: { isAdmin?: boolean } = $props();
+
+	const sections = $derived([
 		{ href: '/settings/account', label: 'Account' },
 		{ href: '/settings/data', label: 'Data & privacy' },
 		{ href: '/settings/preferences', label: 'Preferences' },
 		{ href: '/settings/trust', label: 'Trust' },
-		{ href: '/settings/models', label: 'Models' }
-	];
+		{ href: '/settings/models', label: 'Models' },
+		...(isAdmin ? [{ href: '/settings/mcp', label: 'MCP' }] : [])
+	]);
 	const isActive = (href: string) =>
 		page.url.pathname === href || page.url.pathname.startsWith(href + '/');
 </script>
