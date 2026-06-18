@@ -9030,6 +9030,221 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List configured MCP servers and their cached tools (admin only)
+         * @description WS2/PR4b. Returns the operator's configured MCP servers (sourced
+         *     from gateway config, type==mcp) together with each server's
+         *     discovery-cached tools and their ``enabled`` toggle state. The
+         *     caller's bearer token must have ``is_admin = true`` or the
+         *     endpoint returns 403 ``forbidden``.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description MCP servers with cached tools */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MCPServersResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Caller is not an admin */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mcp/{server}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description MCP server name (as returned by the gateway config). */
+                server: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Re-discover and reconcile a server's tools (admin only)
+         * @description WS2/PR4b. Triggers a fresh tool-discovery pass against the named
+         *     MCP server through the gateway (PR4a's GET /v1/tools/{provider}).
+         *     The discovery cache is reconciled: new tools are inserted with
+         *     ``enabled=true``; surviving tools preserve their existing
+         *     ``enabled`` flag; stale tools (no longer returned) are removed.
+         *     Writes a ``mcp.tools_refreshed`` audit row. 403 when the caller
+         *     is not an admin.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description MCP server name (as returned by the gateway config). */
+                    server: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Refresh complete; returns the updated tool list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MCPRefreshResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Caller is not an admin */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mcp/{server}/tools/{tool}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description MCP server name. */
+                server: string;
+                /** @description Tool name within the server's discovery cache. */
+                tool: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Enable or disable a cached MCP tool (admin only)
+         * @description WS2/PR4b. Toggles the ``enabled`` flag on a single cached tool.
+         *     Disabled tools are not exposed to the model in the chat tool-loop
+         *     (PR5). 404 when the tool is not in the discovery cache (run
+         *     ``POST .../refresh`` first). Writes a ``mcp.tool_enabled`` audit
+         *     row when enabling, ``mcp.tool_disabled`` when disabling. 403 when
+         *     the caller is not an admin.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description MCP server name. */
+                    server: string;
+                    /** @description Tool name within the server's discovery cache. */
+                    tool: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MCPToolEnableRequest"];
+                };
+            };
+            responses: {
+                /** @description Tool updated; returns the updated tool view */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MCPToolView"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Caller is not an admin */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Tool not in discovery cache */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -11212,6 +11427,32 @@ export interface components {
              *     ProviderKeySetRequest.api_key.
              */
             api_key: string;
+        };
+        MCPToolView: {
+            name: string;
+            description?: string | null;
+            parameters?: {
+                [key: string]: unknown;
+            };
+            read_only: boolean;
+            destructive: boolean;
+            requires_confirmation: boolean;
+            enabled: boolean;
+        };
+        MCPServerView: {
+            name: string;
+            type: string;
+            tools: components["schemas"]["MCPToolView"][];
+        };
+        MCPServersResponse: {
+            servers: components["schemas"]["MCPServerView"][];
+        };
+        MCPRefreshResponse: {
+            server: string;
+            tools: components["schemas"]["MCPToolView"][];
+        };
+        MCPToolEnableRequest: {
+            enabled: boolean;
         };
         /**
          * @description Secret-safe status for one provider. Carries at most the last 4
