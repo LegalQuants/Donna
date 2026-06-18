@@ -28,16 +28,29 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
 
 ## Immediate next steps (in order)
 
-1. **Test a live MCP server (user asked).** Harder than the CL token: MCP servers are declared in a
-   separate **`mcp.yaml`** (`mcp_servers:` block — name, server*url, auth none|bearer|oauth), loaded
-   by the gateway via an `mcp_path` (see `vendor/lq-ai/gateway/app/config_loader.py::load_config`,
-   `mcp.yaml.example` at the lq-ai root; api reads servers from gateway config via
-   `list_tool_providers`, discovers tools via the gateway). **GOTCHA:** the gateway's SSRF guard
-   blocks private/loopback/HTTP — so a \_local* MCP container is rejected; you need a **reachable
-   public HTTPS `streamable_http` MCP server**. To wire (dev): provide an `mcp.yaml` with one
-   `mcp_servers:` entry, mount it into the gateway + set its `mcp_path` env (mirror the CL approach:
-   a local `docker-compose.override.yml` + a config edit), `docker compose up -d gateway`, then
-   `GET /api/v1/admin/mcp` should list it. Then the `tests/mcp-admin.spec.ts` toggle flow runs.
+1. **Test a live MCP server: ✅ DONE (2026-06-18).** Slice B verified end-to-end against a real public
+   MCP server — **DeepWiki** (`https://mcp.deepwiki.com/mcp`, no-auth streamable-HTTP; tools
+   `read_wiki_structure` / `read_wiki_contents` / `ask_question`, all un-annotated → "needs
+   confirmation" badge). **Left wired in the dev stack** (useful for Slice C). The recipe (mirrors the
+   CL dev wiring):
+   - **`mcp.yaml`** (repo root, gitignored): one `mcp_servers:` entry — `name`, `server_url`,
+     `auth: none`, `egress_tier`, `allowlist.hosts: [<host>]`. The host **must** be in `allowlist`
+     and resolve to a **public** IP — the gateway egress guard (`gateway/app/providers/tool/egress.py`)
+     is HTTPS-only + public-IP-only, so **local/loopback MCP containers are rejected**; you need a
+     reachable **public HTTPS streamable-HTTP** server.
+   - **`docker-compose.override.yml`**: mount `./mcp.yaml → /config/mcp.yaml:ro` on `gateway` and set
+     `MCP_CONFIG_PATH=/config/mcp.yaml` (the gateway resolves `MCP_CONFIG_PATH`, else a sibling
+     `mcp.yaml` of the gateway config). `docker compose up -d gateway`.
+   - **Discovery is two-step:** `GET /api/v1/admin/mcp` lists the server immediately but with
+     **`tools: []`** — tools are a DB cache (migration 0050). `POST /api/v1/admin/mcp/{server}/refresh`
+     (the page's **Refresh** button) discovers via the gateway and populates the cache; then GET lists
+     the tools and the page renders them. `tests/mcp-admin.spec.ts` toggle flow then passes.
+   - **Pre-flight tip:** to confirm a candidate server before wiring, run the real MCP client _inside
+     the gateway container_: `docker compose exec -T gateway python -c "...streamablehttp_client(url)...
+session.initialize(); session.list_tools()"` — same library + network the gateway uses.
+   - **Verified:** api lists `deepwiki`; refresh discovers 3 tools with badges; PATCH enable/disable
+     round-trips; Donna `/settings/mcp` renders all 3 with toggles; e2e green. To remove: delete
+     `mcp.yaml` (+ the override's MCP lines) and `docker compose up -d gateway`.
 
 ## Remaining slices (gated on backend PRs)
 
@@ -71,8 +84,14 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
   `COURTLISTENER_API_TOKEN` to the gateway; a `tool_providers: courtlistener-dev` block was appended
   to the gateway-config volume's `gateway.yaml` (backup `/tmp/gateway.yaml.bak`). Token in `.env`
   (gitignored). To disable CL: delete the override + `docker compose up -d gateway`.
+- **MCP also wired (2026-06-18):** the same `docker-compose.override.yml` mounts a gitignored root
+  `mcp.yaml` (one `mcp_servers:` entry, **DeepWiki**, public no-auth) into the gateway via
+  `MCP_CONFIG_PATH`. `/settings/mcp` shows it with 3 tools (post-Refresh). See next-steps #1 for the
+  full recipe / how to remove.
 - **Rebuild before any live check** (the container serves built code): `docker compose up -d --build
-api arq-worker ingest-worker donna-web` (also runs migrations on api boot).
+api arq-worker ingest-worker donna-web` (also runs migrations on api boot). **For an MCP/gateway-config
+  change rebuild/restart `gateway` specifically** — the pagination slice proved api/web rebuilds alone
+  miss gateway-side behavior.
 
 ## Process notes (how this milestone is built)
 

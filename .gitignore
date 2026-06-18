@@ -43,3 +43,5 @@ vite.config.ts.timestamp-*
 
 # Local Compose override (dev-only CL/MCP wiring — see HANDOFF; never committed)
 /docker-compose.override.yml
+# Local MCP server declaration (dev-only; mounted into the gateway via the override)
+/mcp.yaml
