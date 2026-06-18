@@ -13,24 +13,20 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
   pagination `cursor`, #167 — see "pagination" below).
 - **Slice A — case-law research workspace: ✅ MERGED** (PR #84, merge commit on `main`). Live-verified
   with real CourtListener data. The dev stack runs it (CL enabled — see "dev stack" below).
-- **Slice B — MCP admin (`/settings/mcp`): ✅ BUILT + reviewed → ➡️ PR #85 OPEN**
-  (`feat/mcp-admin` → main, https://github.com/LegalQuants/Donna/pull/85). Whole-branch Opus review
-  passed (ready-to-merge, no blockers). Gates: check 0/0 · lint 0/0 · **vitest 1375**. e2e verified
-  live (empty-state). Spec/plan: `docs/superpowers/{specs,plans}/2026-06-17-slice-b-mcp-admin*`.
+- **Slice B — MCP admin (`/settings/mcp`): ✅ MERGED** (PR #85, merge commit `f212590` on `main`;
+  mirrored to `tucuxi`; branch deleted). Whole-branch Opus review passed. Gates were check 0/0 ·
+  lint 0/0 · **vitest 1375** · e2e verified live (empty-state). Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-06-17-slice-b-mcp-admin*`.
 
 ## Immediate next steps (in order)
 
-1. **Merge PR #85** with a **MERGE COMMIT** (never squash — §2.4). Then sync `main` → `tucuxi`
-   (+ tags), delete `feat/mcp-admin`, verify the merge is a 2-parent commit (see Slice A's close for
-   the exact `git` recipe). Review + PR are already done.
-
-2. **Slice A pagination ("Load more") — NOW UNBLOCKED.** #167 (`786801a`) added a `cursor` to
+1. **Slice A pagination ("Load more") — NOW UNBLOCKED.** #167 (`786801a`) added a `cursor` to
    `SearchRequest`. On a fresh branch off updated `main`: bump pin `8142d58`→`786801a` + `gen:api`,
    then wire it — the store already holds `nextCursor`. Add `cursor` to `createResearch().search`
    (send it; append results instead of replacing) + a "Load more" button in the research page when
    `r.nextCursor`. Small. Ask doc: `docs/upstream-requests/lq-ai-research-search-cursor.md`.
 
-3. **Test a live MCP server (user asked).** Harder than the CL token: MCP servers are declared in a
+2. **Test a live MCP server (user asked).** Harder than the CL token: MCP servers are declared in a
    separate **`mcp.yaml`** (`mcp_servers:` block — name, server*url, auth none|bearer|oauth), loaded
    by the gateway via an `mcp_path` (see `vendor/lq-ai/gateway/app/config_loader.py::load_config`,
    `mcp.yaml.example` at the lq-ai root; api reads servers from gateway config via
