@@ -60,8 +60,16 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 			const raw = await post('/research/search', body);
 			if (raw) {
 				const parsed = parseSearchResponse(raw);
-				// Append on load-more; replace on a fresh search.
-				results = opts.append ? [...results, ...parsed.results] : parsed.results;
+				if (opts.append) {
+					// Append the next page, skipping any row already shown — keeps the
+					// keyed list unique even if the backend repeats a result. Dedup on
+					// the same composite the page keys by (cluster_id, else case_name).
+					const rowKey = (x: SearchResultItem) => x.cluster_id ?? x.case_name;
+					const seen = new Set(results.map(rowKey));
+					results = [...results, ...parsed.results.filter((x) => !seen.has(rowKey(x)))];
+				} else {
+					results = parsed.results;
+				}
 				count = parsed.count;
 				nextCursor = parsed.nextCursor;
 			}
