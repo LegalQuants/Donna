@@ -2,11 +2,24 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `e2cc311` (bumped 2026-06-17 from `c4d4482`)
+- Pinned SHA: `8142d58` (bumped 2026-06-17 from `e2cc311`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `e2cc311` → `8142d58` (2026-06-17): the **MCP client / WS2** surface, unblocking Donna **Slice B**
+  (MCP admin config `/settings/mcp`). Bundles lq-ai **#165 + #166**:
+  - **#165 `5b73e75`** — gateway MCP tool-provider adapter (`streamable_http`, per-call OAuth token,
+    tool discovery) behind the WS1 egress boundary. Pure gateway/backend — no Donna surface.
+  - **#166 `8142d58`** — the api MCP registry + discovery cache + **`/api/v1/admin/mcp`** surface
+    (migration **0050** `mcp_tools`). **AdminUser-gated**, cleanly typed (named schemas, no OpenAPI
+    drift this time — verified in `backend.d.ts`): `GET /admin/mcp` →
+    `MCPServersResponse { servers: MCPServerView[] }`; `POST /admin/mcp/{server}/refresh` →
+    `MCPRefreshResponse`; `PATCH /admin/mcp/{server}/tools/{tool}` `{enabled}` → `MCPToolView`
+    (`{ name, description?, parameters?, read_only, destructive, requires_confirmation, enabled }`).
+    No connector-creation/auth UI (operator `mcp.yaml`); in-chat tool-calling + confirm gate is Slice C.
+    **Container rebuild before runtime/e2e** (§8): rebuild `api`+workers+`donna-web` so migration 0050 runs.
 
 - `c4d4482` → `e2cc311` (2026-06-17): the **legal-research WS3 / CourtListener** surface, unblocking
   Donna **Slice A** (case-law research workspace). Bundles lq-ai **#158–#164**:
