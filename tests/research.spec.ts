@@ -59,4 +59,9 @@ test('research workspace renders (gate when off, search flow when CL is wired)',
 
 	// The doc panel mounts with the opinion plaintext.
 	await expect(page.locator('pre')).toBeVisible({ timeout: 20000 });
+
+	// Find-in-case within the opened opinion: 'court' reliably appears in a legal opinion.
+	await page.getByRole('textbox', { name: /find in opinion/i }).fill('court');
+	await page.getByRole('button', { name: 'Find', exact: true }).click();
+	await expect(page.getByText(/^Position \d+/).first()).toBeVisible({ timeout: 20000 });
 });
