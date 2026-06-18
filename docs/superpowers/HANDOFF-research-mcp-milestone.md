@@ -13,19 +13,16 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
   pagination `cursor`, #167 — see "pagination" below).
 - **Slice A — case-law research workspace: ✅ MERGED** (PR #84, merge commit on `main`). Live-verified
   with real CourtListener data. The dev stack runs it (CL enabled — see "dev stack" below).
-- **Slice B — MCP admin (`/settings/mcp`): ✅ BUILT, verified live (empty-state), NOT yet PR'd.**
-  Branch **`feat/mcp-admin`** (pushed to origin + tucuxi), 6 task commits, all per-task reviewed.
-  Gates: `npm run check` 0/0 · `npm run lint` 0/0 · **vitest 1375**. e2e `tests/mcp-admin.spec.ts`
-  passes (skips the toggle flow until an MCP server is configured). Spec/plan:
-  `docs/superpowers/{specs,plans}/2026-06-17-slice-b-mcp-admin*`.
+- **Slice B — MCP admin (`/settings/mcp`): ✅ BUILT + reviewed → ➡️ PR #85 OPEN**
+  (`feat/mcp-admin` → main, https://github.com/LegalQuants/Donna/pull/85). Whole-branch Opus review
+  passed (ready-to-merge, no blockers). Gates: check 0/0 · lint 0/0 · **vitest 1375**. e2e verified
+  live (empty-state). Spec/plan: `docs/superpowers/{specs,plans}/2026-06-17-slice-b-mcp-admin*`.
 
 ## Immediate next steps (in order)
 
-1. **Finish Slice B → PR.** Run a whole-branch Opus review of `feat/mcp-admin` vs `origin/main`
-   (the `requesting-code-review` pattern; per-task reviews already passed), then open a PR with a
-   **MERGE COMMIT** (never squash — §2.4). The PR is functional without a live MCP server (the e2e
-   gates like research did). Then merge + sync `tucuxi` + delete the branch (see Slice A's close for
-   the exact `git` recipe; verify the merge is a 2-parent commit).
+1. **Merge PR #85** with a **MERGE COMMIT** (never squash — §2.4). Then sync `main` → `tucuxi`
+   (+ tags), delete `feat/mcp-admin`, verify the merge is a 2-parent commit (see Slice A's close for
+   the exact `git` recipe). Review + PR are already done.
 
 2. **Slice A pagination ("Load more") — NOW UNBLOCKED.** #167 (`786801a`) added a `cursor` to
    `SearchRequest`. On a fresh branch off updated `main`: bump pin `8142d58`→`786801a` + `gen:api`,
