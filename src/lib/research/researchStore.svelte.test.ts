@@ -183,6 +183,32 @@ describe('createResearch', () => {
 		expect(call).toBe(2);
 	});
 
+	it('loadMore drops a cluster already shown (no duplicate rows)', async () => {
+		let call = 0;
+		const f = vi.fn(async () => {
+			call++;
+			return new Response(
+				JSON.stringify({
+					count: 3,
+					next_cursor: call === 1 ? 'N' : null,
+					// Page 2 repeats cluster 1 and adds cluster 2.
+					results:
+						call === 1
+							? [{ cluster_id: 1, case_name: 'A v. B' }]
+							: [
+									{ cluster_id: 1, case_name: 'A v. B' },
+									{ cluster_id: 2, case_name: 'C v. D' }
+								]
+				}),
+				{ status: 200 }
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('q');
+		await r.loadMore();
+		expect(r.results.map((x) => x.cluster_id)).toEqual([1, 2]);
+	});
+
 	it('loadMore is a no-op when there is no nextCursor', async () => {
 		const f = vi.fn(
 			async () =>
