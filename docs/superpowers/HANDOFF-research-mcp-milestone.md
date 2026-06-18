@@ -34,11 +34,11 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
    `r.nextCursor`. Small. Ask doc: `docs/upstream-requests/lq-ai-research-search-cursor.md`.
 
 3. **Test a live MCP server (user asked).** Harder than the CL token: MCP servers are declared in a
-   separate **`mcp.yaml`** (`mcp_servers:` block — name, server_url, auth none|bearer|oauth), loaded
+   separate **`mcp.yaml`** (`mcp_servers:` block — name, server*url, auth none|bearer|oauth), loaded
    by the gateway via an `mcp_path` (see `vendor/lq-ai/gateway/app/config_loader.py::load_config`,
    `mcp.yaml.example` at the lq-ai root; api reads servers from gateway config via
    `list_tool_providers`, discovers tools via the gateway). **GOTCHA:** the gateway's SSRF guard
-   blocks private/loopback/HTTP — so a _local_ MCP container is rejected; you need a **reachable
+   blocks private/loopback/HTTP — so a \_local* MCP container is rejected; you need a **reachable
    public HTTPS `streamable_http` MCP server**. To wire (dev): provide an `mcp.yaml` with one
    `mcp_servers:` entry, mount it into the gateway + set its `mcp_path` env (mirror the CL approach:
    a local `docker-compose.override.yml` + a config edit), `docker compose up -d gateway`, then
