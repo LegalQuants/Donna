@@ -9,10 +9,18 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
 
 ## Current state (what's done)
 
-- **Pin:** `vendor/lq-ai` @ **`8142d58`** (MCP/WS2). lq-ai `main` is ahead at **`786801a`** (the
-  pagination `cursor`, #167 — see "pagination" below).
+- **Pin:** `vendor/lq-ai` @ **`786801a`** (research search `cursor`, #167). Bumped from `8142d58`
+  for Slice A pagination.
 - **Slice A — case-law research workspace: ✅ MERGED** (PR #84, merge commit on `main`). Live-verified
   with real CourtListener data. The dev stack runs it (CL enabled — see "dev stack" below).
+- **Slice A pagination ("Load more"): ✅ MERGED** (PR #86, merge commit `ef92d10` on `main`; +hotfix
+  `d783ec2`; mirrored to `tucuxi`; branch deleted). The store sends the prior `next_cursor` back,
+  **appends** the next page (dedup by `cluster_id ?? case_name ?? absolute_url`), resets the cursor on
+  a fresh search; a "Load more" button shows when `r.nextCursor`. Whole-branch Opus review passed (its
+  two follow-ups folded in). Gates: check 0/0 · lint 0/0 · **vitest 1384** · **live e2e verified**
+  (`tests/research.spec.ts` 2nd test: broad query → Load more grows the list; direct API confirmed
+  page 2 returns distinct clusters, zero overlap). **GOTCHA hit + fixed:** the cursor-accept logic is
+  in the **gateway** CL adapter — rebuild `gateway` (not just api/web) before a live pagination check.
 - **Slice B — MCP admin (`/settings/mcp`): ✅ MERGED** (PR #85, merge commit `f212590` on `main`;
   mirrored to `tucuxi`; branch deleted). Whole-branch Opus review passed. Gates were check 0/0 ·
   lint 0/0 · **vitest 1375** · e2e verified live (empty-state). Spec/plan:
@@ -20,13 +28,7 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
 
 ## Immediate next steps (in order)
 
-1. **Slice A pagination ("Load more") — NOW UNBLOCKED.** #167 (`786801a`) added a `cursor` to
-   `SearchRequest`. On a fresh branch off updated `main`: bump pin `8142d58`→`786801a` + `gen:api`,
-   then wire it — the store already holds `nextCursor`. Add `cursor` to `createResearch().search`
-   (send it; append results instead of replacing) + a "Load more" button in the research page when
-   `r.nextCursor`. Small. Ask doc: `docs/upstream-requests/lq-ai-research-search-cursor.md`.
-
-2. **Test a live MCP server (user asked).** Harder than the CL token: MCP servers are declared in a
+1. **Test a live MCP server (user asked).** Harder than the CL token: MCP servers are declared in a
    separate **`mcp.yaml`** (`mcp_servers:` block — name, server*url, auth none|bearer|oauth), loaded
    by the gateway via an `mcp_path` (see `vendor/lq-ai/gateway/app/config_loader.py::load_config`,
    `mcp.yaml.example` at the lq-ai root; api reads servers from gateway config via
