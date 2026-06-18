@@ -40,3 +40,6 @@ vite.config.ts.timestamp-*
 
 # Visual brainstorming companion
 .superpowers/
+
+# Local Compose override (dev-only CL/MCP wiring — see HANDOFF; never committed)
+/docker-compose.override.yml
