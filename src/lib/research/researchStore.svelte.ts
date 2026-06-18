@@ -38,13 +38,16 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 		return res.json();
 	}
 
-	async function search(q: string) {
+	async function search(q: string, filters: { court?: string; order_by?: string } = {}) {
 		query = q;
 		if (!q.trim()) return;
 		loading = true;
 		error = null;
 		try {
-			const raw = await post('/research/search', { q });
+			const body: Record<string, unknown> = { q };
+			if (filters.court?.trim()) body.court = filters.court.trim();
+			if (filters.order_by?.trim()) body.order_by = filters.order_by.trim();
+			const raw = await post('/research/search', body);
 			if (raw) {
 				const parsed = parseSearchResponse(raw);
 				results = parsed.results;
@@ -74,6 +77,7 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 	}
 
 	async function findInCase(opinionId: number, q: string) {
+		error = null;
 		if (!q.trim()) return;
 		const raw = await post('/research/find-in-case', {
 			opinion_id: opinionId,
@@ -84,6 +88,7 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 	}
 
 	async function verify(text: string) {
+		error = null;
 		if (!text.trim()) return;
 		const raw = await post('/research/verify-citations', { text });
 		if (raw) citations = parseCitations(raw);
