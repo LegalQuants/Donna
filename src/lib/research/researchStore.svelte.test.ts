@@ -85,4 +85,70 @@ describe('createResearch', () => {
 		await expect(r.search('x')).rejects.toThrow('network down');
 		expect(r.loading).toBe(false);
 	});
+
+	it('search sends court and order_by when filters are non-empty', async () => {
+		const f = vi.fn(async (_url: string, init?: RequestInit) => {
+			const body = JSON.parse(String(init?.body));
+			expect(body.court).toBe('scotus');
+			expect(body.order_by).toBe('dateFiled desc');
+			return new Response(JSON.stringify({ count: 0, next_cursor: null, results: [] }), {
+				status: 200
+			});
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('q', { court: 'scotus', order_by: 'dateFiled desc' });
+		expect(f).toHaveBeenCalledOnce();
+	});
+
+	it('search sends only { q } when filters arg is empty {}', async () => {
+		const f = vi.fn(async (_url: string, init?: RequestInit) => {
+			const body = JSON.parse(String(init?.body));
+			expect(body).toEqual({ q: 'x' });
+			return new Response(JSON.stringify({ count: 0, next_cursor: null, results: [] }), {
+				status: 200
+			});
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('x', {});
+		expect(f).toHaveBeenCalledOnce();
+	});
+
+	it('search sends only { q } when no filters arg is passed', async () => {
+		const f = vi.fn(async (_url: string, init?: RequestInit) => {
+			const body = JSON.parse(String(init?.body));
+			expect(body).toEqual({ q: 'y' });
+			return new Response(JSON.stringify({ count: 0, next_cursor: null, results: [] }), {
+				status: 200
+			});
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('y');
+		expect(f).toHaveBeenCalledOnce();
+	});
+
+	it('findInCase populates matches and clears a pre-set error', async () => {
+		// We need two distinct URL handlers: one to trigger an error, then find-in-case success.
+		let callCount = 0;
+		const f = vi.fn(async (_url: string, init?: RequestInit) => {
+			callCount++;
+			if (callCount === 1) {
+				// First call: search with a 502 to set an error state
+				return new Response('{}', { status: 502 });
+			}
+			// Second call: find-in-case success
+			void init;
+			return new Response(
+				JSON.stringify({ opinion_id: 1, matches: [{ position: 5, snippet: 'found it' }] }),
+				{ status: 200 }
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		// Trigger an error via a failed search
+		await r.search('bad');
+		expect(r.error).toBe('Something went wrong — try again.');
+		// Now run findInCase — it should clear the error
+		await r.findInCase(1, 'due process');
+		expect(r.error).toBeNull();
+		expect(r.matches).toEqual([{ position: 5, snippet: 'found it' }]);
+	});
 });
