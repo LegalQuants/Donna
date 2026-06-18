@@ -5,11 +5,11 @@
  * user can change it later in the app's Settings. The API key is OPTIONAL (login/chat work
  * without it; keys can also be set later in Settings).
  */
-const ADMIN_EMAIL = 'admin@lq.ai'
+const ADMIN_EMAIL = 'admin@lq.ai';
 
 interface Snapshot {
-	state: string
-	services?: { health: string }[]
+	state: string;
+	services?: { health: string }[];
 }
 
 export function renderWizard(root: HTMLElement, onDone: () => void): void {
@@ -36,52 +36,52 @@ export function renderWizard(root: HTMLElement, onDone: () => void): void {
 			<button id="go">Start Donna</button>
 			<p id="status"></p>
 		</div>
-	`
+	`;
 
-	const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T
-	const status = $('status')
+	const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+	const status = $('status');
 
 	// Live progress while the stack comes up (replaces a static, misleading message).
 	window.donna.onState((snap) => {
-		const s = snap as Snapshot
+		const s = snap as Snapshot;
 		if (s.state === 'STACK_STARTING') {
-			const healthy = (s.services ?? []).filter((x) => x.health === 'healthy').length
-			status.style.color = '#555'
-			status.textContent = `Starting Donna… ${healthy}/8 services ready (first run pulls images + models; this can take a few minutes).`
+			const healthy = (s.services ?? []).filter((x) => x.health === 'healthy').length;
+			status.style.color = '#555';
+			status.textContent = `Starting Donna… ${healthy}/8 services ready (first run pulls images + models; this can take a few minutes).`;
 		} else if (s.state === 'NO_ENGINE') {
-			status.style.color = '#c00'
-			status.textContent = "Docker isn't running — start Docker Desktop and try again."
+			status.style.color = '#c00';
+			status.textContent = "Docker isn't running — start Docker Desktop and try again.";
 		}
-	})
+	});
 
 	$('go').addEventListener('click', async () => {
-		const mode = (document.querySelector('input[name="inf"]:checked') as HTMLInputElement).value
-		const password = $<HTMLInputElement>('password').value
+		const mode = (document.querySelector('input[name="inf"]:checked') as HTMLInputElement).value;
+		const password = $<HTMLInputElement>('password').value;
 
 		if (password.length < 12) {
-			status.style.color = '#c00'
-			status.textContent = 'Choose a password of at least 12 characters.'
-			return
+			status.style.color = '#c00';
+			status.textContent = 'Choose a password of at least 12 characters.';
+			return;
 		}
 		const inference =
 			mode === 'cloud'
 				? { mode: 'cloud' as const, anthropicApiKey: $<HTMLInputElement>('apikey').value.trim() }
-				: { mode: 'ollama' as const, baseUrl: 'http://host.docker.internal:11434' }
+				: { mode: 'ollama' as const, baseUrl: 'http://host.docker.internal:11434' };
 
-		const goBtn = $<HTMLButtonElement>('go')
-		goBtn.disabled = true
-		status.style.color = '#555'
-		status.textContent = 'Starting Donna…'
+		const goBtn = $<HTMLButtonElement>('go');
+		goBtn.disabled = true;
+		status.style.color = '#555';
+		status.textContent = 'Starting Donna…';
 		const res = await window.donna.completeWizard({
 			inference,
 			adminEmail: ADMIN_EMAIL,
 			adminPassword: password
-		})
-		if (res.ok) onDone()
+		});
+		if (res.ok) onDone();
 		else {
-			status.style.color = '#c00'
-			status.textContent = res.error ?? 'Setup failed.'
-			goBtn.disabled = false
+			status.style.color = '#c00';
+			status.textContent = res.error ?? 'Setup failed.';
+			goBtn.disabled = false;
 		}
-	})
+	});
 }

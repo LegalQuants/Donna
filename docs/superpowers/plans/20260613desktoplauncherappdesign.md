@@ -7,11 +7,11 @@ by wrapping the **existing pre-built image stack** in a native desktop launcher.
 ## Problem
 
 Even after pre-built images shipped (`docs/superpowers/specs/2026-06-11-prebuilt-container-images-design.md`),
-the lowest-barrier install still reads: *download two files, copy `.env.example` to `.env`, fill in
-secrets, `docker compose -f docker-compose.release.yml up -d`, then run an admin-fixture command.* That's
+the lowest-barrier install still reads: _download two files, copy `.env.example` to `.env`, fill in
+secrets, `docker compose -f docker-compose.release.yml up -d`, then run an admin-fixture command._ That's
 a terminal flow with a hand-edited config file — a wall for the audience Donna targets (solo
-practitioners, legal-aid staff, students). The ask from the field is blunt: *"something that doesn't
-require the user to go on their terminal or GitHub to set it up."*
+practitioners, legal-aid staff, students). The ask from the field is blunt: _"something that doesn't
+require the user to go on their terminal or GitHub to set it up."_
 
 This spec is the answer **we can actually build without violating Donna's architecture**: a native
 desktop **launcher / control panel** that owns the lifecycle of the release stack and presents Donna in
@@ -27,12 +27,12 @@ It is **not**:
 
 - **Not a reimplementation of any backend logic.** The legal-AI engine stays in lq-ai, consumed only
   through the published images — same cardinal rule as everywhere else in this repo (CLAUDE.md §1).
-- **Not a fork of `donna-web`.** The launcher loads the *same* SvelteKit BFF the browser would; the BFF,
+- **Not a fork of `donna-web`.** The launcher loads the _same_ SvelteKit BFF the browser would; the BFF,
   auth, and trust boundary are unchanged. The desktop window is just a different chrome around
   `localhost:13002`.
 - **Not a Docker-free, self-contained binary.** Bundling the Python/ML backend (Docling + HuggingFace
   embeddings + EasyOCR, multi-GB) natively would mean repackaging lq-ai's runtime — exactly the coupling
-  §1/§8 forbid. The realistic win is *hiding* the container engine, not eliminating it. (See the
+  §1/§8 forbid. The realistic win is _hiding_ the container engine, not eliminating it. (See the
   feasibility framing in §"Why a launcher, not a true native app".)
 
 ## Why a launcher, not a true native app
@@ -41,7 +41,7 @@ Donna's UI (`donna-web`) is a single `adapter-node` Node server — trivially wr
 without the full release stack: **postgres** (pgvector), **redis**, **minio**, **gateway**, **api**, and
 two Python workers — **ingest-worker** (Docling/HF/EasyOCR, multi-GB model downloads cached in
 `ingest-hf-cache`/`ingest-easyocr-cache` volumes) and **arq-worker**. The setup pain users feel is
-*standing up that backend*, not *opening a browser*. So an Electron/Tauri shell that only replaces the
+_standing up that backend_, not _opening a browser_. So an Electron/Tauri shell that only replaces the
 browser solves the wrong 5%. The launcher's real job is to drive the 8-service stack on the user's
 behalf — which the release compose already makes a one-command operation. We're putting a wizard and a
 lifecycle UI in front of that command.
@@ -64,7 +64,7 @@ lifecycle UI in front of that command.
 ### Tech choice — Tauri (recommended) over Electron
 
 Recommend **Tauri** (Rust core + system WebView2/WKWebView, ~10 MB app) rather than Electron (~150 MB,
-bundles Chromium + a second Node runtime). Rationale specific to *this* app:
+bundles Chromium + a second Node runtime). Rationale specific to _this_ app:
 
 - The window is just a view onto an already-running web server (`localhost:13002`); we don't need a
   bundled Chromium or Node — the OS webview is enough.
@@ -124,11 +124,11 @@ A few friendly screens that produce the `.env` the release compose expects (vari
 2. **Ports** — default to the shifted set (`DONNA_WEB_HOST_PORT=13002`, etc.); auto-detect collisions and
    bump if a port is busy. `ORIGIN` is kept in lockstep with the chosen web port (the adapter-node
    origin check 403s otherwise — CLAUDE.md §10).
-3. **Inference choice** — radio: *(a)* paste an `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` for cloud inference,
-   or *(b)* fully local via Ollama (`OLLAMA_BASE_URL` → `http://host.docker.internal:11434`), the
+3. **Inference choice** — radio: _(a)_ paste an `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` for cloud inference,
+   or _(b)_ fully local via Ollama (`OLLAMA_BASE_URL` → `http://host.docker.internal:11434`), the
    lowest-barrier / access-to-justice path. BYOK keys can also be set later in-app (Settings already
    supports provider keys); the wizard just seeds the gateway env for the simplest first run.
-4. **Create your login** — collect an admin email + password, then run the first-run fixture *for* the
+4. **Create your login** — collect an admin email + password, then run the first-run fixture _for_ the
    user once `api` is healthy:
    `docker compose … exec -T api python -m app.cli reset-admin-password --email <e> --password <p> --no-force-change`.
    The user never sees this command.
@@ -155,7 +155,7 @@ exists (or the user picks "reset").
 
 ### Packaging, signing, notarization (macOS)
 
-- Distributed as a **Developer ID-signed, notarized `.app`/`.dmg` outside the App Store** — *not*
+- Distributed as a **Developer ID-signed, notarized `.app`/`.dmg` outside the App Store** — _not_
   sandboxed. App Store sandboxing forbids managing a container engine, spawning daemons, and the local
   port/process control this app is built on; the launcher category (cf. Docker Desktop, OrbStack,
   TablePlus) is notarized-but-unsandboxed. Notarization (hardened runtime + stapled ticket) is required

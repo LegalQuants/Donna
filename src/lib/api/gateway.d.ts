@@ -356,6 +356,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tools/{provider}/{tool}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invoke a configured tool provider
+         * @description Dispatches a single tool call to the named ``provider`` / ``tool``
+         *     combination. The gateway validates the caller's gateway key (when
+         *     ``LQ_AI_GATEWAY_KEY`` is set), checks the provider is in the live
+         *     tool-provider registry, enforces the ``max_allowed_tier`` ceiling
+         *     against the provider's configured ``egress_tier``, and delegates to
+         *     the adapter (echo / CourtListener / MCP). The egress request is
+         *     written to ``tool_egress_log`` for audit.
+         *
+         *     Per ADR 0014: tool providers are distinct from inference providers.
+         *     They are configured under ``tool_providers`` in ``gateway.yaml`` and
+         *     carry their own egress tier (1-5) and allowlist policy. The gateway
+         *     refuses any provider not in the registry with 403.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Name of a configured tool provider (e.g. ``courtlistener``). */
+                    provider: string;
+                    /** @description Tool name within the provider (e.g. ``search_opinions``). */
+                    tool: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ToolCallRequest"];
+                };
+            };
+            responses: {
+                /** @description Tool call succeeded */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ToolCallResponse"];
+                    };
+                };
+                /** @description Unknown tool name or malformed request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Missing or invalid X-LQ-AI-Gateway-Key */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Provider not in registry, or egress tier exceeds max_allowed_tier */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Tool provider rate limit exceeded */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+                /** @description Upstream tool provider returned an error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GatewayError"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1574,6 +1678,40 @@ export interface components {
         };
         ProviderKeyList: {
             provider_keys: components["schemas"]["ProviderKeyStatus"][];
+        };
+        ToolCallRequest: {
+            /**
+             * @description Arbitrary key/value arguments forwarded to the tool adapter.
+             *     Schema is tool-specific; the gateway passes the object through
+             *     without validation.
+             */
+            args: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description Optional egress-tier ceiling. If the provider's ``egress_tier``
+             *     is higher than this value the gateway refuses with 403
+             *     (``egress_refused``). Omit to allow any tier.
+             */
+            max_allowed_tier?: number | null;
+        };
+        ToolCallResponse: {
+            /** @description The configured tool provider name that handled the call. */
+            provider: string;
+            /** @description The tool name that was invoked. */
+            tool: string;
+            /**
+             * @description The raw JSON payload returned by the tool adapter. Schema is
+             *     tool-specific; callers must handle the shape for the named tool.
+             */
+            payload: {
+                [key: string]: unknown;
+            };
+            /**
+             * @description The egress tier at which the tool call was routed.
+             * @enum {integer}
+             */
+            tier: 1 | 2 | 3 | 4 | 5;
         };
         GatewayError: {
             error: {
