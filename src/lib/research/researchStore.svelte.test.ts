@@ -126,6 +126,169 @@ describe('createResearch', () => {
 		expect(f).toHaveBeenCalledOnce();
 	});
 
+	it('loadMore sends the stored cursor and appends to results', async () => {
+		let call = 0;
+		const f = vi.fn(async (_url: string, init?: RequestInit) => {
+			call++;
+			if (call === 1) {
+				return new Response(
+					JSON.stringify({
+						count: 5,
+						next_cursor: 'CUR1',
+						results: [{ cluster_id: 1, case_name: 'A v. B' }]
+					}),
+					{ status: 200 }
+				);
+			}
+			const body = JSON.parse(String(init?.body));
+			expect(body.cursor).toBe('CUR1');
+			return new Response(
+				JSON.stringify({
+					count: 5,
+					next_cursor: 'CUR2',
+					results: [{ cluster_id: 2, case_name: 'C v. D' }]
+				}),
+				{ status: 200 }
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('chevron');
+		expect(r.results).toHaveLength(1);
+		await r.loadMore();
+		expect(r.results.map((x) => x.cluster_id)).toEqual([1, 2]);
+		expect(r.nextCursor).toBe('CUR2');
+	});
+
+	it('loadMore re-sends the original court/order_by filters with the cursor', async () => {
+		let call = 0;
+		const f = vi.fn(async (_url: string, init?: RequestInit) => {
+			call++;
+			const body = JSON.parse(String(init?.body));
+			if (call === 1) {
+				expect(body).toEqual({ q: 'q', court: 'scotus', order_by: 'dateFiled desc' });
+				return new Response(
+					JSON.stringify({ count: 2, next_cursor: 'N', results: [{ cluster_id: 1 }] }),
+					{ status: 200 }
+				);
+			}
+			expect(body).toEqual({ q: 'q', court: 'scotus', order_by: 'dateFiled desc', cursor: 'N' });
+			return new Response(
+				JSON.stringify({ count: 2, next_cursor: null, results: [{ cluster_id: 2 }] }),
+				{ status: 200 }
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('q', { court: 'scotus', order_by: 'dateFiled desc' });
+		await r.loadMore();
+		expect(call).toBe(2);
+	});
+
+	it('loadMore drops a cluster already shown (no duplicate rows)', async () => {
+		let call = 0;
+		const f = vi.fn(async () => {
+			call++;
+			return new Response(
+				JSON.stringify({
+					count: 3,
+					next_cursor: call === 1 ? 'N' : null,
+					// Page 2 repeats cluster 1 and adds cluster 2.
+					results:
+						call === 1
+							? [{ cluster_id: 1, case_name: 'A v. B' }]
+							: [
+									{ cluster_id: 1, case_name: 'A v. B' },
+									{ cluster_id: 2, case_name: 'C v. D' }
+								]
+				}),
+				{ status: 200 }
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('q');
+		await r.loadMore();
+		expect(r.results.map((x) => x.cluster_id)).toEqual([1, 2]);
+	});
+
+	it('a failed fresh search clears a stale next cursor', async () => {
+		let call = 0;
+		const f = vi.fn(async () => {
+			call++;
+			if (call === 1) {
+				return new Response(
+					JSON.stringify({ count: 5, next_cursor: 'N', results: [{ cluster_id: 1 }] }),
+					{ status: 200 }
+				);
+			}
+			return new Response('{}', { status: 502 });
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('a');
+		expect(r.nextCursor).toBe('N');
+		await r.search('b');
+		// The new query failed, so there is no coherent "next page" — don't leave a
+		// stale cursor that would page the old query.
+		expect(r.nextCursor).toBeNull();
+	});
+
+	it('appends rows that share a null cluster_id/case_name but differ otherwise', async () => {
+		let call = 0;
+		const f = vi.fn(async () => {
+			call++;
+			return new Response(
+				JSON.stringify({
+					count: 4,
+					next_cursor: call === 1 ? 'N' : null,
+					results:
+						call === 1
+							? [{ cluster_id: null, case_name: null, absolute_url: '/a' }]
+							: [{ cluster_id: null, case_name: null, absolute_url: '/b' }]
+				}),
+				{ status: 200 }
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('q');
+		await r.loadMore();
+		expect(r.results).toHaveLength(2);
+		expect(r.results.map((x) => x.absolute_url)).toEqual(['/a', '/b']);
+	});
+
+	it('loadMore is a no-op when there is no nextCursor', async () => {
+		const f = vi.fn(
+			async () =>
+				new Response(
+					JSON.stringify({ count: 1, next_cursor: null, results: [{ cluster_id: 1 }] }),
+					{ status: 200 }
+				)
+		) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('q');
+		expect(r.nextCursor).toBeNull();
+		await r.loadMore();
+		expect(f).toHaveBeenCalledOnce();
+	});
+
+	it('a fresh search replaces previously appended results', async () => {
+		let call = 0;
+		const f = vi.fn(async () => {
+			call++;
+			return new Response(
+				JSON.stringify({
+					count: 1,
+					next_cursor: call === 1 ? 'N' : null,
+					results: [{ cluster_id: call }]
+				}),
+				{ status: 200 }
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('a');
+		await r.loadMore();
+		expect(r.results.map((x) => x.cluster_id)).toEqual([1, 2]);
+		await r.search('b');
+		expect(r.results.map((x) => x.cluster_id)).toEqual([3]);
+	});
+
 	it('findInCase populates matches and clears a pre-set error', async () => {
 		// We need two distinct URL handlers: one to trigger an error, then find-in-case success.
 		let callCount = 0;

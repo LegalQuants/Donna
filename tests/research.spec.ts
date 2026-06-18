@@ -65,3 +65,35 @@ test('research workspace renders (gate when off, search flow when CL is wired)',
 	await page.getByRole('button', { name: 'Find', exact: true }).click();
 	await expect(page.getByText(/^Position \d+/).first()).toBeVisible({ timeout: 20000 });
 });
+
+test('research pagination: "Load more" pages forward with a cursor (when CL is wired)', async ({
+	page
+}) => {
+	await login(page);
+	await page.goto('/research');
+
+	const searchbox = page.getByRole('searchbox', { name: /search case law/i });
+	if (!(await searchbox.isVisible().catch(() => false))) {
+		// CourtListener not wired — the gate is asserted by the test above; skip here.
+		test.skip(true, 'CourtListener not wired — pagination flow skipped');
+		return;
+	}
+
+	// A broad term reliably returns many pages, so the first response carries a
+	// next_cursor and the "Load more" control renders.
+	await searchbox.fill('negligence');
+	await page.getByRole('button', { name: 'Search', exact: true }).click();
+
+	const resultsSection = page
+		.locator('section')
+		.filter({ has: page.getByRole('heading', { name: /^Results/ }) });
+	const rows = resultsSection.locator('ul > li');
+	await expect(rows.first()).toBeVisible({ timeout: 20000 });
+	const before = await rows.count();
+
+	// Clicking "Load more" sends the cursor and appends the next page — more rows.
+	const loadMore = page.getByRole('button', { name: /load more/i });
+	await expect(loadMore).toBeVisible({ timeout: 20000 });
+	await loadMore.click();
+	await expect.poll(() => rows.count(), { timeout: 20000 }).toBeGreaterThan(before);
+});
