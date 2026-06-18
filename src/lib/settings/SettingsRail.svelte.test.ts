@@ -91,4 +91,14 @@ describe('SettingsRail', () => {
 		render(SettingsRail);
 		expect(screen.getByRole('link', { name: 'Models' })).toHaveAttribute('aria-current', 'page');
 	});
+
+	it('always shows the core sections', () => {
+		render(SettingsRail, { isAdmin: false });
+		expect(screen.getByRole('link', { name: 'Models' })).toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: 'MCP' })).toBeNull();
+	});
+	it('shows MCP only for admins', () => {
+		render(SettingsRail, { isAdmin: true });
+		expect(screen.getByRole('link', { name: 'MCP' })).toHaveAttribute('href', '/settings/mcp');
+	});
 });
