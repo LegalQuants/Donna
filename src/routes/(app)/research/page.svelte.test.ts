@@ -55,7 +55,8 @@ describe('research page', () => {
 
 			await fireEvent.click(more);
 			expect(fetchMock).toHaveBeenCalledTimes(2);
-			const secondBody = JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body));
+			const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+			const secondBody = JSON.parse(String(calls[1][1].body));
 			expect(secondBody.cursor).toBe('CUR1');
 		} finally {
 			vi.unstubAllGlobals();
