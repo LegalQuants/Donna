@@ -8781,6 +8781,8 @@ export interface paths {
                         q: string;
                         court?: string | null;
                         order_by?: string | null;
+                        /** @description Opaque pagination cursor from a prior response's next_cursor; fetch the next page. */
+                        cursor?: string | null;
                     };
                 };
             };
