@@ -38,19 +38,45 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 		return res.json();
 	}
 
-	async function search(q: string, filters: { court?: string; order_by?: string } = {}) {
+	// Remember the filters of the current result set so loadMore() can page
+	// forward with the same court/order_by (the cursor alone doesn't carry them).
+	let lastFilters = $state<{ court?: string; order_by?: string }>({});
+
+	async function search(
+		q: string,
+		filters: { court?: string; order_by?: string } = {},
+		opts: { append?: boolean } = {}
+	) {
 		query = q;
 		if (!q.trim()) return;
+		if (!opts.append) {
+			// Start a fresh search: remember its filters and drop any prior page's
+			// cursor so a failed/empty result can't leave a stale "Load more" that
+			// would page the previous query.
+			lastFilters = filters;
+			nextCursor = null;
+		}
 		loading = true;
 		error = null;
 		try {
 			const body: Record<string, unknown> = { q };
 			if (filters.court?.trim()) body.court = filters.court.trim();
 			if (filters.order_by?.trim()) body.order_by = filters.order_by.trim();
+			if (opts.append && nextCursor) body.cursor = nextCursor;
 			const raw = await post('/research/search', body);
 			if (raw) {
 				const parsed = parseSearchResponse(raw);
-				results = parsed.results;
+				if (opts.append) {
+					// Append the next page, skipping any row already shown — keeps the
+					// keyed list unique even if the backend repeats a result. Dedup on
+					// the same composite the page keys by (cluster_id, else case_name,
+					// else absolute_url) so even a cluster_id-less row stays distinct.
+					const rowKey = (x: SearchResultItem) => x.cluster_id ?? x.case_name ?? x.absolute_url;
+					const seen = new Set(results.map(rowKey));
+					results = [...results, ...parsed.results.filter((x) => !seen.has(rowKey(x)))];
+				} else {
+					results = parsed.results;
+				}
 				count = parsed.count;
 				nextCursor = parsed.nextCursor;
 			}
@@ -59,6 +85,12 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 			// button permanently disabled (`disabled={r.loading}` on the page).
 			loading = false;
 		}
+	}
+
+	/** Fetch the next page of the current search and append it. No-op when there's nothing more. */
+	async function loadMore() {
+		if (!nextCursor || loading) return;
+		await search(query, lastFilters, { append: true });
 	}
 
 	async function openCluster(id: number) {
@@ -126,6 +158,7 @@ export function createResearch(fetchFn: typeof fetch = fetch) {
 			return notEnabled;
 		},
 		search,
+		loadMore,
 		openCluster,
 		findInCase,
 		verify

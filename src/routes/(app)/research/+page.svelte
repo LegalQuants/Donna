@@ -77,7 +77,7 @@
 						({r.count}){/if}
 				</h2>
 				<ul class="mt-2 space-y-2">
-					{#each r.results as item (item.cluster_id ?? item.case_name)}
+					{#each r.results as item (item.cluster_id ?? item.case_name ?? item.absolute_url)}
 						<li>
 							<button
 								type="button"
@@ -91,6 +91,16 @@
 						</li>
 					{/each}
 				</ul>
+				{#if r.nextCursor}
+					<button
+						type="button"
+						onclick={() => r.loadMore()}
+						disabled={r.loading}
+						class="mt-3 w-full rounded-mlq-control border border-mlq-subtle px-3 py-2 text-sm text-mlq-text hover:bg-mlq-surface-alt disabled:opacity-60"
+					>
+						{r.loading ? 'Loading…' : 'Load more'}
+					</button>
+				{/if}
 			</section>
 
 			<section>

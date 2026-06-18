@@ -2,11 +2,22 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `8142d58` (bumped 2026-06-17 from `e2cc311`)
+- Pinned SHA: `786801a` (bumped 2026-06-17 from `8142d58`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `8142d58` → `786801a` (2026-06-17): lq-ai **#167** — `/research/search` now **accepts a `cursor`**,
+  unblocking Donna **Slice A pagination** ("Load more"). The ask
+  (`docs/upstream-requests/lq-ai-research-search-cursor.md`) was honored end-to-end: `SearchRequest`
+  gains `cursor: str | None` (still `extra="forbid"`), the search service forwards it to the gateway
+  tool call, and the CL adapter sets CourtListener's native `?cursor=` param. `next_cursor` already
+  returned the right value; this lets a client send it back to page forward. **OpenAPI verified, no
+  drift** — the inline `/api/v1/research/search` request body in `backend.d.ts` now carries
+  `cursor?: string | null` ("Opaque pagination cursor from a prior response's next_cursor"). No
+  migration in this PR (search is stateless REST); a container rebuild is still good hygiene before a
+  live check so the pinned backend matches.
 
 - `e2cc311` → `8142d58` (2026-06-17): the **MCP client / WS2** surface, unblocking Donna **Slice B**
   (MCP admin config `/settings/mcp`). Bundles lq-ai **#165 + #166**:
