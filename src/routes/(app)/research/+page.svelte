@@ -77,7 +77,7 @@
 						({r.count}){/if}
 				</h2>
 				<ul class="mt-2 space-y-2">
-					{#each r.results as item (item.cluster_id ?? item.case_name)}
+					{#each r.results as item (item.cluster_id ?? item.case_name ?? item.absolute_url)}
 						<li>
 							<button
 								type="button"

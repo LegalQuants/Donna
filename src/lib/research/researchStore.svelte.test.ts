@@ -209,6 +209,50 @@ describe('createResearch', () => {
 		expect(r.results.map((x) => x.cluster_id)).toEqual([1, 2]);
 	});
 
+	it('a failed fresh search clears a stale next cursor', async () => {
+		let call = 0;
+		const f = vi.fn(async () => {
+			call++;
+			if (call === 1) {
+				return new Response(
+					JSON.stringify({ count: 5, next_cursor: 'N', results: [{ cluster_id: 1 }] }),
+					{ status: 200 }
+				);
+			}
+			return new Response('{}', { status: 502 });
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('a');
+		expect(r.nextCursor).toBe('N');
+		await r.search('b');
+		// The new query failed, so there is no coherent "next page" — don't leave a
+		// stale cursor that would page the old query.
+		expect(r.nextCursor).toBeNull();
+	});
+
+	it('appends rows that share a null cluster_id/case_name but differ otherwise', async () => {
+		let call = 0;
+		const f = vi.fn(async () => {
+			call++;
+			return new Response(
+				JSON.stringify({
+					count: 4,
+					next_cursor: call === 1 ? 'N' : null,
+					results:
+						call === 1
+							? [{ cluster_id: null, case_name: null, absolute_url: '/a' }]
+							: [{ cluster_id: null, case_name: null, absolute_url: '/b' }]
+				}),
+				{ status: 200 }
+			);
+		}) as unknown as typeof fetch;
+		const r = createResearch(f);
+		await r.search('q');
+		await r.loadMore();
+		expect(r.results).toHaveLength(2);
+		expect(r.results.map((x) => x.absolute_url)).toEqual(['/a', '/b']);
+	});
+
 	it('loadMore is a no-op when there is no nextCursor', async () => {
 		const f = vi.fn(
 			async () =>
