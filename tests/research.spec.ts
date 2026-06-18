@@ -39,14 +39,24 @@ test('research workspace renders (gate when off, search flow when CL is wired)',
 		return;
 	}
 
-	// Enabled path: a real search returns results, and an opinion opens in the doc panel.
-	await searchbox.fill('Chevron');
+	// Enabled path: a real search returns results; clicking one loads its cluster,
+	// and an opinion opens in the doc panel.
+	await searchbox.fill('Chevron deference');
 	await page.getByRole('button', { name: 'Search', exact: true }).click();
 
+	// Results render — click the first one to load its cluster + opinion list.
+	const resultsSection = page
+		.locator('section')
+		.filter({ has: page.getByRole('heading', { name: /^Results/ }) });
+	const firstResult = resultsSection.getByRole('button').first();
+	await expect(firstResult).toBeVisible({ timeout: 20000 });
+	await firstResult.click();
+
+	// The cluster's opinion list renders an Open button → open it in the doc panel.
 	const firstOpen = page.getByRole('button', { name: 'Open' }).first();
 	await expect(firstOpen).toBeVisible({ timeout: 20000 });
 	await firstOpen.click();
 
-	// The doc panel mounts with the opinion text.
+	// The doc panel mounts with the opinion plaintext.
 	await expect(page.locator('pre')).toBeVisible({ timeout: 20000 });
 });
