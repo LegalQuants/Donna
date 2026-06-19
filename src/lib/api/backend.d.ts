@@ -9247,6 +9247,310 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/mcp/oauth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List OAuth connection status for all connectable MCP servers (per-user)
+         * @description PR4d Ask 1. ActiveUser-gated (bearer). Returns one entry per
+         *     configured OAuth-type MCP server together with the calling user's
+         *     connection state (``connected``, ``scopes``, ``expires_at``).
+         *     Token bytes are never exposed. Results are ordered by server name
+         *     for stable output.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Per-user OAuth connection list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MCPOAuthServersResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/oauth/{server}/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description MCP server name (as returned by the gateway config). */
+                server: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Start the per-user OAuth flow for an MCP server
+         * @description PR4c. ActiveUser-gated (bearer). Mints PKCE state, persists a
+         *     single-use mcp_oauth_state row, and returns a 302 redirect to the
+         *     authorization server's authorize endpoint. The callback URL is
+         *     wired to GET /api/v1/mcp/oauth/{server}/callback.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description MCP server name (as returned by the gateway config). */
+                    server: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Redirect to the authorization server authorize endpoint */
+                302: {
+                    headers: {
+                        /** @description Authorization server authorize URL with PKCE parameters. */
+                        Location?: string;
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Server is not a configured OAuth MCP provider */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/oauth/{server}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description MCP server name. */
+                server: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * OAuth callback — receive the authorization code from the AS
+         * @description PR4c. PUBLIC (no bearer auth). The browser is redirected here by
+         *     the authorization server after the user grants consent. The caller
+         *     is identified via the single-use, TTL-bounded mcp_oauth_state row
+         *     (``state`` IS the binding). On success, tokens are encrypted and
+         *     stored and a mcp.oauth_connected audit row is written. Returns 200
+         *     with the connection summary.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Authorization code issued by the AS. */
+                    code: string;
+                    /** @description Opaque state value echoed from the authorize request. */
+                    state: string;
+                    /** @description Issuer identifier (RFC 9207); required when the AS advertised support. */
+                    iss?: string;
+                };
+                header?: never;
+                path: {
+                    /** @description MCP server name. */
+                    server: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OAuth flow completed; tokens stored */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MCPOAuthCallbackResponse"];
+                    };
+                };
+                /** @description Unknown, expired, or replayed state; iss validation failure */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Authorization server returned an error on code exchange */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/oauth/{server}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description MCP server name. */
+                server: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Check the calling user's OAuth connection state for an MCP server
+         * @description PR4c. ActiveUser-gated (bearer). Returns whether a stored token
+         *     exists for the (user, server) pair, the granted scopes, and the
+         *     token expiry. Token bytes are never exposed.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description MCP server name. */
+                    server: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Connection status */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MCPOAuthStatusResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mcp/oauth/{server}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description MCP server name. */
+                server: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke the calling user's stored OAuth tokens for an MCP server
+         * @description PR4c. ActiveUser-gated (bearer). Deletes the stored (user, server)
+         *     token row. Idempotent — returns 204 even when no token was stored.
+         *     AS-side revocation (RFC 7009) is not called in v1 (DE filed).
+         *     Writes a mcp.oauth_disconnected audit row when a row was removed.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description MCP server name. */
+                    server: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Token deleted (or was not present) */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -11444,6 +11748,13 @@ export interface components {
         MCPServerView: {
             name: string;
             type: string;
+            /**
+             * @description Authentication mode for this MCP server. One of ``none``,
+             *     ``bearer``, or ``oauth``. Read from the gateway config
+             *     ``auth`` field; defaults to ``none`` when absent.
+             * @enum {string}
+             */
+            auth: "none" | "bearer" | "oauth";
             tools: components["schemas"]["MCPToolView"][];
         };
         MCPServersResponse: {
@@ -11455,6 +11766,37 @@ export interface components {
         };
         MCPToolEnableRequest: {
             enabled: boolean;
+        };
+        MCPOAuthCallbackResponse: {
+            connected: boolean;
+            server: string;
+            scopes: string[];
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        MCPOAuthStatusResponse: {
+            connected: boolean;
+            scopes: string[];
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        /**
+         * @description PR4d Ask 1. Per-server OAuth connection status for a single user.
+         *     Token bytes are never included.
+         */
+        MCPOAuthServerStatus: {
+            server: string;
+            connected: boolean;
+            scopes: string[];
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        /**
+         * @description PR4d Ask 1. Response body for GET /api/v1/mcp/oauth — list of all
+         *     connectable OAuth MCP servers with the calling user's connection state.
+         */
+        MCPOAuthServersResponse: {
+            servers: components["schemas"]["MCPOAuthServerStatus"][];
         };
         /**
          * @description Secret-safe status for one provider. Carries at most the last 4
