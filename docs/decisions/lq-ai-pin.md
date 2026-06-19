@@ -2,11 +2,31 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `786801a` (bumped 2026-06-17 from `8142d58`)
+- Pinned SHA: `6a6e83e` (bumped 2026-06-18 from `786801a`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `786801a` → `6a6e83e` (2026-06-18): lq-ai **#172 (PR4d)** — the **per-user MCP OAuth UX surface**,
+  unblocking Donna **Slice B2**. Bundles the three Donna asks
+  (`docs/upstream-requests/lq-ai-mcp-oauth-donna-surface.md`), all verified in `backend.d.ts`:
+  - **Q1** — `GET /api/v1/mcp/oauth` (`ActiveUser`) → `MCPOAuthServersResponse { servers:
+    [{ server, connected, scopes, expires_at }] }`. The per-user, list-shaped sibling of the existing
+    single-server `/status`; no token bytes returned.
+  - **Q2** — `GET /api/v1/mcp/oauth/{server}/authorize` now takes an optional **`return_url`** query,
+    validated against `lq_ai_cors_origins` (`is_allowed_return_url`, fail-closed on empty). Stored on
+    the `mcp_oauth_state` row (migration **0052**); the public callback **302s the browser** to
+    `{return_url}?mcp_connected={server}` (success) / `?mcp_error={code}&server={server}` (error),
+    preserving any `#fragment`; absent → today's 200 JSON (back-compat). The one change that makes the
+    OAuth round-trip fit Donna's BFF.
+  - **Q3** — `MCPServerView.auth: "none" | "bearer" | "oauth"` (read from `get_admin_config`) so the
+    admin `/settings/mcp` page can label OAuth servers.
+  - **Runtime:** migration head → **0052**; rebuild `api` + workers + **`gateway`** (PR4d is
+    security-gated/gateway-touching) + `donna-web`. For **live OAuth testing** the api needs
+    `LQ_AI_MCP_MASTER_KEY` (Fernet; lazy — api boots without it) and `LQ_AI_CORS_ORIGINS` to include
+    Donna's origin (`http://localhost:13002`) so `return_url` validates. Connect-on-demand SSE
+    (`mcp_authorization_required`) is PR5b (Slice C).
 
 - `8142d58` → `786801a` (2026-06-17): lq-ai **#167** — `/research/search` now **accepts a `cursor`**,
   unblocking Donna **Slice A pagination** ("Load more"). The ask
