@@ -12,6 +12,14 @@
 	<p class="mt-1 text-xs text-mlq-muted">
 		Model Context Protocol servers your operator has connected. Enable the tools you want available.
 	</p>
+	{#if data.servers.some((s) => s.auth === 'oauth')}
+		<p class="mt-1 text-xs text-mlq-muted">
+			OAuth-protected servers require each user to connect their own account under
+			<a href="/settings/connections" class="text-mlq-workflow hover:underline"
+				>Settings → Connections</a
+			>.
+		</p>
+	{/if}
 
 	{#if !data.isAdmin}
 		<div class="mt-4 rounded-mlq-control border border-mlq-subtle p-4 text-xs text-mlq-muted">
