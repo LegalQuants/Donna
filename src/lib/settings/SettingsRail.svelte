@@ -9,6 +9,7 @@
 		{ href: '/settings/preferences', label: 'Preferences' },
 		{ href: '/settings/trust', label: 'Trust' },
 		{ href: '/settings/models', label: 'Models' },
+		{ href: '/settings/connections', label: 'Connections' },
 		...(isAdmin ? [{ href: '/settings/mcp', label: 'MCP' }] : [])
 	]);
 	const isActive = (href: string) =>

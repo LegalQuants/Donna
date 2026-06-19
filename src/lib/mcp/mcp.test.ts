@@ -66,3 +66,20 @@ describe('toolBadges', () => {
 		expect(toolBadges(tool({ read_only: false }))).toEqual([]);
 	});
 });
+
+describe('parseMcpServers auth field', () => {
+	it('carries an oauth auth value', () => {
+		const [s] = parseMcpServers({
+			servers: [{ name: 'ctx7', type: 'mcp', auth: 'oauth', tools: [] }]
+		});
+		expect(s.auth).toBe('oauth');
+	});
+	it('defaults to none when absent or unknown', () => {
+		const [a] = parseMcpServers({ servers: [{ name: 'fs', type: 'mcp', tools: [] }] });
+		const [b] = parseMcpServers({
+			servers: [{ name: 'fs', type: 'mcp', auth: 'weird', tools: [] }]
+		});
+		expect(a.auth).toBe('none');
+		expect(b.auth).toBe('none');
+	});
+});

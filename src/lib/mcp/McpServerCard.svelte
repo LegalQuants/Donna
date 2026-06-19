@@ -18,6 +18,12 @@
 		<div>
 			<span class="text-sm font-medium text-mlq-text">{server.name}</span>
 			<span class="ml-2 text-xs text-mlq-muted">{server.type}</span>
+			{#if server.auth === 'oauth'}
+				<span
+					class="ml-2 rounded bg-mlq-workflow/10 px-1.5 py-0.5 text-[10px] font-medium text-mlq-workflow"
+					>OAuth</span
+				>
+			{/if}
 		</div>
 		<form method="POST" action="?/refreshServer" use:enhance>
 			<input type="hidden" name="server" value={server.name} />
