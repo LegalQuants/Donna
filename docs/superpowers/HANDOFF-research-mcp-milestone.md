@@ -80,8 +80,10 @@ session.initialize(); session.list_tools()"` — same library + network the gate
   `toolBadges` from `src/lib/mcp/mcp.ts`** (built in Slice B for exactly this). SSE research events
   also live here. **PR5 is split: PR5a (chat tool-loop) is MERGED on lq-ai `main` as of 2026-06-19;
   PR5b adds the connect-on-demand SSE `mcp_authorization_required {server, authorize_url}` event** (the
-  inline-connect prompt that pairs with Slice B2's `return_url`). Confirm which sub-PR a Slice-C slice
-  needs before bumping; the connect-on-demand UI specifically waits on PR5b.
+  inline-connect prompt that pairs with Slice B2's `return_url`). **DECISION (user, 2026-06-19): do NOT
+  start Slice C on PR5a alone — WAIT for PR5b, then build the chat tool-loop + connect-on-demand
+  together as one slice** (one pin bump covering PR5a+PR5b). User will notify when PR5b merges. On that
+  signal: bump pin → PR5b SHA, `gen:api`, then brainstorm→spec→plan→TDD Slice C.
 - **Slice D — transparency & automations:** gate **PR6 (WS5)**. External-source citations through the
   existing citation UI; `retrieve_caselaw`/`call_mcp_tool` surfaced in Automations receipts.
 - **Slice E — wrap-up (docs + desktop):** after A–D. Two parts:
