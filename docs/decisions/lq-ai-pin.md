@@ -12,7 +12,7 @@ Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
   unblocking Donna **Slice B2**. Bundles the three Donna asks
   (`docs/upstream-requests/lq-ai-mcp-oauth-donna-surface.md`), all verified in `backend.d.ts`:
   - **Q1** — `GET /api/v1/mcp/oauth` (`ActiveUser`) → `MCPOAuthServersResponse { servers:
-    [{ server, connected, scopes, expires_at }] }`. The per-user, list-shaped sibling of the existing
+[{ server, connected, scopes, expires_at }] }`. The per-user, list-shaped sibling of the existing
     single-server `/status`; no token bytes returned.
   - **Q2** — `GET /api/v1/mcp/oauth/{server}/authorize` now takes an optional **`return_url`** query,
     validated against `lq_ai_cors_origins` (`is_allowed_return_url`, fail-closed on empty). Stored on
