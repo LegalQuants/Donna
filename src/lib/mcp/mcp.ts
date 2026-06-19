@@ -4,6 +4,8 @@
 // name/description/flags are MCP-discovery-sourced (third-party), so we guard at
 // the boundary and drop malformed rows — same style as automations/findings.ts.
 
+export type McpAuth = 'none' | 'bearer' | 'oauth';
+
 export interface McpTool {
 	name: string;
 	description: string | null;
@@ -16,6 +18,7 @@ export interface McpTool {
 export interface McpServer {
 	name: string;
 	type: string;
+	auth: McpAuth;
 	tools: McpTool[];
 }
 
@@ -52,6 +55,10 @@ function parseToolList(raw: unknown): McpTool[] {
 	return (Array.isArray(raw) ? raw : []).map(parseTool).filter((t): t is McpTool => t !== null);
 }
 
+function parseAuth(v: unknown): McpAuth {
+	return v === 'bearer' || v === 'oauth' ? v : 'none';
+}
+
 export function parseMcpServers(raw: unknown): McpServer[] {
 	const r = obj(raw);
 	return (Array.isArray(r.servers) ? r.servers : [])
@@ -61,6 +68,7 @@ export function parseMcpServers(raw: unknown): McpServer[] {
 			return {
 				name: o.name,
 				type: str(o.type) ?? '',
+				auth: parseAuth(o.auth),
 				tools: parseToolList(o.tools)
 			};
 		})
