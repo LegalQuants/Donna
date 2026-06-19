@@ -9,8 +9,23 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
 
 ## Current state (what's done)
 
-- **Pin:** `vendor/lq-ai` @ **`786801a`** (research search `cursor`, #167). Bumped from `8142d58`
-  for Slice A pagination.
+- **Pin:** `vendor/lq-ai` @ **`6a6e83e`** (PR4d MCP OAuth UX, #172). Bumped from `786801a` for Slice B2.
+- **Slice B2 — per-user MCP OAuth Connections: ✅ MERGED** (PR #87, merge commit `123b578` on `main`;
+  mirrored to `tucuxi`; branch deleted). New per-user `/settings/connections` page (list OAuth servers
+  → Connect via a BFF-mediated `[server]/connect/+server.ts` that proxies `/authorize?return_url=…`
+  with `redirect:'manual'` and forwards the 302 → status → Disconnect) + an "OAuth" badge on the admin
+  `/settings/mcp`. Consumes PR4d's Q1 `GET /api/v1/mcp/oauth` / Q2 `return_url` / Q3 `MCPServerView.auth`.
+  Built via subagent-driven TDD (7 tasks) + whole-branch Opus review (ready-to-merge). Gates: check 0/0
+  · lint 0/0 · **vitest 1409** · live-verified (Context7 wired as an oauth server). **Honest limit:**
+  full external consent needs a _registered_ `oauth_client_id` (the gateway brokers a pre-registered
+  client, NOT dynamic registration) — the dev round-trip stops at the AS; the connect-_success_ UI is
+  unit-covered, the connect→error path is verified live. Spec/plan:
+  `docs/superpowers/{specs,plans}/2026-06-18-slice-b2-mcp-oauth-connections*`. Ask (accepted+shipped):
+  `docs/upstream-requests/lq-ai-mcp-oauth-donna-surface.md`. **Deployment (Slice E): the AS redirects
+  the browser to the api's callback, so the api callback must be browser-reachable — true on localhost
+  (dev + desktop); a hosted Donna must expose it / run same-origin.**
+- **Live MCP server tested (DeepWiki no-auth) — ✅ DONE** (see next-steps #1 below). Context7 (oauth) is
+  also now wired in the dev `mcp.yaml` (placeholder `oauth_client_id`) for B2 testing.
 - **Slice A — case-law research workspace: ✅ MERGED** (PR #84, merge commit on `main`). Live-verified
   with real CourtListener data. The dev stack runs it (CL enabled — see "dev stack" below).
 - **Slice A pagination ("Load more"): ✅ MERGED** (PR #86, merge commit `ef92d10` on `main`; +hotfix
@@ -58,11 +73,15 @@ session.initialize(); session.list_tools()"` — same library + network the gate
   tool-provider key API. Ask filed: `docs/upstream-requests/lq-ai-runtime-tool-provider-keys.md`
   (Ask 1 runtime key API; Ask 2 gateway tolerates unset key). Build when it lands (mirror
   `byok-provider-keys`).
+- **Slice B2 — per-user MCP OAuth Connections:** ✅ **MERGED** (PR #87) — see "Current state".
 - **Slice C — governed tool-calling in chat:** gate **PR5 (WS4)**, not started. The big one:
   tool-call rendering in chat, the **destructive-tool confirmation gate** (SSE pause→approve→resume),
   provenance pills, per-turn cap, + the new `retrieve_caselaw`/`call_mcp_tool` ToolIntents. **Reuses
   `toolBadges` from `src/lib/mcp/mcp.ts`** (built in Slice B for exactly this). SSE research events
-  also live here.
+  also live here. **PR5 is split: PR5a (chat tool-loop) is MERGED on lq-ai `main` as of 2026-06-19;
+  PR5b adds the connect-on-demand SSE `mcp_authorization_required {server, authorize_url}` event** (the
+  inline-connect prompt that pairs with Slice B2's `return_url`). Confirm which sub-PR a Slice-C slice
+  needs before bumping; the connect-on-demand UI specifically waits on PR5b.
 - **Slice D — transparency & automations:** gate **PR6 (WS5)**. External-source citations through the
   existing citation UI; `retrieve_caselaw`/`call_mcp_tool` surfaced in Automations receipts.
 - **Slice E — wrap-up (docs + desktop):** after A–D. Two parts:
