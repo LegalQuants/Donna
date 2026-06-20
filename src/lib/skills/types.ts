@@ -18,3 +18,19 @@ export interface AttachedSkill {
 	optional: SkillInputDef[];
 	values: Record<string, unknown>;
 }
+
+/** The full skill-detail payload (built-in or resolved user/team skill),
+ *  including the C5 tool_usage fields. Returned by /skills/{name}/contents. */
+export type Skill = components['schemas']['Skill'];
+
+/** Build the non-blocking "Uses: …" note for a skill's declared connectors (C5,
+ *  PR6d). Returns null when nothing is declared. `unavailable` lists declared
+ *  connectors not configured in this deployment (null ⇒ undeterminable ⇒ treated
+ *  as available — informational, never gating). */
+export function toolUsageNote(
+	skill: Pick<Skill, 'tool_usage' | 'unavailable_tool_usage'>
+): { text: string; unavailable: string[] } | null {
+	const used = skill.tool_usage ?? [];
+	if (used.length === 0) return null;
+	return { text: `Uses: ${used.join(', ')}`, unavailable: skill.unavailable_tool_usage ?? [] };
+}
