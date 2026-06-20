@@ -115,7 +115,7 @@
 					>
 				</div>
 			</div>
-		{:else if message.status === 'awaiting_auth' && message.mcpAuth}
+		{:else if message.status === 'awaiting_auth' && message.mcpAuth && chatId}
 			{@const a = message.mcpAuth}
 			<div class="rounded-mlq-control border border-mlq-subtle p-3 text-xs">
 				<p class="text-mlq-text">

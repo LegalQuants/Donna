@@ -288,4 +288,20 @@ describe('Message tool-loop cards', () => {
 			'/settings/connections/context7/connect?return=' + encodeURIComponent('/chats/c1')
 		);
 	});
+
+	it('does not render the connect card without a chatId', () => {
+		const { queryByRole } = render(Message, {
+			props: {
+				message: {
+					key: 'g3',
+					id: 'g3',
+					role: 'assistant',
+					content: '',
+					status: 'awaiting_auth',
+					mcpAuth: { server: 'context7', authorize_url: '/api/v1/mcp/oauth/context7/authorize' }
+				} as never
+			}
+		});
+		expect(queryByRole('link', { name: /connect/i })).toBeNull();
+	});
 });
