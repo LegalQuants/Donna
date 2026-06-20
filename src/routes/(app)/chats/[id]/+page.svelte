@@ -15,6 +15,8 @@
 	import MatterBadge from '$lib/matters/MatterBadge.svelte';
 	import PrivilegedChip from '$lib/matters/PrivilegedChip.svelte';
 	import { pickValidModel } from '$lib/models/pickValidModel';
+	import { page } from '$app/state';
+	import ConnectedBanner from '$lib/chat/ConnectedBanner.svelte';
 
 	let { data } = $props();
 
@@ -44,6 +46,17 @@
 	}
 	function retry() {
 		chat.retry();
+	}
+
+	let bannerDismissed = $state(false);
+	const connectedServer = $derived(
+		bannerDismissed ? null : page.url.searchParams.get('mcp_connected')
+	);
+	const connectError = $derived(bannerDismissed ? null : page.url.searchParams.get('mcp_error'));
+	function resendLastUser() {
+		bannerDismissed = true;
+		const lastUser = [...chat.messages].reverse().find((m) => m.role === 'user');
+		if (lastUser) chat.send(lastUser.content, modelStore.selectedModel);
 	}
 
 	// Auto-scroll to the newest content as messages/stream update.
@@ -99,8 +112,15 @@
 
 		<div bind:this={scroller} class="flex-1 overflow-y-auto">
 			<div class="mx-auto max-w-2xl px-6 py-8">
-				{#each chat.messages as m (m.key)}
-					<Message message={m} onretry={retry} onactivatecitation={(c) => docPanel.open(c)} />
+				<ConnectedBanner server={connectedServer} error={connectError} onretry={resendLastUser} />
+				{#each chat.messages as m, i (m.key)}
+					<Message
+						message={m}
+						chatId={data.chatId}
+						onretry={retry}
+						ondecide={(d) => chat.decide(i, d)}
+						onactivatecitation={(c) => docPanel.open(c)}
+					/>
 				{/each}
 			</div>
 		</div>
