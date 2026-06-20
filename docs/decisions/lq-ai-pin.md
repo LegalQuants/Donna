@@ -14,7 +14,7 @@ Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
   Donna-facing contract in `backend.d.ts`:
   - **PR6c — external-source citations.** `GET /api/v1/chats/{chat_id}/messages/{message_id}/sources`
     → `ToolSource[]` (`{ id, message_id, source_kind, label, subtitle?, url?, external_ref?,
-    provider, tool, created_at }`, all fields optional in the schema → **hand-parse** with a
+provider, tool, created_at }`, all fields optional in the schema → **hand-parse** with a
     defensive `parseToolSources` per §2). `source_kind` is `'caselaw'` in 6c (extensible to `'mcp'`
     per lq-ai DE-350). Backed by new table `message_tool_sources` (migration head → **0055**);
     retrieval-provenance ("sources consulted"), NOT marker-grounding — distinct from

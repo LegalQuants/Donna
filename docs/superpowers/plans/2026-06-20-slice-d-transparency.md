@@ -42,6 +42,7 @@ Playwright e2e, Tailwind (`mlq-*` tokens). Backend via the BFF (`lqFetch`, httpO
 ## File Structure
 
 **Part 1 — Chat external-source citations**
+
 - Create `src/lib/citations/sources.ts` — `ToolSource` type + `parseToolSources(raw)`.
 - Create `src/lib/citations/sources.test.ts` — parser unit tests.
 - Create `src/routes/(app)/chats/[id]/messages/[message_id]/sources/+server.ts` — BFF GET proxy.
@@ -54,6 +55,7 @@ Playwright e2e, Tailwind (`mlq-*` tokens). Backend via the BFF (`lqFetch`, httpO
 - Modify `src/lib/components/Message.svelte` — footer pill + panel wiring.
 
 **Part 2 — Built-in skill tool-usage note**
+
 - Modify `src/lib/skills/types.ts` — `Skill` type alias + `toolUsageNote` helper. (Helper may live
   in a sibling `src/lib/skills/toolUsage.ts` if cleaner; this plan puts it in `types.ts`.)
 - Create `src/lib/skills/toolUsage.test.ts` — `toolUsageNote` unit tests.
@@ -63,6 +65,7 @@ Playwright e2e, Tailwind (`mlq-*` tokens). Backend via the BFF (`lqFetch`, httpO
 - Modify `src/routes/(app)/skills/+page.svelte` — "View" link on built-in rows.
 
 **e2e**
+
 - Create `tests/skill-inspector.spec.ts` — view `case-law-research`, assert "Uses: courtlistener".
 - Create `tests/chat-sources.spec.ts` — self-skipping chat-sources check (model-nondeterministic).
 
@@ -73,15 +76,17 @@ Playwright e2e, Tailwind (`mlq-*` tokens). Backend via the BFF (`lqFetch`, httpO
 ### Task 1: `ToolSource` type + `parseToolSources` parser
 
 **Files:**
+
 - Create: `src/lib/citations/sources.ts`
 - Test: `src/lib/citations/sources.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces:
   - `interface ToolSource { id: string; message_id: string; source_kind: string; label: string;
-    subtitle: string | null; url: string | null; external_ref: string | null; provider: string;
-    tool: string; created_at: string | null }`
+subtitle: string | null; url: string | null; external_ref: string | null; provider: string;
+tool: string; created_at: string | null }`
   - `parseToolSources(raw: unknown): ToolSource[]`
 
 - [ ] **Step 1: Write the failing test**
@@ -214,10 +219,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 2: Sources BFF proxy route
 
 **Files:**
+
 - Create: `src/routes/(app)/chats/[id]/messages/[message_id]/sources/+server.ts`
 - Test: `src/routes/(app)/chats/[id]/messages/[message_id]/sources/server.test.ts`
 
 **Interfaces:**
+
 - Consumes: `lqFetch` from `$lib/server/lqClient`.
 - Produces: `GET` handler proxying `/api/v1/chats/{id}/messages/{message_id}/sources`.
 
@@ -299,10 +306,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 3: `loadSources` in the chat store
 
 **Files:**
+
 - Modify: `src/lib/chat/chatStream.svelte.ts`
 - Test: `src/lib/chat/chatStream.sources.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parseToolSources`, `ToolSource` (Task 1); the existing `createChatStream` / SSE plumbing.
 - Produces: `ChatMessage.sources?: ToolSource[]`, populated post-stream on assistant `done`.
 
@@ -413,48 +422,48 @@ import { parseToolSources, type ToolSource } from '$lib/citations/sources';
 (c) Add `loadSources` right after `loadCitations` (after line 119):
 
 ```ts
-	// External-source provenance lives in the message_tool_sources table (PR6c),
-	// not the SSE frame. Unlike citations there is no in-text marker, so fetch
-	// unconditionally once the turn is persisted; the endpoint returns [] cheaply
-	// for the common no-tool turn. One retry covers the persist/fetch race.
-	async function loadSources(idx: number) {
-		const id = messages[idx].id;
-		if (!id || id === 'pending') return;
-		for (let attempt = 0; attempt < 2; attempt++) {
-			try {
-				const res = await fetch(`/chats/${chatId}/messages/${id}/sources`);
-				if (!res.ok) {
-					if (import.meta.env.DEV) console.warn(`loadSources: ${res.status} for message ${id}`);
-					return;
-				}
-				const srcs = parseToolSources(await res.json());
-				if (srcs.length > 0 || attempt === 1) {
-					if (srcs.length > 0) messages[idx].sources = srcs; // last-known-good: never clobber with []
-					return;
-				}
-			} catch {
+// External-source provenance lives in the message_tool_sources table (PR6c),
+// not the SSE frame. Unlike citations there is no in-text marker, so fetch
+// unconditionally once the turn is persisted; the endpoint returns [] cheaply
+// for the common no-tool turn. One retry covers the persist/fetch race.
+async function loadSources(idx: number) {
+	const id = messages[idx].id;
+	if (!id || id === 'pending') return;
+	for (let attempt = 0; attempt < 2; attempt++) {
+		try {
+			const res = await fetch(`/chats/${chatId}/messages/${id}/sources`);
+			if (!res.ok) {
+				if (import.meta.env.DEV) console.warn(`loadSources: ${res.status} for message ${id}`);
 				return;
 			}
-			await new Promise((r) => setTimeout(r, 400));
+			const srcs = parseToolSources(await res.json());
+			if (srcs.length > 0 || attempt === 1) {
+				if (srcs.length > 0) messages[idx].sources = srcs; // last-known-good: never clobber with []
+				return;
+			}
+		} catch {
+			return;
 		}
+		await new Promise((r) => setTimeout(r, 400));
 	}
+}
 ```
 
 (d) Call it in `consumeStream`, beside `loadCitations` (lines 182–185):
 
 ```ts
-		if (messages[idx].status === 'done') {
-			await loadCitations(idx);
-			await loadSources(idx);
-			await loadAnonymization(idx);
-		}
+if (messages[idx].status === 'done') {
+	await loadCitations(idx);
+	await loadSources(idx);
+	await loadAnonymization(idx);
+}
 ```
 
 (e) Reset it in `retry()` beside `citations` (line 279):
 
 ```ts
-		messages[idx].citations = undefined;
-		messages[idx].sources = undefined;
+messages[idx].citations = undefined;
+messages[idx].sources = undefined;
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -478,10 +487,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 4: `ToolSourcesPanel.svelte`
 
 **Files:**
+
 - Create: `src/lib/components/ToolSourcesPanel.svelte`
 - Test: `src/lib/components/ToolSourcesPanel.svelte.test.ts`
 
 **Interfaces:**
+
 - Consumes: `ToolSource` (Task 1).
 - Produces: a presentational component `<ToolSourcesPanel sources={ToolSource[]} />`. Visibility is
   owned by the parent (`Message.svelte`); this renders nothing when `sources` is empty.
@@ -590,9 +601,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 5: Wire the pill + panel into `Message.svelte`
 
 **Files:**
+
 - Modify: `src/lib/components/Message.svelte`
 
 **Interfaces:**
+
 - Consumes: `ChatMessage.sources` (Task 3), `ToolSourcesPanel` (Task 4).
 - Produces: a footer pill `⚖ N source(s) consulted` (always visible when sources exist, regardless
   of the `provenance_pills` collapse setting) that toggles a `showSources` `$state` (default open),
@@ -609,14 +622,14 @@ In the `<script>` block, add the import beside `CitationView` (line 3) and `Scal
 import (line 4), and add a `showSources` state (after line 25):
 
 ```ts
-	import CitationView from './CitationView.svelte';
-	import ToolSourcesPanel from './ToolSourcesPanel.svelte';
-	import { ShieldCheck, ScrollText, Paperclip, Scale } from '@lucide/svelte';
+import CitationView from './CitationView.svelte';
+import ToolSourcesPanel from './ToolSourcesPanel.svelte';
+import { ShieldCheck, ScrollText, Paperclip, Scale } from '@lucide/svelte';
 ```
 
 ```ts
-	let showDetails = $state(false);
-	let showSources = $state(true); // sources panel defaults open (small, high-value)
+let showDetails = $state(false);
+let showSources = $state(true); // sources panel defaults open (small, high-value)
 ```
 
 - [ ] **Step 2: Render the panel after the content block**
@@ -625,9 +638,9 @@ Immediately after the citation/markdown `{#if … }{:else}{/if}` block (after li
 streaming-cursor span (line 148), add:
 
 ```svelte
-		{#if message.status === 'done' && message.sources && message.sources.length > 0 && showSources}
-			<ToolSourcesPanel sources={message.sources} />
-		{/if}
+{#if message.status === 'done' && message.sources && message.sources.length > 0 && showSources}
+	<ToolSourcesPanel sources={message.sources} />
+{/if}
 ```
 
 - [ ] **Step 3: Add the pill to the footer row**
@@ -636,18 +649,18 @@ Inside the `{#if message.status === 'done'}` footer `<div>` (lines 152–186), a
 (line 159), add the pill — rendered whenever sources exist (NOT gated on `showPills`):
 
 ```svelte
-			{#if message.sources && message.sources.length > 0}
-				{@const n = message.sources.length}
-				<button
-					type="button"
-					onclick={() => (showSources = !showSources)}
-					aria-expanded={showSources}
-					class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2 py-0.5"
-				>
-					<Scale size={11} aria-hidden="true" />
-					{n} source{n === 1 ? '' : 's'} consulted
-				</button>
-			{/if}
+{#if message.sources && message.sources.length > 0}
+	{@const n = message.sources.length}
+	<button
+		type="button"
+		onclick={() => (showSources = !showSources)}
+		aria-expanded={showSources}
+		class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2 py-0.5"
+	>
+		<Scale size={11} aria-hidden="true" />
+		{n} source{n === 1 ? '' : 's'} consulted
+	</button>
+{/if}
 ```
 
 - [ ] **Step 4: Verify (no new unit test — covered by Task 4 + the e2e)**
@@ -673,15 +686,17 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 6: `Skill` type alias + `toolUsageNote` helper
 
 **Files:**
+
 - Modify: `src/lib/skills/types.ts`
 - Test: `src/lib/skills/toolUsage.test.ts`
 
 **Interfaces:**
+
 - Consumes: generated `components['schemas']['Skill']`.
 - Produces:
   - `export type Skill = components['schemas']['Skill'];`
   - `toolUsageNote(skill: Pick<Skill, 'tool_usage' | 'unavailable_tool_usage'>): { text: string;
-    unavailable: string[] } | null`
+unavailable: string[] } | null`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -697,15 +712,17 @@ describe('toolUsageNote', () => {
 	});
 
 	it('reports declared connectors when all are available', () => {
-		expect(
-			toolUsageNote({ tool_usage: ['courtlistener'], unavailable_tool_usage: [] })
-		).toEqual({ text: 'Uses: courtlistener', unavailable: [] });
+		expect(toolUsageNote({ tool_usage: ['courtlistener'], unavailable_tool_usage: [] })).toEqual({
+			text: 'Uses: courtlistener',
+			unavailable: []
+		});
 	});
 
 	it('treats null unavailable as available (undeterminable, never an error)', () => {
-		expect(
-			toolUsageNote({ tool_usage: ['courtlistener'], unavailable_tool_usage: null })
-		).toEqual({ text: 'Uses: courtlistener', unavailable: [] });
+		expect(toolUsageNote({ tool_usage: ['courtlistener'], unavailable_tool_usage: null })).toEqual({
+			text: 'Uses: courtlistener',
+			unavailable: []
+		});
 	});
 
 	it('flags unavailable connectors', () => {
@@ -761,11 +778,13 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 7: `/skills/view/[name]` read-only inspector route
 
 **Files:**
+
 - Create: `src/routes/(app)/skills/view/[name]/+page.server.ts`
 - Test: `src/routes/(app)/skills/view/[name]/page.server.test.ts`
 - Create: `src/routes/(app)/skills/view/[name]/+page.svelte`
 
 **Interfaces:**
+
 - Consumes: `lqFetch`; `Skill` + `toolUsageNote` (Task 6); the existing `Markdown` component.
 - Produces: `load` returning `{ skill: Skill }`; a read-only inspector page.
 
@@ -786,7 +805,11 @@ beforeEach(() => lqFetch.mockReset());
 
 describe('skill inspector load', () => {
 	it('loads the full skill via the /contents endpoint', async () => {
-		const skill = { name: 'case-law-research', title: 'Case-law research', tool_usage: ['courtlistener'] };
+		const skill = {
+			name: 'case-law-research',
+			title: 'Case-law research',
+			tool_usage: ['courtlistener']
+		};
 		lqFetch.mockResolvedValue(new Response(JSON.stringify(skill), { status: 200 }));
 		const out = await load(event());
 		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/skills/case-law-research/contents');
@@ -876,7 +899,9 @@ Expected: PASS (3 tests).
 				<span>{note.text} — {note.unavailable.join(', ')} not configured in this deployment</span>
 			</p>
 		{:else}
-			<p class="mt-3 inline-block rounded-full border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-muted">
+			<p
+				class="mt-3 inline-block rounded-full border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-muted"
+			>
 				{note.text}
 			</p>
 		{/if}
@@ -911,9 +936,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 8: "View" link on built-in skill rows
 
 **Files:**
+
 - Modify: `src/routes/(app)/skills/+page.svelte`
 
 **Interfaces:**
+
 - Consumes: the inspector route (Task 7).
 - Produces: a "View" link to `/skills/view/{name}` on each built-in row, beside the Fork button.
 
@@ -926,11 +953,11 @@ In `src/routes/(app)/skills/+page.svelte`, inside the built-in `<li>` (line 73),
 the Fork `<button>` (line 83), add:
 
 ```svelte
-						<a
-							href="/skills/view/{b.name}"
-							class="shrink-0 rounded-mlq-control border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text hover:bg-mlq-subtle/50"
-							>View</a
-						>
+<a
+	href="/skills/view/{b.name}"
+	class="shrink-0 rounded-mlq-control border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text hover:bg-mlq-subtle/50"
+	>View</a
+>
 ```
 
 - [ ] **Step 2: Verify**
@@ -952,6 +979,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 9: Live e2e + API-level chat-sources verification
 
 **Files:**
+
 - Create: `tests/skill-inspector.spec.ts`
 - Create: `tests/chat-sources.spec.ts`
 
@@ -1044,6 +1072,7 @@ test('case-law turn surfaces a sources pill + panel (best-effort)', async ({ pag
 docker compose up -d --build donna-web
 npx playwright test tests/skill-inspector.spec.ts tests/chat-sources.spec.ts
 ```
+
 Expected: `skill-inspector` PASSES (2 tests); `chat-sources` PASSES or SKIPS.
 
 - [ ] **Step 4: API-level chat-sources evidence (binding)**
@@ -1058,6 +1087,7 @@ chat id + assistant message id from the API, then:
 docker compose exec -T postgres psql -U lq_ai -d lq_ai \
   -c "select source_kind, label, provider, tool from message_tool_sources order by created_at desc limit 5;"
 ```
+
 Expected: at least one `caselaw` row with a `courtlistener` provider after a case-law turn. Record
 the output + a UI screenshot of the pill/panel in the PR description.
 
@@ -1077,8 +1107,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - [ ] `npm run check` → 0 errors / 0 warnings.
 - [ ] `npm run lint` → fully clean.
 - [ ] `npx vitest run` → full suite green (≈1429 + the new tests).
-- [ ] `docker compose up -d --build donna-web` then `npx playwright test tests/skill-inspector.spec.ts
-      tests/chat-sources.spec.ts` → inspector green; chat-sources green-or-skip.
+- [ ] `docker compose up -d --build donna-web`, then run the two e2e specs (`skill-inspector`,
+      `chat-sources`) → inspector green; chat-sources green-or-skip.
 - [ ] API-level evidence captured (a `message_tool_sources` row + a UI screenshot of the pill/panel).
 - [ ] Whole-branch Opus review (superpowers:requesting-code-review), fold fixes.
 - [ ] PR with a **merge commit** (never squash). Then mirror `main` + the branch to `tucuxi`.
