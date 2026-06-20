@@ -90,8 +90,9 @@ describe('createChatStream', () => {
 					'data: [DONE]\n\n'
 				])
 			)
-			// loadAnonymization after retry send
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+			// loadSources (single attempt, empty) + loadAnonymization after retry send
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi');
@@ -229,6 +230,7 @@ describe('createChatStream', () => {
 					'data: [DONE]\n\n'
 				])
 			)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadSources (empty)
 			.mockResolvedValueOnce(
 				new Response(
 					JSON.stringify([
@@ -240,7 +242,7 @@ describe('createChatStream', () => {
 					]),
 					{ status: 200 }
 				)
-			);
+			); // call 2: loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hello');
@@ -257,13 +259,15 @@ describe('createChatStream', () => {
 				'data: [DONE]\n\n'
 			]);
 		// Fresh Response per call (a single reused Response would lock its body on the
-		// second read). Each stream is followed by a loadAnonymization receipts GET.
+		// second read). Each stream is followed by loadSources + loadAnonymization GETs.
 		const fetchMock = vi
 			.fn()
 			.mockResolvedValueOnce(frames()) // call 0: send POST
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadAnonymization GET
-			.mockResolvedValueOnce(frames()) // call 2: retry POST
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 3: loadAnonymization GET
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 2: loadAnonymization GET
+			.mockResolvedValueOnce(frames()) // call 3: retry POST
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 4: loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 5: loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'fast');
@@ -271,8 +275,8 @@ describe('createChatStream', () => {
 		expect(firstBody).toMatchObject({ content: 'hi', model: 'fast' });
 
 		await chat.retry();
-		// calls[2] is the retry POST (calls[1]/[3] are the receipts GETs, which carry no init).
-		const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+		// calls[3] is the retry POST (calls[1-2][4-5] are the GET stubs, which carry no init).
+		const retryBody = JSON.parse((fetchMock.mock.calls[3][1] as RequestInit).body as string);
 		expect(retryBody.model).toBe('fast');
 		expect(chat.messages[1].status).toBe('done');
 		expect(chat.status).toBe('idle');
@@ -288,9 +292,11 @@ describe('createChatStream', () => {
 		const fetchMock = vi
 			.fn()
 			.mockResolvedValueOnce(frames()) // call 0: send POST
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadAnonymization GET
-			.mockResolvedValueOnce(frames()) // call 2: retry POST
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 3: loadAnonymization GET
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 2: loadAnonymization GET
+			.mockResolvedValueOnce(frames()) // call 3: retry POST
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 4: loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 5: loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'smart', ['nda-review']);
@@ -298,7 +304,8 @@ describe('createChatStream', () => {
 		expect(firstBody).toMatchObject({ content: 'hi', model: 'smart', skills: ['nda-review'] });
 
 		await chat.retry();
-		const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+		// calls[3] is the retry POST (calls[1-2][4-5] are the GET stubs, which carry no init).
+		const retryBody = JSON.parse((fetchMock.mock.calls[3][1] as RequestInit).body as string);
 		expect(retryBody.skills).toEqual(['nda-review']);
 		expect(chat.messages[1].status).toBe('done');
 	});
@@ -334,8 +341,9 @@ describe('createChatStream', () => {
 						'data: [DONE]\n\n'
 					])
 				)
-				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
-		); // loadAnonymization GET
+				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadAnonymization GET
+		);
 		const chat = createChatStream('c1');
 		await chat.send('hello', 'smart', ['comms-improver']);
 		expect(chat.messages[1].applied_skills).toEqual(['comms-improver']);
@@ -353,7 +361,8 @@ describe('createChatStream', () => {
 						'data: [DONE]\n\n'
 					])
 				)
-				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadAnonymization GET
 		);
 		const chat = createChatStream('c1');
 		await chat.send('hello', 'smart', ['nda-review']);
@@ -379,9 +388,11 @@ describe('createChatStream', () => {
 			vi
 				.fn()
 				.mockResolvedValueOnce(withSkill())
-				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadAnonymization GET
 				.mockResolvedValueOnce(noSkill())
-				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+				.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadAnonymization GET
 		);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'smart', ['comms-improver']);
@@ -402,6 +413,7 @@ describe('createChatStream skill_inputs', () => {
 					'data: [DONE]\n\n'
 				])
 			)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
 			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
@@ -420,7 +432,8 @@ describe('createChatStream skill_inputs', () => {
 					'data: [DONE]\n\n'
 				])
 			)
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'smart', [], {});
@@ -453,14 +466,17 @@ describe('createChatStream skill_inputs', () => {
 		const fetchMock = vi
 			.fn()
 			.mockResolvedValueOnce(frames()) // call 0: send POST
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadAnonymization GET
-			.mockResolvedValueOnce(frames()) // call 2: retry POST
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 3: loadAnonymization GET
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 2: loadAnonymization GET
+			.mockResolvedValueOnce(frames()) // call 3: retry POST
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 4: loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 5: loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'smart', ['nda-review'], { 'nda-review': { party: 'Acme' } });
 		await chat.retry();
-		const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+		// calls[3] is the retry POST (calls[1-2][4-5] are the GET stubs, which carry no init).
+		const retryBody = JSON.parse((fetchMock.mock.calls[3][1] as RequestInit).body as string);
 		expect(retryBody.skill_inputs).toEqual({ 'nda-review': { party: 'Acme' } });
 	});
 });
@@ -476,17 +492,20 @@ describe('createChatStream file_ids', () => {
 	it('includes file_ids in the POST body when provided and reuses them on retry', async () => {
 		const fetchMock = vi
 			.fn()
-			.mockResolvedValueOnce(okFrames())
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
-			.mockResolvedValueOnce(okFrames())
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+			.mockResolvedValueOnce(okFrames()) // call 0: send POST
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 1: loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 2: loadAnonymization GET
+			.mockResolvedValueOnce(okFrames()) // call 3: retry POST
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // call 4: loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // call 5: loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'smart', [], {}, ['file-1', 'file-2']);
 		const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
 		expect(body.file_ids).toEqual(['file-1', 'file-2']);
 		await chat.retry();
-		const retryBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+		// calls[3] is the retry POST (calls[1-2][4-5] are the GET stubs, which carry no init).
+		const retryBody = JSON.parse((fetchMock.mock.calls[3][1] as RequestInit).body as string);
 		expect(retryBody.file_ids).toEqual(['file-1', 'file-2']);
 	});
 
@@ -494,7 +513,8 @@ describe('createChatStream file_ids', () => {
 		const fetchMock = vi
 			.fn()
 			.mockResolvedValueOnce(okFrames())
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'smart', [], {}, []);
@@ -512,7 +532,8 @@ describe('createChatStream file_ids', () => {
 					'data: [DONE]\n\n'
 				])
 			)
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'smart', [], {}, ['file-1']);
@@ -535,9 +556,11 @@ describe('createChatStream file_ids', () => {
 		const fetchMock = vi
 			.fn()
 			.mockResolvedValueOnce(withIds())
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadAnonymization GET
 			.mockResolvedValueOnce(noIds())
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // loadSources (empty)
+			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // loadAnonymization GET
 		vi.stubGlobal('fetch', fetchMock);
 		const chat = createChatStream('c1');
 		await chat.send('hi', 'smart', [], {}, ['file-1']);
