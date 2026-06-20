@@ -9,7 +9,8 @@ export const GET: RequestHandler = async (event) => {
 	// Optional same-origin return path (default the connections page). Reject any
 	// non-relative / cross-origin value to prevent an open redirect.
 	const requested = event.url.searchParams.get('return');
-	const returnPath = requested && requested.startsWith('/') ? requested : CONNECTIONS;
+	const returnPath =
+		requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : CONNECTIONS;
 	const returnUrl = `${event.url.origin}${returnPath}`;
 	const path =
 		`/api/v1/mcp/oauth/${encodeURIComponent(server)}/authorize` +
