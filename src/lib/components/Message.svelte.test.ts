@@ -236,3 +236,72 @@ describe('Message provenance pills (provenance_pills preference)', () => {
 		expect(screen.getByText(/Applied:/)).toBeInTheDocument();
 	});
 });
+
+describe('Message tool-loop cards', () => {
+	it('renders the confirmation card and fires ondecide', async () => {
+		let decided: string | null = null;
+		const { getByRole, getByText } = render(Message, {
+			props: {
+				message: {
+					key: 'g1',
+					id: 'g1',
+					role: 'assistant',
+					content: '',
+					status: 'awaiting_confirmation',
+					confirmation: {
+						pending_call_id: 'p1',
+						provider: 'deepwiki',
+						tool: 'read_wiki_structure',
+						function_name: 'mcp__deepwiki__read_wiki_structure',
+						args_summary: { repoName: 'facebook/react' },
+						tier: 2,
+						destructive: true
+					}
+				} as never,
+				ondecide: (d: 'approve' | 'deny') => (decided = d)
+			}
+		});
+		expect(getByText(/read_wiki_structure/)).toBeInTheDocument();
+		expect(getByText(/facebook\/react/)).toBeInTheDocument();
+		expect(getByText(/destructive/i)).toBeInTheDocument();
+		getByRole('button', { name: /approve/i }).click();
+		expect(decided).toBe('approve');
+	});
+
+	it('renders the connect card linking to the BFF connect route with a chat return', () => {
+		const { getByRole } = render(Message, {
+			props: {
+				message: {
+					key: 'g2',
+					id: 'g2',
+					role: 'assistant',
+					content: '',
+					status: 'awaiting_auth',
+					mcpAuth: { server: 'context7', authorize_url: '/api/v1/mcp/oauth/context7/authorize' }
+				} as never,
+				chatId: 'c1'
+			}
+		});
+		const link = getByRole('link', { name: /connect/i });
+		expect(link).toHaveAttribute(
+			'href',
+			'/settings/connections/context7/connect?return=' + encodeURIComponent('/chats/c1')
+		);
+	});
+
+	it('does not render the connect card without a chatId', () => {
+		const { queryByRole } = render(Message, {
+			props: {
+				message: {
+					key: 'g3',
+					id: 'g3',
+					role: 'assistant',
+					content: '',
+					status: 'awaiting_auth',
+					mcpAuth: { server: 'context7', authorize_url: '/api/v1/mcp/oauth/context7/authorize' }
+				} as never
+			}
+		});
+		expect(queryByRole('link', { name: /connect/i })).toBeNull();
+	});
+});

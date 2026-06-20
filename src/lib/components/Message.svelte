@@ -10,9 +10,16 @@
 	let {
 		message,
 		onretry,
-		onactivatecitation
-	}: { message: ChatMessage; onretry?: () => void; onactivatecitation?: (c: Citation) => void } =
-		$props();
+		ondecide,
+		onactivatecitation,
+		chatId
+	}: {
+		message: ChatMessage;
+		onretry?: () => void;
+		ondecide?: (decision: 'approve' | 'deny') => void;
+		onactivatecitation?: (c: Citation) => void;
+		chatId?: string;
+	} = $props();
 	let copied = $state(false);
 	const collapsed = $derived((page.data.user?.provenance_pills ?? 'always') === 'collapsed');
 	let showDetails = $state(false);
@@ -69,6 +76,60 @@
 					>Retry</button
 				>
 			</p>
+		{:else if message.status === 'awaiting_confirmation' && message.confirmation}
+			{@const c = message.confirmation}
+			<div class="rounded-mlq-control border border-mlq-caveats/40 bg-mlq-caveats/5 p-3 text-xs">
+				<p class="text-mlq-text">
+					The assistant wants to run <span class="font-medium">{c.tool}</span> on
+					<span class="font-medium">{c.provider}</span>.
+				</p>
+				{#if c.destructive}
+					<p class="mt-1 font-medium text-mlq-error">This tool is destructive.</p>
+				{/if}
+				{#if Object.keys(c.args_summary).length}
+					<dl class="mt-2 space-y-0.5 text-mlq-muted">
+						{#each Object.entries(c.args_summary) as [k, v] (k)}
+							<div class="flex gap-2">
+								<dt class="font-medium">{k}</dt>
+								<dd class="min-w-0 break-words">{String(v)}</dd>
+							</div>
+						{/each}
+					</dl>
+				{/if}
+				<div class="mt-3 flex items-center gap-2">
+					<button
+						type="button"
+						onclick={() => ondecide?.('approve')}
+						class="rounded-mlq-control bg-mlq-workflow px-3 py-1.5 font-medium text-white hover:opacity-90"
+						>Approve</button
+					>
+					<button
+						type="button"
+						onclick={() => ondecide?.('deny')}
+						class="rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-mlq-text hover:bg-mlq-surface-alt"
+						>Deny</button
+					>
+					<span
+						class="ml-1 rounded-full border border-mlq-subtle px-2 text-[10px] leading-5 text-mlq-muted"
+						>Tier {c.tier}</span
+					>
+				</div>
+			</div>
+		{:else if message.status === 'awaiting_auth' && message.mcpAuth && chatId}
+			{@const a = message.mcpAuth}
+			<div class="rounded-mlq-control border border-mlq-subtle p-3 text-xs">
+				<p class="text-mlq-text">
+					Connect <span class="font-medium">{a.server}</span> to use this tool.
+				</p>
+				<a
+					href="/settings/connections/{a.server}/connect?return={encodeURIComponent(
+						`/chats/${chatId}`
+					)}"
+					data-sveltekit-reload
+					class="mt-2 inline-block rounded-mlq-control bg-mlq-workflow px-3 py-1.5 font-medium text-white hover:opacity-90"
+					>Connect</a
+				>
+			</div>
 		{:else}
 			{#if message.content === '' && message.status === 'streaming'}
 				<span

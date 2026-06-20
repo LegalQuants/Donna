@@ -57,3 +57,52 @@ describe('createSseParser', () => {
 		expect(frames.map((f) => f.type)).toEqual(['delta', 'done']);
 	});
 });
+
+describe('tool-loop terminal frames', () => {
+	it('parses tool_confirmation_required', () => {
+		const f = parseDataPayload(
+			JSON.stringify({
+				type: 'tool_confirmation_required',
+				lq_ai_message_id: 'a1',
+				pending_call_id: 'p1',
+				provider: 'deepwiki',
+				tool: 'read_wiki_structure',
+				function_name: 'mcp__deepwiki__read_wiki_structure',
+				args_summary: { repoName: 'facebook/react' },
+				tier: 2,
+				destructive: false
+			})
+		);
+		expect(f).toMatchObject({
+			type: 'tool_confirmation_required',
+			pending_call_id: 'p1',
+			tool: 'read_wiki_structure',
+			tier: 2,
+			destructive: false
+		});
+	});
+	it('drops a tool_confirmation_required missing pending_call_id', () => {
+		const f = parseDataPayload(
+			JSON.stringify({ type: 'tool_confirmation_required', lq_ai_message_id: 'a1' })
+		);
+		expect(f).toBeNull();
+	});
+	it('parses mcp_authorization_required', () => {
+		const f = parseDataPayload(
+			JSON.stringify({
+				type: 'mcp_authorization_required',
+				lq_ai_message_id: 'a1',
+				server: 'context7',
+				authorize_url: '/api/v1/mcp/oauth/context7/authorize'
+			})
+		);
+		expect(f).toMatchObject({ type: 'mcp_authorization_required', server: 'context7' });
+	});
+	it('drops an mcp_authorization_required missing server', () => {
+		expect(
+			parseDataPayload(
+				JSON.stringify({ type: 'mcp_authorization_required', lq_ai_message_id: 'a1' })
+			)
+		).toBeNull();
+	});
+});
