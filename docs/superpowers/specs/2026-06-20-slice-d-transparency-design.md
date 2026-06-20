@@ -192,9 +192,8 @@ have Fork). User skills keep their existing edit link.
     last-known-good on a failed retry.
   - `+server.ts` sources proxy: mock `lqFetch` — 200 passes JSON through; 404 → 404; other → 502.
   - `skills/view/[name]/+page.server.ts`: mock `lqFetch` — returns `{ skill }`; 404 → 404; 502.
-- **Component / `svelte-check`:** 0 errors / 0 warnings. Headless static render of
-  `ToolSourcesPanel` (populated + empty), per the established visual-check convention (no
-  `@testing-library/svelte`).
+- **Component / `svelte-check`:** 0 errors / 0 warnings. `@testing-library/svelte` `render`/`screen`
+  on `ToolSourcesPanel` (populated + empty), mirroring `ResearchGate.svelte.test.ts`.
 - **Live e2e (`tests/`, against the running stack):**
   - Skill inspector: visit `/skills/view/case-law-research`; assert title + "Uses: courtlistener"
     render. Self-cleaning; no seeding needed (built-in skill is present in `/skills`).
