@@ -13,7 +13,7 @@ export interface ChatMessage {
 	role: 'user' | 'assistant' | 'system' | 'tool';
 	content: string;
 	routed_inference_tier?: number | null;
-	status?: 'streaming' | 'done' | 'error';
+	status?: 'streaming' | 'done' | 'error' | 'awaiting_confirmation' | 'awaiting_auth';
 	error?: string;
 	citations?: Citation[];
 	anonymized?: boolean;
@@ -21,6 +21,18 @@ export interface ChatMessage {
 	applied_skills?: string[];
 	/** File ids the backend reported as applied to this assistant turn (turn-scoped echo). */
 	applied_file_ids?: string[];
+	/** Destructive/requires_confirmation tool-call gate payload (status 'awaiting_confirmation'). */
+	confirmation?: {
+		pending_call_id: string;
+		provider: string;
+		tool: string;
+		function_name: string;
+		args_summary: Record<string, unknown>;
+		tier: number;
+		destructive: boolean;
+	};
+	/** OAuth MCP server the user must connect (status 'awaiting_auth'). */
+	mcpAuth?: { server: string; authorize_url: string };
 }
 
 export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
@@ -54,6 +66,20 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 			if (frame.applied_skills) m.applied_skills = frame.applied_skills;
 			if (frame.applied_file_ids) m.applied_file_ids = frame.applied_file_ids;
 			m.status = 'done';
+		} else if (frame.type === 'tool_confirmation_required') {
+			m.confirmation = {
+				pending_call_id: frame.pending_call_id,
+				provider: frame.provider,
+				tool: frame.tool,
+				function_name: frame.function_name,
+				args_summary: frame.args_summary,
+				tier: frame.tier,
+				destructive: frame.destructive
+			};
+			m.status = 'awaiting_confirmation';
+		} else if (frame.type === 'mcp_authorization_required') {
+			m.mcpAuth = { server: frame.server, authorize_url: frame.authorize_url };
+			m.status = 'awaiting_auth';
 		} else if (frame.type === 'error') {
 			setError(idx, frame.message);
 		}
@@ -112,6 +138,53 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		}
 	}
 
+	// Read an SSE Response into the assistant message at `idx`. Shared by the
+	// initial send/retry and the confirmation resume. A gate frame
+	// (tool_confirmation_required / mcp_authorization_required) ends the read and
+	// leaves a non-'done' status, so citations/anonymization are not fetched.
+	async function consumeStream(idx: number, res: Response) {
+		const reader = res.body!.getReader();
+		const decoder = new TextDecoder();
+		const parser = createSseParser();
+		let ended = false;
+		try {
+			while (!ended) {
+				const { value, done } = await reader.read();
+				if (done) break;
+				for (const frame of parser.push(decoder.decode(value, { stream: true }))) {
+					if (frame.type === 'done') {
+						ended = true;
+						break;
+					}
+					applyFrame(idx, frame);
+					if (
+						frame.type === 'error' ||
+						frame.type === 'tool_confirmation_required' ||
+						frame.type === 'mcp_authorization_required'
+					) {
+						ended = true;
+						break;
+					}
+				}
+			}
+			if (!ended) {
+				for (const frame of parser.push(decoder.decode())) {
+					if (frame.type === 'done') break;
+					applyFrame(idx, frame);
+					if (frame.type === 'error') break;
+				}
+			}
+		} finally {
+			reader.cancel().catch(() => {});
+		}
+		if (messages[idx].status === 'streaming') messages[idx].status = 'done';
+		if (status === 'streaming') status = 'idle';
+		if (messages[idx].status === 'done') {
+			await loadCitations(idx);
+			await loadAnonymization(idx);
+		}
+	}
+
 	// Stream a response into the assistant message at `idx` (already present and
 	// reset to a streaming state by the caller). Shared by send() and retry().
 	async function runStream(
@@ -154,42 +227,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 				setError(idx, msg);
 				return;
 			}
-			const reader = res.body.getReader();
-			const decoder = new TextDecoder();
-			const parser = createSseParser();
-			let ended = false;
-			try {
-				while (!ended) {
-					const { value, done } = await reader.read();
-					if (done) break;
-					for (const frame of parser.push(decoder.decode(value, { stream: true }))) {
-						if (frame.type === 'done') {
-							ended = true;
-							break;
-						}
-						applyFrame(idx, frame);
-						if (frame.type === 'error') {
-							ended = true;
-							break;
-						}
-					}
-				}
-				// Flush any bytes the decoder buffered if the stream ended without [DONE].
-				if (!ended) {
-					for (const frame of parser.push(decoder.decode())) {
-						if (frame.type === 'done') break;
-						applyFrame(idx, frame);
-						if (frame.type === 'error') break;
-					}
-				}
-			} finally {
-				// Release the connection promptly on done/error/normal exit.
-				reader.cancel().catch(() => {});
-			}
-			if (messages[idx].status === 'streaming') messages[idx].status = 'done';
-			if (status === 'streaming') status = 'idle';
-			await loadCitations(idx);
-			await loadAnonymization(idx);
+			await consumeStream(idx, res);
 		} catch (e) {
 			if ((e as Error).name === 'AbortError') {
 				messages[idx].status = 'done';

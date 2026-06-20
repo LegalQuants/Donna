@@ -546,3 +546,46 @@ describe('createChatStream file_ids', () => {
 		expect(chat.messages[1].applied_file_ids).toBeUndefined();
 	});
 });
+
+describe('tool-loop gate frames', () => {
+	it('pauses on tool_confirmation_required with the gate payload', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi
+				.fn()
+				.mockResolvedValue(
+					streamResponse([
+						'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+						'data: {"type":"tool_confirmation_required","lq_ai_message_id":"a1","pending_call_id":"p1","provider":"deepwiki","tool":"read_wiki_structure","function_name":"mcp__deepwiki__read_wiki_structure","args_summary":{"repoName":"facebook/react"},"tier":2,"destructive":false}\n\n',
+						'data: [DONE]\n\n'
+					])
+				)
+		);
+		const chat = createChatStream('c1');
+		await chat.send('use deepwiki');
+		const m = chat.messages[1];
+		expect(m.status).toBe('awaiting_confirmation');
+		expect(m.confirmation).toMatchObject({ pending_call_id: 'p1', tool: 'read_wiki_structure' });
+		expect(chat.status).toBe('idle');
+	});
+
+	it('pauses on mcp_authorization_required with the server payload', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi
+				.fn()
+				.mockResolvedValue(
+					streamResponse([
+						'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+						'data: {"type":"mcp_authorization_required","lq_ai_message_id":"a1","server":"context7","authorize_url":"/api/v1/mcp/oauth/context7/authorize"}\n\n',
+						'data: [DONE]\n\n'
+					])
+				)
+		);
+		const chat = createChatStream('c1');
+		await chat.send('use context7');
+		const m = chat.messages[1];
+		expect(m.status).toBe('awaiting_auth');
+		expect(m.mcpAuth).toMatchObject({ server: 'context7' });
+	});
+});
