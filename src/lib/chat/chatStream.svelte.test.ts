@@ -546,3 +546,101 @@ describe('createChatStream file_ids', () => {
 		expect(chat.messages[1].applied_file_ids).toBeUndefined();
 	});
 });
+
+describe('tool-loop gate frames', () => {
+	it('pauses on tool_confirmation_required with the gate payload', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi
+				.fn()
+				.mockResolvedValue(
+					streamResponse([
+						'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+						'data: {"type":"tool_confirmation_required","lq_ai_message_id":"a1","pending_call_id":"p1","provider":"deepwiki","tool":"read_wiki_structure","function_name":"mcp__deepwiki__read_wiki_structure","args_summary":{"repoName":"facebook/react"},"tier":2,"destructive":false}\n\n',
+						'data: [DONE]\n\n'
+					])
+				)
+		);
+		const chat = createChatStream('c1');
+		await chat.send('use deepwiki');
+		const m = chat.messages[1];
+		expect(m.status).toBe('awaiting_confirmation');
+		expect(m.confirmation).toMatchObject({ pending_call_id: 'p1', tool: 'read_wiki_structure' });
+		expect(chat.status).toBe('idle');
+	});
+
+	it('pauses on mcp_authorization_required with the server payload', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi
+				.fn()
+				.mockResolvedValue(
+					streamResponse([
+						'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+						'data: {"type":"mcp_authorization_required","lq_ai_message_id":"a1","server":"context7","authorize_url":"/api/v1/mcp/oauth/context7/authorize"}\n\n',
+						'data: [DONE]\n\n'
+					])
+				)
+		);
+		const chat = createChatStream('c1');
+		await chat.send('use context7');
+		const m = chat.messages[1];
+		expect(m.status).toBe('awaiting_auth');
+		expect(m.mcpAuth).toMatchObject({ server: 'context7' });
+	});
+});
+
+describe('decide() resumes a gated turn', () => {
+	function gateThenResume(resumeFrames: string[]) {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				streamResponse([
+					'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+					'data: {"type":"tool_confirmation_required","lq_ai_message_id":"a1","pending_call_id":"p1","provider":"deepwiki","tool":"read_wiki_structure","function_name":"f","args_summary":{},"tier":2,"destructive":false}\n\n',
+					'data: [DONE]\n\n'
+				])
+			)
+			.mockResolvedValueOnce(streamResponse(resumeFrames));
+		vi.stubGlobal('fetch', fetchMock);
+		return fetchMock;
+	}
+
+	it('approve POSTs the decision and streams the resumed turn into the same message', async () => {
+		const fetchMock = gateThenResume([
+			'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+			'data: {"type":"delta","delta":"Done","lq_ai_message_id":"a1"}\n\n',
+			'data: {"type":"complete","lq_ai_message_id":"a1","message":{"id":"a1","content":"Done"}}\n\n',
+			'data: [DONE]\n\n'
+		]);
+		const chat = createChatStream('c1');
+		await chat.send('use deepwiki');
+		expect(chat.messages[1].status).toBe('awaiting_confirmation');
+		await chat.decide(1, 'approve');
+		expect(chat.messages[1].status).toBe('done');
+		expect(chat.messages[1].content).toBe('Done');
+		expect(chat.messages[1].confirmation).toBeUndefined();
+		const resumeCall = fetchMock.mock.calls[1];
+		expect(resumeCall[0]).toBe('/chats/c1/tool-calls/p1');
+		expect(JSON.parse((resumeCall[1] as { body: string }).body)).toEqual({ decision: 'approve' });
+	});
+
+	it('surfaces a friendly error when the resume is 409 (expired)', async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				streamResponse([
+					'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+					'data: {"type":"tool_confirmation_required","lq_ai_message_id":"a1","pending_call_id":"p1","provider":"d","tool":"t","function_name":"f","args_summary":{},"tier":2,"destructive":false}\n\n',
+					'data: [DONE]\n\n'
+				])
+			)
+			.mockResolvedValueOnce(new Response('', { status: 409 }));
+		vi.stubGlobal('fetch', fetchMock);
+		const chat = createChatStream('c1');
+		await chat.send('use deepwiki');
+		await chat.decide(1, 'approve');
+		expect(chat.messages[1].status).toBe('error');
+		expect(chat.messages[1].error).toMatch(/expired/i);
+	});
+});
