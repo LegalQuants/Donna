@@ -25,6 +25,23 @@ export type StreamFrame =
 			citations?: unknown[];
 			routed_inference_tier?: number | null;
 	  }
+	| {
+			type: 'tool_confirmation_required';
+			lq_ai_message_id: string;
+			pending_call_id: string;
+			provider: string;
+			tool: string;
+			function_name: string;
+			args_summary: Record<string, unknown>;
+			tier: number;
+			destructive: boolean;
+	  }
+	| {
+			type: 'mcp_authorization_required';
+			lq_ai_message_id: string;
+			server: string;
+			authorize_url: string;
+	  }
 	| { type: 'error'; code?: string; message: string }
 	| { type: 'done' };
 
@@ -49,6 +66,16 @@ export function parseDataPayload(payload: string): StreamFrame | null {
 		}
 		if (o.type === 'complete') {
 			return o.message && typeof o.message === 'object' ? (o as unknown as StreamFrame) : null;
+		}
+		if (o.type === 'tool_confirmation_required') {
+			return typeof o.lq_ai_message_id === 'string' && typeof o.pending_call_id === 'string'
+				? (o as unknown as StreamFrame)
+				: null;
+		}
+		if (o.type === 'mcp_authorization_required') {
+			return typeof o.lq_ai_message_id === 'string' && typeof o.server === 'string'
+				? (o as unknown as StreamFrame)
+				: null;
 		}
 		if (o.type === 'error') {
 			return {
