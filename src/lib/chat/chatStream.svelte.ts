@@ -284,6 +284,47 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		await runStream(idx, lastUserContent, lastModel, lastSkills, lastSkillInputs, lastFileIds);
 	}
 
+	// Resume a turn paused at a confirmation gate: POST the decision and stream the
+	// resumed turn into the SAME assistant message (idx).
+	async function decide(idx: number, decision: 'approve' | 'deny') {
+		if (status === 'streaming') return;
+		const m = messages[idx];
+		const pendingId = m.confirmation?.pending_call_id;
+		if (!pendingId) return;
+		m.confirmation = undefined;
+		m.error = undefined;
+		m.status = 'streaming';
+		status = 'streaming';
+		controller = new AbortController();
+		try {
+			const res = await fetch(`/chats/${chatId}/tool-calls/${pendingId}`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ decision }),
+				signal: controller.signal
+			});
+			if (!res.ok || !res.body) {
+				setError(
+					idx,
+					res.status === 404 || res.status === 409
+						? 'This confirmation expired — please re-send your message.'
+						: 'Could not resume the turn. Please try again.'
+				);
+				return;
+			}
+			await consumeStream(idx, res);
+		} catch (e) {
+			if ((e as Error).name === 'AbortError') {
+				messages[idx].status = 'done';
+				status = 'idle';
+			} else {
+				setError(idx, 'The connection was lost. Please try again.');
+			}
+		} finally {
+			controller = null;
+		}
+	}
+
 	function stop() {
 		controller?.abort();
 	}
@@ -297,6 +338,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		},
 		send,
 		retry,
+		decide,
 		stop
 	};
 }
