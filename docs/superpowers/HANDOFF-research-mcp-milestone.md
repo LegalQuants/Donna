@@ -89,18 +89,17 @@ session.initialize(); session.list_tools()"` — same library + network the gate
   (Ask 1 runtime key API; Ask 2 gateway tolerates unset key). Build when it lands (mirror
   `byok-provider-keys`).
 - **Slice B2 — per-user MCP OAuth Connections:** ✅ **MERGED** (PR #87) — see "Current state".
-- **Slice C — governed tool-calling in chat:** gate **PR5 (WS4)**, not started. The big one:
-  tool-call rendering in chat, the **destructive-tool confirmation gate** (SSE pause→approve→resume),
-  provenance pills, per-turn cap, + the new `retrieve_caselaw`/`call_mcp_tool` ToolIntents. **Reuses
-  `toolBadges` from `src/lib/mcp/mcp.ts`** (built in Slice B for exactly this). SSE research events
-  also live here. **PR5 is split: PR5a (chat tool-loop) is MERGED on lq-ai `main` as of 2026-06-19;
-  PR5b adds the connect-on-demand SSE `mcp_authorization_required {server, authorize_url}` event** (the
-  inline-connect prompt that pairs with Slice B2's `return_url`). **DECISION (user, 2026-06-19): do NOT
-  start Slice C on PR5a alone — WAIT for PR5b, then build the chat tool-loop + connect-on-demand
-  together as one slice** (one pin bump covering PR5a+PR5b). User will notify when PR5b merges. On that
-  signal: bump pin → PR5b SHA, `gen:api`, then brainstorm→spec→plan→TDD Slice C.
-- **Slice D — transparency & automations:** gate **PR6 (WS5)**. External-source citations through the
-  existing citation UI; `retrieve_caselaw`/`call_mcp_tool` surfaced in Automations receipts.
+- **Slice C — governed chat tool-loop (confirm gate + connect-on-demand):** ✅ **MERGED** (PR #88) —
+  see "Current state" up top. (Provenance pills + inline tool-call rendering were found to be
+  PR6-gated, so Slice C scoped to the confirm gate + connect-on-demand; the rest is Slice D.)
+- **Slice D — transparency & automations:** gate **PR6 (WS5)**, **NOT yet on lq-ai main — STANDING BY**.
+  External-source / case-law citations through the existing citation UI (the "source-kind" citation
+  modeling is **net-new backend**, not in pin `97ccbc0`); provenance pills ("this answer used tools");
+  `retrieve_caselaw`/`call_mcp_tool` surfaced in Automations receipts. **User decision 2026-06-19: no
+  interim release — wait for PR6, build Slice D + Slice E docs, THEN one release at wrap (fresh-user
+  dry-run → cut images + macOS DMG).** On the PR6 signal: bump pin → PR6 SHA, `gen:api`, verify the new
+  citation contract in `backend.d.ts`, rebuild `api`+workers+`gateway`+`donna-web`, then
+  brainstorm→spec→plan→subagent-TDD.
 - **Slice E — wrap-up (docs + desktop):** after A–D. Two parts:
   - **Docs refresh:** README, `docs/PRODUCT.md`, `CHANGELOG.md`, `docs/GUIDE.md`, and the in-app
     `/about` (its playgrounds + guide — the richest docs, §11). **Pull in LQ-AI's research+MCP docs**
