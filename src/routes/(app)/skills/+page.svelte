@@ -80,6 +80,11 @@
 						{#if b.tags?.length}<span class="shrink-0 text-xs text-mlq-muted"
 								>{b.tags.slice(0, 3).join(' · ')}</span
 							>{/if}
+						<a
+							href="/skills/view/{b.name}"
+							class="shrink-0 rounded-mlq-control border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text hover:bg-mlq-subtle/50"
+							>View</a
+						>
 						<button
 							type="button"
 							aria-label="Fork {b.title}"
