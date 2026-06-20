@@ -9,7 +9,22 @@ one slice per backend PR. Donna is the frontend; all backend logic is LQ-AI's (�
 
 ## Current state (what's done)
 
-- **Pin:** `vendor/lq-ai` @ **`6a6e83e`** (PR4d MCP OAuth UX, #172). Bumped from `786801a` for Slice B2.
+- **Pin:** `vendor/lq-ai` @ **`97ccbc0`** (PR5a #181 + PR5b #187, WS4 governed chat tool-loop). Bumped from `6a6e83e` for Slice C.
+- **Slice C — governed chat tool-loop (confirm gate + connect-on-demand): ✅ MERGED** (PR #88, merge
+  commit `e8a7e00` on `main`; mirrored `tucuxi`; branch deleted). Two terminal SSE frames consumed:
+  `tool_confirmation_required` → inline Approve/Deny card → `decide()` POSTs `/chats/{id}/tool-calls/
+{pending_call_id}` → resumed turn streams into the same message; `mcp_authorization_required` →
+  inline Connect card (reuses Slice B2 connect route, generalized with `?return=/chats/{id}`) + a
+  "Connected — Retry" banner on return. New `sse.ts` frames, store `consumeStream` refactor + `decide`,
+  BFF resume proxy, `Message.svelte` cards, `ConnectedBanner`. 8-task subagent-driven TDD + whole-branch
+  Opus review (ready-to-merge; 2 review-loop security fixes folded: chatId href guard + protocol-relative
+  open-redirect guard). Gates check 0/0 · lint 0/0 · **vitest 1429** · **live-verified** (start →
+  tool_confirmation_required → DONE; approve → delta → complete; 2nd resume → 409 single-use; UI card
+  screenshot). **HONEST LIMIT:** tool rounds are non-streaming/invisible (no inline tool frames);
+  connect-on-demand not live-triggerable (Context7 has no discoverable tools w/o a token — B2 limit) so
+  unit-covered. Spec/plan: `docs/superpowers/{specs,plans}/2026-06-19-slice-c-chat-tool-loop*`.
+  **NEXT after this: the RELEASE DRY-RUN (see Slice E) — user wants a fresh-user README walkthrough
+  before cutting images/desktop.**
 - **Slice B2 — per-user MCP OAuth Connections: ✅ MERGED** (PR #87, merge commit `123b578` on `main`;
   mirrored to `tucuxi`; branch deleted). New per-user `/settings/connections` page (list OAuth servers
   → Connect via a BFF-mediated `[server]/connect/+server.ts` that proxies `/authorize?return_url=…`
