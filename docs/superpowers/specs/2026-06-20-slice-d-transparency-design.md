@@ -9,11 +9,11 @@
 
 ## Goal
 
-Make the founding-principle question — *"where did this answer's research come from?"* —
+Make the founding-principle question — _"where did this answer's research come from?"_ —
 answerable right where the user reads it. Two surfaces:
 
 1. **Chat external-source citations (from PR6c).** When a chat turn consults case law via the
-   governed tool-loop, surface *which cases it pulled in* under that assistant turn: a provenance
+   governed tool-loop, surface _which cases it pulled in_ under that assistant turn: a provenance
    pill + a collapsible "Sources consulted" panel. Mirrors Donna's existing per-message citations
    path (`CitationView` + the citations lazy-fetch).
 2. **Built-in skill tool-usage note (from PR6d).** Make a built-in skill's declared connectors
@@ -27,7 +27,7 @@ answerable right where the user reads it. Two surfaces:
   `GET /api/v1/chats/{chat_id}/messages/{message_id}/sources` → array of source rows. The schema
   is loose (every field optional):
   `{ id?, message_id?, source_kind?, label?, subtitle?, url?, external_ref?, provider?, tool?,
-  created_at? }`. `source_kind` is `'caselaw'` in 6c (extensible to `'mcp'` per lq-ai DE-350).
+created_at? }`. `source_kind` is `'caselaw'` in 6c (extensible to `'mcp'` per lq-ai DE-350).
   Retrieval-provenance ("sources consulted"), **not** marker-grounding — distinct from
   `message_citations` (verified quotes). Backed by table `message_tool_sources` (migration 0055,
   verified live). The endpoint returns `[]` (not 404) for turns with no sources; 404 for a
@@ -45,7 +45,7 @@ answerable right where the user reads it. Two surfaces:
 
 lq-ai shipped a complete reference UI for PR6c/6d in their **own** `web/` package
 (`ProvenancePill` caselaw kind + `ToolSourcesPanel` + lazy-fetch in `MessageBubble`; `toolUsageNote`
-helper + "Uses:" row). It is the design blueprint, not Donna code. Mirror the *shape*; implement
+helper + "Uses:" row). It is the design blueprint, not Donna code. Mirror the _shape_; implement
 against Donna's actual patterns (`Message.svelte`, `chatStream.svelte.ts`, the BFF proxies).
 
 ## Decisions locked in brainstorming (2026-06-20)
@@ -54,7 +54,7 @@ against Donna's actual patterns (`Message.svelte`, `chatStream.svelte.ts`, the B
    intent names already render (PR5a + existing `SessionTimeline`) → not re-built here.
 2. **Source rows link externally to CourtListener** (the `url` field), opening in a new tab — matches
    lq-ai's reference UI; simplest; ships now. (In-app doc-panel opening was considered and declined:
-   the row carries a *cluster* id in `external_ref`, so in-app reading would need a cluster→opinion
+   the row carries a _cluster_ id in `external_ref`, so in-app reading would need a cluster→opinion
    resolution step — deferred.)
 3. **Unconditional post-stream `/sources` fetch.** PR6c adds no SSE signal and sources have no
    in-text marker (unlike citations, which gate on `hasCitationMarkers`). Fetch sources for every
@@ -87,8 +87,8 @@ against Donna's actual patterns (`Message.svelte`, `chatStream.svelte.ts`, the B
 
 - `ToolSource` interface (hand-typed, since the backend schema is loose per CLAUDE.md §2):
   `{ id: string; message_id: string; source_kind: string; label: string; subtitle: string | null;
-  url: string | null; external_ref: string | null; provider: string; tool: string;
-  created_at: string | null }`.
+url: string | null; external_ref: string | null; provider: string; tool: string;
+created_at: string | null }`.
 - `parseToolSources(raw: unknown): ToolSource[]` — module-local `str`/`obj` guards (mirror
   `src/lib/automations/findings.ts`). Maps each array element; **drops any row missing the
   load-bearing `label`** (returns `null` → filtered). Preserves array order (= retrieval order).
@@ -100,7 +100,8 @@ against Donna's actual patterns (`Message.svelte`, `chatStream.svelte.ts`, the B
 (`src/routes/(app)/chats/[id]/messages/[message_id]/citations/+server.ts`):
 `lqFetch(event, /api/v1/chats/{id}/messages/{message_id}/sources)` → on `!ok` throw
 `error(404 if 404 else 502, …)`; else `json(await res.json())`. Auth via `lqFetch` (httpOnly cookies
-+ transparent refresh). The client treats any failure as "no panel" (tolerant).
+
+- transparent refresh). The client treats any failure as "no panel" (tolerant).
 
 ### Store — `src/lib/chat/chatStream.svelte.ts`
 
@@ -141,10 +142,10 @@ against Donna's actual patterns (`Message.svelte`, `chatStream.svelte.ts`, the B
 - Add `Skill` type alias `= components['schemas']['Skill']` (in `src/lib/skills/types.ts` or a small
   `detail.ts`; pick the existing module that fits — `types.ts`).
 - `toolUsageNote(skill: Pick<Skill, 'tool_usage' | 'unavailable_tool_usage'>): { text: string;
-  unavailable: boolean } | null` — pure helper, 3 states (mirrors lq-ai's `toolUsageNote`):
+unavailable: boolean } | null` — pure helper, 3 states (mirrors lq-ai's `toolUsageNote`):
   - `tool_usage` empty/absent → `null` (no row).
   - `tool_usage` set, `unavailable_tool_usage` empty/null → `{ text: 'Uses: ' + join(tool_usage),
-    unavailable: false }`.
+unavailable: false }`.
   - `unavailable_tool_usage` non-empty → `{ text: 'Uses: ' + join(tool_usage), unavailable: true }`
     (the component renders the amber "… not configured" treatment naming the unavailable
     connectors). Join with `, `.
@@ -211,6 +212,7 @@ have Fork). User skills keep their existing edit link.
 
 Subagent-driven TDD, one task per unit, per-task spec+quality review, then whole-branch Opus review,
 then PR with a **merge commit**, then mirror `main` + branch to `tucuxi`. Suggested task order:
+
 1. `parseToolSources` + `ToolSource` type (data layer, TDD).
 2. Sources BFF proxy (`+server.ts`, TDD).
 3. `loadSources` + `ChatMessage.sources` in the store (TDD).
@@ -227,8 +229,8 @@ Donna's implementation of PR6's features needs **no new blocking upstream reques
 are complete in pin `658fdbc`. Relay these enhancements/known-limits so LQ-AI can decide whether to
 fold any in before PR6e:
 
-1. **Per-case source detail in *autonomous* receipts** — receipts name the intent + outcome + cost
-   but not *which* cases an autonomous `retrieve_caselaw` pulled (the autonomous analog of PR6c's
+1. **Per-case source detail in _autonomous_ receipts** — receipts name the intent + outcome + cost
+   but not _which_ cases an autonomous `retrieve_caselaw` pulled (the autonomous analog of PR6c's
    chat sources). Nice-to-have enhancement.
 2. **Optional chat complete-frame echo** (`has_tool_sources` / `applied_tools`) so Donna can skip
    the unconditional post-stream `/sources` fetch. Minor optimization.
