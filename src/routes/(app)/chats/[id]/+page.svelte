@@ -52,7 +52,11 @@
 	const connectedServer = $derived(
 		bannerDismissed ? null : page.url.searchParams.get('mcp_connected')
 	);
-	const connectError = $derived(bannerDismissed ? null : page.url.searchParams.get('mcp_error'));
+	const connectError = $derived(
+		bannerDismissed || !page.url.searchParams.get('mcp_error')
+			? null
+			: (page.url.searchParams.get('server') ?? 'the server')
+	);
 	function resendLastUser() {
 		bannerDismissed = true;
 		const lastUser = [...chat.messages].reverse().find((m) => m.role === 'user');
