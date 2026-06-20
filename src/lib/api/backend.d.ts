@@ -6759,6 +6759,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/chats/{chat_id}/tool-calls/{pending_call_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve or deny a pending destructive chat tool-call; resumes the turn */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    chat_id: string;
+                    pending_call_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ToolCallDecisionRequest"];
+                };
+            };
+            responses: {
+                /** @description SSE stream — resumes the turn after approval or denial */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": string;
+                    };
+                };
+                /** @description Malformed request body */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Chat or pending tool-call not found (id-probing-safe) */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Tool-call already resolved or confirmation expired */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integrations/slack/workspaces": {
         parameters: {
             query?: never;
@@ -11829,6 +11893,13 @@ export interface components {
         };
         ProviderKeyList: {
             provider_keys: components["schemas"]["ProviderKeyStatus"][];
+        };
+        ToolCallDecisionRequest: {
+            /**
+             * @description Whether to approve or deny the pending tool call.
+             * @enum {string}
+             */
+            decision: "approve" | "deny";
         };
         /**
          * @description Canonical structured error envelope returned by every backend

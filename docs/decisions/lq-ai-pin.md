@@ -2,11 +2,25 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `6a6e83e` (bumped 2026-06-18 from `786801a`)
+- Pinned SHA: `97ccbc0` (bumped 2026-06-19 from `6a6e83e`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `6a6e83e` → `97ccbc0` (2026-06-19): lq-ai **#181 (PR5a)** + **#187 (PR5b)** — the **governed chat
+  tool-loop** (WS4), unblocking Donna **Slice C**. PR5a added the tool-governance substrate +
+  `retrieve_caselaw`/`call_mcp_tool` autonomous tool intents (`tool_call_log`); PR5b added the chat
+  tool-loop + **persist-and-resume confirmation gate** (migration head → **0054** `chat_pending_tool_
+call`). New Donna-facing contract in `backend.d.ts`: `POST /api/v1/chats/{chat_id}/tool-calls/
+{pending_call_id}` (`ToolCallDecisionRequest { decision: "approve"|"deny" }` → SSE resume; 404/409/400).
+  The two new chat SSE frames (`tool_confirmation_required`, `mcp_authorization_required`) are streaming
+  payloads (not in OpenAPI) — Donna hand-types them in `src/lib/chat/sse.ts`. Tool rounds run
+  non-streaming server-side (no inline tool frames). **Runtime: rebuild `api` + workers + `gateway` (the
+  tools passthrough) + `donna-web` so migration 0054 runs.** NB: this pin bump was committed late (it
+  rode the working tree uncommitted through the Slice C branch and was committed directly to `main` after
+  the PR #88 merge — the frontend never depended on the regenerated types, so the slice still built/tested
+  on 97ccbc0). Connect-on-demand requires a registered OAuth MCP client to exercise end to end.
 
 - `786801a` → `6a6e83e` (2026-06-18): lq-ai **#172 (PR4d)** — the **per-user MCP OAuth UX surface**,
   unblocking Donna **Slice B2**. Bundles the three Donna asks
