@@ -1,7 +1,8 @@
 <script lang="ts">
 	import Markdown from './Markdown.svelte';
 	import CitationView from './CitationView.svelte';
-	import { ShieldCheck, ScrollText, Paperclip } from '@lucide/svelte';
+	import ToolSourcesPanel from './ToolSourcesPanel.svelte';
+	import { ShieldCheck, ScrollText, Paperclip, Scale } from '@lucide/svelte';
 	import type { ChatMessage } from '$lib/chat/chatStream.svelte';
 	import type { Citation } from '$lib/citations/types';
 	import { prettifySkillSlug } from '$lib/skills/skillLabel';
@@ -23,6 +24,7 @@
 	let copied = $state(false);
 	const collapsed = $derived((page.data.user?.provenance_pills ?? 'always') === 'collapsed');
 	let showDetails = $state(false);
+	let showSources = $state(true); // sources panel defaults open (small, high-value)
 	const showPills = $derived(!collapsed || showDetails);
 
 	async function copy() {
@@ -145,6 +147,9 @@
 			{:else}
 				<Markdown content={message.content} />
 			{/if}
+			{#if message.status === 'done' && message.sources && message.sources.length > 0 && showSources}
+				<ToolSourcesPanel sources={message.sources} />
+			{/if}
 			{#if message.status === 'streaming' && message.content !== ''}
 				<span class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-mlq-text align-text-bottom"
 				></span>
@@ -157,6 +162,18 @@
 						class="rounded-mlq-control border border-mlq-subtle px-2 py-0.5"
 						>{copied ? '✓ copied' : '⧉ Copy'}</button
 					>
+					{#if message.sources && message.sources.length > 0}
+						{@const n = message.sources.length}
+						<button
+							type="button"
+							onclick={() => (showSources = !showSources)}
+							aria-expanded={showSources}
+							class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2 py-0.5"
+						>
+							<Scale size={11} aria-hidden="true" />
+							{n} source{n === 1 ? '' : 's'} consulted
+						</button>
+					{/if}
 					{#if collapsed}
 						<button
 							type="button"
