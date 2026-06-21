@@ -39,6 +39,12 @@
 	cases it pulled in, each linking out to CourtListener so you can read the original.
 </p>
 
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+	Research in chat works best on a capable model — pick <strong>smart</strong> in the composer's model
+	selector. Smaller local models can struggle to use the case-law tool reliably and may return an empty
+	reply.
+</p>
+
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">Availability</h2>
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
