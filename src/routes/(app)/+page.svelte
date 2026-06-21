@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { onDestroy } from 'svelte';
 	import Composer from '$lib/components/Composer.svelte';
+	import ComposerStarters from '$lib/components/ComposerStarters.svelte';
 	import { createSkillAttach } from '$lib/skills/attach.svelte';
 	import { createEnhance } from '$lib/enhance/enhance.svelte';
 	import { createFileAttach } from '$lib/files/fileAttach.svelte';
@@ -50,6 +51,10 @@
 			onsubmit={() => formEl?.requestSubmit()}
 		/>
 	</form>
+
+	{#if message.trim() === ''}
+		<ComposerStarters onpick={(t) => (message = t)} />
+	{/if}
 
 	{#if form?.error}<p class="mt-3 text-center text-sm text-mlq-error">{form.error}</p>{/if}
 	<p class="mt-3 text-center text-xs text-mlq-muted">
