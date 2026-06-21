@@ -12,6 +12,8 @@ export interface LauncherConfig {
 	imageTag: string;
 	inference: InferenceChoice;
 	adminEmail: string;
+	/** Optional CourtListener API token (enables case-law research); blank/absent ⇒ research off. */
+	courtlistenerToken?: string;
 }
 
 /** First run = no persisted config blob exists yet. */
