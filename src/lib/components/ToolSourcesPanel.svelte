@@ -10,6 +10,7 @@
 		<p class="mb-2 flex items-center gap-1 font-medium text-mlq-text">
 			<Scale size={13} aria-hidden="true" /> Sources consulted ({sources.length})
 		</p>
+		<p class="mb-2 text-mlq-muted">External sources the assistant looked up for this answer.</p>
 		<ul class="space-y-2">
 			{#each sources as s (s.id || s.external_ref || s.label)}
 				<li>
