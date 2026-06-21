@@ -1,6 +1,7 @@
 import { createSseParser, type StreamFrame } from './sse';
 import { hasCitationMarkers } from '$lib/citations/transform';
 import type { Citation } from '$lib/citations/types';
+import { parseToolSources, type ToolSource } from '$lib/citations/sources';
 import { anonymizedByMessage } from '$lib/receipts/format';
 import type { ReceiptEvent } from '$lib/receipts/types';
 
@@ -16,6 +17,8 @@ export interface ChatMessage {
 	status?: 'streaming' | 'done' | 'error' | 'awaiting_confirmation' | 'awaiting_auth';
 	error?: string;
 	citations?: Citation[];
+	/** External-source provenance (case law consulted), lazy-fetched post-stream (PR6c). */
+	sources?: ToolSource[];
 	anonymized?: boolean;
 	/** Slugs of the skills the backend reported as applied to this assistant turn. */
 	applied_skills?: string[];
@@ -118,6 +121,27 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		}
 	}
 
+	// External-source provenance lives in the message_tool_sources table (PR6c),
+	// not the SSE frame. Unlike citations there is no in-text marker, so fetch
+	// unconditionally once the turn is persisted. A case-law turn's tool round-trip
+	// means the row is committed well before the stream completes, so a single
+	// attempt suffices; on the rare miss, sources appear on the next load.
+	async function loadSources(idx: number) {
+		const id = messages[idx].id;
+		if (!id || id === 'pending') return;
+		try {
+			const res = await fetch(`/chats/${chatId}/messages/${id}/sources`);
+			if (!res.ok) {
+				if (import.meta.env.DEV) console.warn(`loadSources: ${res.status} for message ${id}`);
+				return;
+			}
+			const srcs = parseToolSources(await res.json());
+			if (srcs.length > 0) messages[idx].sources = srcs; // last-known-good: never clobber with []
+		} catch {
+			/* non-blocking — panel simply absent */
+		}
+	}
+
 	// Anonymization is recorded on the inference receipt, correlated by message_id.
 	async function loadAnonymization(idx: number) {
 		const id = messages[idx].id;
@@ -181,6 +205,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		if (status === 'streaming') status = 'idle';
 		if (messages[idx].status === 'done') {
 			await loadCitations(idx);
+			await loadSources(idx);
 			await loadAnonymization(idx);
 		}
 	}
@@ -277,6 +302,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		messages[idx].error = undefined;
 		messages[idx].routed_inference_tier = undefined;
 		messages[idx].citations = undefined;
+		messages[idx].sources = undefined;
 		messages[idx].anonymized = undefined;
 		messages[idx].applied_skills = undefined;
 		messages[idx].applied_file_ids = undefined;

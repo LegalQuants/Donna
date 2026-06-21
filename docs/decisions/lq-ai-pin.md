@@ -2,11 +2,35 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `97ccbc0` (bumped 2026-06-19 from `6a6e83e`)
+- Pinned SHA: `658fdbc` (bumped 2026-06-20 from `97ccbc0`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `97ccbc0` → `658fdbc` (2026-06-20): lq-ai **PR6 series (WS5 transparency)** — **#188 (PR6a)** +
+  **#189 (PR6b)** + **#191 (PR6c)** + **#192 (PR6d)** — unblocking Donna **Slice D**
+  (transparency / external-source citations). PR6e is image-packaging only (not yet cut). New
+  Donna-facing contract in `backend.d.ts`:
+  - **PR6c — external-source citations.** `GET /api/v1/chats/{chat_id}/messages/{message_id}/sources`
+    → `ToolSource[]` (`{ id, message_id, source_kind, label, subtitle?, url?, external_ref?,
+provider, tool, created_at }`, all fields optional in the schema → **hand-parse** with a
+    defensive `parseToolSources` per §2). `source_kind` is `'caselaw'` in 6c (extensible to `'mcp'`
+    per lq-ai DE-350). Backed by new table `message_tool_sources` (migration head → **0055**);
+    retrieval-provenance ("sources consulted"), NOT marker-grounding — distinct from
+    `message_citations` (verified quotes). lq-ai shipped a full reference UI in their own `web/`
+    package (`ProvenancePill` caselaw kind + `ToolSourcesPanel` + lazy-fetch in `MessageBubble`) —
+    the design blueprint for Donna's surface.
+  - **PR6d — skill tool-usage (C5).** `Skill` (detail) schema gains `tool_usage?: string[] | null`
+    (connectors the skill declares it uses) and `unavailable_tool_usage?: string[] | null`
+    (declared connectors not configured in this deployment; informational, never gating). NB: these
+    are on `Skill` (detail) only, **not** `SkillSummary` (list) in Donna's OpenAPI — design the
+    surface on the skill-detail page. New built-in `case-law-research` skill ships with
+    `tool_usage: [courtlistener]`.
+  - **PR6a/6b** are lq-ai-side narrative + their own reference chat UI (no new Donna contract;
+    Donna's Slice C already shipped the equivalent chat tool-loop UI).
+  - **Runtime: rebuild `api` + workers + `gateway` + `donna-web` so migration 0055 runs.** Pin
+    bump committed as the Slice D branch's FIRST commit (not riding the working tree this time).
 
 - `6a6e83e` → `97ccbc0` (2026-06-19): lq-ai **#181 (PR5a)** + **#187 (PR5b)** — the **governed chat
   tool-loop** (WS4), unblocking Donna **Slice C**. PR5a added the tool-governance substrate +
