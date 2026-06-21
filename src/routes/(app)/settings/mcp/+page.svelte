@@ -12,6 +12,13 @@
 	<p class="mt-1 text-xs text-mlq-muted">
 		Model Context Protocol servers your operator has connected. Enable the tools you want available.
 	</p>
+	<div
+		class="mt-3 rounded-mlq-control border border-mlq-subtle bg-mlq-surface-alt/40 p-3 text-xs text-mlq-text"
+	>
+		<strong>What this is.</strong> MCP servers are collections of external tools your operator connects
+		— for example, documentation or reference lookups. Tools you enable here become available to the assistant
+		in chat, and it always asks your permission before running one.
+	</div>
 	{#if data.servers.some((s) => s.auth === 'oauth')}
 		<p class="mt-1 text-xs text-mlq-muted">
 			OAuth-protected servers require each user to connect their own account under
