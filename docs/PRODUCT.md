@@ -1,6 +1,6 @@
 # Donna — Product Overview
 
-**Status:** v0.1.0 (first public release) · **License:** Apache-2.0 · **By:** LegalQuants
+**Status:** v0.2.0 (legal research + MCP) · **License:** Apache-2.0 · **By:** LegalQuants
 
 > A friendly, document-forward frontend for the [LQ.AI](https://github.com/LegalQuants/lq-ai)
 > legal-AI engine. Donna makes a powerful, self-hostable legal-AI backend usable by a working
