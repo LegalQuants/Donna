@@ -14,8 +14,8 @@
 </p>
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-	Click any result to open the full opinion in the document panel, where you can read the decision
-	and use <strong>Find in opinion</strong> to jump to a phrase within it.
+	Click any result to open the full opinion in the document panel and read the decision. Once an
+	opinion is open, use <strong>Find in opinion</strong> to jump to a phrase within it.
 </p>
 
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">
