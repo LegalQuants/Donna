@@ -75,6 +75,17 @@ KB lights up grounded, cited answers.
   knowledge base, openable from the receipt), proposed memories, and recurring precedents — with a
   review queue and a notifications inbox.
 
+### Research & legal tools
+
+A dedicated **Research** workspace searches U.S. case law through **CourtListener** — find decisions
+by topic or name, read full opinions in the document panel, and **verify citations** in a block of
+text against the source. In chat, the assistant can reach the same case-law research and any **MCP**
+(Model Context Protocol) tools your operator connects, through a **governed tool-loop**: it asks for
+your **approval** before running a tool, prompts you to connect an account when one is needed, and
+lists the **external sources it consulted** beneath the answer (distinct from the verified-quote
+citations above). Admins enable tool servers under _Settings → MCP_; each user links OAuth-protected
+servers under _Settings → Connections_.
+
 ### Tabular review
 
 Ask the same questions across many documents and get a **cited, confidence-scored grid**, with

@@ -270,6 +270,24 @@ while it works. And every run surfaces its **Results**:
 A **Notifications** inbox links you straight to each finished run. Combined with cost caps and
 receipts, you always know what ran, what it cost, and what it produced — autonomy you can audit.
 
+### Research & legal tools — case law, and tools the assistant asks before using
+
+Donna can reach beyond your own documents to **U.S. case law**. The **Research** tab is a dedicated
+workspace: search CourtListener by topic (like _"Chevron deference"_) or by case name, open the full
+opinion to read it, and paste a block of text into **Verify citations** to check its authorities
+against the source. (An administrator enables this with a CourtListener key, so each operator brings
+their own.)
+
+You can also just ask the **Assistant** to research for you. When it consults case law — or any
+**MCP** (Model Context Protocol) tool your operator has connected — it works through a **governed
+tool-loop**: Donna pauses and asks you to **Approve** or **Deny** before it runs the tool, prompts
+you to connect an account if one is needed, and then lists the **"sources consulted"** beneath the
+answer with a link to each case. Tool servers are managed by admins under _Settings → MCP_, and you
+connect your own OAuth-protected servers under _Settings → Connections_. It's the same principle as
+the rest of Donna: real capability, but transparent and under your control. (Research works best on
+a capable model — pick **smart** in the composer; small local models can be unreliable at using
+tools.)
+
 ### Tabular review — the same questions across many documents
 
 Tabular review asks one set of questions across a whole document set and returns the answers in a
