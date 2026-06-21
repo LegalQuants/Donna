@@ -54,6 +54,7 @@ curl -o .env https://raw.githubusercontent.com/LegalQuants/Donna/main/.env.examp
 #    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). Pin a release with DONNA_IMAGE_TAG=v0.1.0
 #    (default: latest). Add ANTHROPIC_API_KEY / OPENAI_API_KEY for cloud inference,
 #    or leave them blank and run Ollama on the host (set OLLAMA_BASE_URL=http://host.docker.internal:11434).
+#    To enable case-law research, set COURTLISTENER_API_TOKEN in .env; the desktop wizard also accepts it optionally.
 
 # 3. Start the stack (pulls pre-built images from ghcr.io/legalquants)
 docker compose -f docker-compose.release.yml up -d

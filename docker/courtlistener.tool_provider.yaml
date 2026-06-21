@@ -1,0 +1,13 @@
+# Donna packaging: CourtListener case-law research, active only when
+# COURTLISTENER_API_TOKEN is set (the gateway skips it with a warning otherwise).
+tool_providers:
+  - name: courtlistener
+    type: courtlistener
+    base_url: https://www.courtlistener.com/api/rest/v4
+    api_key_env: COURTLISTENER_API_TOKEN
+    egress_tier: 4
+    allowlist:
+      hosts: [www.courtlistener.com]
+    rate_limit:
+      requests_per_minute: 60
+    anonymize_outbound: false

@@ -31,6 +31,7 @@ interface WizardInput {
 	inference: InferenceChoice;
 	adminEmail: string;
 	adminPassword: string;
+	courtlistenerToken?: string;
 }
 
 function createWindow(): void {
@@ -79,9 +80,10 @@ ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 		const cfg: LauncherConfig = {
 			secrets: generateSecrets(),
 			ports: resolvePorts(DEFAULT_PORTS, isPortFreeSync),
-			imageTag: 'v0.1.0',
+			imageTag: 'v0.2.0',
 			inference: input.inference,
-			adminEmail: input.adminEmail
+			adminEmail: input.adminEmail,
+			courtlistenerToken: input.courtlistenerToken
 		};
 		// Write the .env (needed before startStack) but DON'T persist the config blob yet —
 		// only mark the wizard complete after the stack is healthy and the admin exists, so a

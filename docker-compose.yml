@@ -21,6 +21,21 @@ include:
   - vendor/lq-ai/docker-compose.yml
 
 services:
+  gateway:
+    # Pass Slice F env vars not yet in vendor/lq-ai's docker-compose.yml.
+    # Compose merges this environment block with the vendor-included gateway service.
+    environment:
+      COURTLISTENER_API_TOKEN: ${COURTLISTENER_API_TOKEN:-}
+      MCP_CONFIG_PATH: ${MCP_CONFIG_PATH:-}
+      LQ_AI_MCP_MASTER_KEY: ${LQ_AI_MCP_MASTER_KEY:-}
+      LQ_AI_CORS_ORIGINS: ${LQ_AI_CORS_ORIGINS:-}
+
+  api:
+    # Pass Slice F env vars not yet in vendor/lq-ai's docker-compose.yml.
+    # Compose merges this environment block with the vendor-included api service.
+    environment:
+      LQ_AI_MCP_MASTER_KEY: ${LQ_AI_MCP_MASTER_KEY:-}
+
   donna-web:
     # Donna's SvelteKit frontend (adapter-node). Replaces lq-ai's OpenWebUI fork.
     build:

@@ -93,6 +93,10 @@ services:
       LANGFUSE_HOST: ${LANGFUSE_HOST:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LQ_AI_DEV_MODE: ${LQ_AI_DEV_MODE:-false}
+      COURTLISTENER_API_TOKEN: ${COURTLISTENER_API_TOKEN:-}
+      MCP_CONFIG_PATH: ${MCP_CONFIG_PATH:-}
+      LQ_AI_MCP_MASTER_KEY: ${LQ_AI_MCP_MASTER_KEY:-}
+      LQ_AI_CORS_ORIGINS: ${LQ_AI_CORS_ORIGINS:-}
     volumes:
       - gateway-config:/etc/lq-ai
     ports:
@@ -138,6 +142,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LQ_AI_DEV_MODE: ${LQ_AI_DEV_MODE:-false}
       LQ_AI_CORS_ORIGINS: ${LQ_AI_CORS_ORIGINS:-}
+      LQ_AI_MCP_MASTER_KEY: ${LQ_AI_MCP_MASTER_KEY:-}
       LQ_AI_SKILLS_DIR: ${LQ_AI_SKILLS_DIR:-/skills}
       LQ_AI_BRIDGE_TOKEN: ${LQ_AI_BRIDGE_TOKEN:-}
       LQ_AI_BRIDGE_MASTER_KEY: ${LQ_AI_BRIDGE_MASTER_KEY:-}
