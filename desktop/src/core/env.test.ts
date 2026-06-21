@@ -68,4 +68,10 @@ describe('renderEnv', () => {
 			expect(line).toMatch(/^[A-Z0-9_]+=\S*$/);
 		}
 	});
+
+	it('emits COURTLISTENER_API_TOKEN (empty when absent, the value when set)', () => {
+		expect(parseEnv(renderEnv(base)).COURTLISTENER_API_TOKEN).toBe('');
+		const withTok = parseEnv(renderEnv({ ...base, courtlistenerToken: 'cl-tok-123' }));
+		expect(withTok.COURTLISTENER_API_TOKEN).toBe('cl-tok-123');
+	});
 });

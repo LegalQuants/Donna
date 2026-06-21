@@ -27,7 +27,16 @@ export function renderWizard(root: HTMLElement, onDone: () => void): void {
 		</div>
 
 		<div class="step">
-			<h3>2. Set your password</h3>
+			<h3>2. Legal research (optional)</h3>
+			<input
+				id="cltoken"
+				type="password"
+				placeholder="CourtListener token (optional — enables case-law research)"
+			/>
+		</div>
+
+		<div class="step">
+			<h3>3. Set your password</h3>
 			<p style="margin:4px 0 8px; color:#555">Your login is <strong>${ADMIN_EMAIL}</strong> — you can change it later in Settings → Account.</p>
 			<input id="password" type="password" placeholder="Choose a password (12+ characters)" />
 		</div>
@@ -72,10 +81,12 @@ export function renderWizard(root: HTMLElement, onDone: () => void): void {
 		goBtn.disabled = true;
 		status.style.color = '#555';
 		status.textContent = 'Starting Donna…';
+		const courtlistenerToken = $<HTMLInputElement>('cltoken').value.trim();
 		const res = await window.donna.completeWizard({
 			inference,
 			adminEmail: ADMIN_EMAIL,
-			adminPassword: password
+			adminPassword: password,
+			courtlistenerToken
 		});
 		if (res.ok) onDone();
 		else {
