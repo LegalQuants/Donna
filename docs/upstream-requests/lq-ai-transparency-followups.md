@@ -48,6 +48,30 @@ DE-350 to extend it to generic MCP tool results (`source_kind='mcp'`). Donna's `
 `ToolSourcesPanel` already tolerate other `source_kind` values (they key off `label`/`url`), so when
 DE-350 lands Donna will surface MCP sources with minimal change. Just confirming it's on your list.
 
+## 5. Small local models return empty content in the governed tool-loop (reliability)
+
+**Observed (dev, pin `658fdbc`):** with a small self-hosted local model (`ollama-local`,
+`qwen3.5:4b`, tier 1), a case-law chat turn **intermittently returns empty assistant content**. Same
+prompt ("Find a landmark U.S. Supreme Court case on free speech and cite it"), same model: two
+consecutive turns persisted `messages.content` length **0** with **no `message_tool_sources` rows**,
+while a later turn produced a full ~1200-char cited answer. The gateway logged
+`POST /v1/tools/courtlistener-dev/search_case_law 200 OK` for the empty turns — so the model _did_
+emit a tool call and the tool ran, but the model failed to synthesize a final answer (and the loop
+captured no sources). The same prompt is 100% reliable on the cloud `anthropic-prod` (tier 4) model.
+
+**Why it matters:** the governed tool-loop (PR5b/6c) assumes the model can do the
+call-tool-then-synthesize round. Small local models often can't reliably, producing a silent empty
+turn — a poor first impression for a self-hosted deployment.
+
+**Donna already mitigates the UX** (an "empty response — try again or switch models" fallback + a
+note steering research to a capable model). But the underlying reliability is backend/model-config:
+
+- Options worth considering upstream: a **per-turn tier floor when a tool intent is involved** (route
+  tool-using chat turns to a minimum-capable model), and/or **detect an empty post-tool completion and
+  surface a typed signal** (e.g. a `finish_reason`/warning in the SSE complete frame) rather than an
+  empty string, so clients can message it precisely; and/or **guidance on a minimum tool-capable local
+  model** in the gateway docs. Not blocking; raising for the self-hosted story.
+
 ---
 
 Still independently **upstream-blocked** (unchanged, not part of PR6): **A2** — an in-app
