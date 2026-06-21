@@ -58,6 +58,26 @@ describe('Message', () => {
 		expect(retried).toBe(true);
 	});
 
+	it('shows an empty-response fallback with Retry when a done turn has no content', () => {
+		let retried = false;
+		const { getByRole, getByText } = render(Message, {
+			props: {
+				message: {
+					key: 'e1',
+					id: 'e1',
+					role: 'assistant',
+					content: '',
+					status: 'done',
+					routed_inference_tier: 1
+				},
+				onretry: () => (retried = true)
+			}
+		});
+		expect(getByText(/empty response/i)).toBeInTheDocument();
+		getByRole('button', { name: /retry/i }).click();
+		expect(retried).toBe(true);
+	});
+
 	it('renders citation pills for a done assistant message with citations', () => {
 		const { container } = render(Message, {
 			props: {

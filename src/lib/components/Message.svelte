@@ -145,6 +145,17 @@
 					citations={message.citations as Citation[]}
 					onactivate={onactivatecitation}
 				/>
+			{:else if message.status === 'done' && message.content.trim() === '' && !(message.sources && message.sources.length > 0)}
+				<p class="text-mlq-muted">
+					The model returned an empty response. This can happen with smaller local models on
+					requests that need tools. Try again, or switch to a more capable model.
+					<button
+						type="button"
+						onclick={() => onretry?.()}
+						class="ml-2 rounded-mlq-control border border-mlq-subtle px-2 py-0.5 text-xs text-mlq-text"
+						>Retry</button
+					>
+				</p>
 			{:else}
 				<Markdown content={message.content} />
 			{/if}
