@@ -3,6 +3,39 @@
 All notable changes to Donna are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+The **legal research + MCP** milestone — surfacing LQ-AI's CourtListener case-law research and
+Model Context Protocol tool support in Donna, governed and transparent.
+
+### Added
+
+- **Research workspace** (`/research`) — search U.S. case law via **CourtListener**, read full
+  opinions in the document panel, _find in opinion_, and **verify citations** in a block of text
+  against the source.
+- **Governed chat tool-loop** — the assistant can consult case law and connected tools mid-answer,
+  pausing for your **Approve / Deny** before it runs one; a **connect-on-demand** prompt links an
+  account inline when a tool needs it.
+- **External-source citations** — a **"sources consulted"** panel + provenance pill beneath answers
+  that consulted case law, each row linking to the case on CourtListener (distinct from the
+  character-verified quote citations).
+- **MCP tool administration** (`/settings/mcp`) — admins view operator-connected Model Context
+  Protocol servers and enable individual tools (with read-only / destructive / needs-confirmation
+  badges).
+- **Per-user Connections** (`/settings/connections`) — connect your own account to OAuth-protected
+  MCP tool servers.
+- **Built-in skill inspector** (`/skills/view/{name}`) — read a built-in skill's content and its
+  declared connector usage ("Uses: …", with an amber note when a connector isn't configured).
+- **In-app guidance** — new About pages (**Research**; **Tools & connections**), plain-language
+  explainers on each new surface, and clickable starter searches / example prompts.
+- An **empty-response fallback** — a completed turn that returns no content now shows an honest
+  message with a **Retry**, instead of a blank bubble.
+
+### Changed
+
+- Backend pin advanced from `c4d4482` to **`658fdbc`** (lq-ai WS2–WS5: CourtListener research, the
+  MCP client, the governed tool-loop, and transparency / external-source citations).
+
 ## [0.1.0] — 2026-06-07 — First public release
 
 Donna's first public release: a friendly, document-forward frontend for the
