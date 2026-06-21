@@ -59,6 +59,9 @@ export function renderEnv(cfg: LauncherConfig): string {
 		`ANTHROPIC_API_KEY=${anthropic}`,
 		`OPENAI_API_KEY=${openai}`,
 		`OLLAMA_BASE_URL=${ollama}`,
+		'',
+		'# Legal research (optional — case-law via CourtListener)',
+		`COURTLISTENER_API_TOKEN=${cfg.courtlistenerToken ?? ''}`,
 		''
 	].join('\n');
 }
