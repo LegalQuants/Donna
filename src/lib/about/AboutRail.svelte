@@ -8,8 +8,10 @@
 		{ href: '/about/workflows', label: 'Workflows' },
 		{ href: '/about/automations', label: 'Automations' },
 		{ href: '/about/tabular', label: 'Tabular' },
+		{ href: '/about/research', label: 'Research' },
 		{ href: '/about/knowledge', label: 'Knowledge' },
 		{ href: '/about/models', label: 'Models' },
+		{ href: '/about/tools', label: 'Tools & connections' },
 		{ href: '/about/trust', label: 'Trust & citations' }
 	];
 	const isActive = (href: string) =>

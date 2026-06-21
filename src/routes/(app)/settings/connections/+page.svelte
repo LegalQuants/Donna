@@ -26,6 +26,12 @@
 	<p class="mt-1 text-xs text-mlq-muted">
 		Connect your account to the OAuth-protected MCP tool servers your operator has enabled.
 	</p>
+	<div
+		class="mt-3 rounded-mlq-control border border-mlq-subtle bg-mlq-surface-alt/40 p-3 text-xs text-mlq-text"
+	>
+		<strong>What this is.</strong> Some tool servers ask you to sign in with your own account. Connect
+		once here and the assistant can use them for you in chat — nothing runs without your sign-in.
+	</div>
 
 	{#if banner}
 		{#if banner.status === 'connected'}

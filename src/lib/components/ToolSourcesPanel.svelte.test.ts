@@ -32,6 +32,9 @@ describe('ToolSourcesPanel', () => {
 			]
 		});
 		expect(screen.getByText(/Sources consulted \(2\)/i)).toBeInTheDocument();
+		expect(
+			screen.getByText(/External sources the assistant looked up for this answer\./i)
+		).toBeInTheDocument();
 		expect(screen.getByText('Roe v. Wade, 410 U.S. 113 (1973)')).toBeInTheDocument();
 		expect(screen.getByText('U.S. Supreme Court · 1973')).toBeInTheDocument();
 		// exactly one link rendered (row with url); row without url has no link

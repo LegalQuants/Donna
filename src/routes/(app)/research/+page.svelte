@@ -5,6 +5,7 @@
 	import ResearchGate from '$lib/research/ResearchGate.svelte';
 	import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
 	import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
+	import ResearchStarters from '$lib/research/ResearchStarters.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const r = createResearch();
@@ -67,6 +68,15 @@
 				</select>
 			</div>
 		</form>
+
+		{#if r.count === null && !r.loading}
+			<ResearchStarters
+				onpick={(query) => {
+					q = query;
+					r.search(query, { court, order_by: orderBy });
+				}}
+			/>
+		{/if}
 
 		{#if r.error}<p role="alert" class="mt-3 text-xs text-mlq-error">{r.error}</p>{/if}
 

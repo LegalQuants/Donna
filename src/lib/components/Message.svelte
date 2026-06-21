@@ -85,6 +85,7 @@
 					The assistant wants to run <span class="font-medium">{c.tool}</span> on
 					<span class="font-medium">{c.provider}</span>.
 				</p>
+				<p class="mt-1 text-mlq-muted">Approve to let it run this once, or Deny to skip it.</p>
 				{#if c.destructive}
 					<p class="mt-1 font-medium text-mlq-error">This tool is destructive.</p>
 				{/if}

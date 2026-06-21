@@ -41,6 +41,10 @@
 		<strong>Tabular</strong> — structured document review; extract and compare fields across a set of
 		files in a grid.
 	</li>
+	<li>
+		<strong>Research</strong> — search U.S. case law from CourtListener: find decisions by topic or name,
+		read full opinions, and verify citations.
+	</li>
 	<li><strong>About</strong> — this guide.</li>
 	<li><strong>Settings</strong> — account, model routing, and provider configuration.</li>
 </ul>
@@ -54,7 +58,9 @@
 	<strong>Assistant</strong> page — it covers the core chat loop that underlies everything else.
 	From there, work through <strong>Projects</strong>, <strong>Workflows</strong>,
 	<strong>Automations</strong>, and <strong>Tabular</strong> in any order that suits your workflow.
-	The <strong>Knowledge</strong>,
+	The <strong>Research</strong> page covers case-law lookups,
+	<strong>Tools &amp; connections</strong>
+	covers external tools and the in-chat approval flow, and the <strong>Knowledge</strong>,
 	<strong>Models</strong>, and <strong>Trust &amp; citations</strong> pages cover the infrastructure behind
 	Donna's answers.
 </p>
