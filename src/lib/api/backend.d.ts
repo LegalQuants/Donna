@@ -1901,6 +1901,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/chats/{chat_id}/messages/{message_id}/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chat_id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        /** Get external-source provenance (case law consulted) for a message (PR6c) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    chat_id: string;
+                    message_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description External sources consulted during the message turn */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id?: string;
+                            /** Format: uuid */
+                            message_id?: string;
+                            source_kind?: string;
+                            label?: string;
+                            subtitle?: string | null;
+                            url?: string | null;
+                            external_ref?: string | null;
+                            provider?: string;
+                            tool?: string;
+                            /** Format: date-time */
+                            created_at?: string;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/skills": {
         parameters: {
             query?: never;
@@ -11289,6 +11345,10 @@ export interface components {
             }[];
             /** @description M3-C1 — column definitions for ``output_format: table`` skills. ``null`` for non-table skills. The validator rejects ``output_format: table`` skills that lack a non-empty ``columns`` list at load time. */
             columns?: components["schemas"]["ColumnSpec"][] | null;
+            /** @description Connector identifiers the skill declares it uses (C5). */
+            tool_usage?: string[] | null;
+            /** @description Declared connectors not configured in this deployment; null when undeterminable. Informational, never gating. */
+            unavailable_tool_usage?: string[] | null;
         };
         SkillInputDef: {
             name: string;
