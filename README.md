@@ -1,6 +1,6 @@
 # Donna
 
-**v0.1.0** · Apache-2.0 · a [LegalQuants](https://github.com/LegalQuants) project
+**v0.2.0** · Apache-2.0 · a [LegalQuants](https://github.com/LegalQuants) project
 
 **A friendly, document-forward frontend for the [LQ.AI](https://github.com/LegalQuants/lq-ai) legal-AI backend** — conversational legal work with character-verified citations, transparent receipts, and autonomous runs, under a clean reading-first interface inspired by [MikeOSS](https://github.com/willchen96/mike).
 
@@ -32,8 +32,8 @@ The browser talks only to Donna's SvelteKit server (a **backend-for-frontend**).
 
 ### Option A — Desktop app (macOS, easiest)
 
-Download **`Donna-0.1.0-arm64.dmg`** from the
-[latest desktop release](https://github.com/LegalQuants/Donna/releases/tag/desktop-v0.1.0), drag it to
+Download **`Donna-0.2.0-arm64.dmg`** from the
+[latest desktop release](https://github.com/LegalQuants/Donna/releases/tag/desktop-v0.2.0), drag it to
 Applications, and open it (signed + notarized — no Gatekeeper warning). A one-time wizard sets your
 password and starts the engine; then sign in and you're working. No terminal, no GitHub, no `.env`.
 Docker Desktop is the one prerequisite — the app links you to it if it's not installed.
@@ -51,7 +51,7 @@ curl -O https://raw.githubusercontent.com/LegalQuants/Donna/main/docker-compose.
 curl -o .env https://raw.githubusercontent.com/LegalQuants/Donna/main/.env.example
 
 # 2. Edit .env — set the required secrets (POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD,
-#    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). Pin a release with DONNA_IMAGE_TAG=v0.1.0
+#    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). Pin a release with DONNA_IMAGE_TAG=v0.2.0
 #    (default: latest). Add ANTHROPIC_API_KEY / OPENAI_API_KEY for cloud inference,
 #    or leave them blank and run Ollama on the host (set OLLAMA_BASE_URL=http://host.docker.internal:11434).
 #    To enable case-law research, set COURTLISTENER_API_TOKEN in .env; the desktop wizard also accepts it optionally.

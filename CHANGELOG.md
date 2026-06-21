@@ -3,7 +3,7 @@
 All notable changes to Donna are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] — 2026-06-21 — Legal research + MCP
 
 The **legal research + MCP** milestone — surfacing LQ-AI's CourtListener case-law research and
 Model Context Protocol tool support in Donna, governed and transparent.
@@ -121,4 +121,5 @@ backend as a pinned git submodule (pin `c4d4482`), so the whole product runs fro
   brainstorm → spec → plan → subagent-driven execution → review → PR loop; specs and plans for every
   phase are archived under `docs/superpowers/`.
 
+[0.2.0]: https://github.com/LegalQuants/Donna/releases/tag/v0.2.0
 [0.1.0]: https://github.com/LegalQuants/Donna/releases/tag/v0.1.0
