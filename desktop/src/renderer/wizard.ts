@@ -5,6 +5,8 @@
  * user can change it later in the app's Settings. The API key is OPTIONAL (login/chat work
  * without it; keys can also be set later in Settings).
  */
+import { startupMessage } from '../core/startup';
+
 const ADMIN_EMAIL = 'admin@lq.ai';
 
 interface Snapshot {
@@ -51,12 +53,14 @@ export function renderWizard(root: HTMLElement, onDone: () => void): void {
 	const status = $('status');
 
 	// Live progress while the stack comes up (replaces a static, misleading message).
+	// STOPPED after Start = the ~10 GB engine images are still downloading (no containers
+	// yet) — the long first-run phase that previously looked frozen and made users retry.
 	window.donna.onState((snap) => {
 		const s = snap as Snapshot;
-		if (s.state === 'STACK_STARTING') {
+		if (s.state === 'STACK_STARTING' || s.state === 'STOPPED') {
 			const healthy = (s.services ?? []).filter((x) => x.health === 'healthy').length;
 			status.style.color = '#555';
-			status.textContent = `Starting Donna… ${healthy}/8 services ready (first run pulls images + models; this can take a few minutes).`;
+			status.textContent = startupMessage(s.state, healthy);
 		} else if (s.state === 'NO_ENGINE') {
 			status.style.color = '#c00';
 			status.textContent = "Docker isn't running — start Docker Desktop and try again.";
@@ -80,7 +84,9 @@ export function renderWizard(root: HTMLElement, onDone: () => void): void {
 		const goBtn = $<HTMLButtonElement>('go');
 		goBtn.disabled = true;
 		status.style.color = '#555';
-		status.textContent = 'Starting Donna…';
+		// Set expectations from t=0: the first thing that happens is the long image download,
+		// before any container exists to report progress on.
+		status.textContent = startupMessage('STOPPED');
 		const courtlistenerToken = $<HTMLInputElement>('cltoken').value.trim();
 		const res = await window.donna.completeWizard({
 			inference,

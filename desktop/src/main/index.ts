@@ -90,7 +90,15 @@ ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 		// failed first run re-shows the wizard instead of stranding a half-configured install.
 		writeEnvFile(cfg);
 		const b = base();
-		await startStack(b, process.env);
+		// `up -d` includes the first-run image pull (~10 GB) and only returns once containers
+		// are started. Check its exit code so a genuine failure surfaces immediately instead
+		// of falling through to a 10-minute waitHealthy timeout.
+		const started = await startStack(b, process.env);
+		if (started.code !== 0) {
+			throw new Error(
+				`Could not start Donna: ${started.stderr.trim() || started.stdout.trim() || 'docker compose up failed'}`
+			);
+		}
 		await waitHealthy(b);
 		const admin = await runAdminFixture(b, input.adminEmail, input.adminPassword);
 		if (admin.code !== 0) {
