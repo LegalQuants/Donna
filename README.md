@@ -2,7 +2,7 @@
 
 **v0.2.0** · Apache-2.0 · a [LegalQuants](https://github.com/LegalQuants) project
 
-**A friendly, document-forward frontend for the [LQ.AI](https://github.com/LegalQuants/lq-ai) legal-AI backend** — conversational legal work with character-verified citations, transparent receipts, and autonomous runs, under a clean reading-first interface inspired by [MikeOSS](https://github.com/willchen96/mike).
+**A friendly, document-forward frontend for the [LQ.AI](https://github.com/LegalQuants/lq-ai) legal-AI backend** — conversational legal work with character-verified citations, **U.S. case-law research**, and a **governed tool-loop** (the assistant asks your approval before it reaches for case law or connected **MCP** tools), plus transparent receipts and autonomous runs, under a clean reading-first interface inspired by [MikeOSS](https://github.com/willchen96/mike).
 
 ![Donna — chat with character-verified citations and the document panel](docs/images/donna-hero.png)
 
@@ -11,6 +11,7 @@ Donna is a standalone SvelteKit app that talks to the lq-ai backend only through
 ## What's inside
 
 - **Assistant chat** with streaming answers and **character-verified citation pills** — hover for the source quote, click to open the document panel jumped to the exact cited passage. A per-turn **receipts drawer** shows every retrieval, inference, and skill event behind an answer, including whether anonymization was applied.
+- **Legal research & tools** — a dedicated **Research** workspace for U.S. case law (search [CourtListener](https://www.courtlistener.com/), read full opinions, verify citations), plus a **governed tool-loop** in chat: the assistant can look up case law or call connected **MCP** (Model Context Protocol) tools, always asking your **approval** first, and lists the **sources it consulted** beneath the answer. Admins manage MCP tool servers in **Settings → MCP**; each user links OAuth-protected servers under **Settings → Connections**.
 - **Matters (projects)** — scope chats to a matter with files, linked knowledge bases, attached skills, and free-form context; privileged matters enforce a minimum inference tier in the composer.
 - **Knowledge bases** — create, link, upload; documents auto-ingest for retrieval (RAG) with live status, hybrid-search tuning, and per-file download.
 - **Workflows hub** — four kinds of reuse:
@@ -20,7 +21,6 @@ Donna is a standalone SvelteKit app that talks to the lq-ai backend only through
   - **Automations**: runs Donna executes on its own — run-now, cron schedules, and KB-arrival watches — each leaving a transparency receipt (phases, tool calls, cost, terminal reason) plus its results (findings, proposed memories, and recurring precedents), with a notifications inbox. Opted-in runs also produce **document-grade artifacts** — memos the run writes into its target knowledge base, openable inline or downloadable straight from the receipt.
 - **Tabular review** — the same questions across many documents → a cited, confidence-scored grid; per-column model-tier floors and ensemble verification; Excel/CSV export.
 - **Redlines** — consolidated change-set view of a playbook run with severity-ordered margin notes.
-- **Legal research & tools** — a **Research** workspace for U.S. case law (search [CourtListener](https://www.courtlistener.com/), read full opinions, verify citations), plus a **governed tool-loop** in chat: the assistant can look up case law or call connected **MCP** tools, always asking your **approval** first, and lists the **sources it consulted** beneath the answer. Admins manage MCP tool servers in **Settings → MCP**; each user links OAuth-protected servers under **Settings → Connections**.
 - **Settings** — account & security, data export / scheduled deletion, preferences (incl. ambient trust pills), a read-only trust matrix, and model management: per-category routing, installed local (Ollama) models, and **bring-your-own provider keys** (admin, hot-applied, write-only).
 - **Prompt enhance** on every composer, **file attach** in chat, and an in-app guide at **/about** — including interactive playgrounds explaining how the LQ-AI engine works.
 
@@ -166,9 +166,9 @@ static/learn/         interactive playgrounds served by the /about guide
 ## Documentation
 
 - **[docs/GUIDE.md](docs/GUIDE.md)** — the friendly, non-technical guide: what Donna is, what you can do with it today, how it works in plain terms, and what else you could build on LQ-AI (for practitioners, firms, students, professors, and access-to-justice builders). Start here if you're new.
-- **[About Donna — v0.1.0 (PDF)](docs/About-Donna-v0.1.0.pdf)** — a downloadable export of the in-app **About** guide (v0.1.0 · June 8, 2026): a full visual overview of every feature, for readers who'd like the complete tour without standing up the app. The interactive version, with playgrounds, lives at **/about** once Donna is running.
+- **[About Donna — v0.1.0 (PDF)](docs/About-Donna-v0.1.0.pdf)** — a downloadable export of the in-app **About** guide (v0.1.0 · June 8, 2026): a full visual overview, for readers who'd like a tour without standing up the app. _Note: this export predates the v0.2 legal-research + MCP features_ — the interactive **/about** guide in the running app (with new **Research** and **Tools** pages and playgrounds) is the current, complete version.
 - **[docs/PRODUCT.md](docs/PRODUCT.md)** — what Donna is, who it's for, the full capability set, design principles, and non-goals.
-- **[CHANGELOG.md](CHANGELOG.md)** — release history (start at v0.1.0).
+- **[CHANGELOG.md](CHANGELOG.md)** — release history (latest: v0.2.0 — legal research + MCP).
 - **[CLAUDE.md](CLAUDE.md)** — the engineering guide: architecture, the build workflow, conventions, gotchas, and how to pick up a roadmap item. Written for a coding co-pilot (human or AI) joining the project.
 - **[docs/roadmap/donna-future-roadmap.md](docs/roadmap/donna-future-roadmap.md)** — what's deferred and why, with enough context to pick up cleanly.
 - **[docs/README.md](docs/README.md)** — index of the `docs/` tree (specs, plans, decisions, upstream requests, research).
