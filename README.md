@@ -166,7 +166,7 @@ static/learn/         interactive playgrounds served by the /about guide
 ## Documentation
 
 - **[docs/GUIDE.md](docs/GUIDE.md)** — the friendly, non-technical guide: what Donna is, what you can do with it today, how it works in plain terms, and what else you could build on LQ-AI (for practitioners, firms, students, professors, and access-to-justice builders). Start here if you're new.
-- **[About Donna — v0.1.0 (PDF)](docs/About-Donna-v0.1.0.pdf)** — a downloadable export of the in-app **About** guide (v0.1.0 · June 8, 2026): a full visual overview, for readers who'd like a tour without standing up the app. _Note: this export predates the v0.2 legal-research + MCP features_ — the interactive **/about** guide in the running app (with new **Research** and **Tools** pages and playgrounds) is the current, complete version.
+- **[About Donna — v0.2.0 (PDF)](docs/About-Donna-v0.2.0.pdf)** — a downloadable export of the in-app **About** guide (v0.2.0): a full tour of every feature — Assistant, Projects, Workflows, Automations, Tabular, **Research**, Knowledge, Models, **Tools & connections**, and Trust & citations — for readers who'd like the overview without standing up the app. The interactive version, with playgrounds, lives at **/about** once Donna is running.
 - **[docs/PRODUCT.md](docs/PRODUCT.md)** — what Donna is, who it's for, the full capability set, design principles, and non-goals.
 - **[CHANGELOG.md](CHANGELOG.md)** — release history (latest: v0.2.0 — legal research + MCP).
 - **[CLAUDE.md](CLAUDE.md)** — the engineering guide: architecture, the build workflow, conventions, gotchas, and how to pick up a roadmap item. Written for a coding co-pilot (human or AI) joining the project.
