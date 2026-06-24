@@ -21,21 +21,12 @@ include:
   - vendor/lq-ai/docker-compose.yml
 
 services:
-  gateway:
-    # Pass Slice F env vars not yet in vendor/lq-ai's docker-compose.yml.
-    # Compose merges this environment block with the vendor-included gateway service.
-    environment:
-      COURTLISTENER_API_TOKEN: ${COURTLISTENER_API_TOKEN:-}
-      MCP_CONFIG_PATH: ${MCP_CONFIG_PATH:-}
-      LQ_AI_MCP_MASTER_KEY: ${LQ_AI_MCP_MASTER_KEY:-}
-      LQ_AI_CORS_ORIGINS: ${LQ_AI_CORS_ORIGINS:-}
-
-  api:
-    # Pass Slice F env vars not yet in vendor/lq-ai's docker-compose.yml.
-    # Compose merges this environment block with the vendor-included api service.
-    environment:
-      LQ_AI_MCP_MASTER_KEY: ${LQ_AI_MCP_MASTER_KEY:-}
-
+  # NOTE: Docker Compose v2.40+ no longer merges a service redefined HERE with one
+  # pulled in by the `include` above — it errors "conflicts with imported resource".
+  # So we do not redefine gateway/api here. The vendored compose now forwards the
+  # tool-provider env itself (COURTLISTENER_API_TOKEN, LQ_AI_CORS_ORIGINS). Dev-only
+  # MCP wiring (MCP_CONFIG_PATH + LQ_AI_MCP_MASTER_KEY + the mcp.yaml mount) lives in
+  # docker-compose.override.yml — the -f override layer CAN extend an imported service.
   donna-web:
     # Donna's SvelteKit frontend (adapter-node). Replaces lq-ai's OpenWebUI fork.
     build:
