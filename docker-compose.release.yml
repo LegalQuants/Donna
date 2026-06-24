@@ -9,6 +9,9 @@
 # Images are published from github.com/LegalQuants/Donna to ghcr.io/legalquants.
 # This file is a hand-maintained mirror of vendor/lq-ai/docker-compose.yml +
 # the donna-web service; re-sync it when the lq-ai pin bumps. (See CLAUDE.md.)
+# NOTE: lq-ai's own `web` (OpenWebUI) service is intentionally omitted here —
+# donna-web replaces it — so env it carries upstream (e.g. RAG_EMBEDDING_ENGINE,
+# added at pin 5ad9f9e) does NOT apply to this stack and is deliberately absent.
 #
 # Project name is "donna" (same as the build-from-source stack). If you ALSO run
 # the dev stack on the same Docker host, add `-p donna-release` to this command
