@@ -218,10 +218,12 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		model: string,
 		skills: string[],
 		skillInputs: Record<string, Record<string, unknown>>,
-		fileIds: string[]
-	) {
+		fileIds: string[],
+		setSticky?: boolean
+	): Promise<boolean> {
 		status = 'streaming';
 		controller = new AbortController();
+		let accepted = false;
 		try {
 			const body: {
 				content: string;
@@ -229,10 +231,12 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 				skills?: string[];
 				skill_inputs?: Record<string, Record<string, unknown>>;
 				file_ids?: string[];
+				set_sticky?: boolean;
 			} = { content, model };
 			if (skills.length) body.skills = skills;
 			if (Object.keys(skillInputs).length) body.skill_inputs = skillInputs;
 			if (fileIds.length) body.file_ids = fileIds;
+			if (setSticky !== undefined) body.set_sticky = setSticky;
 			const res = await fetch(`/chats/${chatId}/messages`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
@@ -250,9 +254,11 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 					}
 				}
 				setError(idx, msg);
-				return;
+				return false;
 			}
+			accepted = true; // POST accepted — set_sticky (if any) reached the backend
 			await consumeStream(idx, res);
+			return true;
 		} catch (e) {
 			if ((e as Error).name === 'AbortError') {
 				messages[idx].status = 'done';
@@ -260,6 +266,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 			} else {
 				setError(idx, 'The connection was lost. Please try again.');
 			}
+			return accepted; // an abort AFTER acceptance still dispatched set_sticky
 		} finally {
 			controller = null;
 		}
@@ -270,9 +277,10 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		model = 'smart',
 		skills: string[] = [],
 		skillInputs: Record<string, Record<string, unknown>> = {},
-		fileIds: string[] = []
-	) {
-		if (status === 'streaming') return;
+		fileIds: string[] = [],
+		setSticky?: boolean
+	): Promise<boolean> {
+		if (status === 'streaming') return false;
 		lastUserContent = content;
 		lastModel = model;
 		lastSkills = skills;
@@ -289,7 +297,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 				status: 'streaming'
 			}
 		];
-		await runStream(messages.length - 1, content, model, skills, skillInputs, fileIds);
+		return await runStream(messages.length - 1, content, model, skills, skillInputs, fileIds, setSticky);
 	}
 
 	// Re-run the last exchange in place (no duplicate user/assistant turns): reset
@@ -307,6 +315,8 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		messages[idx].applied_skills = undefined;
 		messages[idx].applied_file_ids = undefined;
 		messages[idx].status = 'streaming';
+		// NB: no set_sticky on retry — the sticky set is already persisted server-side; re-snapshotting
+		// on a retry would be wrong.
 		await runStream(idx, lastUserContent, lastModel, lastSkills, lastSkillInputs, lastFileIds);
 	}
 
