@@ -17,6 +17,8 @@
 	import type { createEnhance } from '$lib/enhance/enhance.svelte';
 	import type { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
 	import type { MatterSummary } from '$lib/matters/types';
+	import type { createStickySkills } from '$lib/skills/sticky.svelte';
+	import { prettifySkillSlug } from '$lib/skills/skillLabel';
 
 	let {
 		value = $bindable(''),
@@ -30,7 +32,8 @@
 		promptLibrary,
 		matters,
 		selectedMatterId = $bindable(null as string | null),
-		minimumTier = null as 1 | 2 | 3 | 4 | 5 | null
+		minimumTier = null as 1 | 2 | 3 | 4 | 5 | null,
+		sticky
 	}: {
 		value?: string;
 		placeholder?: string;
@@ -39,7 +42,8 @@
 			model: string,
 			skills: string[],
 			skillInputs: Record<string, Record<string, unknown>>,
-			fileIds: string[]
+			fileIds: string[],
+			setSticky?: boolean
 		) => void;
 		streaming?: boolean;
 		onstop?: () => void;
@@ -50,6 +54,7 @@
 		matters?: MatterSummary[];
 		selectedMatterId?: string | null;
 		minimumTier?: 1 | 2 | 3 | 4 | 5 | null;
+		sticky?: ReturnType<typeof createStickySkills>;
 	} = $props();
 
 	let textarea = $state<HTMLTextAreaElement>();
@@ -91,7 +96,8 @@
 			modelStore.selectedModel,
 			skillAttach?.names ?? [],
 			skillAttach?.skillInputs ?? {},
-			fileAttach?.fileIds ?? []
+			fileAttach?.fileIds ?? [],
+			sticky?.sendValue()
 		);
 	}
 	function onkeydown(e: KeyboardEvent) {
@@ -241,6 +247,33 @@
 				onsearch={skillAttach.search}
 				onattach={skillAttach.attach}
 			/>
+		{/if}
+		{#if sticky}
+			<button
+				type="button"
+				role="switch"
+				aria-checked={sticky.enabled}
+				data-testid="sticky-toggle"
+				onclick={() => sticky.toggle(skillAttach?.names ?? [])}
+				class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs {sticky.enabled
+					? 'bg-mlq-subtle text-mlq-strong'
+					: 'text-mlq-text'}"
+				title="Keep the skills applied in this chat on for follow-up messages"
+			>
+				<span
+					class="inline-block h-2 w-2 rounded-full {sticky.enabled
+						? 'bg-mlq-strong'
+						: 'bg-mlq-muted'}"
+				></span>
+				Keep skills on
+				{#if sticky.enabled && sticky.set.length > 0}
+					<span
+						class="text-mlq-muted"
+						title={sticky.set.map(prettifySkillSlug).join(', ')}
+						data-testid="sticky-count">· Keeping {sticky.set.length} on</span
+					>
+				{/if}
+			</button>
 		{/if}
 		{#if fileAttach}
 			<input
