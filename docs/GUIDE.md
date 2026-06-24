@@ -189,7 +189,11 @@ share it internally, return to it later). A few things make the composer more th
   sends until you say so.
 - **Skills** (the **+** button) attach structured instruction blocks — a contract-review checklist, a
   clause-extraction routine — that travel with your message so you don't retype guidance. Some skills
-  expose typed input fields (text, number, toggle, drop-down) right in the composer.
+  expose typed input fields (text, number, toggle, drop-down) right in the composer. Once you have a
+  skill attached, the **Keep skills on** toggle (in the toolbar) carries those skills into every
+  follow-up message automatically — so you don't have to re-attach them turn after turn. It's off by
+  default and scoped to the current chat; each turn still records exactly which skills it used, so
+  the receipt is always honest.
 - **Files** (the paperclip, or drag-and-drop) ground an answer in a specific document — up to 16 per
   message — with live upload/processing status.
 - **Saved prompts** (the bookmark) insert reusable snippets at your cursor, or save your current

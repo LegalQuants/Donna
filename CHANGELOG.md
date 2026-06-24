@@ -3,6 +3,22 @@
 All notable changes to Donna are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [0.3.0] — 2026-06-24 — Sticky skills
+
+A per-chat **"Keep skills on"** toggle so applied skills carry forward into follow-up turns without
+re-attaching.
+
+### Added
+
+- **Sticky skills** — a **Keep skills on** switch in the in-chat composer toolbar. Turn it on and
+  the skills you have attached to the current turn are kept in place for every follow-up message in
+  that chat, with a quiet **"Keeping _N_ on"** indicator (skill names on hover) when active.
+- **Design posture:** off by default, per-chat scope (state lives on the chat row — a new chat
+  always starts off), and audit-honest — every turn still records its own `applied_skills` so the
+  receipt is never misleading.
+- Backed by backend pin bump `658fdbc` → **`5ad9f9e`** (lq-ai PR #211: `chats.sticky_skills text[]`
+  column + message-create `set_sticky` field).
+
 ## [0.2.0] — 2026-06-21 — Legal research + MCP
 
 The **legal research + MCP** milestone — surfacing LQ-AI's CourtListener case-law research and
