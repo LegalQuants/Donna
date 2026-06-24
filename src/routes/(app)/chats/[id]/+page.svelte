@@ -9,6 +9,7 @@
 	import { createFileAttach } from '$lib/files/fileAttach.svelte';
 	import { createEnhance } from '$lib/enhance/enhance.svelte';
 	import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
+	import { createStickySkills } from '$lib/skills/sticky.svelte';
 	import { ReceiptText } from '@lucide/svelte';
 	import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
 	import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
@@ -29,20 +30,29 @@
 	const fileAttach = createFileAttach();
 	const enhance = untrack(() => createEnhance(data.chatId, () => skillAttach.names));
 	const promptLibrary = createPromptLibrary();
+	const sticky = createStickySkills();
 	const docPanel = createDocPanel();
 	let draftValue = $state('');
+
+	// Re-sync the sticky toggle from the loaded chat. syncFromChat acts only on a chat-id change,
+	// so this never clobbers an in-progress toggle, and a new chat starts off.
+	$effect(() => {
+		sticky.syncFromChat(data.chatId, data.stickySkills);
+	});
 	let showReceipts = $state(false);
 	let scroller = $state<HTMLElement>();
 
-	function submit(
+	async function submit(
 		text: string,
 		model = 'smart',
 		skills: string[] = [],
 		skillInputs: Record<string, Record<string, unknown>> = {},
-		fileIds: string[] = []
+		fileIds: string[] = [],
+		setSticky?: boolean
 	) {
 		draftValue = '';
-		chat.send(text, model, skills, skillInputs, fileIds);
+		const ok = await chat.send(text, model, skills, skillInputs, fileIds, setSticky);
+		if (ok && setSticky !== undefined) sticky.markSent();
 	}
 	function retry() {
 		chat.retry();
@@ -136,6 +146,7 @@
 				streaming={chat.status === 'streaming'}
 				onstop={chat.stop}
 				{skillAttach}
+				{sticky}
 				{fileAttach}
 				{enhance}
 				{promptLibrary}
