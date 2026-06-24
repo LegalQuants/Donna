@@ -7,6 +7,7 @@ export const POST: RequestHandler = async (event) => {
 	let skills: string[] = [];
 	let skillInputs: Record<string, Record<string, unknown>> = {};
 	let fileIds: string[] = [];
+	let setSticky: boolean | undefined;
 	try {
 		const body = (await event.request.json()) as {
 			content?: string;
@@ -14,6 +15,7 @@ export const POST: RequestHandler = async (event) => {
 			skills?: string[];
 			skill_inputs?: unknown;
 			file_ids?: unknown;
+			set_sticky?: unknown;
 		};
 		content = (body.content ?? '').trim();
 		const m = (body.model ?? '').trim();
@@ -33,6 +35,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 		if (Array.isArray(body.file_ids))
 			fileIds = body.file_ids.filter((s): s is string => typeof s === 'string');
+		if (typeof body.set_sticky === 'boolean') setSticky = body.set_sticky;
 	} catch {
 		content = '';
 	}
@@ -45,10 +48,12 @@ export const POST: RequestHandler = async (event) => {
 		skills?: string[];
 		skill_inputs?: Record<string, Record<string, unknown>>;
 		file_ids?: string[];
+		set_sticky?: boolean;
 	} = { content, model, stream: true };
 	if (skills.length) payload.skills = skills;
 	if (Object.keys(skillInputs).length) payload.skill_inputs = skillInputs;
 	if (fileIds.length) payload.file_ids = fileIds;
+	if (setSticky !== undefined) payload.set_sticky = setSticky;
 
 	const upstream = await lqStream(event, `/api/v1/chats/${event.params.id}/messages`, {
 		method: 'POST',

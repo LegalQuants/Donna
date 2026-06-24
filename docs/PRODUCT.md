@@ -1,6 +1,6 @@
 # Donna — Product Overview
 
-**Status:** v0.2.0 (legal research + MCP) · **License:** Apache-2.0 · **By:** LegalQuants
+**Status:** v0.3.0 (sticky skills) · **License:** Apache-2.0 · **By:** LegalQuants
 
 > A friendly, document-forward frontend for the [LQ.AI](https://github.com/LegalQuants/lq-ai)
 > legal-AI engine. Donna makes a powerful, self-hostable legal-AI backend usable by a working
@@ -64,7 +64,9 @@ KB lights up grounded, cited answers.
 ### Workflows — four kinds of reuse
 
 - **Skills** — reusable instruction blocks with typed inputs; author your own or fork built-ins,
-  attach per-message.
+  attach per-message; a per-chat **Keep skills on** toggle carries applied skills across follow-up
+  turns without re-attaching (off by default, audit-honest — each turn still records its own
+  applied skills).
 - **Playbooks** — negotiation positions applied to a contract → a verdict scorecard and a
   consolidated **redline** view. Browse built-ins, apply them, **generate** a draft playbook from
   your own documents, or author one manually.

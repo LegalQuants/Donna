@@ -74,6 +74,22 @@
 	to a single message; each is sent alongside your prompt.
 </p>
 
+<h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">Keep skills on</h2>
+
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+	Once you have a skill attached to a message, the <strong>Keep skills on</strong> toggle in the
+	composer toolbar lets you carry that skill — and any others attached — into every follow-up turn
+	of the same chat without re-attaching. When active, a quiet <strong>"Keeping N on"</strong>
+	indicator appears alongside the toggle; hover it to see the skill names that are being carried forward.
+</p>
+
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+	The toggle is <strong>off by default</strong> and scoped to the current chat — opening a different chat
+	reflects that chat's own setting, and a brand-new chat always starts off. Turning it off on any turn
+	clears the sticky set immediately. Every turn still records exactly which skills it used in the receipts
+	drawer, so the audit trail is always honest even when skills are carried automatically.
+</p>
+
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">
 	Attaching files
 </h2>
