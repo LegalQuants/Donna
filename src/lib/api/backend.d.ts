@@ -11057,6 +11057,14 @@ export interface components {
             archived_at?: string | null;
             /** @description Count of persisted messages in this chat. */
             message_count?: number;
+            /**
+             * @description Opt-in per-chat "sticky skills" set (issue #207 finding 4).
+             *     Empty means the sticky toggle is off (a new chat never inherits
+             *     stickiness). When non-empty, these skill slugs are auto-applied
+             *     (unioned) to every turn in this chat until cleared. Set via
+             *     `MessageCreate.set_sticky`.
+             */
+            sticky_skills?: string[];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -11139,6 +11147,15 @@ export interface components {
              *     backend's internal-skills endpoint and assembles the prompt.
              */
             skills?: string[];
+            /**
+             * @description Issue #207 finding 4 — opt-in per-chat "sticky skills" toggle.
+             *     `true` snapshots this turn's applied skills as the chat's sticky
+             *     set (auto-applied to later turns without re-sending); `false`
+             *     clears it; omitted/null leaves it unchanged. Off by default — a
+             *     new chat never inherits stickiness (fail-restrictive).
+             * @default null
+             */
+            set_sticky: boolean | null;
             /**
              * @description C2: per-skill input bindings, keyed by skill name. Inner
              *     dict maps input variable names to values. Required inputs
@@ -11470,14 +11487,17 @@ export interface components {
              * @description Lifecycle: `pending` (just uploaded; C4 sets this on insert)
              *     → `processing` (C5 worker has picked it up) → `ready`
              *     (parsed, chunks persisted) OR `failed` (with `ingestion_error`
-             *     set; e.g., `unsupported_type` for non-PDF MIMEs in M1, or
-             *     `parse_failed` for corrupt PDFs).
+             *     set; e.g., `unsupported_type` for unsupported MIMEs (anything
+             *     that is neither PDF nor text/Markdown), `decode_error` for a
+             *     non-UTF-8 text upload, or `parse_failed` for corrupt PDFs).
              * @enum {string}
              */
             ingestion_status?: "pending" | "processing" | "ready" | "failed";
             /**
-             * @description Set when `ingestion_status='failed'`. M1 values include
-             *     `unsupported_type`, `unsupported_content`, `parse_failed`.
+             * @description Set when `ingestion_status='failed'`. Values include
+             *     `unsupported_type`, `unsupported_content`, `parse_failed`,
+             *     and `decode_error` (a `text/plain` or `text/markdown` upload
+             *     whose bytes are not valid UTF-8).
              */
             ingestion_error?: string | null;
             /**
@@ -11489,8 +11509,9 @@ export interface components {
             /**
              * @description Populated by the C5 document pipeline once
              *     `ingestion_status='ready'`; counts characters of the
-             *     canonical PyMuPDF-extracted text, not of the original
-             *     PDF byte stream.
+             *     canonical extracted text (PyMuPDF for PDF; the verbatim
+             *     decoded bytes for text/Markdown), not the original byte
+             *     stream.
              */
             character_count?: number | null;
             /**

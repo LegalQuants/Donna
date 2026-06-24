@@ -2,11 +2,19 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `658fdbc` (bumped 2026-06-20 from `97ccbc0`)
+- Pinned SHA: `5ad9f9e` (bumped 2026-06-23 from `658fdbc`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `658fdbc` → `5ad9f9e` (2026-06-23): lq-ai **#211 — opt-in sticky-skills toggle** — unblocking
+  Donna's per-chat **"Keep skills on"** feature. New Donna-facing contract in `backend.d.ts`:
+  migration `0056_chat_sticky_skills` adds `chats.sticky_skills text[]`; the Chat response exposes
+  **`sticky_skills?: string[]`** (so the client reflects the toggle on load); the message-create
+  request gains **`set_sticky: boolean | null`** (`true` = snapshot this turn's effective skills as the
+  sticky set, `false` = clear, `null`/omitted = unchanged). Donna sends `set_sticky` only when the user
+  flips the toggle and never sends `null` (omits instead). Verified post-`gen:api`: check 0/0.
 
 - `97ccbc0` → `658fdbc` (2026-06-20): lq-ai **PR6 series (WS5 transparency)** — **#188 (PR6a)** +
   **#189 (PR6b)** + **#191 (PR6c)** + **#192 (PR6d)** — unblocking Donna **Slice D**
