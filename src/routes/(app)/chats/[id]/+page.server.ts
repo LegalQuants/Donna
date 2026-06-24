@@ -10,6 +10,7 @@ import { resolveMatter } from './matter';
 import { parseDraftSkills } from './draftSkills';
 import { parseDraftSkillInputs } from './draftSkillInputs';
 import { parseDraftFileIds } from './draftFileIds';
+import { parseChat } from '$lib/chat/chat';
 
 export const load: PageServerLoad = async (event) => {
 	const draft = event.cookies.get('donna_draft') ?? null;
@@ -73,6 +74,15 @@ export const load: PageServerLoad = async (event) => {
 
 	const matter = await resolveMatter((path) => lqFetch(event, path), event.params.id);
 
+	// Per-chat sticky-skills set — drives the composer "Keep skills on" toggle. Degrades to off.
+	let stickySkills: string[] = [];
+	try {
+		const cr = await lqFetch(event, `/api/v1/chats/${event.params.id}`);
+		if (cr.ok) stickySkills = parseChat(await cr.json()).stickySkills;
+	} catch {
+		/* leave [] — the toggle simply reads off */
+	}
+
 	return {
 		chatId: event.params.id,
 		messages,
@@ -80,6 +90,7 @@ export const load: PageServerLoad = async (event) => {
 		draftSkills,
 		draftSkillInputs,
 		draftFileIds,
-		matter
+		matter,
+		stickySkills
 	};
 };
