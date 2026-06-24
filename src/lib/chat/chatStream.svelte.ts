@@ -297,7 +297,15 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 				status: 'streaming'
 			}
 		];
-		return await runStream(messages.length - 1, content, model, skills, skillInputs, fileIds, setSticky);
+		return await runStream(
+			messages.length - 1,
+			content,
+			model,
+			skills,
+			skillInputs,
+			fileIds,
+			setSticky
+		);
 	}
 
 	// Re-run the last exchange in place (no duplicate user/assistant turns): reset

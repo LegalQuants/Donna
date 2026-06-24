@@ -30,7 +30,7 @@ semantics live in the backend; Donna drives them through the published contract.
 lq-ai `5ad9f9e` adds, verified against the source checkout:
 
 - Migration `0056_chat_sticky_skills.py` — `chats.sticky_skills text[] NOT NULL DEFAULT '{}'`
-  (empty array = toggle off; the array *is* the state).
+  (empty array = toggle off; the array _is_ the state).
 - Message-create request schema: `set_sticky: bool | None = None`
   - `true` = snapshot this turn's effective skills as the sticky set
   - `false` = clear the set (this turn applies only explicit skills)
@@ -175,11 +175,13 @@ Absent / non-boolean → omitted (the backend treats omitted as "unchanged").
 ## 8. File inventory
 
 **New**
+
 - `src/lib/skills/sticky.svelte.ts` + `sticky.svelte.test.ts`
 - `parseChat` (in a small `src/lib/chat/chat.ts` or alongside the chat load) + test
 - `tests/sticky-skills.spec.ts`
 
 **Changed**
+
 - `vendor/lq-ai` pin → `5ad9f9e`; regenerated `src/lib/api/backend.d.ts`; `docs/decisions/lq-ai-pin.md`
 - `routes/(app)/chats/[id]/+page.server.ts` (+ test) — load Chat, return `stickySkills`
 - `routes/(app)/chats/[id]/+page.svelte` — wire the sticky controller, `chatId`-keyed re-sync, pass to
