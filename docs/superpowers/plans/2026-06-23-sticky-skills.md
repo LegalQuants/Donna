@@ -29,11 +29,13 @@
 ### Task 1: Bump the lq-ai pin and regenerate the contract
 
 **Files:**
+
 - Modify: `vendor/lq-ai` (submodule pointer → `5ad9f9e`)
 - Modify: `src/lib/api/backend.d.ts` (regenerated)
 - Modify: `docs/decisions/lq-ai-pin.md` (append the bump)
 
 **Interfaces:**
+
 - Produces: the generated types `Chat.sticky_skills: string[]` and message-create `set_sticky?: boolean | null` in `backend.d.ts`, consumed by Tasks 2–6.
 
 - [ ] **Step 1: Bump the submodule pin**
@@ -59,6 +61,7 @@ Expected: `Chat` has `sticky_skills: string[]`; the message-create request body 
 set -a; . ./.env; set +a
 docker compose up -d --build api arq-worker ingest-worker donna-web
 ```
+
 Expected: `api` boots, applies `0056_chat_sticky_skills`; `docker compose ps` shows healthy.
 
 - [ ] **Step 5: Record the bump**
@@ -79,10 +82,12 @@ git push
 ### Task 2: `parseChat` defensive parser
 
 **Files:**
+
 - Create: `src/lib/chat/chat.ts`
 - Test: `src/lib/chat/chat.test.ts`
 
 **Interfaces:**
+
 - Produces: `parseChat(raw: unknown): { stickySkills: string[] }` — consumed by Task 3.
 
 - [ ] **Step 1: Write the failing test**
@@ -149,10 +154,12 @@ git push
 ### Task 3: Chat load returns `stickySkills`
 
 **Files:**
+
 - Modify: `src/routes/(app)/chats/[id]/+page.server.ts`
 - Test: `src/routes/(app)/chats/[id]/page.server.stickyskills.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parseChat` (Task 2).
 - Produces: `data.stickySkills: string[]` on the chat page — consumed by Task 8.
 
@@ -215,34 +222,37 @@ Expected: FAIL — `res.stickySkills` is `undefined`.
 In `src/routes/(app)/chats/[id]/+page.server.ts`: add the import and the sub-fetch, and return `stickySkills`.
 
 Add near the other imports:
+
 ```ts
 import { parseChat } from '$lib/chat/chat';
 ```
 
 After the `matter` resolution (`const matter = await resolveMatter(...)`), add:
+
 ```ts
-	// Per-chat sticky-skills set — drives the composer "Keep skills on" toggle. Degrades to off.
-	let stickySkills: string[] = [];
-	try {
-		const cr = await lqFetch(event, `/api/v1/chats/${event.params.id}`);
-		if (cr.ok) stickySkills = parseChat(await cr.json()).stickySkills;
-	} catch {
-		/* leave [] — the toggle simply reads off */
-	}
+// Per-chat sticky-skills set — drives the composer "Keep skills on" toggle. Degrades to off.
+let stickySkills: string[] = [];
+try {
+	const cr = await lqFetch(event, `/api/v1/chats/${event.params.id}`);
+	if (cr.ok) stickySkills = parseChat(await cr.json()).stickySkills;
+} catch {
+	/* leave [] — the toggle simply reads off */
+}
 ```
 
 Add `stickySkills` to the returned object:
+
 ```ts
-	return {
-		chatId: event.params.id,
-		messages,
-		draft,
-		draftSkills,
-		draftSkillInputs,
-		draftFileIds,
-		matter,
-		stickySkills
-	};
+return {
+	chatId: event.params.id,
+	messages,
+	draft,
+	draftSkills,
+	draftSkillInputs,
+	draftFileIds,
+	matter,
+	stickySkills
+};
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -264,10 +274,12 @@ git push
 ### Task 4: `createStickySkills` controller
 
 **Files:**
+
 - Create: `src/lib/skills/sticky.svelte.ts`
 - Test: `src/lib/skills/sticky.svelte.test.ts`
 
 **Interfaces:**
+
 - Produces: `createStickySkills()` returning `{ get enabled, get set, get dirty, syncFromChat(chatId, stickySkills), toggle(currentTurnSkills), sendValue(), markSent() }` — consumed by Tasks 7 & 8.
 
 - [ ] **Step 1: Write the failing test**
@@ -425,9 +437,11 @@ git push
 ### Task 5: Thread `set_sticky` through `chatStream.send`
 
 **Files:**
+
 - Modify: `src/lib/chat/chatStream.svelte.ts` (`runStream`, `send`, `retry`)
 
 **Interfaces:**
+
 - Consumes: nothing new.
 - Produces: `send(content, model?, skills?, skillInputs?, fileIds?, setSticky?): Promise<boolean>` — returns whether the POST was accepted; `body.set_sticky` is set only when `setSticky !== undefined`. Consumed by Task 8.
 
@@ -436,97 +450,105 @@ git push
 In `runStream`, change the signature to add `setSticky?: boolean`, add the body field, track acceptance, and return a boolean:
 
 ```ts
-	async function runStream(
-		idx: number,
-		content: string,
-		model: string,
-		skills: string[],
-		skillInputs: Record<string, Record<string, unknown>>,
-		fileIds: string[],
-		setSticky?: boolean
-	): Promise<boolean> {
-		status = 'streaming';
-		controller = new AbortController();
-		let accepted = false;
-		try {
-			const body: {
-				content: string;
-				model: string;
-				skills?: string[];
-				skill_inputs?: Record<string, Record<string, unknown>>;
-				file_ids?: string[];
-				set_sticky?: boolean;
-			} = { content, model };
-			if (skills.length) body.skills = skills;
-			if (Object.keys(skillInputs).length) body.skill_inputs = skillInputs;
-			if (fileIds.length) body.file_ids = fileIds;
-			if (setSticky !== undefined) body.set_sticky = setSticky;
-			const res = await fetch(`/chats/${chatId}/messages`, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(body),
-				signal: controller.signal
-			});
-			if (!res.ok || !res.body) {
-				let msg = 'Could not reach the model. Please try again.';
-				if (res.status === 400) {
-					try {
-						const env = (await res.json()) as { detail?: unknown };
-						if (typeof env.detail === 'string' && env.detail) msg = env.detail;
-					} catch {
-						/* keep the generic message */
-					}
+async function runStream(
+	idx: number,
+	content: string,
+	model: string,
+	skills: string[],
+	skillInputs: Record<string, Record<string, unknown>>,
+	fileIds: string[],
+	setSticky?: boolean
+): Promise<boolean> {
+	status = 'streaming';
+	controller = new AbortController();
+	let accepted = false;
+	try {
+		const body: {
+			content: string;
+			model: string;
+			skills?: string[];
+			skill_inputs?: Record<string, Record<string, unknown>>;
+			file_ids?: string[];
+			set_sticky?: boolean;
+		} = { content, model };
+		if (skills.length) body.skills = skills;
+		if (Object.keys(skillInputs).length) body.skill_inputs = skillInputs;
+		if (fileIds.length) body.file_ids = fileIds;
+		if (setSticky !== undefined) body.set_sticky = setSticky;
+		const res = await fetch(`/chats/${chatId}/messages`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify(body),
+			signal: controller.signal
+		});
+		if (!res.ok || !res.body) {
+			let msg = 'Could not reach the model. Please try again.';
+			if (res.status === 400) {
+				try {
+					const env = (await res.json()) as { detail?: unknown };
+					if (typeof env.detail === 'string' && env.detail) msg = env.detail;
+				} catch {
+					/* keep the generic message */
 				}
-				setError(idx, msg);
-				return false;
 			}
-			accepted = true; // POST accepted — set_sticky (if any) reached the backend
-			await consumeStream(idx, res);
-			return true;
-		} catch (e) {
-			if ((e as Error).name === 'AbortError') {
-				messages[idx].status = 'done';
-				status = 'idle';
-			} else {
-				setError(idx, 'The connection was lost. Please try again.');
-			}
-			return accepted; // an abort AFTER acceptance still dispatched set_sticky
-		} finally {
-			controller = null;
+			setError(idx, msg);
+			return false;
 		}
+		accepted = true; // POST accepted — set_sticky (if any) reached the backend
+		await consumeStream(idx, res);
+		return true;
+	} catch (e) {
+		if ((e as Error).name === 'AbortError') {
+			messages[idx].status = 'done';
+			status = 'idle';
+		} else {
+			setError(idx, 'The connection was lost. Please try again.');
+		}
+		return accepted; // an abort AFTER acceptance still dispatched set_sticky
+	} finally {
+		controller = null;
 	}
+}
 ```
 
 - [ ] **Step 2: Thread it through `send` (return the acceptance)**
 
 ```ts
-	async function send(
-		content: string,
-		model = 'smart',
-		skills: string[] = [],
-		skillInputs: Record<string, Record<string, unknown>> = {},
-		fileIds: string[] = [],
-		setSticky?: boolean
-	): Promise<boolean> {
-		if (status === 'streaming') return false;
-		lastUserContent = content;
-		lastModel = model;
-		lastSkills = skills;
-		lastSkillInputs = skillInputs;
-		lastFileIds = fileIds;
-		messages = [
-			...messages,
-			{ key: crypto.randomUUID(), id: crypto.randomUUID(), role: 'user', content },
-			{
-				key: crypto.randomUUID(),
-				id: 'pending',
-				role: 'assistant',
-				content: '',
-				status: 'streaming'
-			}
-		];
-		return await runStream(messages.length - 1, content, model, skills, skillInputs, fileIds, setSticky);
-	}
+async function send(
+	content: string,
+	model = 'smart',
+	skills: string[] = [],
+	skillInputs: Record<string, Record<string, unknown>> = {},
+	fileIds: string[] = [],
+	setSticky?: boolean
+): Promise<boolean> {
+	if (status === 'streaming') return false;
+	lastUserContent = content;
+	lastModel = model;
+	lastSkills = skills;
+	lastSkillInputs = skillInputs;
+	lastFileIds = fileIds;
+	messages = [
+		...messages,
+		{ key: crypto.randomUUID(), id: crypto.randomUUID(), role: 'user', content },
+		{
+			key: crypto.randomUUID(),
+			id: 'pending',
+			role: 'assistant',
+			content: '',
+			status: 'streaming'
+		}
+	];
+	return await runStream(
+		messages.length - 1,
+		content,
+		model,
+		skills,
+		skillInputs,
+		fileIds,
+		setSticky
+	);
+}
 ```
 
 - [ ] **Step 3: Keep `retry` from re-snapshotting**
@@ -534,9 +556,9 @@ In `runStream`, change the signature to add `setSticky?: boolean`, add the body 
 `retry()` calls `runStream(idx, lastUserContent, lastModel, lastSkills, lastSkillInputs, lastFileIds)` — leave it WITHOUT a `setSticky` arg (it defaults to `undefined`). Add a clarifying comment above that call:
 
 ```ts
-		// NB: no set_sticky on retry — the sticky set is already persisted server-side; re-snapshotting
-		// on a retry would be wrong.
-		await runStream(idx, lastUserContent, lastModel, lastSkills, lastSkillInputs, lastFileIds);
+// NB: no set_sticky on retry — the sticky set is already persisted server-side; re-snapshotting
+// on a retry would be wrong.
+await runStream(idx, lastUserContent, lastModel, lastSkills, lastSkillInputs, lastFileIds);
 ```
 
 - [ ] **Step 4: Verify the suite + types still pass**
@@ -557,10 +579,12 @@ git push
 ### Task 6: Forward `set_sticky` in the messages BFF proxy
 
 **Files:**
+
 - Modify: `src/routes/(app)/chats/[id]/messages/+server.ts`
 - Test: `src/routes/(app)/chats/[id]/messages/server.setsticky.test.ts`
 
 **Interfaces:**
+
 - Consumes: nothing new.
 - Produces: the proxy forwards `set_sticky` to lq-ai when it's a boolean; omits it otherwise.
 
@@ -626,16 +650,21 @@ Expected: FAIL — `set_sticky` not forwarded.
 In `src/routes/(app)/chats/[id]/messages/+server.ts`:
 
 Add to the incoming body type and a local var (top of the handler, beside the others):
+
 ```ts
-	let setSticky: boolean | undefined;
+let setSticky: boolean | undefined;
 ```
+
 Extend the destructured `body` type with `set_sticky?: unknown;`, and inside the `try` (after the `file_ids` parse) add:
+
 ```ts
-		if (typeof body.set_sticky === 'boolean') setSticky = body.set_sticky;
+if (typeof body.set_sticky === 'boolean') setSticky = body.set_sticky;
 ```
+
 Extend the `payload` type with `set_sticky?: boolean;` and after the existing `if (fileIds.length)` line add:
+
 ```ts
-	if (setSticky !== undefined) payload.set_sticky = setSticky;
+if (setSticky !== undefined) payload.set_sticky = setSticky;
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -657,23 +686,29 @@ git push
 ### Task 7: Composer — the "Keep skills on" switch + indicator
 
 **Files:**
+
 - Modify: `src/lib/components/Composer.svelte`
 
 **Interfaces:**
+
 - Consumes: `createStickySkills` (Task 4), `prettifySkillSlug` (`src/lib/skills/skillLabel.ts`).
 - Produces: a `sticky?` prop; `onsubmit` gains a 6th arg `setSticky?: boolean`.
 
 - [ ] **Step 1: Add the import and the prop**
 
 Add to the imports:
+
 ```ts
-	import type { createStickySkills } from '$lib/skills/sticky.svelte';
-	import { prettifySkillSlug } from '$lib/skills/skillLabel';
+import type { createStickySkills } from '$lib/skills/sticky.svelte';
+import { prettifySkillSlug } from '$lib/skills/skillLabel';
 ```
+
 Add `sticky` to the destructured props and the props type:
+
 ```ts
 		sticky,
 ```
+
 ```ts
 		sticky?: ReturnType<typeof createStickySkills>;
 ```
@@ -681,6 +716,7 @@ Add `sticky` to the destructured props and the props type:
 - [ ] **Step 2: Extend the `onsubmit` signature and pass `sendValue()`**
 
 In the `onsubmit` type, add a 6th parameter:
+
 ```ts
 		onsubmit?: (
 			text: string,
@@ -691,49 +727,50 @@ In the `onsubmit` type, add a 6th parameter:
 			setSticky?: boolean
 		) => void;
 ```
+
 In `submit()`, pass `sticky?.sendValue()` as the 6th arg:
+
 ```ts
-		onsubmit?.(
-			text,
-			modelStore.selectedModel,
-			skillAttach?.names ?? [],
-			skillAttach?.skillInputs ?? {},
-			fileAttach?.fileIds ?? [],
-			sticky?.sendValue()
-		);
+onsubmit?.(
+	text,
+	modelStore.selectedModel,
+	skillAttach?.names ?? [],
+	skillAttach?.skillInputs ?? {},
+	fileAttach?.fileIds ?? [],
+	sticky?.sendValue()
+);
 ```
 
 - [ ] **Step 3: Add the switch + indicator in the toolbar**
 
 Immediately after the `{#if skillAttach}…{/if}` SkillAttach block, add:
+
 ```svelte
-		{#if sticky}
-			<button
-				type="button"
-				role="switch"
-				aria-checked={sticky.enabled}
-				data-testid="sticky-toggle"
-				onclick={() => sticky.toggle(skillAttach?.names ?? [])}
-				class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs {sticky.enabled
-					? 'bg-mlq-subtle text-mlq-strong'
-					: 'text-mlq-text'}"
-				title="Keep the skills applied in this chat on for follow-up messages"
+{#if sticky}
+	<button
+		type="button"
+		role="switch"
+		aria-checked={sticky.enabled}
+		data-testid="sticky-toggle"
+		onclick={() => sticky.toggle(skillAttach?.names ?? [])}
+		class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs {sticky.enabled
+			? 'bg-mlq-subtle text-mlq-strong'
+			: 'text-mlq-text'}"
+		title="Keep the skills applied in this chat on for follow-up messages"
+	>
+		<span
+			class="inline-block h-2 w-2 rounded-full {sticky.enabled ? 'bg-mlq-strong' : 'bg-mlq-muted'}"
+		></span>
+		Keep skills on
+		{#if sticky.enabled && sticky.set.length > 0}
+			<span
+				class="text-mlq-muted"
+				title={sticky.set.map(prettifySkillSlug).join(', ')}
+				data-testid="sticky-count">· Keeping {sticky.set.length} on</span
 			>
-				<span
-					class="inline-block h-2 w-2 rounded-full {sticky.enabled
-						? 'bg-mlq-strong'
-						: 'bg-mlq-muted'}"
-				></span>
-				Keep skills on
-				{#if sticky.enabled && sticky.set.length > 0}
-					<span
-						class="text-mlq-muted"
-						title={sticky.set.map(prettifySkillSlug).join(', ')}
-						data-testid="sticky-count">· Keeping {sticky.set.length} on</span
-					>
-				{/if}
-			</button>
 		{/if}
+	</button>
+{/if}
 ```
 
 - [ ] **Step 4: Verify types/format**
@@ -754,54 +791,63 @@ git push
 ### Task 8: Wire the sticky controller into the chat page
 
 **Files:**
+
 - Modify: `src/routes/(app)/chats/[id]/+page.svelte`
 
 **Interfaces:**
+
 - Consumes: `createStickySkills` (Task 4), `chat.send(...): Promise<boolean>` (Task 5), `data.stickySkills` (Task 3), the Composer `sticky` prop + 6th `onsubmit` arg (Task 7).
 
 - [ ] **Step 1: Create the controller + re-sync effect**
 
 Add the import:
+
 ```ts
-	import { createStickySkills } from '$lib/skills/sticky.svelte';
+import { createStickySkills } from '$lib/skills/sticky.svelte';
 ```
+
 Beside the other controllers (after `const promptLibrary = createPromptLibrary();`):
+
 ```ts
-	const sticky = createStickySkills();
+const sticky = createStickySkills();
 ```
+
 Add an effect that re-syncs on chat-id change (the controller no-ops on the same id, so this is safe to run reactively):
+
 ```ts
-	// Re-sync the sticky toggle from the loaded chat. syncFromChat acts only on a chat-id change,
-	// so this never clobbers an in-progress toggle, and a new chat starts off.
-	$effect(() => {
-		sticky.syncFromChat(data.chatId, data.stickySkills);
-	});
+// Re-sync the sticky toggle from the loaded chat. syncFromChat acts only on a chat-id change,
+// so this never clobbers an in-progress toggle, and a new chat starts off.
+$effect(() => {
+	sticky.syncFromChat(data.chatId, data.stickySkills);
+});
 ```
 
 - [ ] **Step 2: Thread `setSticky` through submit + markSent on success**
 
 Replace the `submit` function:
+
 ```ts
-	async function submit(
-		text: string,
-		model = 'smart',
-		skills: string[] = [],
-		skillInputs: Record<string, Record<string, unknown>> = {},
-		fileIds: string[] = [],
-		setSticky?: boolean
-	) {
-		draftValue = '';
-		const ok = await chat.send(text, model, skills, skillInputs, fileIds, setSticky);
-		if (ok && setSticky !== undefined) sticky.markSent();
-	}
+async function submit(
+	text: string,
+	model = 'smart',
+	skills: string[] = [],
+	skillInputs: Record<string, Record<string, unknown>> = {},
+	fileIds: string[] = [],
+	setSticky?: boolean
+) {
+	draftValue = '';
+	const ok = await chat.send(text, model, skills, skillInputs, fileIds, setSticky);
+	if (ok && setSticky !== undefined) sticky.markSent();
+}
 ```
 
 - [ ] **Step 3: Pass `sticky` to the Composer**
 
 Add `{sticky}` to the `<Composer … />` props (next to `{skillAttach}`):
+
 ```svelte
-				{skillAttach}
-				{sticky}
+{skillAttach}
+{sticky}
 ```
 
 - [ ] **Step 4: Verify**
@@ -823,9 +869,11 @@ git push
 ### Task 9: Live e2e — the sticky carry-over loop
 
 **Files:**
+
 - Create: `tests/sticky-skills.spec.ts`
 
 **Interfaces:**
+
 - Consumes: the running stack (rebuilt `donna-web` from Task 8) + the admin fixture.
 
 - [ ] **Step 1: Write the e2e**
@@ -852,6 +900,7 @@ test('sticky skills carry across follow-up turns', async ({ page }) => {
 docker compose exec api python -m app.cli reset-admin-password --email admin@lq.ai --password '<pw>' --no-force-change
 npx playwright test tests/sticky-skills.spec.ts
 ```
+
 Expected: PASS (self-cleaning).
 
 - [ ] **Step 3: Commit**
@@ -881,7 +930,8 @@ npx vitest run       # full unit/component suite passes
 ### Task 11: Documentation — mention sticky skills everywhere it belongs
 
 **Files:**
-- Modify: `README.md` (the Assistant bullet in *What's inside*)
+
+- Modify: `README.md` (the Assistant bullet in _What's inside_)
 - Modify: `docs/PRODUCT.md` (capabilities)
 - Modify: `docs/GUIDE.md` (the Assistant / Workflows section)
 - Modify: `CHANGELOG.md` (new `[0.3.0]` entry)
@@ -907,6 +957,7 @@ git push
 ### Task 12: Version bump to 0.3.0
 
 **Files:**
+
 - Modify: `package.json` (`version` → `0.3.0`)
 - Modify: `README.md` (top badge `**v0.3.0**`)
 - Modify: `desktop/package.json` (`version` → `0.3.0`)
@@ -937,6 +988,7 @@ gh release create v0.3.0 -R LegalQuants/Donna --title v0.3.0 --generate-notes   
 gh run watch <run-id> -R LegalQuants/Donna --exit-status
 gh run view <run-id> -R LegalQuants/Donna --json conclusion    # trust this, not watch (gotcha #6)
 ```
+
 Expected: 5 `ghcr.io/legalquants/donna-*:v0.3.0` images published. Verify all 5 manifests present + anonymously pullable (the packages were made public for 0.2.0; same packages).
 
 - [ ] **Step 3:** Release-image dry-run: isolated `-p donna-rel-dryrun` + shifted ports + `DONNA_IMAGE_TAG=v0.3.0`, pull → 8/8 healthy → admin fixture → Playwright login PASS → tear down `down -v`. (Mirror the 0.2.0 dry-run.)
@@ -951,6 +1003,7 @@ Expected: 5 `ghcr.io/legalquants/donna-*:v0.3.0` images published. Verify all 5 
 git tag -a desktop-v0.3.0 -m "Donna for Mac 0.3.0 — sticky skills" <main-tip>
 git push origin desktop-v0.3.0 && git push tucuxi desktop-v0.3.0   # triggers desktop-release.yml
 ```
+
 - [ ] **Step 2:** Watch + verify the **published artifact** (gotcha #6): `gh run view --json conclusion`, then `gh release download desktop-v0.3.0 -p '*.dmg' -D /tmp`, `spctl -a -vvv -t open --context context:primary-signature` (want Notarized Developer ID / Tucuxi `MC8BT9Z8GD`), `xcrun stapler validate`.
 - [ ] **Step 3:** Fresh-Mac install test from a true clean slate (remove `donna-desktop` containers+volumes, the `ghcr.io/legalquants/donna-*` images, the app-data dir + prefs plist) → download DMG → wizard → 8/8 healthy → browser login → open a chat, apply a skill, flip **Keep skills on**, confirm a follow-up keeps it. Record the result.
 
