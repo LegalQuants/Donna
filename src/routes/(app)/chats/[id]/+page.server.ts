@@ -72,16 +72,22 @@ export const load: PageServerLoad = async (event) => {
 		/* non-blocking — badges simply absent */
 	}
 
-	const matter = await resolveMatter((path) => lqFetch(event, path), event.params.id);
-
-	// Per-chat sticky-skills set — drives the composer "Keep skills on" toggle. Degrades to off.
+	// Fetch the chat once to derive both its sticky-skills set (composer "Keep skills on" toggle)
+	// and its project_id (matter header). Each degrades independently: off / unscoped on failure.
 	let stickySkills: string[] = [];
+	let projectId: string | null = null;
 	try {
 		const cr = await lqFetch(event, `/api/v1/chats/${event.params.id}`);
-		if (cr.ok) stickySkills = parseChat(await cr.json()).stickySkills;
+		if (cr.ok) {
+			const cj = await cr.json();
+			stickySkills = parseChat(cj).stickySkills;
+			projectId = (cj as { project_id?: string | null }).project_id ?? null;
+		}
 	} catch {
-		/* leave [] — the toggle simply reads off */
+		/* leave [] / null — the toggle reads off and the matter is unscoped */
 	}
+
+	const matter = await resolveMatter((path) => lqFetch(event, path), projectId);
 
 	return {
 		chatId: event.params.id,
