@@ -90,6 +90,16 @@ ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 		// failed first run re-shows the wizard instead of stranding a half-configured install.
 		writeEnvFile(cfg);
 		const b = base();
+		// Clear any orphaned data volumes from a PRIOR failed first run before starting. The
+		// wizard only reaches here when config isn't persisted (first run, or a retry after a
+		// failure), and each run mints a fresh POSTGRES_PASSWORD/MINIO secret — but Postgres and
+		// MinIO only apply those on first init and otherwise reuse the existing volume's old
+		// credentials. A leftover `pgdata` from a half-up earlier attempt would therefore reject
+		// the new password, leaving `api` permanently unhealthy ("password authentication failed
+		// for user lq_ai") with no way out via retry. `down -v` wipes those stale volumes; it's a
+		// harmless no-op on a genuine first run and never touches the (separately-cached) images,
+		// so it doesn't re-trigger the ~10 GB pull. .env already exists for the --env-file.
+		await resetStack(b);
 		// `up -d` includes the first-run image pull (~10 GB) and only returns once containers
 		// are started. Check its exit code so a genuine failure surfaces immediately instead
 		// of falling through to a 10-minute waitHealthy timeout.
