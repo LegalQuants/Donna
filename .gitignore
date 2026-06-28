@@ -45,3 +45,5 @@ vite.config.ts.timestamp-*
 /docker-compose.override.yml
 # Local MCP server declaration (dev-only; mounted into the gateway via the override)
 /mcp.yaml
+# gen:api intermediate sanitized specs
+/.tmp/
