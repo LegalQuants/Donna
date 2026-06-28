@@ -71,6 +71,19 @@
 		background: #f9eae8;
 		color: #a23b32;
 	}
+	/* Dark: swap the light tinted bars for low-luminance fills that read on a dark surface. */
+	:global(.dark) .pop-verified .bar {
+		background: #16271d;
+		color: #6fd29a;
+	}
+	:global(.dark) .pop-caveats .bar {
+		background: #2a2410;
+		color: #e0c46a;
+	}
+	:global(.dark) .pop-unverified .bar {
+		background: #2c1715;
+		color: #f0918a;
+	}
 	.quote {
 		font-family: var(--font-serif);
 		font-size: 14px;

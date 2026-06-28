@@ -1,6 +1,11 @@
 @import 'tailwindcss';
 @import 'katex/dist/katex.min.css';
 
+/* Class-based dark mode: utilities like `dark:…` apply under a `.dark` ancestor.
+   We mostly don't need `dark:` variants — the `.dark` block below re-points the
+   `--color-mlq-*` variables, so every utility that resolves them flips automatically. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
 	/* Typography — serif headings AND body is the signature MikeOSS trait. */
 	--font-serif: ui-serif, Georgia, 'Times New Roman', serif;
@@ -36,7 +41,35 @@
 		font-family: var(--font-serif);
 		color: var(--color-mlq-text);
 		background: var(--color-mlq-surface);
+		/* smooth the theme flip; respected only by elements that animate color */
+		color-scheme: light;
 	}
+}
+
+/* Dark theme — re-point the surface/text tokens. The serif "legal memo" identity and
+   semantic accents (workflow blue, error red, success green) carry over; surfaces and
+   text invert. Accents are nudged brighter so they hold AA contrast on dark surfaces. */
+.dark {
+	color-scheme: dark;
+
+	--color-mlq-surface: #0f1115;
+	--color-mlq-surface-alt: #181b21;
+	--color-mlq-subtle: #2b303a; /* borders / hover fills */
+	--color-mlq-muted: #8b909c; /* disclaimers/labels */
+	--color-mlq-text: #d4d7dd; /* body */
+	--color-mlq-strong: #f4f5f7; /* headings / inverted buttons */
+
+	--color-mlq-workflow: #4d8bf5; /* blue */
+	--color-mlq-error: #f05252; /* red */
+	--color-mlq-success: #34c878; /* green */
+	--color-mlq-doc: #f4f5f7; /* document chips read as "strong" */
+	--color-mlq-privileged: #f08a8a; /* P4 — light enough to read on dark */
+
+	--color-mlq-verified: #34c878;
+	--color-mlq-caveats: #d8b13f; /* amber */
+	--color-mlq-unverified: #f05252;
+
+	--cite-highlight: #5a4d12; /* dimmer amber so highlighted text stays legible on dark */
 }
 
 /* Motion */
@@ -167,6 +200,9 @@
    layer renders transparent glyphs over the canvas, so this paints a yellow box
    behind the cited words. */
 ::highlight(cite) {
-	background-color: #fff2a8;
+	/* `--cite-highlight` is re-pointed in the `.dark` block; default is the light amber.
+	   Note: lightningcss warns that `::highlight` is an unknown pseudo-element and passes
+	   the rule through unchanged — the Custom Highlight API works regardless. */
+	background-color: var(--cite-highlight, #fff2a8);
 	color: inherit;
 }

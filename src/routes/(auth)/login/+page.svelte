@@ -18,7 +18,7 @@
 				class="w-full rounded-mlq-control border border-mlq-subtle px-3 py-2 text-center tracking-widest outline-none"
 			/>
 			{#if form?.error}<p class="text-sm text-mlq-error">{form.error}</p>{/if}
-			<button class="w-full rounded-mlq-control bg-mlq-strong py-2 text-white">Verify</button>
+			<button class="w-full rounded-mlq-control bg-mlq-strong py-2 text-mlq-surface">Verify</button>
 		</form>
 	{:else}
 		<form method="POST" action="?/login" use:enhance class="space-y-4">
@@ -38,7 +38,8 @@
 				class="w-full rounded-mlq-control border border-mlq-subtle px-3 py-2 outline-none"
 			/>
 			{#if form?.error}<p class="text-sm text-mlq-error">{form.error}</p>{/if}
-			<button class="w-full rounded-mlq-control bg-mlq-strong py-2 text-white">Sign in</button>
+			<button class="w-full rounded-mlq-control bg-mlq-strong py-2 text-mlq-surface">Sign in</button
+			>
 		</form>
 	{/if}
 </div>

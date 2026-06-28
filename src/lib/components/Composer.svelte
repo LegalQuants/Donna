@@ -223,124 +223,125 @@
 		class="max-h-48 w-full resize-none bg-transparent font-serif text-mlq-text outline-none placeholder:text-mlq-muted"
 	></textarea>
 
-	<div class="mt-2 flex items-center gap-2 border-t border-mlq-subtle pt-2">
-		<ModelPicker
-			options={modelStore.options}
-			selected={modelStore.selectedModel}
-			error={modelStore.error}
-			{minimumTier}
-			onselect={modelStore.setModel}
-		/>
-		<TrustPill
-			option={modelStore.selectedOption}
-			format={page.data.user?.trust_pills ?? 'labels'}
-		/>
-		{#if matters}
-			<MatterPicker {matters} bind:selectedId={selectedMatterId} />
-		{/if}
-		{#if skillAttach}
-			<SkillAttach
-				results={skillAttach.results}
-				loading={skillAttach.loading}
-				error={skillAttach.error}
-				onopen={skillAttach.open}
-				onsearch={skillAttach.search}
-				onattach={skillAttach.attach}
+	<div class="mt-2 flex items-start gap-2 border-t border-mlq-subtle pt-2">
+		<div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+			<ModelPicker
+				options={modelStore.options}
+				selected={modelStore.selectedModel}
+				error={modelStore.error}
+				{minimumTier}
+				onselect={modelStore.setModel}
 			/>
-		{/if}
-		{#if sticky}
-			<button
-				type="button"
-				role="switch"
-				aria-checked={sticky.enabled}
-				data-testid="sticky-toggle"
-				onclick={() => sticky.toggle(skillAttach?.names ?? [])}
-				class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs {sticky.enabled
-					? 'bg-mlq-subtle text-mlq-strong'
-					: 'text-mlq-text'}"
-				title="Keep the skills applied in this chat on for follow-up messages"
-			>
-				<span
-					class="inline-block h-2 w-2 rounded-full {sticky.enabled
-						? 'bg-mlq-strong'
-						: 'bg-mlq-muted'}"
-				></span>
-				Keep skills on
-				{#if sticky.enabled && sticky.set.length > 0}
-					<span
-						class="text-mlq-muted"
-						title={sticky.set.map(prettifySkillSlug).join(', ')}
-						data-testid="sticky-count">· Keeping {sticky.set.length} on</span
-					>
-				{/if}
-			</button>
-		{/if}
-		{#if fileAttach}
-			<input
-				type="file"
-				multiple
-				bind:this={fileInput}
-				data-testid="file-attach-input"
-				onchange={(e) => {
-					const fs = e.currentTarget.files;
-					if (fs?.length) fileAttach?.attach(Array.from(fs));
-					e.currentTarget.value = '';
-				}}
-				class="hidden"
+			<TrustPill
+				option={modelStore.selectedOption}
+				format={page.data.user?.trust_pills ?? 'labels'}
 			/>
-			<button
-				type="button"
-				data-testid="file-attach"
-				aria-label="Attach files"
-				onclick={() => fileInput?.click()}
-				class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
-			>
-				<Paperclip size={13} />
-			</button>
-		{/if}
-		{#if promptLibrary}
-			<PromptPicker
-				prompts={promptLibrary.prompts}
-				loading={promptLibrary.loading}
-				error={promptLibrary.error}
-				draft={value}
-				onopen={promptLibrary.ensureLoaded}
-				oninsert={insertAtCursor}
-				onsave={promptLibrary.create}
-			/>
-		{/if}
-		{#if enhance}
-			{#if enhance.status === 'loading'}
-				<span
-					class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-muted"
-				>
-					Enhancing…
-					<button
-						type="button"
-						aria-label="Cancel enhance"
-						onclick={enhance.cancel}
-						class="hover:text-mlq-text"><X size={12} /></button
-					>
-				</span>
-			{:else}
+			{#if matters}
+				<MatterPicker {matters} bind:selectedId={selectedMatterId} />
+			{/if}
+			{#if skillAttach}
+				<SkillAttach
+					results={skillAttach.results}
+					loading={skillAttach.loading}
+					error={skillAttach.error}
+					onopen={skillAttach.open}
+					onsearch={skillAttach.search}
+					onattach={skillAttach.attach}
+				/>
+			{/if}
+			{#if sticky}
 				<button
 					type="button"
-					data-testid="enhance-button"
-					onclick={() => enhance.run(value)}
-					disabled={!value.trim()}
-					class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text disabled:opacity-40"
+					role="switch"
+					aria-checked={sticky.enabled}
+					data-testid="sticky-toggle"
+					onclick={() => sticky.toggle(skillAttach?.names ?? [])}
+					class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs {sticky.enabled
+						? 'bg-mlq-subtle text-mlq-strong'
+						: 'text-mlq-text'}"
+					title="Keep the skills applied in this chat on for follow-up messages"
 				>
-					<Sparkles size={13} /> Enhance
+					<span
+						class="inline-block h-2 w-2 rounded-full {sticky.enabled
+							? 'bg-mlq-strong'
+							: 'bg-mlq-muted'}"
+					></span>
+					Keep skills on
+					{#if sticky.enabled && sticky.set.length > 0}
+						<span
+							class="text-mlq-muted"
+							title={sticky.set.map(prettifySkillSlug).join(', ')}
+							data-testid="sticky-count">· Keeping {sticky.set.length} on</span
+						>
+					{/if}
 				</button>
 			{/if}
-		{/if}
-		<span class="flex-1"></span>
+			{#if fileAttach}
+				<input
+					type="file"
+					multiple
+					bind:this={fileInput}
+					data-testid="file-attach-input"
+					onchange={(e) => {
+						const fs = e.currentTarget.files;
+						if (fs?.length) fileAttach?.attach(Array.from(fs));
+						e.currentTarget.value = '';
+					}}
+					class="hidden"
+				/>
+				<button
+					type="button"
+					data-testid="file-attach"
+					aria-label="Attach files"
+					onclick={() => fileInput?.click()}
+					class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
+				>
+					<Paperclip size={13} />
+				</button>
+			{/if}
+			{#if promptLibrary}
+				<PromptPicker
+					prompts={promptLibrary.prompts}
+					loading={promptLibrary.loading}
+					error={promptLibrary.error}
+					draft={value}
+					onopen={promptLibrary.ensureLoaded}
+					oninsert={insertAtCursor}
+					onsave={promptLibrary.create}
+				/>
+			{/if}
+			{#if enhance}
+				{#if enhance.status === 'loading'}
+					<span
+						class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-muted"
+					>
+						Enhancing…
+						<button
+							type="button"
+							aria-label="Cancel enhance"
+							onclick={enhance.cancel}
+							class="hover:text-mlq-text"><X size={12} /></button
+						>
+					</span>
+				{:else}
+					<button
+						type="button"
+						data-testid="enhance-button"
+						onclick={() => enhance.run(value)}
+						disabled={!value.trim()}
+						class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text disabled:opacity-40"
+					>
+						<Sparkles size={13} /> Enhance
+					</button>
+				{/if}
+			{/if}
+		</div>
 		{#if streaming}
 			<button
 				type="button"
 				onclick={() => onstop?.()}
 				aria-label="Stop"
-				class="rounded-mlq-control bg-mlq-strong p-2 text-white"
+				class="shrink-0 rounded-mlq-control bg-mlq-strong p-2 text-mlq-surface"
 			>
 				<Square size={18} />
 			</button>
@@ -352,7 +353,7 @@
 					!(skillAttach?.allRequiredFilled ?? true) ||
 					!(fileAttach?.allReady ?? true)}
 				aria-label="Send"
-				class="rounded-mlq-control bg-mlq-strong p-2 text-white disabled:opacity-40"
+				class="shrink-0 rounded-mlq-control bg-mlq-strong p-2 text-mlq-surface disabled:opacity-40"
 			>
 				<ArrowRight size={18} />
 			</button>
