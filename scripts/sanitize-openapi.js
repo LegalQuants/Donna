@@ -13,7 +13,8 @@
  * Usage: node scripts/sanitize-openapi.js <input.yaml> <output.yaml>
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { dirname } from 'path';
 
 const [, , input, output] = process.argv;
 if (!input || !output) {
@@ -22,7 +23,9 @@ if (!input || !output) {
 }
 
 const content = readFileSync(input, 'utf8');
-const lines = content.split('\n');
+// Normalize CRLF/CR to LF so line-by-line scalar detection isn't thrown off by a
+// stray trailing \r (Windows git checkouts deliver these specs with CRLF endings).
+const lines = content.split(/\r\n|\r|\n/);
 
 let inBlockScalar = false;
 let blockScalarIndent = -1;
@@ -92,5 +95,6 @@ const fixed = lines.map((line) => {
 	return line;
 });
 
+mkdirSync(dirname(output), { recursive: true });
 writeFileSync(output, fixed.join('\n'), 'utf8');
 console.error(`Sanitized: ${input} -> ${output}`);
