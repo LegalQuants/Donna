@@ -26,11 +26,11 @@ fine at runtime; they're just not in the published contract, which every API con
 
 ## The gap (verified against lq-ai source at pin `3659360`)
 
-| Route | Exists in code | In `backend-openapi.yaml`? |
-|---|---|---|
-| `GET /api/v1/research/sources` | ✅ `api/app/api/research.py:116` — `@router.get("/sources", response_model=SourcesResponse)` (`SourcesResponse` defined `research.py:54`) | ❌ **absent** |
-| `GET /api/v1/autonomous/sessions/{session_id}/ledger` | ✅ `api/app/api/autonomous.py:660` — `get_session_ledger` | ❌ **absent** |
-| `GET /api/v1/chats/{chat_id}/ledger` | ✅ `api/app/api/chats.py:1796` | ✅ present (typed, `LedgerEntry`) |
+| Route                                                 | Exists in code                                                                                                                            | In `backend-openapi.yaml`?        |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `GET /api/v1/research/sources`                        | ✅ `api/app/api/research.py:116` — `@router.get("/sources", response_model=SourcesResponse)` (`SourcesResponse` defined `research.py:54`) | ❌ **absent**                     |
+| `GET /api/v1/autonomous/sessions/{session_id}/ledger` | ✅ `api/app/api/autonomous.py:660` — `get_session_ledger`                                                                                 | ❌ **absent**                     |
+| `GET /api/v1/chats/{chat_id}/ledger`                  | ✅ `api/app/api/chats.py:1796`                                                                                                            | ✅ present (typed, `LedgerEntry`) |
 
 **Root cause (hypothesis):** the export is not intentionally excluding these — their routers are
 otherwise exported (`/api/v1/research/capabilities`, `/api/v1/research/search`,
@@ -43,7 +43,7 @@ not — consistent with the export having been regenerated at a point **after** 
 
 1. `GET /api/v1/research/sources` present, carrying its `SourcesResponse` schema (it has a
    `response_model`, so this should type cleanly — `{ sources: [{ name, type, jurisdiction, coverage,
-   content_kinds[], enabled, egress_tier }] }`).
+content_kinds[], enabled, egress_tier }] }`).
 2. `GET /api/v1/autonomous/sessions/{session_id}/ledger` present. (Its handler returns
    `dict[str, Any]`, so an empty/loose body schema is expected — that's fine; we hand-parse the ledger
    body regardless. We just need the **path** to appear so it's part of the contract.)
