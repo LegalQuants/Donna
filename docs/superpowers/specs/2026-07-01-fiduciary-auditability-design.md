@@ -30,10 +30,10 @@ Pulled from the integration doc; these shape every UI decision.
 1. **No cryptographic integrity (§3.1).** No hash-chaining, no signatures, no HMAC — only an unsigned,
    unchained per-message `content_hash` (Merkle layer is "future M2+"). → We build an **honest
    provenance record**, never a "tamper-proof / cryptographically verified / signed" affordance. Safe
-   language: *"every source and quote is recorded and independently re-verifiable against the
-   original."*
+   language: _"every source and quote is recorded and independently re-verifiable against the
+   original."_
 2. **The zero-assertion honesty trap (§2.2).** `total_assertions == 0` also returns
-   `gate_status: "fiduciary_grade"` — meaning *"no verifiable claims,"* not *"claims verified."* We
+   `gate_status: "fiduciary_grade"` — meaning _"no verifiable claims,"_ not _"claims verified."_ We
    render this as a **neutral state, never green.**
 3. **Owner-scoped, no auditor role, no admin bypass on the ledger (§2.6).** A user sees only their own
    trail. A cross-user compliance/auditor view is **not buildable** → deferred upstream (§8 here).
@@ -56,12 +56,12 @@ Pulled from the integration doc; these shape every UI decision.
   consulted" panel folds in as the lighter provenance group.
 - **The four trust states** (owned by one vocabulary module):
 
-  | Backend | Donna label | Tone | Meaning |
-  |---|---|---|---|
-  | `fiduciary_grade` (assertions > 0, all pass) | **Fiduciary-grade** | sage/green | every quoted claim matched its source |
-  | `supported_only` | **Supported** | amber | backed in substance, verified by meaning |
-  | `flagged` | **Needs review** | red | a quote couldn't be confirmed in its source |
-  | `fiduciary_grade` **but `total_assertions == 0`** | **No sourced claims** | neutral grey | nothing to verify — **never green** |
+  | Backend                                           | Donna label           | Tone         | Meaning                                     |
+  | ------------------------------------------------- | --------------------- | ------------ | ------------------------------------------- |
+  | `fiduciary_grade` (assertions > 0, all pass)      | **Fiduciary-grade**   | sage/green   | every quoted claim matched its source       |
+  | `supported_only`                                  | **Supported**         | amber        | backed in substance, verified by meaning    |
+  | `flagged`                                         | **Needs review**      | red          | a quote couldn't be confirmed in its source |
+  | `fiduciary_grade` **but `total_assertions == 0`** | **No sourced claims** | neutral grey | nothing to verify — **never green**         |
 
 - **Derive, don't assert (treatment).** Never color a case "good/bad law"; show derived signals with
   justifications, labelled "derived, not editorial."
@@ -84,6 +84,7 @@ Pulled from the integration doc; these shape every UI decision.
   so it stays consistent with today's inline citations.
 
 BFF proxy routes (auth via `lqFetch`, `!res.ok → 502`, honest-degradation `null` on failure):
+
 - `chats/[id]/ledger/+server.ts` (GET, forwards `?message_id=`) — live turns + treatment polling.
 - Autonomous session ledger — folded into the existing `automations/[id]/+page.server.ts` load and
   `[id]/+server.ts` poll proxy.
@@ -93,6 +94,7 @@ BFF proxy routes (auth via `lqFetch`, `!res.ok → 502`, honest-degradation `nul
 ## 5. Slices
 
 ### Slice 0 — Research sources card
+
 A read-only `<section>` card (the `ProviderKeysCard`/settings-card shape) on the **existing Research
 page** (`routes/(app)/research/`), fetched in its `+page.server.ts` load. One row per source: name,
 jurisdiction, coverage, content-kind tags, and an **enabled / unavailable** badge. Registered-but-
@@ -100,11 +102,13 @@ unconfigured sources render as "unavailable," never hidden (`enabled: false`). D
 `gen:api` smoke test (the one typed endpoint).
 
 ### Slice 1 — Per-turn fiduciary receipt (centerpiece)
+
 In `Message.svelte`'s assistant footer (`~L169-215`):
+
 - The **trust pill** (`trust.ts`) as the leading footer pill. **Shown by default** on every assistant
-  turn that has a gate (green/amber/red/grey), *unless* the user has disabled trust pills via the
+  turn that has a gate (green/amber/red/grey), _unless_ the user has disabled trust pills via the
   existing **`trust_pills`** preference (master on/off — verify its exact values at plan time); the
-  *other* footer pills keep obeying the separate `provenance_pills` collapse preference independently.
+  _other_ footer pills keep obeying the separate `provenance_pills` collapse preference independently.
 - Clicking expands **`FiduciaryReceipt.svelte`** (structured like `ToolSourcesPanel.svelte`): a gate
   summary line, then one row per ledger `entry` — source identity (branched on `source.kind`) + quoted
   `passages[].text` + a verification chip (from `verification_status`) + confidence. Provenance / tool-
@@ -115,6 +119,7 @@ In `Message.svelte`'s assistant footer (`~L169-215`):
   authority/statute → external `external_ref` link (no native statute viewer in the doc panel yet).
 
 ### Slice 2 — Treatment / validity surfacing
+
 Where a caselaw `entry.treatment` is present: a muted line **"⚖ Cited by N · derived · <strongest
 negative signal>"** that discloses `signals[]` (classification + justification, linked to the citing
 opinion id). **Never** colored good/bad-law. While `treatment === null` on a caselaw entry, show a
@@ -124,6 +129,7 @@ open + interval, **capped** (default ~6 polls over ~60s, then stop and leave a m
 the poll itself self-drives derivation (DE-363).
 
 ### Slice 3 — Autonomous matter audit timeline
+
 - Session-level **gate verdict as a headline trust pill in `SessionReceiptHeader.svelte`**, beside the
   existing cost / cost-cap chips.
 - The session ledger renders as a **"Fiduciary receipt" block in `SessionDetail.svelte`**, **reusing
@@ -135,13 +141,15 @@ the poll itself self-drives derivation (DE-363).
   story is strongest, because cost already lives in the receipt here.
 
 ### Slice 4 — Provenance export
+
 An **"Export provenance record"** affordance (chat turn and autonomous session) that serializes the
 ledger **client-side** to **structured JSON + a printable/markdown rendering** (doc panel already
-renders markdown). Honestly labelled: *"a faithful copy of the sourcing trail — not a cryptographically
-signed attestation."* No bespoke PDF. The affordance is designed so it can later point at a real
+renders markdown). Honestly labelled: _"a faithful copy of the sourcing trail — not a cryptographically
+signed attestation."_ No bespoke PDF. The affordance is designed so it can later point at a real
 signed-export endpoint (progressive enhancement) with no rework.
 
 ### Slice 5 — Documentation & education
+
 - **`/about` guide:** new prose page `routes/(app)/about/fiduciary/+page.svelte` (canonical template =
   `about/overview`) + a rail entry in `about/AboutRail.svelte`. Explains the fiduciary receipt, the four
   trust states, the citation ledger, and treatment.
@@ -153,7 +161,9 @@ signed-export endpoint (progressive enhancement) with no rework.
   the About PDF for the new capabilities.
 
 ### Slice 6-lean — Contextual capability discovery (fiduciary-scoped)
+
 Greenfield (no existing coachmark system). **Client-side only**, no backend dependency:
+
 - **Dismissable hints / coachmarks** tied to the new features, dismissal persisted in **localStorage**
   (mirror `components/sidebar.ts`; a `dismissedHints` set keyed by hint id). First appearance of a
   "Needs review" pill explains it; a nudge to expand the ledger or export a provenance record; a hint
@@ -194,6 +204,7 @@ Greenfield (no existing coachmark system). **Client-side only**, no backend depe
 ## 8. Deferred / upstream (filed as asks, not built here)
 
 Both are genuinely not buildable client-side today; file per CLAUDE.md §8 as the final tasks:
+
 - `docs/upstream-requests/lq-ai-cross-user-auditor-role.md` — a compliance/auditor role + re-scoped
   authz so a reviewer can read another user's ledger (today: owner-scoped, 404, no admin bypass).
 - `docs/upstream-requests/lq-ai-signed-attestation-export.md` — a server-side **signed** export /
