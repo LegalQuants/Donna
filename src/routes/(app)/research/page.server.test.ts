@@ -3,37 +3,48 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const lqFetch = vi.fn();
 vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(...a) }));
 
+import { load } from './+page.server';
+
+function res(ok: boolean, body: unknown) {
+	return { ok, json: async () => body } as unknown as Response;
+}
+
 beforeEach(() => lqFetch.mockReset());
 
-describe('research load', () => {
-	it('returns capabilities (enabled)', async () => {
-		lqFetch.mockResolvedValue(
-			new Response(
-				JSON.stringify({ enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] }),
-				{ status: 200 }
-			)
-		);
-		const { load } = await import('./+page.server');
-		const out = (await load({} as never)) as {
-			capabilities: { enabled: boolean; providers: { name: string; type: string }[] };
-		};
-		expect(out.capabilities).toEqual({
-			enabled: true,
-			providers: [{ name: 'cl', type: 'courtlistener' }]
+describe('research load — sources', () => {
+
+	it('returns parsed sources on success', async () => {
+		lqFetch.mockImplementation(async (_e: unknown, path: string) => {
+			if (path === '/api/v1/research/capabilities')
+				return res(true, { enabled: true, providers: [] });
+			if (path === '/api/v1/research/sources')
+				return res(true, {
+					sources: [{ type: 'govinfo', enabled: true, content_kinds: ['statute'] }]
+				});
+			return res(false, {});
 		});
+		const data = (await load({} as never)) as any;
+		expect(data.sources).toHaveLength(1);
+		expect(data.sources?.[0].type).toBe('govinfo');
 	});
-	it('degrades to disabled when the check fails', async () => {
-		lqFetch.mockResolvedValue(new Response('nope', { status: 502 }));
-		const { load } = await import('./+page.server');
-		const out = (await load({} as never)) as { capabilities: { enabled: boolean } };
-		expect(out.capabilities.enabled).toBe(false);
+
+	it('degrades sources to null when the fetch is not ok', async () => {
+		lqFetch.mockImplementation(async (_e: unknown, path: string) => {
+			if (path === '/api/v1/research/capabilities')
+				return res(true, { enabled: true, providers: [] });
+			return res(false, {});
+		});
+		const data = (await load({} as never)) as any;
+		expect(data.sources).toBeNull();
 	});
-	it('degrades to disabled when the response body is unreadable (catch path)', async () => {
-		// A 200 with a non-JSON body makes `await res.json()` reject inside the
-		// load's try — exercising the catch → disabled fallback.
-		lqFetch.mockResolvedValue(new Response('not json{', { status: 200 }));
-		const { load } = await import('./+page.server');
-		const out = (await load({} as never)) as { capabilities: { enabled: boolean } };
-		expect(out.capabilities.enabled).toBe(false);
+
+	it('degrades sources to null when lqFetch throws', async () => {
+		lqFetch.mockImplementation(async (_e: unknown, path: string) => {
+			if (path === '/api/v1/research/capabilities')
+				return res(true, { enabled: true, providers: [] });
+			throw new Error('network');
+		});
+		const data = (await load({} as never)) as any;
+		expect(data.sources).toBeNull();
 	});
 });
