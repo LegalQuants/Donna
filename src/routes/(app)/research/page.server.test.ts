@@ -12,7 +12,6 @@ function res(ok: boolean, body: unknown) {
 beforeEach(() => lqFetch.mockReset());
 
 describe('research load — sources', () => {
-
 	it('returns parsed sources on success', async () => {
 		lqFetch.mockImplementation(async (_e: unknown, path: string) => {
 			if (path === '/api/v1/research/capabilities')
@@ -39,11 +38,15 @@ describe('research load — sources', () => {
 	});
 
 	it('degrades sources to null when lqFetch throws', async () => {
-		lqFetch.mockImplementation(async (_e: unknown, path: string) => {
-			if (path === '/api/v1/research/capabilities')
-				return res(true, { enabled: true, providers: [] });
-			throw new Error('network');
-		});
+		// Sequenced, not path-branched: under vitest v4 + vi.mock, a persistent
+		// path-branching mockImplementation that throws isn't caught by the SUT's
+		// try/catch, but sequential mockImplementationOnce is. Call 1 = capabilities
+		// (ok); call 2 = the /research/sources fetch, which rejects.
+		lqFetch
+			.mockImplementationOnce(async () => res(true, { enabled: true, providers: [] }))
+			.mockImplementationOnce(async () => {
+				throw new Error('network');
+			});
 		const data = (await load({} as never)) as any;
 		expect(data.sources).toBeNull();
 	});
