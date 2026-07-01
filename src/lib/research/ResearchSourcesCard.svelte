@@ -18,7 +18,7 @@
 			but not configured on this deployment.
 		</p>
 	</div>
-	{#if sources === null}
+	{#if !sources}
 		<p class="px-4 py-3 text-sm text-mlq-muted">Could not load source availability right now.</p>
 	{:else if sources.length === 0}
 		<p class="px-4 py-3 text-sm text-mlq-muted">No authoritative sources are registered.</p>
