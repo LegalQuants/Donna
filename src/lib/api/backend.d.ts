@@ -1404,6 +1404,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/knowledge-bases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach a knowledge base to a matter
+         * @description Wave D.1 T3. Body: ``{knowledge_base_id}``. The caller must own
+         *     both the project and the KB (cross-user → 404 on either side).
+         *     Idempotent — re-attaching an already-attached KB returns 200
+         *     with the current project state (unlike the skill/file attach
+         *     endpoints above, this does NOT return 409 on repeat attach).
+         *     Audit action: ``project.knowledge_base_attached``.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    project_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        knowledge_base_id: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Project state after attach (idempotent — same body on repeat calls) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Project"];
+                    };
+                };
+                /** @description Project or knowledge base not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/knowledge-bases/{kb_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                kb_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Detach a knowledge base from a matter
+         * @description Wave D.1 T3. Idempotent — detaching a KB that is not attached
+         *     still returns 204. The KB row itself is untouched (use
+         *     ``DELETE /api/v1/knowledge-bases/{id}`` for the KB). Audit
+         *     action: ``project.knowledge_base_detached`` (only written when
+         *     a join row is actually removed).
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    project_id: string;
+                    kb_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Detached (or was already not attached) */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Project not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/sandbox/ensure": {
         parameters: {
             query?: never;
@@ -1945,6 +2065,79 @@ export interface paths {
                             /** Format: date-time */
                             created_at?: string;
                         }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{chat_id}/ledger": {
+        parameters: {
+            query?: {
+                /** @description Narrow to a single assistant turn. */
+                message_id?: string;
+            };
+            header?: never;
+            path: {
+                chat_id: string;
+            };
+            cookie?: never;
+        };
+        /** Citation Ledger for a chat — one-click trace (P1-A3) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Narrow to a single assistant turn. */
+                    message_id?: string;
+                };
+                header?: never;
+                path: {
+                    chat_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Ledger entries resolved to source + passage(s) + status + provenance */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            chat_id?: string;
+                            entries?: components["schemas"]["LedgerEntry"][];
+                            /** @description Per-turn fiduciary-grade verdicts (ADR 0018 D3). */
+                            gates?: {
+                                /** Format: uuid */
+                                message_id?: string;
+                                /** @enum {string} */
+                                gate_status?: "fiduciary_grade" | "supported_only" | "flagged";
+                                pass_count?: number;
+                                supported_count?: number;
+                                fail_count?: number;
+                                total_assertions?: number;
+                                confidence?: number | null;
+                                /** Format: date-time */
+                                created_at?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Chat (or filtered message) does not exist */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
                     };
                 };
             };
@@ -7468,6 +7661,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/autonomous/sessions/{session_id}/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Citation ledger + fiduciary gate for an autonomous session (WS-D PR2 C5)
+         * @description Returns ``{chat_id, entries, gates}`` — the identical shape
+         *     produced by ``GET /api/v1/chats/{chat_id}/ledger`` — so the
+         *     PR2 UI can reuse the chat ledger component directly without
+         *     adaptation. For a session ledger, ``gates`` always has exactly
+         *     one element (the single fiduciary-grade gate manufactured by
+         *     ``build_session_ledger``). Reuses ``resolve_ledger_entries`` and
+         *     ``resolve_gates`` — the same functions the chat ledger endpoint
+         *     calls.
+         *
+         *     Owner-gated: another user's ``session_id`` or a missing session
+         *     returns 404 (not 403) to avoid existence disclosure. Also
+         *     returns 404 if the session exists but ``build_session_ledger``
+         *     has not yet manufactured the hidden backing chat.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    session_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Ledger entries resolved to source + passage(s) + status + provenance, plus the session's single fiduciary-grade gate */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            chat_id?: string;
+                            entries?: components["schemas"]["LedgerEntry"][];
+                            /** @description Exactly one element for a session ledger — the gate manufactured by build_session_ledger (ADR 0018 D3). */
+                            gates?: {
+                                /** Format: uuid */
+                                message_id?: string;
+                                /** @enum {string} */
+                                gate_status?: "fiduciary_grade" | "supported_only" | "flagged";
+                                pass_count?: number;
+                                supported_count?: number;
+                                fail_count?: number;
+                                total_assertions?: number;
+                                confidence?: number | null;
+                                /** Format: date-time */
+                                created_at?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Session not found, or session has no ledger yet */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/autonomous/sessions/{session_id}/halt": {
         parameters: {
             query?: never;
@@ -9146,6 +9424,58 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List available content-authority sources from the registry
+         * @description WS-E PR1a (ADR 0016 / P3). Returns one entry per registered
+         *     content-authority source type, indicating whether it is enabled
+         *     (configured in the gateway) and its safe metadata fields. Auth
+         *     keys and cost fields are never included. Requires an
+         *     authenticated user (bearer token).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Available content-authority sources */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SourcesResponse"];
+                    };
+                };
+                /** @description Not authenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -10990,6 +11320,13 @@ export interface components {
             /** @description Files attached to this project, ordered by attachment time */
             attached_file_ids?: string[];
             /**
+             * @description Knowledge bases attached to this project (matter), ordered by
+             *     attachment time (Wave D.1 T3). Mutated by
+             *     ``POST /api/v1/projects/{project_id}/knowledge-bases`` and
+             *     ``DELETE /api/v1/projects/{project_id}/knowledge-bases/{kb_id}``.
+             */
+            attached_knowledge_base_ids?: string[];
+            /**
              * @description System-managed flag added by migration 0022. When true, this
              *     project is the per-user try-it sandbox (slug ``__sandbox__``).
              *     Sandbox projects are excluded from the default ``GET /projects``
@@ -12022,6 +12359,45 @@ export interface components {
                     [key: string]: unknown;
                 };
             };
+        };
+        /** @description One citation-ledger entry resolved to its source (ADR 0018 D4). */
+        LedgerEntry: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            message_id?: string;
+            /** @enum {string} */
+            source_kind?: "kb_document" | "caselaw" | "mcp";
+            verification_status?: string;
+            confidence?: number | null;
+            provider?: string | null;
+            /** Format: date-time */
+            retrieved_at?: string | null;
+            /** Format: uuid */
+            treatment_id?: string | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** @description Resolved source block; shape varies by kind. Quote kinds carry passages[]. */
+            source?: Record<string, never>;
+        };
+        /** @description Envelope for GET /api/v1/research/sources (WS-E PR1a). */
+        SourcesResponse: {
+            sources: components["schemas"]["AvailableSourceResponse"][];
+        };
+        /**
+         * @description One content-authority source registry entry. Exposes only the
+         *     safe fields defined by P3 (ADR 0016): name, type, jurisdiction,
+         *     coverage, content_kinds, enabled, egress_tier. Auth keys and
+         *     cost fields are NEVER included.
+         */
+        AvailableSourceResponse: {
+            name?: string | null;
+            type: string;
+            jurisdiction: string;
+            coverage: string;
+            content_kinds: string[];
+            enabled: boolean;
+            egress_tier?: number | null;
         };
     };
     responses: never;
