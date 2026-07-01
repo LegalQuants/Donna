@@ -17,7 +17,7 @@
 - **Defensive parsers at the data boundary** — local `str`/`obj`/`num` guards, drop malformed rows, never throw (template: `src/lib/research/research.ts`).
 - **Honest degradation** — a failed sub-fetch degrades to `null` independently; the card shows an "unavailable" state, never breaks the page or fabricates data.
 - **Design tokens** (from `src/app.css`): `mlq-success` `#16a34a` (green), `mlq-muted`, `mlq-subtle` (border), `mlq-surface`, `mlq-surface-alt`, `mlq-text`, `mlq-workflow`. No `-subtle` variant exists for success — use `text-mlq-success` (no custom bg).
-- **Pin SHA target:** `3659360` (lq-ai `main` HEAD; includes #251 `3e3230c` chat-authority consumer and the #252 integration-doc merge). Authoritative contract after bump: `vendor/lq-ai/docs/integration/2026-07-01-donna-fiduciary-auditability-integration.md`.
+- **Pin SHA target:** `5aa9135` (lq-ai `main` HEAD, **PR #253** — the regenerated OpenAPI sketch adding `/research/sources` + `/autonomous/sessions/{id}/ledger`; supersedes `3659360`, whose committed sketch was stale — see `docs/upstream-requests/lq-ai-openapi-export-staleness.md`). Authoritative contract after bump: `vendor/lq-ai/docs/integration/2026-07-01-donna-fiduciary-auditability-integration.md`.
 - **`/research/sources` response shape** (integration doc §2.3–2.4): `{ "sources": [ { "name": string|null, "type": string, "jurisdiction": string|null, "coverage": string|null, "content_kinds": string[], "enabled": boolean, "egress_tier": number|null } ] }`. Registered-but-unconfigured sources appear with `"enabled": false` (never omitted).
 
 ---

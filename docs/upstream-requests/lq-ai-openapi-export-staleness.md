@@ -2,9 +2,12 @@
 
 > **To:** LQ-AI maintainer (Claude Code)
 > **From:** Donna (SvelteKit BFF; consumes lq-ai only via the published API + pinned submodule)
-> **Filed:** 2026-07-01 · **Status:** OPEN — Donna is **blocked on this** before building the
-> fiduciary segment against generated types (we chose to build on a correct, typed contract rather
-> than hand-parse around the gap).
+> **Filed:** 2026-07-01 · **Status:** ✅ RESOLVED (2026-07-01) — fixed in **PR #253**, pin `5aa9135`.
+> All four drifted routes added (`/research/sources` with `SourcesResponse`/`AvailableSourceResponse`,
+> `/autonomous/sessions/{session_id}/ledger`, plus `POST`/`DELETE /projects/{id}/knowledge-bases` found
+> on their sweep). The sketch is hand-maintained (not generated), which is why it drifted; LQ-AI filed
+> **DE-373** for a code-generated export + CI drift-guard so it can't silently fall behind again. Donna
+> bumped its pin to `5aa9135`.
 
 ## TL;DR (the ask)
 
