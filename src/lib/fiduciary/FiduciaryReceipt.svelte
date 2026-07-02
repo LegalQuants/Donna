@@ -8,6 +8,7 @@
 	import {
 		ledgerSourceTitle,
 		buildProvenanceExport,
+		PROVENANCE_DISCLAIMER,
 		type ProvenanceSource
 	} from './provenanceExport';
 	import { downloadTextFile } from './download';
@@ -151,7 +152,7 @@
 				{/if}
 			</div>
 			<p class="mt-1 text-[10px] text-mlq-muted">
-				A faithful copy of the sourcing trail — not a signed attestation.
+				{PROVENANCE_DISCLAIMER}
 			</p>
 		</div>
 	{/if}

@@ -202,6 +202,15 @@ describe('FiduciaryReceipt', () => {
 		expect(content).toContain(PROVENANCE_DISCLAIMER);
 	});
 
+	it('shows the verbatim provenance disclaimer as the on-screen export caption', () => {
+		render(FiduciaryReceipt, {
+			entries: [entry({})],
+			gate,
+			exportMeta: { type: 'autonomous_session', session_id: 'sess-123' }
+		});
+		expect(screen.getByText(PROVENANCE_DISCLAIMER)).toBeInTheDocument();
+	});
+
 	it('exports a Markdown provenance record when that item is clicked', async () => {
 		vi.mocked(downloadTextFile).mockClear();
 		render(FiduciaryReceipt, {
