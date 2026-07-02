@@ -18,6 +18,7 @@
 	import { pickValidModel } from '$lib/models/pickValidModel';
 	import { page } from '$app/state';
 	import ConnectedBanner from '$lib/chat/ConnectedBanner.svelte';
+	import type { Citation } from '$lib/citations/types';
 
 	let { data } = $props();
 
@@ -134,6 +135,21 @@
 						onretry={retry}
 						ondecide={(d) => chat.decide(i, d)}
 						onactivatecitation={(c) => docPanel.open(c)}
+						onopensource={(e) => {
+							const s = e.source;
+							if (!s) return;
+							if (s.source_file_id)
+								docPanel.open({
+									source_file_id: s.source_file_id,
+									verificationApplicable: false
+								} as Citation);
+							else if (s.opinion_id)
+								docPanel.openOpinion({
+									opinionId: s.opinion_id,
+									caseName: s.label ?? `Opinion #${s.opinion_id}`
+								});
+							else if (s.url) window.open(s.url, '_blank', 'noopener');
+						}}
 					/>
 				{/each}
 			</div>

@@ -6,7 +6,12 @@
 	import type { LedgerEntry, LedgerGate } from './ledger';
 	import { gateVerdict, entryVerification, isProvenance } from './trust';
 
-	let { entries, gate }: { entries: LedgerEntry[]; gate: LedgerGate | null } = $props();
+	let {
+		entries,
+		gate,
+		onopensource
+	}: { entries: LedgerEntry[]; gate: LedgerGate | null; onopensource?: (e: LedgerEntry) => void } =
+		$props();
 
 	const verdict = $derived(gateVerdict(gate));
 	const quoted = $derived(entries.filter((e) => !isProvenance(e.verification_status)));
@@ -27,13 +32,7 @@
 	<p class="mb-1 font-medium text-mlq-text">Fiduciary receipt</p>
 	{#if verdict}
 		<p class="mb-2 flex flex-wrap items-center gap-2 text-mlq-muted">
-			<span
-				class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase {verdict.pillClass}"
-				title={verdict.explanation}
-			>
-				<span class="inline-block h-1.5 w-1.5 rounded-full {verdict.dotClass}"></span>
-				{verdict.label}
-			</span>
+			<span class="font-medium text-mlq-text" title={verdict.explanation}>{verdict.label}</span>
 			{#if gate && gate.total_assertions > 0}
 				<span>{gate.total_assertions} assertion{gate.total_assertions === 1 ? '' : 's'}</span>
 			{/if}
@@ -46,17 +45,47 @@
 				{@const chip = entryVerification(e.verification_status)}
 				<li>
 					<span class="flex flex-wrap items-center gap-2">
-						<span class="font-medium text-mlq-text">{sourceTitle(e)}</span>
+						{#if onopensource}
+							<button
+								type="button"
+								onclick={() => onopensource(e)}
+								class="text-left font-medium text-mlq-workflow hover:underline"
+							>
+								{sourceTitle(e)}
+							</button>
+						{:else}
+							<span class="font-medium text-mlq-text">{sourceTitle(e)}</span>
+						{/if}
 						<span class="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase {chip.cls}">
 							{chip.label}{#if e.confidence !== null}
 								· {Math.round(e.confidence * 100)}%{/if}
 						</span>
 					</span>
-					{#each e.source?.passages ?? [] as p (p.text)}
+					{#each e.source?.passages ?? [] as p, i (i)}
 						<span class="mt-0.5 block border-l-2 border-mlq-subtle pl-2 text-mlq-muted italic"
 							>&ldquo;{p.text}&rdquo;</span
 						>
 					{/each}
+					{#if e.source?.kind === 'caselaw'}
+						{#if e.treatment}
+							<span class="mt-1 block text-[11px] text-mlq-muted">
+								⚖ Cited by {e.treatment.cited_by_count ?? '—'} · derived{#if e.treatment.strongest_negative_class}
+									· strongest signal: {e.treatment.strongest_negative_class}{/if}
+							</span>
+							{#if e.treatment.signals.length > 0}
+								<details class="mt-0.5 text-[11px] text-mlq-muted">
+									<summary class="cursor-pointer">Signals</summary>
+									<ul class="mt-0.5 space-y-0.5 pl-3">
+										{#each e.treatment.signals as sig, i (i)}
+											<li>{sig.classification} — {sig.justification}</li>
+										{/each}
+									</ul>
+								</details>
+							{/if}
+						{:else}
+							<span class="mt-1 block text-[11px] text-mlq-muted">checking treatment…</span>
+						{/if}
+					{/if}
 				</li>
 			{/each}
 		</ul>
