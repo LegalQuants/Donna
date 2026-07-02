@@ -5,6 +5,7 @@
 <script lang="ts">
 	import type { LedgerEntry, LedgerGate } from './ledger';
 	import { gateVerdict, entryVerification, isProvenance } from './trust';
+	import { ledgerSourceTitle } from './provenanceExport';
 
 	let {
 		entries,
@@ -16,16 +17,6 @@
 	const verdict = $derived(gateVerdict(gate));
 	const quoted = $derived(entries.filter((e) => !isProvenance(e.verification_status)));
 	const consulted = $derived(entries.filter((e) => isProvenance(e.verification_status)));
-
-	function sourceTitle(e: LedgerEntry): string {
-		const s = e.source;
-		if (!s) return e.source_kind;
-		if (s.label) return s.label;
-		if (s.kind === 'kb_document') return 'Knowledge-base document';
-		if (s.kind === 'caselaw') return s.opinion_id ? `Opinion #${s.opinion_id}` : 'Case law';
-		if (s.external_ref) return s.external_ref;
-		return s.kind;
-	}
 </script>
 
 <div class="mt-3 rounded-mlq-control border border-mlq-subtle bg-mlq-surface-alt/40 p-3 text-xs">
@@ -51,10 +42,10 @@
 								onclick={() => onopensource(e)}
 								class="text-left font-medium text-mlq-workflow hover:underline"
 							>
-								{sourceTitle(e)}
+								{ledgerSourceTitle(e)}
 							</button>
 						{:else}
-							<span class="font-medium text-mlq-text">{sourceTitle(e)}</span>
+							<span class="font-medium text-mlq-text">{ledgerSourceTitle(e)}</span>
 						{/if}
 						<span class="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase {chip.cls}">
 							{chip.label}{#if e.confidence !== null}
@@ -98,7 +89,7 @@
 		<ul class="space-y-1">
 			{#each consulted as e (e.id)}
 				<li class="text-mlq-muted">
-					{e.source?.label ?? sourceTitle(e)}{#if e.source?.subtitle}
+					{e.source?.label ?? ledgerSourceTitle(e)}{#if e.source?.subtitle}
 						— {e.source.subtitle}{/if}
 				</li>
 			{/each}
