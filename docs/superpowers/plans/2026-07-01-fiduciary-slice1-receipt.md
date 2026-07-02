@@ -55,20 +55,64 @@
 **Files:** Create `src/lib/fiduciary/ledger.ts`, `src/lib/fiduciary/ledger.test.ts`.
 
 **Interfaces — Produces:**
+
 ```ts
-export interface LedgerPassage { text: string; offset_start: number | null; offset_end: number | null; page: number | null; verified: boolean | null; method: string | null }
-export interface LedgerSource { kind: string; source_file_id: string | null; opinion_id: number | null; cluster_id: number | null; external_ref: string | null; provider: string | null; label: string | null; subtitle: string | null; url: string | null; tool: string | null; passages: LedgerPassage[] }
-export interface LedgerEntry { id: string; message_id: string | null; source_kind: string; verification_status: string; confidence: number | null; provider: string | null; retrieved_at: string | null; treatment_id: string | null; created_at: string | null; source: LedgerSource | null }
-export interface LedgerGate { message_id: string | null; gate_status: string; pass_count: number; supported_count: number; fail_count: number; total_assertions: number; confidence: number | null; created_at: string | null }
-export interface Ledger { entries: LedgerEntry[]; gates: LedgerGate[] }
-export function parseLedger(raw: unknown): Ledger
-export function gateForMessage(ledger: Ledger, messageId: string): LedgerGate | null
-export function entriesForMessage(ledger: Ledger, messageId: string): LedgerEntry[]
+export interface LedgerPassage {
+	text: string;
+	offset_start: number | null;
+	offset_end: number | null;
+	page: number | null;
+	verified: boolean | null;
+	method: string | null;
+}
+export interface LedgerSource {
+	kind: string;
+	source_file_id: string | null;
+	opinion_id: number | null;
+	cluster_id: number | null;
+	external_ref: string | null;
+	provider: string | null;
+	label: string | null;
+	subtitle: string | null;
+	url: string | null;
+	tool: string | null;
+	passages: LedgerPassage[];
+}
+export interface LedgerEntry {
+	id: string;
+	message_id: string | null;
+	source_kind: string;
+	verification_status: string;
+	confidence: number | null;
+	provider: string | null;
+	retrieved_at: string | null;
+	treatment_id: string | null;
+	created_at: string | null;
+	source: LedgerSource | null;
+}
+export interface LedgerGate {
+	message_id: string | null;
+	gate_status: string;
+	pass_count: number;
+	supported_count: number;
+	fail_count: number;
+	total_assertions: number;
+	confidence: number | null;
+	created_at: string | null;
+}
+export interface Ledger {
+	entries: LedgerEntry[];
+	gates: LedgerGate[];
+}
+export function parseLedger(raw: unknown): Ledger;
+export function gateForMessage(ledger: Ledger, messageId: string): LedgerGate | null;
+export function entriesForMessage(ledger: Ledger, messageId: string): LedgerEntry[];
 ```
 
 - [ ] **Step 1: Write the failing tests**
 
 Create `src/lib/fiduciary/ledger.test.ts`:
+
 ```ts
 import { describe, it, expect } from 'vitest';
 import { parseLedger, gateForMessage, entriesForMessage } from './ledger';
@@ -90,7 +134,14 @@ const RAW = {
 			source: {
 				kind: 'kb_document',
 				source_file_id: 'c3000000-0000-4000-8000-000000000003',
-				passages: [{ text: 'This Agreement shall be governed by', offset_start: 0, offset_end: 35, page: null }]
+				passages: [
+					{
+						text: 'This Agreement shall be governed by',
+						offset_start: 0,
+						offset_end: 35,
+						page: null
+					}
+				]
 			}
 		},
 		{
@@ -116,11 +167,27 @@ const RAW = {
 			source_kind: 'caselaw',
 			verification_status: 'provenance',
 			confidence: null,
-			source: { kind: 'caselaw', label: 'Miranda v. Arizona', subtitle: 'U.S. Supreme Court', url: 'https://x', external_ref: '10648', tool: 'search_case_law' }
+			source: {
+				kind: 'caselaw',
+				label: 'Miranda v. Arizona',
+				subtitle: 'U.S. Supreme Court',
+				url: 'https://x',
+				external_ref: '10648',
+				tool: 'search_case_law'
+			}
 		}
 	],
 	gates: [
-		{ message_id: 'b2000000-0000-4000-8000-000000000002', gate_status: 'supported_only', pass_count: 1, supported_count: 0, fail_count: 0, total_assertions: 1, confidence: 0.95, created_at: '2026-06-30T12:00:02+00:00' }
+		{
+			message_id: 'b2000000-0000-4000-8000-000000000002',
+			gate_status: 'supported_only',
+			pass_count: 1,
+			supported_count: 0,
+			fail_count: 0,
+			total_assertions: 1,
+			confidence: 0.95,
+			created_at: '2026-06-30T12:00:02+00:00'
+		}
 	]
 };
 
@@ -152,7 +219,9 @@ describe('parseLedger', () => {
 	it('drops entries with no id and tolerates a malformed envelope', () => {
 		expect(parseLedger(null)).toEqual({ entries: [], gates: [] });
 		expect(parseLedger({ entries: 'no', gates: 5 })).toEqual({ entries: [], gates: [] });
-		const l = parseLedger({ entries: [{ source_kind: 'kb_document' }, { id: 'x', source_kind: 'caselaw' }] });
+		const l = parseLedger({
+			entries: [{ source_kind: 'kb_document' }, { id: 'x', source_kind: 'caselaw' }]
+		});
 		expect(l.entries).toHaveLength(1);
 		expect(l.entries[0].id).toBe('x');
 		expect(l.entries[0].source).toBeNull();
@@ -171,6 +240,7 @@ describe('parseLedger', () => {
 - [ ] **Step 2: Run — expect FAIL** (`npx vitest run src/lib/fiduciary/ledger.test.ts` → "Failed to resolve import './ledger'").
 
 - [ ] **Step 3: Implement** `src/lib/fiduciary/ledger.ts`:
+
 ```ts
 // src/lib/fiduciary/ledger.ts
 // Defensive view model for GET /api/v1/chats/{id}/ledger and the identical
@@ -335,29 +405,53 @@ export function gateForMessage(ledger: Ledger, messageId: string): LedgerGate | 
 **Files:** Create `src/lib/fiduciary/trust.ts`, `src/lib/fiduciary/trust.test.ts`.
 
 **Interfaces — Consumes:** `LedgerGate` (Task 1). **Produces:**
+
 ```ts
 export type TrustTone = 'grade' | 'supported' | 'review' | 'none';
-export interface GateVerdict { tone: TrustTone; label: string; explanation: string; pillClass: string; dotClass: string }
-export function gateVerdict(gate: LedgerGate | null): GateVerdict | null   // null when no gate
+export interface GateVerdict {
+	tone: TrustTone;
+	label: string;
+	explanation: string;
+	pillClass: string;
+	dotClass: string;
+}
+export function gateVerdict(gate: LedgerGate | null): GateVerdict | null; // null when no gate
 export type EntryState = 'verified' | 'caveats' | 'unverified' | 'provenance';
-export interface EntryChip { state: EntryState; label: string; cls: string }
-export function entryVerification(status: string): EntryChip
-export function isProvenance(status: string): boolean
+export interface EntryChip {
+	state: EntryState;
+	label: string;
+	cls: string;
+}
+export function entryVerification(status: string): EntryChip;
+export function isProvenance(status: string): boolean;
 ```
 
 - [ ] **Step 1: Write the failing tests** — `src/lib/fiduciary/trust.test.ts`:
+
 ```ts
 import { describe, it, expect } from 'vitest';
 import { gateVerdict, entryVerification, isProvenance } from './trust';
 import type { LedgerGate } from './ledger';
 
 function gate(p: Partial<LedgerGate>): LedgerGate {
-	return { message_id: 'm', gate_status: 'fiduciary_grade', pass_count: 0, supported_count: 0, fail_count: 0, total_assertions: 0, confidence: null, created_at: null, ...p };
+	return {
+		message_id: 'm',
+		gate_status: 'fiduciary_grade',
+		pass_count: 0,
+		supported_count: 0,
+		fail_count: 0,
+		total_assertions: 0,
+		confidence: null,
+		created_at: null,
+		...p
+	};
 }
 
 describe('gateVerdict', () => {
 	it('fiduciary_grade with assertions → green grade', () => {
-		const v = gateVerdict(gate({ gate_status: 'fiduciary_grade', total_assertions: 3, pass_count: 3 }))!;
+		const v = gateVerdict(
+			gate({ gate_status: 'fiduciary_grade', total_assertions: 3, pass_count: 3 })
+		)!;
 		expect(v.tone).toBe('grade');
 		expect(v.label).toBe('Fiduciary-grade');
 		expect(v.pillClass).toContain('mlq-verified');
@@ -370,7 +464,9 @@ describe('gateVerdict', () => {
 		expect(v.pillClass).not.toContain('mlq-verified');
 	});
 	it('supported_only → amber', () => {
-		const v = gateVerdict(gate({ gate_status: 'supported_only', total_assertions: 2, supported_count: 2 }))!;
+		const v = gateVerdict(
+			gate({ gate_status: 'supported_only', total_assertions: 2, supported_count: 2 })
+		)!;
 		expect(v.tone).toBe('supported');
 		expect(v.label).toBe('Supported');
 		expect(v.pillClass).toContain('mlq-caveats');
@@ -414,6 +510,7 @@ describe('entryVerification', () => {
 - [ ] **Step 2: Run — expect FAIL.**
 
 - [ ] **Step 3: Implement** `src/lib/fiduciary/trust.ts`:
+
 ```ts
 // src/lib/fiduciary/trust.ts
 // The single owner of the fiduciary trust vocabulary: the per-turn gate verdict
@@ -497,7 +594,11 @@ export function entryVerification(status: string): EntryChip {
 	if (AMBER.has(status)) {
 		return { state: 'caveats', label: 'supported', cls: 'bg-mlq-caveats/20 text-mlq-caveats' };
 	}
-	return { state: 'unverified', label: 'unverified', cls: 'bg-mlq-unverified/15 text-mlq-unverified' };
+	return {
+		state: 'unverified',
+		label: 'unverified',
+		cls: 'bg-mlq-unverified/15 text-mlq-unverified'
+	};
 }
 ```
 
@@ -513,15 +614,58 @@ export function entryVerification(status: string): EntryChip {
 **Interfaces — Consumes:** `LedgerEntry`, `LedgerGate` (Task 1); `gateVerdict`, `entryVerification`, `isProvenance` (Task 2). **Produces:** `<FiduciaryReceipt {entries} {gate} />` where `entries: LedgerEntry[]`, `gate: LedgerGate | null`.
 
 - [ ] **Step 1: Write the failing test** — `src/lib/fiduciary/FiduciaryReceipt.test.ts`:
+
 ```ts
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import FiduciaryReceipt from './FiduciaryReceipt.svelte';
 import type { LedgerEntry, LedgerGate } from './ledger';
 
-const gate: LedgerGate = { message_id: 'm', gate_status: 'supported_only', pass_count: 1, supported_count: 0, fail_count: 0, total_assertions: 1, confidence: 0.95, created_at: null };
+const gate: LedgerGate = {
+	message_id: 'm',
+	gate_status: 'supported_only',
+	pass_count: 1,
+	supported_count: 0,
+	fail_count: 0,
+	total_assertions: 1,
+	confidence: 0.95,
+	created_at: null
+};
 function entry(p: Partial<LedgerEntry>): LedgerEntry {
-	return { id: 'e', message_id: 'm', source_kind: 'kb_document', verification_status: 'exact_match', confidence: 1, provider: null, retrieved_at: null, treatment_id: null, created_at: null, source: { kind: 'kb_document', source_file_id: 'f', opinion_id: null, cluster_id: null, external_ref: null, provider: null, label: null, subtitle: null, url: null, tool: null, passages: [{ text: 'governing law clause', offset_start: 0, offset_end: 20, page: null, verified: null, method: null }] }, ...p };
+	return {
+		id: 'e',
+		message_id: 'm',
+		source_kind: 'kb_document',
+		verification_status: 'exact_match',
+		confidence: 1,
+		provider: null,
+		retrieved_at: null,
+		treatment_id: null,
+		created_at: null,
+		source: {
+			kind: 'kb_document',
+			source_file_id: 'f',
+			opinion_id: null,
+			cluster_id: null,
+			external_ref: null,
+			provider: null,
+			label: null,
+			subtitle: null,
+			url: null,
+			tool: null,
+			passages: [
+				{
+					text: 'governing law clause',
+					offset_start: 0,
+					offset_end: 20,
+					page: null,
+					verified: null,
+					method: null
+				}
+			]
+		},
+		...p
+	};
 }
 
 describe('FiduciaryReceipt', () => {
@@ -532,13 +676,32 @@ describe('FiduciaryReceipt', () => {
 		expect(screen.getByText(/verified/i)).toBeInTheDocument();
 	});
 	it('separates provenance ("consulted") rows into a lighter group', () => {
-		const prov = entry({ id: 'p', verification_status: 'provenance', source: { kind: 'caselaw', source_file_id: null, opinion_id: null, cluster_id: null, external_ref: null, provider: null, label: 'Miranda v. Arizona', subtitle: null, url: null, tool: 'search_case_law', passages: [] } });
+		const prov = entry({
+			id: 'p',
+			verification_status: 'provenance',
+			source: {
+				kind: 'caselaw',
+				source_file_id: null,
+				opinion_id: null,
+				cluster_id: null,
+				external_ref: null,
+				provider: null,
+				label: 'Miranda v. Arizona',
+				subtitle: null,
+				url: null,
+				tool: 'search_case_law',
+				passages: []
+			}
+		});
 		render(FiduciaryReceipt, { entries: [entry({}), prov], gate });
 		expect(screen.getByText(/consulted, not quoted/i)).toBeInTheDocument();
 		expect(screen.getByText(/Miranda v. Arizona/)).toBeInTheDocument();
 	});
 	it('shows the honest zero-assertion state', () => {
-		render(FiduciaryReceipt, { entries: [], gate: { ...gate, gate_status: 'fiduciary_grade', total_assertions: 0 } });
+		render(FiduciaryReceipt, {
+			entries: [],
+			gate: { ...gate, gate_status: 'fiduciary_grade', total_assertions: 0 }
+		});
 		expect(screen.getByText(/no sourced claims/i)).toBeInTheDocument();
 	});
 });
@@ -547,6 +710,7 @@ describe('FiduciaryReceipt', () => {
 - [ ] **Step 2: Run — expect FAIL.**
 
 - [ ] **Step 3: Implement** `src/lib/fiduciary/FiduciaryReceipt.svelte` (clone the `ToolSourcesPanel.svelte` card shape; split provenance vs quoted entries; per-entry chip via `entryVerification`; source title branches on `source.kind`):
+
 ```svelte
 <!-- src/lib/fiduciary/FiduciaryReceipt.svelte -->
 <!-- The per-turn fiduciary receipt: gate summary + one row per ledger entry
@@ -634,13 +798,23 @@ describe('FiduciaryReceipt', () => {
 **Interfaces — Consumes:** `LedgerGate` (Task 1), `gateVerdict` (Task 2). **Produces:** `<FiduciaryPill {gate} expanded onclick />` — a button.
 
 - [ ] **Step 1: Write the failing test** — `src/lib/fiduciary/FiduciaryPill.test.ts`:
+
 ```ts
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import FiduciaryPill from './FiduciaryPill.svelte';
 import type { LedgerGate } from './ledger';
 
-const gate: LedgerGate = { message_id: 'm', gate_status: 'flagged', pass_count: 1, supported_count: 0, fail_count: 1, total_assertions: 2, confidence: 1, created_at: null };
+const gate: LedgerGate = {
+	message_id: 'm',
+	gate_status: 'flagged',
+	pass_count: 1,
+	supported_count: 0,
+	fail_count: 1,
+	total_assertions: 2,
+	confidence: 1,
+	created_at: null
+};
 
 describe('FiduciaryPill', () => {
 	it('renders the verdict label as a button with aria-expanded', () => {
@@ -662,11 +836,13 @@ describe('FiduciaryPill', () => {
 	});
 });
 ```
+
 > If `@testing-library/user-event` is not a dependency, use `fireEvent.click` from `@testing-library/svelte` instead (grep an existing `*.svelte.test.ts` to confirm which is used) — do not add a dependency.
 
 - [ ] **Step 2: Run — expect FAIL.**
 
 - [ ] **Step 3: Implement** `src/lib/fiduciary/FiduciaryPill.svelte`:
+
 ```svelte
 <!-- src/lib/fiduciary/FiduciaryPill.svelte -->
 <!-- The always-visible per-turn trust pill. Distinct from the model-provenance
@@ -710,6 +886,7 @@ describe('FiduciaryPill', () => {
 **Interfaces — Consumes:** `parseLedger`, `LedgerEntry`, `LedgerGate`, `gateForMessage`, `entriesForMessage` (Task 1). **Produces:** the GET proxy at `/chats/{id}/ledger?message_id=`; `ChatMessage` gains `ledgerEntries?: LedgerEntry[]` and `ledgerGate?: LedgerGate | null`; `loadLedger(idx)` populates them.
 
 - [ ] **Step 1: Write the failing proxy test** — `src/routes/(app)/chats/[id]/ledger/server.test.ts`:
+
 ```ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 const lqFetch = vi.fn();
@@ -744,6 +921,7 @@ describe('ledger proxy', () => {
 - [ ] **Step 2: Run — expect FAIL.**
 
 - [ ] **Step 3: Implement the proxy** `src/routes/(app)/chats/[id]/ledger/+server.ts` (mirror `messages/[message_id]/citations/+server.ts`):
+
 ```ts
 import type { RequestHandler } from './$types';
 import { lqFetch } from '$lib/server/lqClient';
@@ -761,6 +939,7 @@ export const GET: RequestHandler = async (event) => {
 - [ ] **Step 4: Run the proxy test — expect PASS.**
 
 - [ ] **Step 5: Wire `loadLedger` into `chatStream.svelte.ts`.** (a) Import at the top: `import { parseLedger, gateForMessage, entriesForMessage, type LedgerEntry, type LedgerGate } from '$lib/fiduciary/ledger';`. (b) Add to the `ChatMessage` interface (beside `sources?`): `ledgerEntries?: LedgerEntry[]; ledgerGate?: LedgerGate | null;`. (c) Add the loader (clone `loadSources`, last-known-good):
+
 ```ts
 async function loadLedger(idx: number) {
 	const id = messages[idx].id;
@@ -778,6 +957,7 @@ async function loadLedger(idx: number) {
 	}
 }
 ```
+
 (d) Call it in `consumeStream` beside the others (after `loadSources(idx)`): `await loadLedger(idx);`.
 
 - [ ] **Step 6: Run** `npx vitest run src/lib/chat "src/routes/(app)/chats/[id]/ledger"` and `npm run check` — expect green (the added optional fields don't break existing chat tests).
@@ -796,6 +976,7 @@ async function loadLedger(idx: number) {
 - [ ] **Step 2: Run — expect FAIL.**
 
 - [ ] **Step 3: Implement** — after the existing per-message citation hydration block, add a single ledger fetch and distribute it:
+
 ```ts
 // One-shot ledger hydration: fetch the whole chat ledger once, group by message_id.
 try {
@@ -814,6 +995,7 @@ try {
 	/* ledger is optional — never break the page */
 }
 ```
+
 Add the import: `import { parseLedger, entriesForMessage, gateForMessage } from '$lib/fiduciary/ledger';` and, if the message view-model is a typed local, widen it to carry the optional `ledgerEntries`/`ledgerGate` (match how `citations`/`sources` are attached). Grep the file first to place this beside the existing hydration and use the actual `messages`/`id` variable names.
 
 - [ ] **Step 4: Run — expect PASS**, then `npm run check`.
@@ -832,21 +1014,29 @@ Add the import: `import { parseLedger, entriesForMessage, gateForMessage } from 
 - [ ] **Step 2: Run — expect FAIL.**
 
 - [ ] **Step 3: Implement** the wiring in `Message.svelte`:
-  (a) Imports: `import FiduciaryPill from '$lib/fiduciary/FiduciaryPill.svelte';` and `import FiduciaryReceipt from '$lib/fiduciary/FiduciaryReceipt.svelte';`.
-  (b) Add `let showLedger = $state(false);` beside `showSources` (~line 27).
-  (c) Render the panel alongside `ToolSourcesPanel` (~line 162), gated on the toggle + a gate being present:
+      (a) Imports: `import FiduciaryPill from '$lib/fiduciary/FiduciaryPill.svelte';` and `import FiduciaryReceipt from '$lib/fiduciary/FiduciaryReceipt.svelte';`.
+      (b) Add `let showLedger = $state(false);` beside `showSources` (~line 27).
+      (c) Render the panel alongside `ToolSourcesPanel` (~line 162), gated on the toggle + a gate being present:
+
 ```svelte
 {#if message.status === 'done' && message.ledgerGate && showLedger}
 	<FiduciaryReceipt entries={message.ledgerEntries ?? []} gate={message.ledgerGate} />
 {/if}
 ```
-  (d) Add the pill as the **leading** item of the footer flex row (before the Copy button at ~line 171), always visible when a gate exists:
+
+(d) Add the pill as the **leading** item of the footer flex row (before the Copy button at ~line 171), always visible when a gate exists:
+
 ```svelte
 {#if message.ledgerGate}
-	<FiduciaryPill gate={message.ledgerGate} expanded={showLedger} onclick={() => (showLedger = !showLedger)} />
+	<FiduciaryPill
+		gate={message.ledgerGate}
+		expanded={showLedger}
+		onclick={() => (showLedger = !showLedger)}
+	/>
 {/if}
 ```
-  Match surrounding indentation (tabs) and the existing footer markup exactly.
+
+Match surrounding indentation (tabs) and the existing footer markup exactly.
 
 - [ ] **Step 4: Run — expect PASS.** Then the FULL gates: `npm run check` (0/0), `npm run lint` (clean), `npx vitest run` (full suite green — confirm no existing `Message`/chat test regressed, the way the Slice-0 nullish-prop regression was caught).
 - [ ] **Step 5: Commit** — `feat(fiduciary): trust pill + receipt in the chat message footer`.
@@ -878,4 +1068,7 @@ Add the import: `import { parseLedger, entriesForMessage, gateForMessage } from 
 - **Design correction recorded:** the `trust_pills` gating from spec §5 is dropped (wrong lever — it's a model-pill format enum); the fiduciary pill is always-visible and needs no new preference key. Colors use `mlq-verified/caveats/unverified/muted` per the approved mockup.
 - **Deferred to Slice 2:** the `treatment` object (only `treatment_id` is parsed here); the "checking treatment…" poll.
 - **Type consistency:** `LedgerEntry`/`LedgerGate`/`Ledger` defined in Task 1 are imported unchanged by Tasks 2–7; `ledgerEntries`/`ledgerGate` field names are identical across the stream store (Task 5), the page load (Task 6), and `Message.svelte` (Task 7).
+
+```
+
 ```

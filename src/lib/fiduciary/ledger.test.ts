@@ -18,7 +18,14 @@ const RAW = {
 			source: {
 				kind: 'kb_document',
 				source_file_id: 'c3000000-0000-4000-8000-000000000003',
-				passages: [{ text: 'This Agreement shall be governed by', offset_start: 0, offset_end: 35, page: null }]
+				passages: [
+					{
+						text: 'This Agreement shall be governed by',
+						offset_start: 0,
+						offset_end: 35,
+						page: null
+					}
+				]
 			}
 		},
 		{
@@ -44,11 +51,27 @@ const RAW = {
 			source_kind: 'caselaw',
 			verification_status: 'provenance',
 			confidence: null,
-			source: { kind: 'caselaw', label: 'Miranda v. Arizona', subtitle: 'U.S. Supreme Court', url: 'https://x', external_ref: '10648', tool: 'search_case_law' }
+			source: {
+				kind: 'caselaw',
+				label: 'Miranda v. Arizona',
+				subtitle: 'U.S. Supreme Court',
+				url: 'https://x',
+				external_ref: '10648',
+				tool: 'search_case_law'
+			}
 		}
 	],
 	gates: [
-		{ message_id: 'b2000000-0000-4000-8000-000000000002', gate_status: 'supported_only', pass_count: 1, supported_count: 0, fail_count: 0, total_assertions: 1, confidence: 0.95, created_at: '2026-06-30T12:00:02+00:00' }
+		{
+			message_id: 'b2000000-0000-4000-8000-000000000002',
+			gate_status: 'supported_only',
+			pass_count: 1,
+			supported_count: 0,
+			fail_count: 0,
+			total_assertions: 1,
+			confidence: 0.95,
+			created_at: '2026-06-30T12:00:02+00:00'
+		}
 	]
 };
 
@@ -80,7 +103,9 @@ describe('parseLedger', () => {
 	it('drops entries with no id and tolerates a malformed envelope', () => {
 		expect(parseLedger(null)).toEqual({ entries: [], gates: [] });
 		expect(parseLedger({ entries: 'no', gates: 5 })).toEqual({ entries: [], gates: [] });
-		const l = parseLedger({ entries: [{ source_kind: 'kb_document' }, { id: 'x', source_kind: 'caselaw' }] });
+		const l = parseLedger({
+			entries: [{ source_kind: 'kb_document' }, { id: 'x', source_kind: 'caselaw' }]
+		});
 		expect(l.entries).toHaveLength(1);
 		expect(l.entries[0].id).toBe('x');
 		expect(l.entries[0].source).toBeNull();
