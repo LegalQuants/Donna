@@ -5,8 +5,8 @@
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
 	Donna keeps an <strong>honest provenance record on every answer</strong>: for each reply, what
 	sources it used, exactly what it quoted from each, whether that quote was actually found in the
-	real source, and — for cases — whether it is still good law. You never have to take the answer on
-	faith; you can trace any claim back to where it came from.
+	real source, and — for cases — signals about how later courts have treated it. You never have to
+	take the answer on faith; you can trace any claim back to where it came from.
 </p>
 
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">
