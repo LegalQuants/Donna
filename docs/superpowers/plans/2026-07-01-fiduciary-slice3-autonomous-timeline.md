@@ -973,11 +973,18 @@ async function login(page: Page) {
 	await page.waitForURL('/');
 }
 
-// The autonomous-session ledger endpoint reads the hidden backing chat linked by
-// chats.autonomous_session_id (migration 0063) and manufactures a single gate.
+// NOTE (verified against lq-ai source during execution — the shipped test is
+// tests/fiduciary-session-ledger.spec.ts): the endpoint (autonomous.py:688-705)
+// finds the hidden chat by chats.autonomous_session_id (migration 0063), then
+// resolves entries via resolve_ledger_entries(chat_id) AND the gate via
+// resolve_gates(chat_id), which READS work_product_fiduciary_gate rows
+// (gate.py:111-132) — the gate is NOT synthesized, so it must be seeded. The
+// shipped spec therefore also inserts a fiduciary_grade gate row (message_id,
+// chat_id, gate_status, counts, total_assertions=1) → a deterministic
+// "Fiduciary-grade" pill (asserted exactly, not via a 4-label regex).
 // Seed: a completed session + its hidden chat + an assistant message + a caselaw
 // citation + a citation_ledger_entry (needs exactly one source FK — the caselaw
-// citation id, mirroring the chat-receipt seed which needs no file FK).
+// citation id, no file FK) + the fiduciary gate.
 test('automations session view renders the fiduciary receipt + gate pill', async ({ page }) => {
 	const sessionId = randomUUID();
 	const chatId = randomUUID();
