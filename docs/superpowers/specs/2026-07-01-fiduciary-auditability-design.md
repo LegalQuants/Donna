@@ -192,10 +192,12 @@ Greenfield (no existing coachmark system). **Client-side only**, no backend depe
 
 ## 7. Ops (bookend tasks)
 
-- **First task — pin bump:** `vendor/lq-ai` → **`3659360`** (main HEAD incl. #251 `3e3230c` + the #252
-  docs merge, so the integration doc lands in-tree). `npm run gen:api`; rebuild `api` + `arq-worker` +
+- **First task — pin bump:** `vendor/lq-ai` → **`5aa9135`** (PR #253 — supersedes `3659360`, whose
+  committed OpenAPI sketch was stale; see `docs/upstream-requests/lq-ai-openapi-export-staleness.md`).
+  `npm run gen:api`; rebuild `api` + `arq-worker` +
   `ingest-worker` + `donna-web`; **verify the contract in `src/lib/api/backend.d.ts`** (`SourcesResponse`,
-  autonomous receipt types; confirm ledger bodies are untyped as expected); log in
+  autonomous receipt types; the ledger bodies are shape-typed (`LedgerEntry`) but the runtime returns
+  `dict[str,Any]` — parse defensively); log in
   `docs/decisions/lq-ai-pin.md`.
 - **Config to enable features** (§5.3 of the contract): CourtListener (`COURTLISTENER_API_TOKEN`) for
   caselaw + treatment graph; GovInfo (`GOVINFO_API_KEY`) for statute/regulation authority; a judge

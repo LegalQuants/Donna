@@ -22,7 +22,12 @@
 
 ---
 
-### Task 1: Pin bump to `3659360` + regenerate types + verify contract
+### Task 1: Pin bump + regenerate types + verify contract
+
+> **Note:** executed at **`5aa9135`** (PR #253), not `3659360` — the latter's committed OpenAPI sketch
+> was stale (missing `/research/sources` + `/autonomous/sessions/{id}/ledger`). The `3659360` references
+> in the steps below are the original as-planned target; the authoritative record is the Global
+> Constraints pin line, `docs/decisions/lq-ai-pin.md`, and `docs/upstream-requests/lq-ai-openapi-export-staleness.md`.
 
 **Files:**
 

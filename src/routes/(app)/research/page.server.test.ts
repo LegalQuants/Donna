@@ -38,10 +38,11 @@ describe('research load — sources', () => {
 	});
 
 	it('degrades sources to null when lqFetch throws', async () => {
-		// Sequenced, not path-branched: under vitest v4 + vi.mock, a persistent
-		// path-branching mockImplementation that throws isn't caught by the SUT's
-		// try/catch, but sequential mockImplementationOnce is. Call 1 = capabilities
-		// (ok); call 2 = the /research/sources fetch, which rejects.
+		// Sequenced, not path-branched: the SUT's try/catch is correct (verified
+		// live + by repro), but under this vitest v4 + vi.mock setup a persistent
+		// path-branching mockImplementation that throws surfaces a spurious uncaught
+		// rejection in the test harness. Sequential mockImplementationOnce avoids
+		// that artifact. Call 1 = capabilities (ok); call 2 = /research/sources rejects.
 		lqFetch
 			.mockImplementationOnce(async () => res(true, { enabled: true, providers: [] }))
 			.mockImplementationOnce(async () => {
