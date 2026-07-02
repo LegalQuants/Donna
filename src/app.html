@@ -4,6 +4,15 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+		<script>
+			// Set the theme class before first paint to avoid a light→dark flash (FOUC).
+			// Mirrors lib/theme.svelte.ts: explicit choice in localStorage wins, else OS preference.
+			try {
+				var t = localStorage.getItem('donna:theme');
+				if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches))
+					document.documentElement.classList.add('dark');
+			} catch (e) {}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

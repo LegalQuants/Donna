@@ -45,7 +45,7 @@
 			type="button"
 			data-testid="enhance-accept"
 			onclick={onaccept}
-			class="rounded-mlq-control bg-mlq-strong px-3 py-1 text-xs text-white">Use this</button
+			class="rounded-mlq-control bg-mlq-strong px-3 py-1 text-xs text-mlq-surface">Use this</button
 		>
 		<button
 			type="button"

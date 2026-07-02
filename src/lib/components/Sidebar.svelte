@@ -9,9 +9,12 @@
 		PanelLeft,
 		LogOut,
 		Settings,
-		Info
+		Info,
+		Sun,
+		Moon
 	} from '@lucide/svelte';
 	import { loadSidebar, persistSidebar } from './sidebar';
+	import { theme } from '$lib/theme.svelte';
 
 	let { displayName = 'Account' }: { displayName?: string } = $props();
 	let open = $state(loadSidebar());
@@ -72,6 +75,16 @@
 	</nav>
 
 	<div class="space-y-1 border-t border-mlq-subtle p-2">
+		<button
+			type="button"
+			onclick={() => theme.toggle()}
+			aria-pressed={theme.isDark}
+			title={theme.isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+			class="flex w-full items-center gap-3 rounded-mlq-control px-3 py-2 text-sm text-mlq-text hover:bg-mlq-subtle"
+		>
+			{#if theme.isDark}<Sun size={18} />{:else}<Moon size={18} />{/if}
+			{#if open}<span>{theme.isDark ? 'Light mode' : 'Dark mode'}</span>{/if}
+		</button>
 		<a
 			href="/about"
 			aria-current={page.url.pathname.startsWith('/about') ? 'page' : undefined}
