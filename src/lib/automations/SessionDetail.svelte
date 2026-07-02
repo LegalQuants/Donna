@@ -7,6 +7,8 @@
 	import type { SessionSummary, SessionReceipt } from './types';
 	import type { FindingItem, RunMemoryItem } from './findings';
 	import type { ArtifactItem } from './artifacts';
+	import FiduciaryReceipt from '$lib/fiduciary/FiduciaryReceipt.svelte';
+	import type { Ledger, LedgerEntry } from '$lib/fiduciary/ledger';
 
 	let {
 		initialSession,
@@ -17,7 +19,9 @@
 		initialMemoriesTotal = null,
 		initialArtifacts = null,
 		initialArtifactsTotal = null,
-		onopenartifact
+		initialLedger = null,
+		onopenartifact,
+		onopensource
 	}: {
 		initialSession: SessionSummary;
 		initialReceipt: SessionReceipt | null;
@@ -27,7 +31,9 @@
 		initialMemoriesTotal?: number | null;
 		initialArtifacts?: ArtifactItem[] | null;
 		initialArtifactsTotal?: number | null;
+		initialLedger?: Ledger | null;
 		onopenartifact?: (artifact: ArtifactItem) => void;
+		onopensource?: (entry: LedgerEntry) => void;
 	} = $props();
 
 	// Live-poll a running session to terminal; swap in fresh data as it arrives.
@@ -52,6 +58,8 @@
 	const memoriesTotal = $derived(pick(live.memoriesTotal, initialMemoriesTotal));
 	const artifacts = $derived(pick(live.artifacts, initialArtifacts));
 	const artifactsTotal = $derived(pick(live.artifactsTotal, initialArtifactsTotal));
+	const ledger = $derived(pick(live.ledger, initialLedger));
+	const gate = $derived(ledger?.gates[0] ?? null);
 
 	$effect(() => {
 		if (initialSession.status === 'running') {
@@ -62,7 +70,7 @@
 </script>
 
 <div class="flex flex-col gap-4">
-	<SessionReceiptHeader {session} {receipt} />
+	<SessionReceiptHeader {session} {receipt} {gate} />
 	{#if session.status === 'running'}
 		<p class="text-xs text-mlq-workflow">Running — live updating…</p>
 	{/if}
@@ -76,5 +84,8 @@
 		{onopenartifact}
 		running={session.status === 'running'}
 	/>
+	{#if ledger}
+		<FiduciaryReceipt entries={ledger.entries} {gate} {onopensource} />
+	{/if}
 	<SessionTimeline {receipt} />
 </div>
