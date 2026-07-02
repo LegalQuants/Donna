@@ -3,7 +3,10 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import Page from './+page.svelte';
 
 const enabled = {
-	data: { capabilities: { enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] } }
+	data: {
+		capabilities: { enabled: true, providers: [{ name: 'cl', type: 'courtlistener' }] },
+		sources: null
+	}
 } as never;
 
 describe('research page', () => {

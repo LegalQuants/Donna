@@ -2,11 +2,26 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `5ad9f9e` (bumped 2026-06-23 from `658fdbc`)
+- Pinned SHA: `5aa9135` (bumped 2026-07-01 from `5ad9f9e`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `5ad9f9e` → `5aa9135` (2026-07-01): lq-ai **WS-E/WS-D fiduciary-grade auditability** — unblocking the
+  Donna fiduciary segment (citation ledger, fiduciary gate, provenance, caselaw + authority
+  verification, case treatment, autonomous-session ledger, research source registry). Contract:
+  chat/session ledger `GET /chats/{id}/ledger` + `GET /autonomous/sessions/{id}/ledger` (identical
+  `{entries[], gates[]}`; `gate_status` ∈ `fiduciary_grade|supported_only|flagged`; **typed as
+  `LedgerEntry` for shape, but the runtime handlers return `dict[str,Any]` — shape-accurate, not
+  runtime-validated, so parse defensively**), provenance `GET /chats/{id}/messages/{id}/sources`, and
+  the typed research registry `GET /research/sources` → `SourcesResponse`/`AvailableSourceResponse`.
+  Migrations 0057–0064. The initial fiduciary code shipped on `3659360` (#251/#252), but its committed
+  OpenAPI **sketch was stale** (missing `/research/sources` and `/autonomous/sessions/{id}/ledger`) —
+  see `docs/upstream-requests/lq-ai-openapi-export-staleness.md`; fixed in **PR #253 (`5aa9135`)**,
+  which is why we pin here. LQ-AI filed **DE-373** (code-generated export + CI drift-guard) so the
+  sketch can't silently drift again. Authoritative reference:
+  `vendor/lq-ai/docs/integration/2026-07-01-donna-fiduciary-auditability-integration.md`.
 
 - `658fdbc` → `5ad9f9e` (2026-06-23): lq-ai **#211 — opt-in sticky-skills toggle** — unblocking
   Donna's per-chat **"Keep skills on"** feature. New Donna-facing contract in `backend.d.ts`:

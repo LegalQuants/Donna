@@ -6,6 +6,7 @@
 	import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
 	import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
 	import ResearchStarters from '$lib/research/ResearchStarters.svelte';
+	import ResearchSourcesCard from '$lib/research/ResearchSourcesCard.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const r = createResearch();
@@ -22,6 +23,10 @@
 
 <div class="mx-auto max-w-5xl p-6">
 	<h1 class="text-lg font-semibold text-mlq-text">Case-law research</h1>
+
+	<div class="mt-4">
+		<ResearchSourcesCard sources={data.sources} />
+	</div>
 
 	{#if !data.capabilities.enabled}
 		<div class="mt-4"><ResearchGate /></div>
