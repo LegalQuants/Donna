@@ -43,6 +43,51 @@ const RAW = {
 				opinion_id: 2812209,
 				cluster_id: 654321,
 				passages: [{ text: 'The court held that...', offset_start: 40, offset_end: 120 }]
+			},
+			treatment: {
+				cited_by_count: 214,
+				as_of: '2026-06-30T11:58:00+00:00',
+				derived_method: 'court_ai_ml_v1',
+				citing: [
+					{
+						opinion_id: 1234567,
+						cluster_id: 111111,
+						case_name: 'Plaintiff v. Defendant',
+						court: 'U.S. Supreme Court',
+						date_filed: '2024-01-15'
+					},
+					{
+						opinion_id: 7654321,
+						cluster_id: 222222,
+						case_name: 'Another v. Party',
+						court: 'D.C. Circuit',
+						date_filed: '2023-06-20'
+					}
+				],
+				strongest_negative_class: 'overruled',
+				judged_count: null,
+				judge_as_of: null,
+				per_class_counts: {
+					overruled: 1,
+					reversed: 3,
+					limited: 2,
+					distinguished: 8
+				},
+				case_confidence: 0.87,
+				signals: [
+					{
+						citing_opinion_id: 1234567,
+						classification: 'overruled',
+						confidence: 0.92,
+						justification: 'Court explicitly overruled this precedent'
+					},
+					{
+						citing_opinion_id: 7654321,
+						classification: 'distinguished',
+						confidence: 0.78,
+						justification: 'Court noted factual differences'
+					}
+				]
 			}
 		},
 		{
@@ -117,5 +162,132 @@ describe('parseLedger', () => {
 		expect(entriesForMessage(l, mid)).toHaveLength(3);
 		expect(gateForMessage(l, mid)?.gate_status).toBe('supported_only');
 		expect(gateForMessage(l, 'nope')).toBeNull();
+	});
+
+	it('parses treatment with full data (cited_by_count, signals, per_class_counts)', () => {
+		const l = parseLedger(RAW);
+		const entry = l.entries[1];
+		expect(entry.treatment).not.toBeNull();
+		expect(entry.treatment?.cited_by_count).toBe(214);
+		expect(entry.treatment?.strongest_negative_class).toBe('overruled');
+		expect(entry.treatment?.as_of).toBe('2026-06-30T11:58:00+00:00');
+		expect(entry.treatment?.derived_method).toBe('court_ai_ml_v1');
+		expect(entry.treatment?.case_confidence).toBe(0.87);
+		expect(entry.treatment?.signals).toHaveLength(2);
+		expect(entry.treatment?.signals[0].classification).toBe('overruled');
+		expect(entry.treatment?.signals[0].confidence).toBe(0.92);
+		expect(entry.treatment?.signals[1].classification).toBe('distinguished');
+		expect(entry.treatment?.per_class_counts?.overruled).toBe(1);
+		expect(entry.treatment?.per_class_counts?.distinguished).toBe(8);
+		expect(entry.treatment?.citing).toHaveLength(2);
+		expect(entry.treatment?.citing[0].case_name).toBe('Plaintiff v. Defendant');
+	});
+
+	it('parses treatment as null for entries without treatment data', () => {
+		const l = parseLedger(RAW);
+		const entry0 = l.entries[0];
+		expect(entry0.treatment).toBeNull();
+		const entry2 = l.entries[2];
+		expect(entry2.treatment).toBeNull();
+	});
+
+	it('drops malformed citing rows and non-numeric per_class_counts values', () => {
+		const withDefects = {
+			entries: [
+				{
+					id: 'test-1',
+					source_kind: 'caselaw',
+					treatment: {
+						cited_by_count: 100,
+						citing: [
+							{
+								opinion_id: 123,
+								cluster_id: 456,
+								case_name: 'Valid Case',
+								court: 'Court',
+								date_filed: '2024-01-01'
+							},
+							'not an object',
+							null
+						],
+						per_class_counts: {
+							valid: 5,
+							invalid: 'not a number',
+							another: 10,
+							also_invalid: true,
+							ok: 3
+						},
+						signals: []
+					}
+				}
+			]
+		};
+		const l = parseLedger(withDefects);
+		const entry = l.entries[0];
+		expect(entry.treatment?.citing).toHaveLength(1);
+		expect(entry.treatment?.citing[0].case_name).toBe('Valid Case');
+		expect(entry.treatment?.per_class_counts).toEqual({
+			valid: 5,
+			another: 10,
+			ok: 3
+		});
+	});
+
+	it('drops signals rows missing classification', () => {
+		const withDefects = {
+			entries: [
+				{
+					id: 'test-2',
+					source_kind: 'caselaw',
+					treatment: {
+						cited_by_count: 50,
+						signals: [
+							{
+								citing_opinion_id: 111,
+								classification: 'valid',
+								confidence: 0.9,
+								justification: 'This is good'
+							},
+							{
+								citing_opinion_id: 222,
+								confidence: 0.8,
+								justification: 'Missing classification'
+							},
+							{
+								citing_opinion_id: 333,
+								classification: '',
+								confidence: 0.7
+							},
+							{
+								citing_opinion_id: 444,
+								classification: 'good',
+								confidence: 0.85
+							}
+						],
+						citing: [],
+						per_class_counts: {}
+					}
+				}
+			]
+		};
+		const l = parseLedger(withDefects);
+		const entry = l.entries[0];
+		expect(entry.treatment?.signals).toHaveLength(2);
+		expect(entry.treatment?.signals[0].classification).toBe('valid');
+		expect(entry.treatment?.signals[1].classification).toBe('good');
+	});
+
+	it('handles treatment as null (not yet derived)', () => {
+		const withoutTreatment = {
+			entries: [
+				{
+					id: 'test-3',
+					source_kind: 'caselaw',
+					treatment: null
+				}
+			]
+		};
+		const l = parseLedger(withoutTreatment);
+		expect(l.entries[0].treatment).toBeNull();
 	});
 });

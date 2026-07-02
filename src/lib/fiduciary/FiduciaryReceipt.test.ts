@@ -23,6 +23,7 @@ function entry(p: Partial<LedgerEntry>): LedgerEntry {
 		provider: null,
 		retrieved_at: null,
 		treatment_id: null,
+		treatment: null,
 		created_at: null,
 		source: {
 			kind: 'kb_document',
