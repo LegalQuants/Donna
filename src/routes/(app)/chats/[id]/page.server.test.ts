@@ -38,19 +38,19 @@ describe('chat load — ledger hydration', () => {
 						{
 							id: 'le-1',
 							message_id: 'a1',
-							source_kind: 'case_law',
+							source_kind: 'caselaw',
 							verification_status: 'verified',
 							source: null
 						},
 						{
 							id: 'le-2',
 							message_id: 'a1',
-							source_kind: 'case_law',
+							source_kind: 'caselaw',
 							verification_status: 'verified',
 							source: null
 						}
 					],
-					gates: [{ message_id: 'a1', gate_status: 'pass' }]
+					gates: [{ message_id: 'a1', gate_status: 'fiduciary_grade' }]
 				});
 			}
 			if (path === '/api/v1/chats/chat-1') return ok({ sticky_skills: [] });
@@ -71,7 +71,7 @@ describe('chat load — ledger hydration', () => {
 		const u1 = res.messages.find((m) => m.id === 'u1')!;
 
 		expect(a1.ledgerEntries).toHaveLength(2);
-		expect(a1.ledgerGate).toMatchObject({ gate_status: 'pass' });
+		expect(a1.ledgerGate).toMatchObject({ gate_status: 'fiduciary_grade' });
 		// The message without ledger data gets neither field attached.
 		expect(a2.ledgerEntries).toBeUndefined();
 		expect(a2.ledgerGate).toBeUndefined();

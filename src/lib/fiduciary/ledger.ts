@@ -3,7 +3,7 @@
 // autonomous-session ledger. The response is shape-typed in backend.d.ts but the
 // runtime returns dict[str,Any] and `entry.source` is opaque/polymorphic — so we
 // hand-parse here (house style of research.ts / findings.ts), dropping malformed
-// rows rather than throwing. Treatment (Slice 2) is not parsed here beyond treatment_id.
+// rows rather than throwing.
 
 export interface LedgerPassage {
 	text: string;
@@ -26,6 +26,31 @@ export interface LedgerSource {
 	tool: string | null;
 	passages: LedgerPassage[];
 }
+export interface TreatmentSignal {
+	citing_opinion_id: number | null;
+	classification: string;
+	confidence: number | null;
+	justification: string | null;
+}
+export interface TreatmentCiting {
+	opinion_id: number | null;
+	cluster_id: number | null;
+	case_name: string | null;
+	court: string | null;
+	date_filed: string | null;
+}
+export interface LedgerTreatment {
+	cited_by_count: number | null;
+	as_of: string | null;
+	derived_method: string | null;
+	citing: TreatmentCiting[];
+	strongest_negative_class: string | null;
+	judged_count: number | null;
+	judge_as_of: string | null;
+	per_class_counts: Record<string, number>;
+	case_confidence: number | null;
+	signals: TreatmentSignal[];
+}
 export interface LedgerEntry {
 	id: string;
 	message_id: string | null;
@@ -35,6 +60,7 @@ export interface LedgerEntry {
 	provider: string | null;
 	retrieved_at: string | null;
 	treatment_id: string | null;
+	treatment: LedgerTreatment | null;
 	created_at: string | null;
 	source: LedgerSource | null;
 }
@@ -98,6 +124,60 @@ function parseSource(raw: unknown): LedgerSource | null {
 	};
 }
 
+function parseSignal(raw: unknown): TreatmentSignal | null {
+	const r = obj(raw);
+	const classification = str(r.classification);
+	if (!classification) return null;
+	return {
+		citing_opinion_id: num(r.citing_opinion_id),
+		classification,
+		confidence: num(r.confidence),
+		justification: str(r.justification)
+	};
+}
+
+function parseCiting(raw: unknown): TreatmentCiting | null {
+	if (!raw || typeof raw !== 'object') return null;
+	const r = raw as Record<string, unknown>;
+	return {
+		opinion_id: num(r.opinion_id),
+		cluster_id: num(r.cluster_id),
+		case_name: str(r.case_name),
+		court: str(r.court),
+		date_filed: str(r.date_filed)
+	};
+}
+
+function parsePerClassCounts(raw: unknown): Record<string, number> {
+	const r = obj(raw);
+	const out: Record<string, number> = {};
+	for (const [k, v] of Object.entries(r)) {
+		if (typeof v === 'number') out[k] = v;
+	}
+	return out;
+}
+
+function parseTreatment(raw: unknown): LedgerTreatment | null {
+	if (!raw || typeof raw !== 'object') return null;
+	const r = raw as Record<string, unknown>;
+	return {
+		cited_by_count: num(r.cited_by_count),
+		as_of: str(r.as_of),
+		derived_method: str(r.derived_method),
+		citing: (Array.isArray(r.citing) ? r.citing : [])
+			.map(parseCiting)
+			.filter((c): c is TreatmentCiting => c !== null),
+		strongest_negative_class: str(r.strongest_negative_class),
+		judged_count: num(r.judged_count),
+		judge_as_of: str(r.judge_as_of),
+		per_class_counts: parsePerClassCounts(r.per_class_counts),
+		case_confidence: num(r.case_confidence),
+		signals: (Array.isArray(r.signals) ? r.signals : [])
+			.map(parseSignal)
+			.filter((s): s is TreatmentSignal => s !== null)
+	};
+}
+
 function parseEntry(raw: unknown): LedgerEntry | null {
 	const r = obj(raw);
 	const id = str(r.id);
@@ -111,6 +191,7 @@ function parseEntry(raw: unknown): LedgerEntry | null {
 		provider: str(r.provider),
 		retrieved_at: str(r.retrieved_at),
 		treatment_id: str(r.treatment_id),
+		treatment: parseTreatment(r.treatment),
 		created_at: str(r.created_at),
 		source: parseSource(r.source)
 	};
