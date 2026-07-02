@@ -3,6 +3,7 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import SessionDetail from './SessionDetail.svelte';
 import type { SessionSummary } from './types';
+import type { Ledger } from '$lib/fiduciary/ledger';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
@@ -23,6 +24,57 @@ const session: SessionSummary = {
 	completed_at: '2026-06-05T09:04:00Z',
 	last_activity_at: null,
 	error: null
+};
+
+const ledger: Ledger = {
+	entries: [
+		{
+			id: 'le1',
+			message_id: 'm1',
+			source_kind: 'kb_document',
+			verification_status: 'exact_match',
+			confidence: 1,
+			provider: null,
+			retrieved_at: null,
+			treatment_id: null,
+			treatment: null,
+			created_at: null,
+			source: {
+				kind: 'kb_document',
+				source_file_id: 'f1',
+				opinion_id: null,
+				cluster_id: null,
+				external_ref: null,
+				provider: null,
+				label: 'Master Services Agreement',
+				subtitle: null,
+				url: null,
+				tool: null,
+				passages: [
+					{
+						text: 'limitation of liability',
+						offset_start: 0,
+						offset_end: 5,
+						page: null,
+						verified: true,
+						method: 'exact_match'
+					}
+				]
+			}
+		}
+	],
+	gates: [
+		{
+			message_id: 'm1',
+			gate_status: 'fiduciary_grade',
+			pass_count: 1,
+			supported_count: 0,
+			fail_count: 0,
+			total_assertions: 1,
+			confidence: 0.99,
+			created_at: null
+		}
+	]
 };
 
 describe('SessionDetail', () => {
@@ -248,5 +300,52 @@ describe('SessionDetail', () => {
 		expect(screen.getByText('Documents')).toBeInTheDocument();
 		await fireEvent.click(screen.getByRole('button', { name: /open/i }));
 		expect(onopenartifact).toHaveBeenCalled();
+	});
+
+	it('renders the fiduciary receipt block from the initial ledger', () => {
+		render(SessionDetail, {
+			props: {
+				initialSession: session,
+				initialReceipt: null,
+				initialFindings: [],
+				initialFindingsTotal: 0,
+				initialMemories: [],
+				initialLedger: ledger
+			}
+		});
+		expect(screen.getByText('Fiduciary receipt')).toBeInTheDocument();
+		expect(screen.getByText('Master Services Agreement')).toBeInTheDocument();
+		// the gate pill shows in the header
+		expect(screen.getAllByText('Fiduciary-grade').length).toBeGreaterThan(0);
+	});
+	it('omits the fiduciary receipt block when there is no ledger', () => {
+		render(SessionDetail, {
+			props: {
+				initialSession: session,
+				initialReceipt: null,
+				initialFindings: [],
+				initialFindingsTotal: 0,
+				initialMemories: [],
+				initialLedger: null
+			}
+		});
+		expect(screen.queryByText('Fiduciary receipt')).not.toBeInTheDocument();
+	});
+	it('fires onopensource when a ledger source is clicked', async () => {
+		const onopensource = vi.fn();
+		render(SessionDetail, {
+			props: {
+				initialSession: session,
+				initialReceipt: null,
+				initialFindings: [],
+				initialFindingsTotal: 0,
+				initialMemories: [],
+				initialLedger: ledger,
+				onopensource
+			}
+		});
+		await fireEvent.click(screen.getByText('Master Services Agreement'));
+		expect(onopensource).toHaveBeenCalledTimes(1);
+		expect(onopensource.mock.calls[0][0].id).toBe('le1');
 	});
 });

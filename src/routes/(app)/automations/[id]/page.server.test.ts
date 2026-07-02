@@ -7,16 +7,18 @@ const ev = (id = 's1') => ({ params: { id } }) as never;
 beforeEach(() => lqFetch.mockReset());
 
 const okJson = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
-/** Queue the findings+memories+artifacts responses that follow the session response. */
+/** Queue the findings+memories+artifacts+ledger responses that follow the session response. */
 function mockOutput(
 	findingsBody: unknown = { findings: [], total_count: 0 },
 	memoriesBody: unknown = { entries: [], total_count: 0 },
-	artifactsBody: unknown = { artifacts: [], total_count: 0 }
+	artifactsBody: unknown = { artifacts: [], total_count: 0 },
+	ledgerBody: unknown = { chat_id: 'c', entries: [], gates: [] }
 ) {
 	lqFetch
 		.mockResolvedValueOnce(okJson(findingsBody))
 		.mockResolvedValueOnce(okJson(memoriesBody))
-		.mockResolvedValueOnce(okJson(artifactsBody));
+		.mockResolvedValueOnce(okJson(artifactsBody))
+		.mockResolvedValueOnce(okJson(ledgerBody));
 }
 
 describe('/automations/[id] load', () => {
@@ -49,12 +51,14 @@ describe('/automations/[id] load', () => {
 		const out = (await load(ev())) as {
 			session: { id: string };
 			receipt: { terminal_reason: string } | null;
+			ledger: { gates: { gate_status: string }[] } | null;
 		};
 		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/sessions/s1');
 		expect(lqFetch.mock.calls[1][1]).toBe('/api/v1/autonomous/sessions/s1/findings?limit=200');
 		expect(lqFetch.mock.calls[2][1]).toBe(
 			'/api/v1/autonomous/memory?source_session_id=s1&limit=200'
 		);
+		expect(lqFetch.mock.calls[4][1]).toBe('/api/v1/autonomous/sessions/s1/ledger');
 		expect(out.session.id).toBe('s1');
 		expect(out.receipt?.terminal_reason).toBe('completed');
 	});
@@ -133,9 +137,38 @@ describe('/automations/[id] load', () => {
 		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		const out = (await load(ev())) as { findings: null; memories: null };
+		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+		const out = (await load(ev())) as { findings: null; memories: null; ledger: null };
 		expect(out.findings).toBeNull();
 		expect(out.memories).toBeNull();
+		expect(out.ledger).toBeNull();
+	});
+
+	it('degrades a 404 session ledger to a null data.ledger without failing the page', async () => {
+		lqFetch.mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({
+					session: {
+						id: 's1',
+						status: 'completed',
+						trigger_kind: 'manual',
+						current_phase: 'delivery',
+						cost_total_usd: '0.1',
+						created_at: 'x'
+					},
+					receipt: null
+				}),
+				{ status: 200 }
+			)
+		);
+		lqFetch
+			.mockResolvedValueOnce(okJson({ findings: [], total_count: 0 }))
+			.mockResolvedValueOnce(okJson({ entries: [], total_count: 0 }))
+			.mockResolvedValueOnce(okJson({ artifacts: [], total_count: 0 }))
+			.mockResolvedValueOnce(new Response('nope', { status: 404 }));
+		const out = (await load(ev())) as { session: { id: string }; ledger: unknown };
+		expect(out.session.id).toBe('s1');
+		expect(out.ledger).toBeNull();
 	});
 });
 

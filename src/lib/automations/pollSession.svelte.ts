@@ -6,6 +6,7 @@ import {
 } from './types';
 import type { FindingItem, RunMemoryItem } from './findings';
 import type { ArtifactItem } from './artifacts';
+import type { Ledger } from '$lib/fiduciary/ledger';
 
 const TERMINAL = new Set(['completed', 'halted', 'failed']);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -32,6 +33,7 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 	let memoriesTotal = $state<number | null>(null);
 	let artifacts = $state<ArtifactItem[] | null>(null);
 	let artifactsTotal = $state<number | null>(null);
+	let ledger = $state<Ledger | null>(null);
 	let done = $state(false);
 	let error = $state<string | null>(null);
 	let running = false;
@@ -52,6 +54,7 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 			memories_total?: unknown;
 			artifacts?: unknown;
 			artifacts_total?: unknown;
+			ledger?: unknown;
 		};
 		const parsed = parseSessionSummary(body.session);
 		if (!parsed) {
@@ -82,6 +85,9 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 		const incomingArtifactsTotal =
 			typeof body.artifacts_total === 'number' ? body.artifacts_total : null;
 		if (incomingArtifactsTotal !== null) artifactsTotal = incomingArtifactsTotal;
+		const incomingLedger =
+			body.ledger && typeof body.ledger === 'object' ? (body.ledger as Ledger) : null;
+		if (incomingLedger !== null) ledger = incomingLedger;
 		return TERMINAL.has(parsed.status);
 	}
 
@@ -129,6 +135,9 @@ export function createSessionPoll(id: string, opts: PollOpts = {}) {
 		},
 		get artifactsTotal() {
 			return artifactsTotal;
+		},
+		get ledger() {
+			return ledger;
 		},
 		get done() {
 			return done;

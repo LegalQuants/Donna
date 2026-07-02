@@ -11,6 +11,7 @@ import {
 	type RunMemoryItem
 } from './findings';
 import { parseArtifactList, type ArtifactItem } from './artifacts';
+import { parseLedger, type Ledger } from '$lib/fiduciary/ledger';
 import type { RequestEvent } from '@sveltejs/kit';
 
 export interface RunOutput {
@@ -65,4 +66,22 @@ export async function loadRunOutput(event: RequestEvent, sessionId: string): Pro
 		}
 	}
 	return { findings, findings_total, memories, memories_total, artifacts, artifacts_total };
+}
+
+/** The autonomous-session citation ledger + fiduciary gate (WS-D). Identical
+ *  shape to the chat ledger. Degrades to null on any failure — a 404 means the
+ *  session's hidden backing chat has not been manufactured yet, or the session
+ *  is not the caller's; either way the receipt page must never fail because of it. */
+export async function loadSessionLedger(
+	event: RequestEvent,
+	sessionId: string
+): Promise<Ledger | null> {
+	const res = await lqFetch(event, `/api/v1/autonomous/sessions/${sessionId}/ledger`);
+	if (!res.ok) return null;
+	try {
+		return parseLedger(await res.json());
+	} catch {
+		// non-JSON body → ledger unavailable
+		return null;
+	}
 }
