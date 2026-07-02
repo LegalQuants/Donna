@@ -5,6 +5,7 @@
 	import { createDocPanel } from '$lib/docpanel/docPanel.svelte';
 	import type { Citation } from '$lib/citations/types';
 	import type { ArtifactItem } from '$lib/automations/artifacts';
+	import { openLedgerSource } from '$lib/fiduciary/openSource';
 	import type { PageData, ActionData } from './$types';
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -41,7 +42,9 @@
 					initialMemoriesTotal={data.memories_total}
 					initialArtifacts={data.artifacts}
 					initialArtifactsTotal={data.artifacts_total}
+					initialLedger={data.ledger}
 					onopenartifact={openArtifact}
+					onopensource={(e) => openLedgerSource(docPanel, e)}
 				/>
 			{/key}
 		</div>
