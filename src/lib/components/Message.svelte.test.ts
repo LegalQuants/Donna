@@ -325,3 +325,89 @@ describe('Message tool-loop cards', () => {
 		expect(queryByRole('link', { name: /connect/i })).toBeNull();
 	});
 });
+
+describe('Message fiduciary receipt (trust pill + expandable panel)', () => {
+	const ledgerGate = {
+		message_id: 'f1',
+		gate_status: 'flagged',
+		pass_count: 0,
+		supported_count: 0,
+		fail_count: 1,
+		total_assertions: 1,
+		confidence: null,
+		created_at: null
+	};
+	const ledgerEntries = [
+		{
+			id: 'le1',
+			message_id: 'f1',
+			source_kind: 'kb_document',
+			verification_status: 'unverified',
+			confidence: null,
+			provider: null,
+			retrieved_at: null,
+			treatment_id: null,
+			created_at: null,
+			source: {
+				kind: 'kb_document',
+				source_file_id: 'sf1',
+				opinion_id: null,
+				cluster_id: null,
+				external_ref: null,
+				provider: null,
+				label: 'Master Services Agreement',
+				subtitle: null,
+				url: null,
+				tool: null,
+				passages: [
+					{
+						text: 'termination requires thirty days notice',
+						offset_start: null,
+						offset_end: null,
+						page: null,
+						verified: null,
+						method: null
+					}
+				]
+			}
+		}
+	];
+
+	it('always shows the trust pill for a done message with a ledger gate, independent of provenance_pills', () => {
+		h.provenance = 'collapsed';
+		render(Message, {
+			props: {
+				message: {
+					key: 'f1',
+					id: 'f1',
+					role: 'assistant',
+					content: 'Answer.',
+					status: 'done',
+					ledgerGate,
+					ledgerEntries
+				} as never
+			}
+		});
+		expect(screen.getByRole('button', { name: /needs review/i })).toBeInTheDocument();
+	});
+
+	it('reveals the receipt panel with the quoted passage when the pill is clicked', async () => {
+		h.provenance = 'always';
+		render(Message, {
+			props: {
+				message: {
+					key: 'f2',
+					id: 'f2',
+					role: 'assistant',
+					content: 'Answer.',
+					status: 'done',
+					ledgerGate,
+					ledgerEntries
+				} as never
+			}
+		});
+		expect(screen.queryByText(/thirty days notice/)).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: /needs review/i }));
+		expect(screen.getByText(/thirty days notice/)).toBeInTheDocument();
+	});
+});

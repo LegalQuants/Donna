@@ -2,6 +2,8 @@
 	import Markdown from './Markdown.svelte';
 	import CitationView from './CitationView.svelte';
 	import ToolSourcesPanel from './ToolSourcesPanel.svelte';
+	import FiduciaryPill from '$lib/fiduciary/FiduciaryPill.svelte';
+	import FiduciaryReceipt from '$lib/fiduciary/FiduciaryReceipt.svelte';
 	import { ShieldCheck, ScrollText, Paperclip, Scale } from '@lucide/svelte';
 	import type { ChatMessage } from '$lib/chat/chatStream.svelte';
 	import type { Citation } from '$lib/citations/types';
@@ -25,6 +27,7 @@
 	const collapsed = $derived((page.data.user?.provenance_pills ?? 'always') === 'collapsed');
 	let showDetails = $state(false);
 	let showSources = $state(true); // sources panel defaults open (small, high-value)
+	let showLedger = $state(false);
 	const showPills = $derived(!collapsed || showDetails);
 
 	async function copy() {
@@ -162,12 +165,22 @@
 			{#if message.status === 'done' && message.sources && message.sources.length > 0 && showSources}
 				<ToolSourcesPanel sources={message.sources} />
 			{/if}
+			{#if message.status === 'done' && message.ledgerGate && showLedger}
+				<FiduciaryReceipt entries={message.ledgerEntries ?? []} gate={message.ledgerGate} />
+			{/if}
 			{#if message.status === 'streaming' && message.content !== ''}
 				<span class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-mlq-text align-text-bottom"
 				></span>
 			{/if}
 			{#if message.status === 'done'}
 				<div class="mt-2 flex items-center gap-2 text-xs text-mlq-muted">
+					{#if message.ledgerGate}
+						<FiduciaryPill
+							gate={message.ledgerGate}
+							expanded={showLedger}
+							onclick={() => (showLedger = !showLedger)}
+						/>
+					{/if}
 					<button
 						type="button"
 						onclick={copy}
