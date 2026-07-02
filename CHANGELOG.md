@@ -3,6 +3,16 @@
 All notable changes to Donna are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [Unreleased] — Fiduciary auditability
+
+### Added
+
+- **Fiduciary receipts** across chat and autonomous sessions: a per-answer trust pill (four honest states, incl. the zero-assertion neutral state) opening a citation ledger of sources, quoted passages, and verification status, with click-through to each source.
+- **Case treatment** signals on caselaw citations (cited-by, followed/distinguished/criticised) — derived, not editorial.
+- **Autonomous matter audit timeline** — the session ledger + a session-level trust pill on the receipt, alongside cost.
+- **Provenance export** — download any chat turn or session receipt as a structured JSON envelope + printable Markdown, honestly labelled as not a signed attestation.
+- **Authoritative sources** card on Research, and a new **About → Fiduciary receipts** guide with an interactive trust-states explorer.
+
 ## [0.3.0] — 2026-06-24 — Sticky skills
 
 A per-chat **"Keep skills on"** toggle so applied skills carry forward into follow-up turns without

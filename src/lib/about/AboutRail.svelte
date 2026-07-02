@@ -12,7 +12,8 @@
 		{ href: '/about/knowledge', label: 'Knowledge' },
 		{ href: '/about/models', label: 'Models' },
 		{ href: '/about/tools', label: 'Tools & connections' },
-		{ href: '/about/trust', label: 'Trust & citations' }
+		{ href: '/about/trust', label: 'Trust & citations' },
+		{ href: '/about/fiduciary', label: 'Fiduciary receipts' }
 	];
 	const isActive = (href: string) =>
 		page.url.pathname === href || page.url.pathname.startsWith(href + '/');
