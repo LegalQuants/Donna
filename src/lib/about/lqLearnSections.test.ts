@@ -17,12 +17,17 @@ const PLAYGROUNDS = [
 	'autonomous-primitives',
 	'kb-hybrid-retrieval',
 	'projects-org-tiers',
-	'intake-bridges'
+	'intake-bridges',
+	'authority-sources',
+	'citation-ledger',
+	'fiduciary-gate',
+	'treatment-layer',
+	'matter-session-flow'
 ];
 
 describe('lqLearnSections', () => {
 	it('has the 16 How-It-Works sections in order with the expected playgrounds', () => {
-		expect(lqLearnSections).toHaveLength(16);
+		expect(lqLearnSections).toHaveLength(21);
 		expect(lqLearnSections.map((s) => s.playground)).toEqual(PLAYGROUNDS);
 		lqLearnSections.forEach((s, i) => {
 			expect(s.number).toBe(i + 1);

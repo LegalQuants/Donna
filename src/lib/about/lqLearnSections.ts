@@ -170,5 +170,63 @@ export const lqLearnSections: LqLearnSection[] = [
 		playground: 'intake-bridges',
 		sourceLabel: 'docs/intake-bridges.md',
 		sourceUrl: 'https://github.com/LegalQuants/lq-ai/blob/main/docs/intake-bridges.md'
+	},
+	{
+		number: 17,
+		title: 'The fiduciary loop: authority sources',
+		paragraphs: [
+			'The authority-sources registry is where retrieve-and-verify begins: primary law fetched and character-verified across CourtListener (US case law), GovInfo (US Code / CFR), SEC EDGAR (filings), and EUR-Lex (EU law). This playground lets you toggle which providers an operator configured and watch each report enabled or unavailable-with-reason.',
+			'Honest caveats: EUR-Lex is get-by-CELEX only (keyword search is DE-374, treaty coverage DE-375); every source is operator-config-gated and reported unavailable-with-reason, never silently hidden. Illustrative walkthrough — synthetic data, not a live call.'
+		],
+		playground: 'authority-sources',
+		sourceLabel: 'api/app/citation/authority.py',
+		sourceUrl: 'https://github.com/LegalQuants/lq-ai/blob/main/api/app/citation/authority.py'
+	},
+	{
+		number: 18,
+		title: 'The fiduciary loop: the citation ledger',
+		paragraphs: [
+			'The citation ledger records every source and passage the agent actually read: source to passage-read to verification status to a one-click trace to the source and character offset. Provenance-only entries are flagged as non-assertions (consulted, not quoted).',
+			'Honest caveat: the ledger references content by identifier and character offset only — no raw payloads are stored in the audit layer (the P3 no-raw-payload guarantee). Illustrative walkthrough.'
+		],
+		playground: 'citation-ledger',
+		sourceLabel: 'ADR 0018 — citation ledger & fiduciary-grade output',
+		sourceUrl:
+			'https://github.com/LegalQuants/lq-ai/blob/main/docs/adr/0018-citation-ledger-and-fiduciary-grade-output.md'
+	},
+	{
+		number: 19,
+		title: 'The fiduciary loop: the fiduciary gate',
+		paragraphs: [
+			'The fiduciary gate is derive-not-assert: it assembles a turn’s citations and deterministically buckets each into PASS / SUPPORTED / FAIL (provenance entries excluded). This is the engine layer beneath the answer-level trust pill you see in Donna — the pill summarises a whole turn; the gate buckets each individual citation.',
+			'Honest caveat: chat vs autonomous verdict-tier parity gaps remain (DE-370 / DE-371). Illustrative walkthrough.'
+		],
+		playground: 'fiduciary-gate',
+		sourceLabel: 'api/app/citation/gate.py',
+		sourceUrl: 'https://github.com/LegalQuants/lq-ai/blob/main/api/app/citation/gate.py'
+	},
+	{
+		number: 20,
+		title: 'The fiduciary loop: the treatment layer',
+		paragraphs: [
+			'The treatment layer derives case-law validity signals — followed / distinguished / criticised — with a trace to each citing case, via a two-pass graph-then-judge derivation.',
+			'Honest caveat: derived, not editorial — it is a signal to guide your reading, not an authoritative citator; judge snippets are never stored (P3) and carry a 30-day TTL. Illustrative walkthrough.'
+		],
+		playground: 'treatment-layer',
+		sourceLabel: 'ADR 0019 — transparent validity / treatment layer',
+		sourceUrl:
+			'https://github.com/LegalQuants/lq-ai/blob/main/docs/adr/0019-transparent-validity-treatment-layer.md'
+	},
+	{
+		number: 21,
+		title: 'The fiduciary loop: the governed matter session',
+		paragraphs: [
+			'The capstone: a governed matter session runs plan to act to observe to replan over a closed tool set, under hard brakes and a per-phase step cap, orchestrating the authority / ledger / gate / treatment layers into one audited run.',
+			'Honest caveat: the backend shipped, but there is no dedicated matter-intake UI yet — it reuses the autonomous session surface. Illustrative walkthrough.'
+		],
+		playground: 'matter-session-flow',
+		sourceLabel: 'ADR 0020 — governed agentic legal matter sessions',
+		sourceUrl:
+			'https://github.com/LegalQuants/lq-ai/blob/main/docs/adr/0020-governed-agentic-legal-matter-sessions.md'
 	}
 ];

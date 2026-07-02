@@ -27,4 +27,16 @@ describe('/about/fiduciary page', () => {
 			screen.getAllByText(/not a (cryptographically )?signed attestation/i).length
 		).toBeGreaterThan(0);
 	});
+	it('drills into each of the 5 fiduciary playgrounds and drops the stale "on the way" prose', () => {
+		const { container } = render(Page);
+		for (const slug of [
+			'authority-sources',
+			'citation-ledger',
+			'fiduciary-gate',
+			'treatment-layer',
+			'matter-session-flow'
+		])
+			expect(container.querySelector(`a[href="/learn/playgrounds/${slug}.html"]`)).not.toBeNull();
+		expect(screen.queryByText(/on the way from the LQ-AI engine/i)).not.toBeInTheDocument();
+	});
 });
