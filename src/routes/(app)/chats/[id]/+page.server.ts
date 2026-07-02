@@ -6,6 +6,7 @@ import { hasCitationMarkers } from '$lib/citations/transform';
 import type { Citation } from '$lib/citations/types';
 import { anonymizedByMessage } from '$lib/receipts/format';
 import type { ReceiptEvent } from '$lib/receipts/types';
+import { parseLedger, entriesForMessage, gateForMessage } from '$lib/fiduciary/ledger';
 import { resolveMatter } from './matter';
 import { parseDraftSkills } from './draftSkills';
 import { parseDraftSkillInputs } from './draftSkillInputs';
@@ -55,6 +56,23 @@ export const load: PageServerLoad = async (event) => {
 			}
 		})
 	);
+
+	// One-shot ledger hydration: fetch the whole chat ledger once, group by message_id.
+	try {
+		const res = await lqFetch(event, `/api/v1/chats/${event.params.id}/ledger`);
+		if (res.ok) {
+			const ledger = parseLedger(await res.json());
+			for (const m of messages) {
+				if (m.role !== 'assistant') continue;
+				const entries = entriesForMessage(ledger, m.id);
+				if (entries.length > 0) m.ledgerEntries = entries;
+				const gate = gateForMessage(ledger, m.id);
+				if (gate) m.ledgerGate = gate;
+			}
+		}
+	} catch {
+		/* ledger is optional — never break the page */
+	}
 
 	// Per-message anonymization status from the inference receipts (M2-D2).
 	try {
