@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 const lqFetch = vi.fn();
 vi.mock('$lib/server/lqClient', () => ({ lqFetch: (...a: unknown[]) => lqFetch(...a) }));
-import { loadRunOutput } from './runOutput.server';
+import { loadRunOutput, loadSessionLedger } from './runOutput.server';
 const ev = {} as never;
 beforeEach(() => lqFetch.mockReset());
 
@@ -107,5 +107,45 @@ describe('loadRunOutput artifacts', () => {
 			.mockResolvedValueOnce(new Response('<html>', { status: 200 }));
 		const out = await loadRunOutput(ev, 's1');
 		expect(out.artifacts).toBeNull();
+	});
+});
+
+describe('loadSessionLedger', () => {
+	const ledgerBody = {
+		chat_id: 'hidden-chat',
+		entries: [
+			{
+				id: 'le1',
+				message_id: 'm1',
+				source_kind: 'kb_document',
+				verification_status: 'exact_match',
+				confidence: 1,
+				source: { kind: 'kb_document', label: 'Master Agreement', passages: [] }
+			}
+		],
+		gates: [{ message_id: 'm1', gate_status: 'fiduciary_grade', total_assertions: 1 }]
+	};
+
+	it('fetches the session ledger and returns the parsed Ledger', async () => {
+		lqFetch.mockResolvedValueOnce(new Response(JSON.stringify(ledgerBody), { status: 200 }));
+		const out = await loadSessionLedger(ev, 's1');
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/sessions/s1/ledger');
+		expect(out?.entries).toHaveLength(1);
+		expect(out?.gates[0].gate_status).toBe('fiduciary_grade');
+	});
+
+	it('degrades a 404 (hidden chat not yet manufactured) to null', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('nope', { status: 404 }));
+		expect(await loadSessionLedger(ev, 's1')).toBeNull();
+	});
+
+	it('degrades a 502 to null', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 502 }));
+		expect(await loadSessionLedger(ev, 's1')).toBeNull();
+	});
+
+	it('degrades a non-JSON body to null', async () => {
+		lqFetch.mockResolvedValueOnce(new Response('<html>', { status: 200 }));
+		expect(await loadSessionLedger(ev, 's1')).toBeNull();
 	});
 });

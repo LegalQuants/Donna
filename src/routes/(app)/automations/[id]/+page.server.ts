@@ -1,13 +1,14 @@
 import { error, fail } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
 import { parseReceipt, parseSessionSummary } from '$lib/automations/types';
-import { loadRunOutput } from '$lib/automations/runOutput.server';
+import { loadRunOutput, loadSessionLedger } from '$lib/automations/runOutput.server';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	const [res, output] = await Promise.all([
+	const [res, output, ledger] = await Promise.all([
 		lqFetch(event, `/api/v1/autonomous/sessions/${event.params.id}`),
-		loadRunOutput(event, event.params.id)
+		loadRunOutput(event, event.params.id),
+		loadSessionLedger(event, event.params.id)
 	]);
 	if (!res.ok) {
 		if (res.status === 404) throw error(404, 'Session not found.');
@@ -16,7 +17,7 @@ export const load: PageServerLoad = async (event) => {
 	const body = (await res.json()) as { session?: unknown; receipt?: unknown };
 	const session = parseSessionSummary(body.session);
 	if (!session) throw error(502, 'Malformed session response.');
-	return { session, receipt: parseReceipt(body.receipt), ...output };
+	return { session, receipt: parseReceipt(body.receipt), ...output, ledger };
 };
 
 async function memoryAction(event: Parameters<Actions[string]>[0], endpoint: 'keep' | 'dismiss') {

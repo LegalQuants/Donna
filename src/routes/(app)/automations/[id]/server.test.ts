@@ -18,6 +18,7 @@ describe('GET /automations/[id]', () => {
 		lqFetch.mockResolvedValueOnce(okJson({ findings: [], total_count: 0 }));
 		lqFetch.mockResolvedValueOnce(okJson({ entries: [], total_count: 0 }));
 		lqFetch.mockResolvedValueOnce(okJson({ artifacts: [], total_count: 0 }));
+		lqFetch.mockResolvedValueOnce(okJson({ chat_id: 'c', entries: [], gates: [] }));
 		const res = await GET(ev());
 		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/sessions/s1');
 		const body = await res.json();
@@ -25,6 +26,7 @@ describe('GET /automations/[id]', () => {
 		expect(body.findings).toEqual([]);
 		expect(body.findings_total).toBe(0);
 		expect(body.memories).toEqual([]);
+		expect(body.ledger).toEqual({ entries: [], gates: [] });
 	});
 	it('maps a 404 to 404 and a 500 to 502', async () => {
 		lqFetch.mockResolvedValueOnce(new Response('nope', { status: 404 }));
