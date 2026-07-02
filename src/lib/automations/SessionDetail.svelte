@@ -85,7 +85,12 @@
 		running={session.status === 'running'}
 	/>
 	{#if ledger}
-		<FiduciaryReceipt entries={ledger.entries} {gate} {onopensource} />
+		<FiduciaryReceipt
+			entries={ledger.entries}
+			{gate}
+			{onopensource}
+			exportMeta={{ type: 'autonomous_session', session_id: session.id }}
+		/>
 	{/if}
 	<SessionTimeline {receipt} />
 </div>

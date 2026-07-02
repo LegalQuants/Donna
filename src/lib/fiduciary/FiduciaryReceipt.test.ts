@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
+vi.mock('./download', () => ({ downloadTextFile: vi.fn() }));
+import { downloadTextFile } from './download';
+import { PROVENANCE_DISCLAIMER } from './provenanceExport';
 import FiduciaryReceipt from './FiduciaryReceipt.svelte';
 import type { LedgerEntry, LedgerGate, LedgerTreatment } from './ledger';
 
@@ -176,5 +179,40 @@ describe('FiduciaryReceipt', () => {
 			screen.queryByRole('button', { name: /knowledge-base document/i })
 		).not.toBeInTheDocument();
 		expect(screen.getByText(/knowledge-base document/i)).toBeInTheDocument();
+	});
+
+	it('renders no Export affordance without exportMeta', () => {
+		render(FiduciaryReceipt, { entries: [entry({})], gate });
+		expect(screen.queryByRole('button', { name: /export/i })).not.toBeInTheDocument();
+	});
+
+	it('exports a JSON provenance record when the menu item is clicked', async () => {
+		vi.mocked(downloadTextFile).mockClear();
+		render(FiduciaryReceipt, {
+			entries: [entry({})],
+			gate,
+			exportMeta: { type: 'autonomous_session', session_id: 'sess-123' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /export/i }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Provenance record (.json)' }));
+		expect(downloadTextFile).toHaveBeenCalledTimes(1);
+		const [filename, mime, content] = vi.mocked(downloadTextFile).mock.calls[0];
+		expect(filename).toMatch(/^provenance-session-sess-123-\d{4}-\d{2}-\d{2}\.json$/);
+		expect(mime).toBe('application/json');
+		expect(content).toContain(PROVENANCE_DISCLAIMER);
+	});
+
+	it('exports a Markdown provenance record when that item is clicked', async () => {
+		vi.mocked(downloadTextFile).mockClear();
+		render(FiduciaryReceipt, {
+			entries: [entry({})],
+			gate,
+			exportMeta: { type: 'autonomous_session', session_id: 'sess-123' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /export/i }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Provenance record (.md)' }));
+		const [filename, mime] = vi.mocked(downloadTextFile).mock.calls[0];
+		expect(filename).toMatch(/\.md$/);
+		expect(mime).toBe('text/markdown');
 	});
 });

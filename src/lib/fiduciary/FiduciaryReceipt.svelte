@@ -5,18 +5,40 @@
 <script lang="ts">
 	import type { LedgerEntry, LedgerGate } from './ledger';
 	import { gateVerdict, entryVerification, isProvenance } from './trust';
-	import { ledgerSourceTitle } from './provenanceExport';
+	import {
+		ledgerSourceTitle,
+		buildProvenanceExport,
+		type ProvenanceSource
+	} from './provenanceExport';
+	import { downloadTextFile } from './download';
 
 	let {
 		entries,
 		gate,
-		onopensource
-	}: { entries: LedgerEntry[]; gate: LedgerGate | null; onopensource?: (e: LedgerEntry) => void } =
-		$props();
+		onopensource,
+		exportMeta
+	}: {
+		entries: LedgerEntry[];
+		gate: LedgerGate | null;
+		onopensource?: (e: LedgerEntry) => void;
+		exportMeta?: ProvenanceSource;
+	} = $props();
 
 	const verdict = $derived(gateVerdict(gate));
 	const quoted = $derived(entries.filter((e) => !isProvenance(e.verification_status)));
 	const consulted = $derived(entries.filter((e) => isProvenance(e.verification_status)));
+
+	let exportOpen = $state(false);
+	function doExport(fmt: 'json' | 'md') {
+		if (!exportMeta) return;
+		const out = buildProvenanceExport(entries, gate, {
+			source: exportMeta,
+			exported_at: new Date().toISOString()
+		});
+		if (fmt === 'json') downloadTextFile(`${out.baseFilename}.json`, 'application/json', out.json);
+		else downloadTextFile(`${out.baseFilename}.md`, 'text/markdown', out.markdown);
+		exportOpen = false;
+	}
 </script>
 
 <div class="mt-3 rounded-mlq-control border border-mlq-subtle bg-mlq-surface-alt/40 p-3 text-xs">
@@ -94,5 +116,43 @@
 				</li>
 			{/each}
 		</ul>
+	{/if}
+
+	{#if exportMeta}
+		<div class="mt-3 border-t border-mlq-subtle pt-2">
+			<div class="relative inline-block">
+				<button
+					type="button"
+					onclick={() => (exportOpen = !exportOpen)}
+					aria-expanded={exportOpen}
+					class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2 py-1 text-[11px] text-mlq-text"
+				>
+					Export ▾
+				</button>
+				{#if exportOpen}
+					<div
+						class="absolute left-0 z-10 mt-1 w-52 rounded-mlq-control border border-mlq-subtle bg-mlq-surface py-1 shadow-md"
+					>
+						<button
+							type="button"
+							onclick={() => doExport('json')}
+							class="block w-full px-3 py-1.5 text-left text-xs text-mlq-text hover:bg-mlq-surface-alt"
+						>
+							Provenance record (.json)
+						</button>
+						<button
+							type="button"
+							onclick={() => doExport('md')}
+							class="block w-full px-3 py-1.5 text-left text-xs text-mlq-text hover:bg-mlq-surface-alt"
+						>
+							Provenance record (.md)
+						</button>
+					</div>
+				{/if}
+			</div>
+			<p class="mt-1 text-[10px] text-mlq-muted">
+				A faithful copy of the sourcing trail — not a signed attestation.
+			</p>
+		</div>
 	{/if}
 </div>
