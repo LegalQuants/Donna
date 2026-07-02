@@ -101,6 +101,10 @@ surface the active posture; **anonymization** visibility in receipts; **data exp
 **scheduled deletion**; and **model management** — per-category routing, local Ollama models, and
 **bring-your-own provider keys**.
 
+### Fiduciary receipts
+
+Beyond inline citation pills, every assistant answer carries a **trust pill** in one of four honest states — **Fiduciary-grade**, **Supported**, **Needs review**, or **No sourced claims** (neutral, never green: nothing to verify is not the same as verified). Expanding it opens the **citation ledger**: each source read, the exact passage quoted, its verification status, and — for case law — derived treatment signals (cited-by, followed/distinguished/criticised) with a trace to each citing case. Treatment is **derived, not editorial** — a signal, not an authoritative citator. Autonomous matter sessions carry the same ledger at the matter level, alongside cost, as an audit timeline. Any receipt can be **exported** as a structured JSON + printable Markdown provenance record — a faithful copy, honestly labelled as **not a cryptographically signed attestation**. The ledger references content by identifier and passage location, not by storing raw payloads.
+
 ### In-app guidance
 
 A full guide at **/about**, including interactive playgrounds that explain how the LQ-AI engine
