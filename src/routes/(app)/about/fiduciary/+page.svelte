@@ -72,6 +72,24 @@
 	location — not by stashing copies of the source text.
 </p>
 
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+	Beneath the answer-level trust pill, the engine buckets each individual citation into pass /
+	supported / fail — a different layer from the four turn-level states above.
+	<a
+		href="/learn/playgrounds/citation-ledger.html"
+		target="_blank"
+		rel="noopener noreferrer"
+		class="text-mlq-strong hover:underline">Explore the citation ledger ↗</a
+	>
+	·
+	<a
+		href="/learn/playgrounds/fiduciary-gate.html"
+		target="_blank"
+		rel="noopener noreferrer"
+		class="text-mlq-strong hover:underline">the fiduciary gate ↗</a
+	>
+</p>
+
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">
 	Case treatment (validity)
 </h2>
@@ -83,6 +101,15 @@
 	it — each with a trace to the citing case. This is <strong>derived, not editorial</strong>: it is
 	a signal to guide your own reading, <em>not</em> an authoritative citator, and Donna never colours a
 	case "good" or "bad" law for you.
+</p>
+
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+	<a
+		href="/learn/playgrounds/treatment-layer.html"
+		target="_blank"
+		rel="noopener noreferrer"
+		class="text-mlq-strong hover:underline">Explore how treatment signals are derived ↗</a
+	>
 </p>
 
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">
@@ -97,6 +124,15 @@
 	>
 </p>
 
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+	<a
+		href="/learn/playgrounds/matter-session-flow.html"
+		target="_blank"
+		rel="noopener noreferrer"
+		class="text-mlq-strong hover:underline">Explore a governed matter session ↗</a
+	>
+</p>
+
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">
 	Authoritative sources
 </h2>
@@ -108,6 +144,15 @@
 	path. Availability depends on how your operator has configured the instance, and EU law is currently
 	fetch-by-identifier (CELEX) only; a source that isn't configured shows as unavailable rather than silently
 	disappearing.
+</p>
+
+<p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
+	<a
+		href="/learn/playgrounds/authority-sources.html"
+		target="_blank"
+		rel="noopener noreferrer"
+		class="text-mlq-strong hover:underline">Explore the authoritative-source registry ↗</a
+	>
 </p>
 
 <h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">
@@ -136,7 +181,7 @@
 </p>
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-	Deeper interactive explorers of the citation ledger, the fiduciary gate, the authority sources,
-	and the treatment layer are on the way from the LQ-AI engine; this page will link to them as they
-	ship.
+	The interactive walkthroughs linked above are <strong>illustrative</strong> — self-contained examples
+	of how the LQ-AI engine works, not your live data — and each links onward to the real backend module
+	or decision record it depicts.
 </p>
