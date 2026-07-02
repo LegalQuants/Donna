@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Markdown from './Markdown.svelte';
 	import CitationView from './CitationView.svelte';
 	import ToolSourcesPanel from './ToolSourcesPanel.svelte';
 	import FiduciaryPill from '$lib/fiduciary/FiduciaryPill.svelte';
 	import FiduciaryReceipt from '$lib/fiduciary/FiduciaryReceipt.svelte';
+	import { createTreatmentPoll } from '$lib/fiduciary/treatmentPoll.svelte';
+	import type { LedgerEntry } from '$lib/fiduciary/ledger';
 	import { ShieldCheck, ScrollText, Paperclip, Scale } from '@lucide/svelte';
 	import type { ChatMessage } from '$lib/chat/chatStream.svelte';
 	import type { Citation } from '$lib/citations/types';
@@ -15,12 +18,14 @@
 		onretry,
 		ondecide,
 		onactivatecitation,
+		onopensource,
 		chatId
 	}: {
 		message: ChatMessage;
 		onretry?: () => void;
 		ondecide?: (decision: 'approve' | 'deny') => void;
 		onactivatecitation?: (c: Citation) => void;
+		onopensource?: (e: LedgerEntry) => void;
 		chatId?: string;
 	} = $props();
 	let copied = $state(false);
@@ -29,6 +34,27 @@
 	let showSources = $state(true); // sources panel defaults open (small, high-value)
 	let showLedger = $state(false);
 	const showPills = $derived(!collapsed || showDetails);
+
+	// Seeded once via untrack (chatId/message.id don't change for a given turn) —
+	// avoids the state_referenced_locally warning documented in CLAUDE.md §7.
+	const treatmentPoll = untrack(() => createTreatmentPoll(chatId ?? '', message.id));
+	const ledgerEntries = $derived(treatmentPoll.entries ?? message.ledgerEntries ?? []);
+
+	$effect(() => {
+		if (
+			showLedger &&
+			(message.ledgerEntries ?? []).some(
+				(e) => e.source?.kind === 'caselaw' && e.treatment === null
+			)
+		) {
+			treatmentPoll.start();
+			return () => treatmentPoll.stop();
+		}
+	});
+
+	$effect(() => {
+		if (treatmentPoll.entries) message.ledgerEntries = treatmentPoll.entries;
+	});
 
 	async function copy() {
 		try {
@@ -166,7 +192,7 @@
 				<ToolSourcesPanel sources={message.sources} />
 			{/if}
 			{#if message.status === 'done' && message.ledgerGate && showLedger}
-				<FiduciaryReceipt entries={message.ledgerEntries ?? []} gate={message.ledgerGate} />
+				<FiduciaryReceipt entries={ledgerEntries} gate={message.ledgerGate} {onopensource} />
 			{/if}
 			{#if message.status === 'streaming' && message.content !== ''}
 				<span class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-mlq-text align-text-bottom"

@@ -410,4 +410,77 @@ describe('Message fiduciary receipt (trust pill + expandable panel)', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /needs review/i }));
 		expect(screen.getByText(/thirty days notice/)).toBeInTheDocument();
 	});
+
+	it('starts the treatment poll (fetches the ledger) once the panel is opened on a caselaw entry with pending treatment', async () => {
+		h.provenance = 'always';
+		const fetchSpy = vi
+			.spyOn(global, 'fetch')
+			.mockResolvedValue({ ok: true, json: async () => ({ entries: [], gates: [] }) } as Response);
+		const caselawEntries = [
+			{
+				id: 'le2',
+				message_id: 'f3',
+				source_kind: 'caselaw',
+				verification_status: 'unverified',
+				confidence: null,
+				provider: null,
+				retrieved_at: null,
+				treatment_id: null,
+				treatment: null,
+				created_at: null,
+				source: {
+					kind: 'caselaw',
+					source_file_id: null,
+					opinion_id: 42,
+					cluster_id: null,
+					external_ref: null,
+					provider: null,
+					label: 'Roe v. Wade',
+					subtitle: null,
+					url: null,
+					tool: 'search_case_law',
+					passages: []
+				}
+			}
+		];
+		render(Message, {
+			props: {
+				message: {
+					key: 'f3',
+					id: 'f3',
+					role: 'assistant',
+					content: 'Answer.',
+					status: 'done',
+					ledgerGate,
+					ledgerEntries: caselawEntries
+				} as never,
+				chatId: 'c1'
+			}
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /needs review/i }));
+		await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledWith('/chats/c1/ledger?message_id=f3'));
+		fetchSpy.mockRestore();
+	});
+
+	it('wires onopensource so clicking a source title in the open panel fires the handler', async () => {
+		h.provenance = 'always';
+		const onopensource = vi.fn();
+		render(Message, {
+			props: {
+				message: {
+					key: 'f4',
+					id: 'f4',
+					role: 'assistant',
+					content: 'Answer.',
+					status: 'done',
+					ledgerGate,
+					ledgerEntries
+				} as never,
+				onopensource
+			}
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /needs review/i }));
+		await fireEvent.click(screen.getByRole('button', { name: /master services agreement/i }));
+		expect(onopensource).toHaveBeenCalledWith(ledgerEntries[0]);
+	});
 });
