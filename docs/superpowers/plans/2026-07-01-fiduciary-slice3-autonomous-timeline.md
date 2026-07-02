@@ -28,6 +28,7 @@
 Adds a defensive, honest-degrading server loader for the autonomous-session ledger and exposes it as `data.ledger` (SSR) and the `ledger` field on the poll-proxy JSON. Kept a **sibling** of `loadRunOutput` (leaves that function and its 6 tests untouched) because the audit ledger is a distinct concern from the work-product bundle.
 
 **Files:**
+
 - Modify: `src/lib/automations/runOutput.server.ts` (add `loadSessionLedger`)
 - Modify: `src/routes/(app)/automations/[id]/+page.server.ts:7-20` (add to `Promise.all`, return `ledger`)
 - Modify: `src/routes/(app)/automations/[id]/+server.ts:6-20` (add to `Promise.all`, include `ledger` in JSON)
@@ -36,6 +37,7 @@ Adds a defensive, honest-degrading server loader for the autonomous-session ledg
 - Test: `src/routes/(app)/automations/[id]/server.test.ts` (queue the ledger response + one assertion)
 
 **Interfaces:**
+
 - Consumes: `parseLedger`, `type Ledger` from `$lib/fiduciary/ledger`; `lqFetch` from `$lib/server/lqClient`.
 - Produces: `loadSessionLedger(event: RequestEvent, sessionId: string): Promise<Ledger | null>`. `data.ledger: Ledger | null` on the page; `ledger: Ledger | null` field on `GET /automations/[id]` JSON.
 
@@ -134,19 +136,19 @@ import { loadRunOutput, loadSessionLedger } from '$lib/automations/runOutput.ser
 ```
 
 ```ts
-	const [res, output, ledger] = await Promise.all([
-		lqFetch(event, `/api/v1/autonomous/sessions/${event.params.id}`),
-		loadRunOutput(event, event.params.id),
-		loadSessionLedger(event, event.params.id)
-	]);
-	if (!res.ok) {
-		if (res.status === 404) throw error(404, 'Session not found.');
-		throw error(502, 'Could not load the session.');
-	}
-	const body = (await res.json()) as { session?: unknown; receipt?: unknown };
-	const session = parseSessionSummary(body.session);
-	if (!session) throw error(502, 'Malformed session response.');
-	return { session, receipt: parseReceipt(body.receipt), ...output, ledger };
+const [res, output, ledger] = await Promise.all([
+	lqFetch(event, `/api/v1/autonomous/sessions/${event.params.id}`),
+	loadRunOutput(event, event.params.id),
+	loadSessionLedger(event, event.params.id)
+]);
+if (!res.ok) {
+	if (res.status === 404) throw error(404, 'Session not found.');
+	throw error(502, 'Could not load the session.');
+}
+const body = (await res.json()) as { session?: unknown; receipt?: unknown };
+const session = parseSessionSummary(body.session);
+if (!session) throw error(502, 'Malformed session response.');
+return { session, receipt: parseReceipt(body.receipt), ...output, ledger };
 ```
 
 - [ ] **Step 6: Thread it into the poll proxy**
@@ -158,20 +160,20 @@ import { loadRunOutput, loadSessionLedger } from '$lib/automations/runOutput.ser
 ```
 
 ```ts
-	const [res, output, ledger] = await Promise.all([
-		lqFetch(event, `/api/v1/autonomous/sessions/${event.params.id}`),
-		loadRunOutput(event, event.params.id),
-		loadSessionLedger(event, event.params.id)
-	]);
-	if (!res.ok) {
-		if (res.status === 404) throw error(404, 'Session not found.');
-		throw error(
-			res.status === 503 || res.status === 504 ? res.status : 502,
-			'Could not load the session.'
-		);
-	}
-	const body = (await res.json()) as Record<string, unknown>;
-	return json({ ...body, ...output, ledger });
+const [res, output, ledger] = await Promise.all([
+	lqFetch(event, `/api/v1/autonomous/sessions/${event.params.id}`),
+	loadRunOutput(event, event.params.id),
+	loadSessionLedger(event, event.params.id)
+]);
+if (!res.ok) {
+	if (res.status === 404) throw error(404, 'Session not found.');
+	throw error(
+		res.status === 503 || res.status === 504 ? res.status : 502,
+		'Could not load the session.'
+	);
+}
+const body = (await res.json()) as Record<string, unknown>;
+return json({ ...body, ...output, ledger });
 ```
 
 - [ ] **Step 7: Update the route tests for the new (5th) fetch**
@@ -199,59 +201,59 @@ function mockOutput(
 Then add one assertion to the first load test (the `returns the parsed session summary and receipt` case), after its existing assertions, and widen its result type:
 
 ```ts
-			const out = (await load(ev())) as {
-				session: { id: string };
-				receipt: { terminal_reason: string } | null;
-				ledger: { gates: { gate_status: string }[] } | null;
-			};
+const out = (await load(ev())) as {
+	session: { id: string };
+	receipt: { terminal_reason: string } | null;
+	ledger: { gates: { gate_status: string }[] } | null;
+};
 ```
 
 ```ts
-		expect(lqFetch.mock.calls[4][1]).toBe('/api/v1/autonomous/sessions/s1/ledger');
+expect(lqFetch.mock.calls[4][1]).toBe('/api/v1/autonomous/sessions/s1/ledger');
 ```
 
 Add a focused ledger case at the end of the `describe('/automations/[id] load')` block:
 
 ```ts
-	it('degrades a 404 session ledger to a null data.ledger without failing the page', async () => {
-		lqFetch.mockResolvedValueOnce(
-			new Response(
-				JSON.stringify({
-					session: {
-						id: 's1',
-						status: 'completed',
-						trigger_kind: 'manual',
-						current_phase: 'delivery',
-						cost_total_usd: '0.1',
-						created_at: 'x'
-					},
-					receipt: null
-				}),
-				{ status: 200 }
-			)
-		);
-		lqFetch
-			.mockResolvedValueOnce(okJson({ findings: [], total_count: 0 }))
-			.mockResolvedValueOnce(okJson({ entries: [], total_count: 0 }))
-			.mockResolvedValueOnce(okJson({ artifacts: [], total_count: 0 }))
-			.mockResolvedValueOnce(new Response('nope', { status: 404 }));
-		const out = (await load(ev())) as { session: { id: string }; ledger: unknown };
-		expect(out.session.id).toBe('s1');
-		expect(out.ledger).toBeNull();
-	});
+it('degrades a 404 session ledger to a null data.ledger without failing the page', async () => {
+	lqFetch.mockResolvedValueOnce(
+		new Response(
+			JSON.stringify({
+				session: {
+					id: 's1',
+					status: 'completed',
+					trigger_kind: 'manual',
+					current_phase: 'delivery',
+					cost_total_usd: '0.1',
+					created_at: 'x'
+				},
+				receipt: null
+			}),
+			{ status: 200 }
+		)
+	);
+	lqFetch
+		.mockResolvedValueOnce(okJson({ findings: [], total_count: 0 }))
+		.mockResolvedValueOnce(okJson({ entries: [], total_count: 0 }))
+		.mockResolvedValueOnce(okJson({ artifacts: [], total_count: 0 }))
+		.mockResolvedValueOnce(new Response('nope', { status: 404 }));
+	const out = (await load(ev())) as { session: { id: string }; ledger: unknown };
+	expect(out.session.id).toBe('s1');
+	expect(out.ledger).toBeNull();
+});
 ```
 
 One load test queues its sub-fetch responses **manually** (not via `mockOutput`): `degrades findings/memories failures to null without failing the page` (currently three `mockResolvedValueOnce(new Response('boom', { status: 500 }))`). It now fires a 4th sub-fetch (the ledger) — add a matching 4th response so it degrades cleanly instead of hitting an unqueued (undefined) mock:
 
 ```ts
-		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		const out = (await load(ev())) as { findings: null; memories: null; ledger: null };
-		expect(out.findings).toBeNull();
-		expect(out.memories).toBeNull();
-		expect(out.ledger).toBeNull();
+lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+lqFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+const out = (await load(ev())) as { findings: null; memories: null; ledger: null };
+expect(out.findings).toBeNull();
+expect(out.memories).toBeNull();
+expect(out.ledger).toBeNull();
 ```
 
 (The `throws 404 for a missing/cross-user session` test uses a `mockResolvedValue` fallback, so its extra ledger fetch returns 404 → null and the session still 404s — no change needed.)
@@ -259,16 +261,16 @@ One load test queues its sub-fetch responses **manually** (not via `mockOutput`)
 In `src/routes/(app)/automations/[id]/server.test.ts`, add the ledger response to the passthrough test and assert it flows through:
 
 ```ts
-		lqFetch.mockResolvedValueOnce(okJson({ artifacts: [], total_count: 0 }));
-		lqFetch.mockResolvedValueOnce(okJson({ chat_id: 'c', entries: [], gates: [] }));
-		const res = await GET(ev());
-		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/sessions/s1');
-		const body = await res.json();
-		expect(body.session.status).toBe('running');
-		expect(body.findings).toEqual([]);
-		expect(body.findings_total).toBe(0);
-		expect(body.memories).toEqual([]);
-		expect(body.ledger).toEqual({ entries: [], gates: [] });
+lqFetch.mockResolvedValueOnce(okJson({ artifacts: [], total_count: 0 }));
+lqFetch.mockResolvedValueOnce(okJson({ chat_id: 'c', entries: [], gates: [] }));
+const res = await GET(ev());
+expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/autonomous/sessions/s1');
+const body = await res.json();
+expect(body.session.status).toBe('running');
+expect(body.findings).toEqual([]);
+expect(body.findings_total).toBe(0);
+expect(body.memories).toEqual([]);
+expect(body.ledger).toEqual({ entries: [], gates: [] });
 ```
 
 (The `maps a 404 to 404 and a 500 to 502` test already uses a `mockResolvedValue` fallback, so the extra ledger fetch returns 404 and degrades to null — no change needed there.)
@@ -297,10 +299,12 @@ git commit -m "feat(fiduciary): loadSessionLedger threaded through the automatio
 Extends the live poller so a running session's ledger updates each tick without a degraded tick blanking a previously-received ledger.
 
 **Files:**
+
 - Modify: `src/lib/automations/pollSession.svelte.ts:27-142`
 - Test: `src/lib/automations/pollSession.svelte.test.ts`
 
 **Interfaces:**
+
 - Consumes: the `ledger` field on the `GET /automations/[id]` JSON (Task 1); `type Ledger` from `$lib/fiduciary/ledger`.
 - Produces: `poll.ledger: Ledger | null` getter on the `createSessionPoll` return.
 
@@ -309,46 +313,46 @@ Extends the live poller so a running session's ledger updates each tick without 
 Append to `src/lib/automations/pollSession.svelte.test.ts` inside the `describe('createSessionPoll', ...)` block:
 
 ```ts
-	it('threads the session ledger with last-known-good retention', async () => {
-		const bodies = [
-			{
-				session: {
-					id: 's1',
-					status: 'running',
-					trigger_kind: 'manual',
-					current_phase: 'analysis',
-					cost_total_usd: '0.1',
-					created_at: 'x'
-				},
-				receipt: null,
-				ledger: { entries: [{ id: 'le1' }], gates: [{ gate_status: 'fiduciary_grade' }] }
+it('threads the session ledger with last-known-good retention', async () => {
+	const bodies = [
+		{
+			session: {
+				id: 's1',
+				status: 'running',
+				trigger_kind: 'manual',
+				current_phase: 'analysis',
+				cost_total_usd: '0.1',
+				created_at: 'x'
 			},
-			// degraded tick: a null ledger must NOT blank the earlier one
-			{
-				session: {
-					id: 's1',
-					status: 'completed',
-					trigger_kind: 'manual',
-					current_phase: 'delivery',
-					cost_total_usd: '0.2',
-					created_at: 'x'
-				},
-				receipt: null,
-				ledger: null
-			}
-		];
-		let i = 0;
-		vi.stubGlobal(
-			'fetch',
-			vi.fn(async () => new Response(JSON.stringify(bodies[Math.min(i++, bodies.length - 1)])))
-		);
-		const poll = createSessionPoll('s1', { pollMs: 1 });
-		const p = poll.start();
-		await vi.advanceTimersByTimeAsync(10);
-		await p;
-		expect(poll.ledger?.entries).toHaveLength(1);
-		expect(poll.ledger?.gates[0].gate_status).toBe('fiduciary_grade');
-	});
+			receipt: null,
+			ledger: { entries: [{ id: 'le1' }], gates: [{ gate_status: 'fiduciary_grade' }] }
+		},
+		// degraded tick: a null ledger must NOT blank the earlier one
+		{
+			session: {
+				id: 's1',
+				status: 'completed',
+				trigger_kind: 'manual',
+				current_phase: 'delivery',
+				cost_total_usd: '0.2',
+				created_at: 'x'
+			},
+			receipt: null,
+			ledger: null
+		}
+	];
+	let i = 0;
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(async () => new Response(JSON.stringify(bodies[Math.min(i++, bodies.length - 1)])))
+	);
+	const poll = createSessionPoll('s1', { pollMs: 1 });
+	const p = poll.start();
+	await vi.advanceTimersByTimeAsync(10);
+	await p;
+	expect(poll.ledger?.entries).toHaveLength(1);
+	expect(poll.ledger?.gates[0].gate_status).toBe('fiduciary_grade');
+});
 ```
 
 - [ ] **Step 2: Run it to verify it fails**
@@ -369,15 +373,15 @@ import type { Ledger } from '$lib/fiduciary/ledger';
 Add the state declaration alongside the others (after `artifactsTotal`, before `done`):
 
 ```ts
-	let ledger = $state<Ledger | null>(null);
+let ledger = $state<Ledger | null>(null);
 ```
 
 Add `ledger` to the `tick()` body destructure type (inside the `body` object type) and apply last-known-good after the artifacts block, before `return TERMINAL.has(parsed.status);`:
 
 ```ts
-		const incomingLedger =
-			body.ledger && typeof body.ledger === 'object' ? (body.ledger as Ledger) : null;
-		if (incomingLedger !== null) ledger = incomingLedger;
+const incomingLedger =
+	body.ledger && typeof body.ledger === 'object' ? (body.ledger as Ledger) : null;
+if (incomingLedger !== null) ledger = incomingLedger;
 ```
 
 (Add `ledger?: unknown;` to the inline `body` type in `tick()`.)
@@ -414,10 +418,12 @@ git commit -m "feat(fiduciary): pollSession exposes the session ledger (last-kno
 Renders the session's single gate verdict as a non-interactive pill in the header chip row, beside the cost / cost-cap chips. Non-interactive (a `<span>`, not the chat's toggling `FiduciaryPill` button) because the receipt block below is always visible, not expand/collapse.
 
 **Files:**
+
 - Modify: `src/lib/automations/SessionReceiptHeader.svelte`
 - Test: `src/lib/automations/SessionReceiptView.svelte.test.ts`
 
 **Interfaces:**
+
 - Consumes: `gateVerdict` from `$lib/fiduciary/trust`; `type LedgerGate` from `$lib/fiduciary/ledger`.
 - Produces: `SessionReceiptHeader` accepts an **optional** prop `gate?: LedgerGate | null` (defaults to `null` so the existing/`SessionDetail` call sites compile until Task 5 supplies it). Renders nothing when there is no verdict.
 
@@ -443,15 +449,15 @@ const gradeGate: LedgerGate = {
 In `describe('Session receipt view', ...)`:
 
 ```ts
-	it('header renders the session gate trust pill', () => {
-		render(SessionReceiptHeader, { props: { session, receipt, gate: gradeGate } });
-		expect(screen.getByText('Fiduciary-grade')).toBeInTheDocument();
-	});
-	it('header renders no gate pill when the gate is null', () => {
-		render(SessionReceiptHeader, { props: { session, receipt, gate: null } });
-		expect(screen.queryByText('Fiduciary-grade')).not.toBeInTheDocument();
-		expect(screen.queryByText('No sourced claims')).not.toBeInTheDocument();
-	});
+it('header renders the session gate trust pill', () => {
+	render(SessionReceiptHeader, { props: { session, receipt, gate: gradeGate } });
+	expect(screen.getByText('Fiduciary-grade')).toBeInTheDocument();
+});
+it('header renders no gate pill when the gate is null', () => {
+	render(SessionReceiptHeader, { props: { session, receipt, gate: null } });
+	expect(screen.queryByText('Fiduciary-grade')).not.toBeInTheDocument();
+	expect(screen.queryByText('No sourced claims')).not.toBeInTheDocument();
+});
 ```
 
 - [ ] **Step 2: Run them to verify they fail**
@@ -473,8 +479,11 @@ In `src/lib/automations/SessionReceiptHeader.svelte`, extend the script and mark
 		session,
 		receipt,
 		gate = null
-	}: { session: SessionSummary; receipt: SessionReceipt | null; gate?: LedgerGate | null } =
-		$props();
+	}: {
+		session: SessionSummary;
+		receipt: SessionReceipt | null;
+		gate?: LedgerGate | null;
+	} = $props();
 	const capLabel = $derived(
 		session.max_cost_usd === null ? 'no cap' : `${formatUsd(session.max_cost_usd)} cap`
 	);
@@ -523,11 +532,13 @@ git commit -m "feat(fiduciary): session gate trust pill in SessionReceiptHeader"
 Extracts the chat page's inline ledger-source open closure into a shared helper so the session page can reuse the exact same routing (KB doc → doc panel · caselaw → opinion · external → new tab) without drift.
 
 **Files:**
+
 - Create: `src/lib/fiduciary/openSource.ts`
 - Create: `src/lib/fiduciary/openSource.test.ts`
 - Modify: `src/routes/(app)/chats/[id]/+page.svelte:138-152` (replace the inline closure body with a call to the helper)
 
 **Interfaces:**
+
 - Consumes: `type DocPanel` from `$lib/docpanel/docPanel.svelte` (exported as `ReturnType<typeof createDocPanel>`); `type LedgerEntry` from `$lib/fiduciary/ledger`.
 - Produces: `openLedgerSource(docPanel: DocPanel, entry: LedgerEntry): void`.
 
@@ -556,7 +567,9 @@ function entry(source: LedgerEntry['source']): LedgerEntry {
 		source
 	};
 }
-function src(over: Partial<NonNullable<LedgerEntry['source']>>): NonNullable<LedgerEntry['source']> {
+function src(
+	over: Partial<NonNullable<LedgerEntry['source']>>
+): NonNullable<LedgerEntry['source']> {
 	return {
 		kind: 'kb_document',
 		source_file_id: null,
@@ -654,13 +667,13 @@ Expected: PASS.
 In `src/routes/(app)/chats/[id]/+page.svelte`, add the import (near the other `$lib` imports at the top of the `<script>`):
 
 ```ts
-	import { openLedgerSource } from '$lib/fiduciary/openSource';
+import { openLedgerSource } from '$lib/fiduciary/openSource';
 ```
 
 Replace the inline `onopensource` closure (lines 138-152) with:
 
 ```svelte
-						onopensource={(e) => openLedgerSource(docPanel, e)}
+onopensource={(e) => openLedgerSource(docPanel, e)}
 ```
 
 - [ ] **Step 6: Run the chat page's existing tests + gates to verify no regression**
@@ -687,11 +700,13 @@ git commit -m "refactor(fiduciary): extract shared openLedgerSource click-throug
 Adds the session ledger to `SessionDetail` (last-known-good via the existing `pick`), passes the single gate to the header, renders the reused `FiduciaryReceipt` between `RunResults` and `SessionTimeline`, and wires click-through on the page using the docPanel that already exists there.
 
 **Files:**
+
 - Modify: `src/lib/automations/SessionDetail.svelte`
 - Modify: `src/routes/(app)/automations/[id]/+page.svelte`
 - Test: `src/lib/automations/SessionDetail.svelte.test.ts`
 
 **Interfaces:**
+
 - Consumes: `poll.ledger` (Task 2); `SessionReceiptHeader` `gate` prop (Task 3); `openLedgerSource` (Task 4); `data.ledger` (Task 1); `FiduciaryReceipt.svelte`, `type Ledger`, `type LedgerEntry`, `type LedgerGate` from `$lib/fiduciary/*`.
 - Produces: `SessionDetail` accepts optional `initialLedger?: Ledger | null` and optional `onopensource?: (e: LedgerEntry) => void`.
 
@@ -726,7 +741,16 @@ const ledger: Ledger = {
 				subtitle: null,
 				url: null,
 				tool: null,
-				passages: [{ text: 'limitation of liability', offset_start: 0, offset_end: 5, page: null, verified: true, method: 'exact_match' }]
+				passages: [
+					{
+						text: 'limitation of liability',
+						offset_start: 0,
+						offset_end: 5,
+						page: null,
+						verified: true,
+						method: 'exact_match'
+					}
+				]
 			}
 		}
 	],
@@ -748,52 +772,52 @@ const ledger: Ledger = {
 Tests:
 
 ```ts
-	it('renders the fiduciary receipt block from the initial ledger', () => {
-		render(SessionDetail, {
-			props: {
-				initialSession: session,
-				initialReceipt: null,
-				initialFindings: [],
-				initialFindingsTotal: 0,
-				initialMemories: [],
-				initialLedger: ledger
-			}
-		});
-		expect(screen.getByText('Fiduciary receipt')).toBeInTheDocument();
-		expect(screen.getByText('Master Services Agreement')).toBeInTheDocument();
-		// the gate pill shows in the header
-		expect(screen.getByText('Fiduciary-grade')).toBeInTheDocument();
+it('renders the fiduciary receipt block from the initial ledger', () => {
+	render(SessionDetail, {
+		props: {
+			initialSession: session,
+			initialReceipt: null,
+			initialFindings: [],
+			initialFindingsTotal: 0,
+			initialMemories: [],
+			initialLedger: ledger
+		}
 	});
-	it('omits the fiduciary receipt block when there is no ledger', () => {
-		render(SessionDetail, {
-			props: {
-				initialSession: session,
-				initialReceipt: null,
-				initialFindings: [],
-				initialFindingsTotal: 0,
-				initialMemories: [],
-				initialLedger: null
-			}
-		});
-		expect(screen.queryByText('Fiduciary receipt')).not.toBeInTheDocument();
+	expect(screen.getByText('Fiduciary receipt')).toBeInTheDocument();
+	expect(screen.getByText('Master Services Agreement')).toBeInTheDocument();
+	// the gate pill shows in the header
+	expect(screen.getByText('Fiduciary-grade')).toBeInTheDocument();
+});
+it('omits the fiduciary receipt block when there is no ledger', () => {
+	render(SessionDetail, {
+		props: {
+			initialSession: session,
+			initialReceipt: null,
+			initialFindings: [],
+			initialFindingsTotal: 0,
+			initialMemories: [],
+			initialLedger: null
+		}
 	});
-	it('fires onopensource when a ledger source is clicked', async () => {
-		const onopensource = vi.fn();
-		render(SessionDetail, {
-			props: {
-				initialSession: session,
-				initialReceipt: null,
-				initialFindings: [],
-				initialFindingsTotal: 0,
-				initialMemories: [],
-				initialLedger: ledger,
-				onopensource
-			}
-		});
-		await fireEvent.click(screen.getByText('Master Services Agreement'));
-		expect(onopensource).toHaveBeenCalledTimes(1);
-		expect(onopensource.mock.calls[0][0].id).toBe('le1');
+	expect(screen.queryByText('Fiduciary receipt')).not.toBeInTheDocument();
+});
+it('fires onopensource when a ledger source is clicked', async () => {
+	const onopensource = vi.fn();
+	render(SessionDetail, {
+		props: {
+			initialSession: session,
+			initialReceipt: null,
+			initialFindings: [],
+			initialFindingsTotal: 0,
+			initialMemories: [],
+			initialLedger: ledger,
+			onopensource
+		}
 	});
+	await fireEvent.click(screen.getByText('Master Services Agreement'));
+	expect(onopensource).toHaveBeenCalledTimes(1);
+	expect(onopensource.mock.calls[0][0].id).toBe('le1');
+});
 ```
 
 - [ ] **Step 2: Run them to verify they fail**
@@ -808,8 +832,8 @@ In `src/lib/automations/SessionDetail.svelte`:
 Add imports:
 
 ```ts
-	import FiduciaryReceipt from '$lib/fiduciary/FiduciaryReceipt.svelte';
-	import type { Ledger, LedgerEntry } from '$lib/fiduciary/ledger';
+import FiduciaryReceipt from '$lib/fiduciary/FiduciaryReceipt.svelte';
+import type { Ledger, LedgerEntry } from '$lib/fiduciary/ledger';
 ```
 
 Add the two new props to the `$props()` destructure and type block (both optional, defaulting to keep existing call sites valid):
@@ -838,8 +862,8 @@ Add the two new props to the `$props()` destructure and type block (both optiona
 Add the derived ledger + gate alongside the other `$derived` lines (using the same `pick` helper so a degraded live tick keeps last-known-good):
 
 ```ts
-	const ledger = $derived(pick(live.ledger, initialLedger));
-	const gate = $derived(ledger?.gates[0] ?? null);
+const ledger = $derived(pick(live.ledger, initialLedger));
+const gate = $derived(ledger?.gates[0] ?? null);
 ```
 
 Update the markup: pass `gate` to the header, and add the receipt block between `RunResults` and `SessionTimeline`:
@@ -877,16 +901,16 @@ Expected: PASS (including the pre-existing Results/timeline order tests, which p
 In `src/routes/(app)/automations/[id]/+page.svelte`, add the import and pass the two new props (the page already creates `docPanel`):
 
 ```ts
-	import { openLedgerSource } from '$lib/fiduciary/openSource';
+import { openLedgerSource } from '$lib/fiduciary/openSource';
 ```
 
 Inside the `<SessionDetail ... />` in the `{#key data.session.id}` block, add:
 
 ```svelte
-					initialArtifactsTotal={data.artifacts_total}
-					initialLedger={data.ledger}
-					onopenartifact={openArtifact}
-					onopensource={(e) => openLedgerSource(docPanel, e)}
+initialArtifactsTotal={data.artifacts_total}
+initialLedger={data.ledger}
+onopenartifact={openArtifact}
+onopensource={(e) => openLedgerSource(docPanel, e)}
 ```
 
 - [ ] **Step 6: Run the gates**
@@ -908,13 +932,16 @@ git commit -m "feat(fiduciary): fiduciary receipt block + gate pill in the autom
 A self-cleaning Playwright test that SQL-seeds an autonomous session, its hidden backing chat (linked via `chats.autonomous_session_id`), a caselaw citation, and a citation ledger entry, then asserts the session view renders the fiduciary receipt + gate pill + the seeded source.
 
 **Files:**
+
 - Create: `tests/fiduciary-session-ledger.spec.ts`
 
 **Interfaces:**
+
 - Consumes: the full slice (Tasks 1–5) rendered by the running stack.
 - Produces: a passing live e2e run.
 
 **Preconditions (do these first, they are the evidence step):**
+
 - Rebuild the app container so it serves this branch's code: `docker compose up -d --build donna-web`.
 - The stack is up at pin `5aa9135`; the admin fixture exists (`admin@lq.ai`). `DONNA_E2E_PASSWORD` is set in the environment.
 - Read `tests/fiduciary-receipt.spec.ts` (the `sql()` helper + the caselaw-citation seed) and this task's SQL below — mirror the `sql()`/`login()` helpers exactly (creds `lq_ai`/`lq_ai` via `docker compose exec -T postgres psql`).
@@ -1052,6 +1079,7 @@ git push tucuxi main
 ## Self-Review
 
 **Spec coverage (design §5 Slice 3):**
+
 - Session-level gate verdict as a headline pill in `SessionReceiptHeader` → Task 3. ✅
 - Session ledger as a "Fiduciary receipt" block in `SessionDetail`, reusing `FiduciaryReceipt.svelte`, alongside `SessionTimeline` + `RunResults` → Task 5. ✅
 - Data via `GET /autonomous/sessions/{id}/ledger`, folded into the existing session load + poll proxy, degrading to `null` independently → Tasks 1 + 2. ✅
