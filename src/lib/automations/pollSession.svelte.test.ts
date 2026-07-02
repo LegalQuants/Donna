@@ -273,4 +273,45 @@ describe('createSessionPoll', () => {
 		expect(poll.memories?.[1].id).toBe('m2');
 		expect(poll.memoriesTotal).toBe(2);
 	});
+
+	it('threads the session ledger with last-known-good retention', async () => {
+		const bodies = [
+			{
+				session: {
+					id: 's1',
+					status: 'running',
+					trigger_kind: 'manual',
+					current_phase: 'analysis',
+					cost_total_usd: '0.1',
+					created_at: 'x'
+				},
+				receipt: null,
+				ledger: { entries: [{ id: 'le1' }], gates: [{ gate_status: 'fiduciary_grade' }] }
+			},
+			// degraded tick: a null ledger must NOT blank the earlier one
+			{
+				session: {
+					id: 's1',
+					status: 'completed',
+					trigger_kind: 'manual',
+					current_phase: 'delivery',
+					cost_total_usd: '0.2',
+					created_at: 'x'
+				},
+				receipt: null,
+				ledger: null
+			}
+		];
+		let i = 0;
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response(JSON.stringify(bodies[Math.min(i++, bodies.length - 1)])))
+		);
+		const poll = createSessionPoll('s1', { pollMs: 1 });
+		const p = poll.start();
+		await vi.advanceTimersByTimeAsync(10);
+		await p;
+		expect(poll.ledger?.entries).toHaveLength(1);
+		expect(poll.ledger?.gates[0].gate_status).toBe('fiduciary_grade');
+	});
 });
