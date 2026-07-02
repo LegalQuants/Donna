@@ -4,6 +4,13 @@ import type { Citation } from '$lib/citations/types';
 import { parseToolSources, type ToolSource } from '$lib/citations/sources';
 import { anonymizedByMessage } from '$lib/receipts/format';
 import type { ReceiptEvent } from '$lib/receipts/types';
+import {
+	parseLedger,
+	gateForMessage,
+	entriesForMessage,
+	type LedgerEntry,
+	type LedgerGate
+} from '$lib/fiduciary/ledger';
 
 export interface ChatMessage {
 	/** Stable client-side identity for list keying; never changes after creation.
@@ -19,6 +26,10 @@ export interface ChatMessage {
 	citations?: Citation[];
 	/** External-source provenance (case law consulted), lazy-fetched post-stream (PR6c). */
 	sources?: ToolSource[];
+	/** Per-turn fiduciary ledger entries (Slice 1), lazy-fetched post-stream. */
+	ledgerEntries?: LedgerEntry[];
+	/** Per-turn fiduciary gate verdict (Slice 1), lazy-fetched post-stream. */
+	ledgerGate?: LedgerGate | null;
 	anonymized?: boolean;
 	/** Slugs of the skills the backend reported as applied to this assistant turn. */
 	applied_skills?: string[];
@@ -142,6 +153,24 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		}
 	}
 
+	// The per-turn fiduciary ledger (Slice 1) lives at /chats/{id}/ledger, correlated
+	// by message_id. Fetch it once the turn is persisted; last-known-good like sources.
+	async function loadLedger(idx: number) {
+		const id = messages[idx].id;
+		if (!id || id === 'pending') return;
+		try {
+			const res = await fetch(`/chats/${chatId}/ledger?message_id=${id}`);
+			if (!res.ok) return;
+			const ledger = parseLedger(await res.json());
+			const entries = entriesForMessage(ledger, id);
+			if (entries.length > 0) messages[idx].ledgerEntries = entries;
+			const gate = gateForMessage(ledger, id);
+			if (gate) messages[idx].ledgerGate = gate;
+		} catch {
+			/* non-blocking */
+		}
+	}
+
 	// Anonymization is recorded on the inference receipt, correlated by message_id.
 	async function loadAnonymization(idx: number) {
 		const id = messages[idx].id;
@@ -206,6 +235,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		if (messages[idx].status === 'done') {
 			await loadCitations(idx);
 			await loadSources(idx);
+			await loadLedger(idx);
 			await loadAnonymization(idx);
 		}
 	}
