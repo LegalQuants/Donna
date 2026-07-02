@@ -38,7 +38,11 @@
 	// Seeded once via untrack (chatId/message.id don't change for a given turn) —
 	// avoids the state_referenced_locally warning documented in CLAUDE.md §7.
 	const treatmentPoll = untrack(() => createTreatmentPoll(chatId ?? '', message.id));
-	const ledgerEntries = $derived(treatmentPoll.entries ?? message.ledgerEntries ?? []);
+	// What the panel displays: poll results override the initial prop entries once they
+	// arrive. Never written back onto `message` — mutating an unbound prop is both a
+	// Svelte ownership violation and, on a $state-backed message, re-triggers the effect
+	// below (stop→start), spawning overlapping poll loops (a fetch storm).
+	const shownEntries = $derived(treatmentPoll.entries ?? message.ledgerEntries ?? []);
 
 	$effect(() => {
 		if (
@@ -50,10 +54,6 @@
 			treatmentPoll.start();
 			return () => treatmentPoll.stop();
 		}
-	});
-
-	$effect(() => {
-		if (treatmentPoll.entries) message.ledgerEntries = treatmentPoll.entries;
 	});
 
 	async function copy() {
@@ -192,7 +192,7 @@
 				<ToolSourcesPanel sources={message.sources} />
 			{/if}
 			{#if message.status === 'done' && message.ledgerGate && showLedger}
-				<FiduciaryReceipt entries={ledgerEntries} gate={message.ledgerGate} {onopensource} />
+				<FiduciaryReceipt entries={shownEntries} gate={message.ledgerGate} {onopensource} />
 			{/if}
 			{#if message.status === 'streaming' && message.content !== ''}
 				<span class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-mlq-text align-text-bottom"

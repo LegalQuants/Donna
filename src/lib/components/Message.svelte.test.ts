@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import { fireEvent } from '@testing-library/dom';
 import Message from './Message.svelte';
+import { createChatStream } from '$lib/chat/chatStream.svelte';
 
 const h = vi.hoisted(() => ({ provenance: 'always' as 'always' | 'collapsed' }));
 vi.mock('$app/state', () => ({
@@ -460,6 +461,70 @@ describe('Message fiduciary receipt (trust pill + expandable panel)', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /needs review/i }));
 		await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledWith('/chats/c1/ledger?message_id=f3'));
 		fetchSpy.mockRestore();
+	});
+
+	it('does not fetch-storm the ledger when message is a reactive ($state-backed) object', async () => {
+		// Regression test for a critical reactivity bug: the poll effect used to write
+		// treatmentPoll.entries back onto message.ledgerEntries, which — on a real
+		// $state-backed message (as chats/[id]/+page.svelte uses) — re-triggered the
+		// start effect on every tick, spawning overlapping poll loops (an unbounded
+		// fetch storm). Plain object-literal props (used by the other tests in this
+		// file) don't reproduce it, so this test seeds \`message\` from createChatStream,
+		// whose \`messages\` array is genuinely $state-backed.
+		vi.useFakeTimers();
+		h.provenance = 'always';
+		const caselawEntry = {
+			id: 'le6',
+			message_id: 'f6',
+			source_kind: 'caselaw',
+			verification_status: 'unverified',
+			confidence: null,
+			provider: null,
+			retrieved_at: null,
+			treatment_id: null,
+			treatment: null,
+			created_at: null,
+			source: {
+				kind: 'caselaw',
+				source_file_id: null,
+				opinion_id: 43,
+				cluster_id: null,
+				external_ref: null,
+				provider: null,
+				label: 'Roe v. Wade',
+				subtitle: null,
+				url: null,
+				tool: 'search_case_law',
+				passages: []
+			}
+		};
+		const stream = createChatStream('c1', [
+			{
+				key: 'f6',
+				id: 'f6',
+				role: 'assistant',
+				content: 'Answer.',
+				status: 'done',
+				ledgerGate,
+				ledgerEntries: [caselawEntry]
+			} as never
+		]);
+		// treatment never resolves — every tick returns the same pending caselaw entry,
+		// so the poll only stops via maxAttempts (default 6), not via the data.
+		const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({
+			ok: true,
+			json: async () => ({ entries: [caselawEntry], gates: [] })
+		} as Response);
+
+		render(Message, { props: { message: stream.messages[0], chatId: 'c1' } });
+		await fireEvent.click(screen.getByRole('button', { name: /needs review/i }));
+
+		// Far beyond maxAttempts (6) * default intervalMs (5000ms) = 30s of simulated time.
+		await vi.advanceTimersByTimeAsync(60 * 5000);
+
+		expect(fetchSpy.mock.calls.length).toBeLessThanOrEqual(6);
+		fetchSpy.mockRestore();
+		vi.useRealTimers();
 	});
 
 	it('wires onopensource so clicking a source title in the open panel fires the handler', async () => {
