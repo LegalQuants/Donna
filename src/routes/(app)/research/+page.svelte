@@ -7,6 +7,7 @@
 	import DocumentPanel from '$lib/docpanel/DocumentPanel.svelte';
 	import ResearchStarters from '$lib/research/ResearchStarters.svelte';
 	import ResearchSourcesCard from '$lib/research/ResearchSourcesCard.svelte';
+	import Hint from '$lib/fiduciary/Hint.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const r = createResearch();
@@ -25,6 +26,10 @@
 	<h1 class="text-lg font-semibold text-mlq-text">Case-law research</h1>
 
 	<div class="mt-4">
+		<Hint id="fiduciary-research-sources">
+			The <strong>Authoritative sources</strong> card below shows which primary-law sources this instance
+			can reach right now.
+		</Hint>
 		<ResearchSourcesCard sources={data.sources} />
 	</div>
 

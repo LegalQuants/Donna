@@ -19,6 +19,7 @@
 	import { page } from '$app/state';
 	import ConnectedBanner from '$lib/chat/ConnectedBanner.svelte';
 	import { openLedgerSource } from '$lib/fiduciary/openSource';
+	import Hint from '$lib/fiduciary/Hint.svelte';
 
 	let { data } = $props();
 
@@ -128,6 +129,15 @@
 		<div bind:this={scroller} class="flex-1 overflow-y-auto">
 			<div class="mx-auto max-w-2xl px-6 py-8">
 				<ConnectedBanner server={connectedServer} error={connectError} onretry={resendLastUser} />
+				{#if chat.messages.some((m) => m.ledgerGate)}
+					<Hint id="fiduciary-trust-pill">
+						New — every answer now carries a <strong>trust pill</strong> in its footer. Click it to
+						open the receipt and trace each claim back to its source.
+						<a href="/about/fiduciary" class="font-medium text-mlq-workflow hover:underline"
+							>Learn more →</a
+						>
+					</Hint>
+				{/if}
 				{#each chat.messages as m, i (m.key)}
 					<Message
 						message={m}
