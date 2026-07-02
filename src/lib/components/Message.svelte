@@ -192,7 +192,12 @@
 				<ToolSourcesPanel sources={message.sources} />
 			{/if}
 			{#if message.status === 'done' && message.ledgerGate && showLedger}
-				<FiduciaryReceipt entries={shownEntries} gate={message.ledgerGate} {onopensource} />
+				<FiduciaryReceipt
+					entries={shownEntries}
+					gate={message.ledgerGate}
+					{onopensource}
+					exportMeta={{ type: 'chat_turn', chat_id: chatId ?? '', message_id: message.id }}
+				/>
 			{/if}
 			{#if message.status === 'streaming' && message.content !== ''}
 				<span class="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-mlq-text align-text-bottom"
