@@ -10,4 +10,10 @@ describe('AboutRail', () => {
 		const tools = screen.getByRole('link', { name: 'Tools & connections' });
 		expect(tools).toHaveAttribute('href', '/about/tools');
 	});
+
+	it('links the Fiduciary receipts guide page', () => {
+		render(AboutRail);
+		const fiduciary = screen.getByRole('link', { name: 'Fiduciary receipts' });
+		expect(fiduciary).toHaveAttribute('href', '/about/fiduciary');
+	});
 });

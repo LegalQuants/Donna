@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Trust states — how Donna labels an answer's trustworthiness</title>
+		<style>
+			:root {
+				--bg: #0c0f14;
+				--bg-elev: #151a23;
+				--bg-elev-2: #1d242f;
+				--border: #2a3340;
+				--text: #e6ebf3;
+				--text-dim: #8a96a8;
+				--text-faint: #5a6578;
+				--grade: #16a34a;
+				--supported: #c9a227;
+				--review: #dc2626;
+				--none: #9ca3af;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+			}
+			body {
+				background: var(--bg);
+				color: var(--text);
+				font:
+					14px/1.55 -apple-system,
+					BlinkMacSystemFont,
+					'Segoe UI',
+					system-ui,
+					sans-serif;
+			}
+			.app {
+				display: grid;
+				grid-template-rows: auto 1fr;
+				min-height: 100vh;
+			}
+			header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 12px;
+				padding: 14px 20px;
+				border-bottom: 1px solid var(--border);
+			}
+			header h1 {
+				margin: 0;
+				font-size: 15px;
+				font-weight: 600;
+			}
+			header p {
+				margin: 2px 0 0;
+				font-size: 12px;
+				color: var(--text-dim);
+			}
+			.back {
+				color: var(--text-dim);
+				text-decoration: none;
+				font-size: 13px;
+				white-space: nowrap;
+			}
+			.back:hover {
+				color: var(--text);
+			}
+			main {
+				display: grid;
+				grid-template-columns: minmax(240px, 320px) 1fr;
+				gap: 20px;
+				padding: 20px;
+			}
+			@media (max-width: 720px) {
+				main {
+					grid-template-columns: 1fr;
+				}
+			}
+			.controls,
+			.preview {
+				background: var(--bg-elev);
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				padding: 16px;
+			}
+			.controls h2,
+			.preview h2 {
+				margin: 0 0 10px;
+				font-size: 11px;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--text-dim);
+			}
+			.opt {
+				display: flex;
+				gap: 8px;
+				align-items: flex-start;
+				padding: 8px 10px;
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				margin-bottom: 8px;
+				cursor: pointer;
+			}
+			.opt:hover {
+				border-color: var(--text-faint);
+			}
+			.opt input {
+				margin-top: 2px;
+			}
+			.opt span {
+				font-size: 13px;
+			}
+			.opt small {
+				display: block;
+				color: var(--text-dim);
+				font-size: 11px;
+			}
+			.divider {
+				height: 1px;
+				background: var(--border);
+				margin: 14px 0;
+			}
+			.pill {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				border: 1px solid;
+				border-radius: 999px;
+				padding: 3px 12px;
+				font-size: 13px;
+				font-weight: 600;
+			}
+			.pill .dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+			}
+			.pill.grade {
+				color: var(--grade);
+				border-color: rgba(22, 163, 74, 0.5);
+				background: rgba(22, 163, 74, 0.12);
+			}
+			.pill.grade .dot {
+				background: var(--grade);
+			}
+			.pill.supported {
+				color: var(--supported);
+				border-color: rgba(201, 162, 39, 0.5);
+				background: rgba(201, 162, 39, 0.12);
+			}
+			.pill.supported .dot {
+				background: var(--supported);
+			}
+			.pill.review {
+				color: var(--review);
+				border-color: rgba(220, 38, 38, 0.5);
+				background: rgba(220, 38, 38, 0.12);
+			}
+			.pill.review .dot {
+				background: var(--review);
+			}
+			.pill.none {
+				color: var(--none);
+				border-color: rgba(156, 163, 175, 0.5);
+				background: rgba(156, 163, 175, 0.12);
+			}
+			.pill.none .dot {
+				background: var(--none);
+			}
+			#explanation {
+				margin: 14px 0 0;
+				font-size: 14px;
+			}
+			#why {
+				margin: 8px 0 0;
+				font-size: 12px;
+				color: var(--text-dim);
+			}
+			.rule {
+				margin-top: 18px;
+				padding: 12px 14px;
+				border-left: 3px solid var(--none);
+				background: var(--bg-elev-2);
+				border-radius: 0 8px 8px 0;
+				font-size: 12px;
+				color: var(--text-dim);
+			}
+			.rule strong {
+				color: var(--text);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="app">
+			<header>
+				<div>
+					<h1>Trust states</h1>
+					<p>How Donna labels an answer's trustworthiness — the pill you see on every reply.</p>
+				</div>
+				<a class="back" href="../../">↩ Learn</a>
+			</header>
+			<main>
+				<section class="controls">
+					<h2>What happened when Donna verified the answer</h2>
+					<label class="opt"
+						><input type="radio" name="gate" value="fiduciary_grade" checked /><span
+							>Every quoted claim matched its source<small
+								>The strongest result: each quote was found in the real source.</small
+							></span
+						></label
+					>
+					<label class="opt"
+						><input type="radio" name="gate" value="supported_only" /><span
+							>Backed in substance<small
+								>Verified by meaning rather than an exact quote match.</small
+							></span
+						></label
+					>
+					<label class="opt"
+						><input type="radio" name="gate" value="flagged" /><span
+							>A quote couldn't be confirmed<small
+								>At least one quote wasn't found in its source — worth a look.</small
+							></span
+						></label
+					>
+					<div class="divider"></div>
+					<label class="opt"
+						><input type="checkbox" id="assertions" checked /><span
+							>This answer made sourced claims<small
+								>Uncheck to see what happens when there is nothing to verify.</small
+							></span
+						></label
+					>
+				</section>
+				<section class="preview">
+					<h2>The trust pill you'd see</h2>
+					<span id="pill" class="pill grade"
+						><span class="dot"></span><span id="pill-label">Fiduciary-grade</span></span
+					>
+					<p id="explanation"></p>
+					<p id="why"></p>
+					<div class="rule">
+						<strong>The honesty rule:</strong> an answer that made no sourced claims is never marked
+						green. With nothing to verify, "verified" would be misleading — so it shows the neutral
+						<em>No sourced claims</em> instead. Green is earned, not defaulted.
+					</div>
+				</section>
+			</main>
+		</div>
+		<script>
+			// Mirrors src/lib/fiduciary/trust.ts:gateVerdict — the honesty rule is checked first.
+			var STATES = {
+				grade: {
+					cls: 'grade',
+					label: 'Fiduciary-grade',
+					explanation: 'Every quoted claim was matched against its original source.',
+					why: 'The answer made sourced claims and all of them checked out.'
+				},
+				supported: {
+					cls: 'supported',
+					label: 'Supported',
+					explanation: 'Claims are backed by the sources in substance, verified by meaning.',
+					why: 'Support was confirmed by meaning rather than an exact quote match.'
+				},
+				review: {
+					cls: 'review',
+					label: 'Needs review',
+					explanation: 'At least one quoted claim could not be confirmed in its source.',
+					why: 'Read the flagged quote against its source before relying on it.'
+				},
+				none: {
+					cls: 'none',
+					label: 'No sourced claims',
+					explanation: 'This answer did not quote or rely on a specific source.',
+					why: 'Nothing to verify — neutral, never green.'
+				}
+			};
+			function verdict(status, hasAssertions) {
+				if (status === 'fiduciary_grade' && !hasAssertions) return STATES.none;
+				if (status === 'fiduciary_grade') return STATES.grade;
+				if (status === 'supported_only') return STATES.supported;
+				return STATES.review;
+			}
+			function render() {
+				var status = document.querySelector('input[name="gate"]:checked').value;
+				var hasAssertions = document.getElementById('assertions').checked;
+				var v = verdict(status, hasAssertions);
+				var pill = document.getElementById('pill');
+				pill.className = 'pill ' + v.cls;
+				document.getElementById('pill-label').textContent = v.label;
+				document.getElementById('explanation').textContent = v.explanation;
+				document.getElementById('why').textContent = v.why;
+			}
+			document.querySelectorAll('input[name="gate"], #assertions').forEach(function (el) {
+				el.addEventListener('change', render);
+			});
+			render();
+		</script>
+	</body>
+</html>

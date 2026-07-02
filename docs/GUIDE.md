@@ -329,6 +329,10 @@ Donna's defining commitment is that you never have to take an answer on faith:
 - **A standing disclaimer** appears on every composer: _"AI can make mistakes. Answers are not legal
   advice."_
 
+#### Fiduciary receipts — the whole sourcing trail
+
+The citation pills tell you about individual passages; the **trust pill** on each answer tells you about the answer as a whole. It shows one of four states — **Fiduciary-grade** (green: every quoted claim matched its source), **Supported** (amber: backed in substance), **Needs review** (red: a quote couldn't be confirmed), or **No sourced claims** (grey: nothing to verify — deliberately never green). Click it to open the **fiduciary receipt**: the citation ledger of every source the assistant read, what it quoted, and whether each quote checked out, so you can trace any claim back to its source. For case law you'll also see **derived** treatment signals (never an editorial "good/bad law" verdict). Autonomous matter sessions get the same receipt at the matter level, next to cost. And you can **export** any receipt as a JSON + printable Markdown provenance record — a faithful copy, not a signed attestation. The in-app **About → Fiduciary receipts** page walks through all of this with a live trust-state explorer.
+
 ---
 
 ## How it actually works (in plain terms)
