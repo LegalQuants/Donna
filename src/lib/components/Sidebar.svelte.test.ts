@@ -72,4 +72,14 @@ describe('Sidebar', () => {
 		expect(link).toHaveAttribute('href', '/settings');
 		expect(link).toHaveAttribute('aria-current', 'page');
 	});
+
+	it('shows a Review entry when canAudit is true', () => {
+		render(Sidebar, { props: { displayName: 'Admin', canAudit: true } });
+		expect(screen.getByRole('link', { name: 'Review' })).toHaveAttribute('href', '/audit');
+	});
+
+	it('hides the Review entry by default (non-privileged)', () => {
+		render(Sidebar, { props: { displayName: 'Member' } });
+		expect(screen.queryByRole('link', { name: 'Review' })).toBeNull();
+	});
 });
