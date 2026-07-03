@@ -21,7 +21,12 @@ export const load: PageServerLoad = async (event) => {
 	if (res.status === 404) throw error(404, 'Not found, or not accessible to your role.');
 	if (!res.ok) throw error(502, 'Could not load the ledger.');
 
-	const ledger = parseLedger(await res.json());
+	let ledger;
+	try {
+		ledger = parseLedger(await res.json());
+	} catch {
+		throw error(502, 'Could not load the ledger.');
+	}
 	return {
 		kind: params.kind as 'chat' | 'session',
 		id: params.id,
