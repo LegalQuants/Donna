@@ -6,6 +6,7 @@
 		Workflow,
 		Table,
 		Scale,
+		ShieldCheck,
 		PanelLeft,
 		LogOut,
 		Settings,
@@ -13,11 +14,12 @@
 	} from '@lucide/svelte';
 	import { loadSidebar, persistSidebar } from './sidebar';
 
-	let { displayName = 'Account' }: { displayName?: string } = $props();
+	let { displayName = 'Account', canAudit = false }: { displayName?: string; canAudit?: boolean } =
+		$props();
 	let open = $state(loadSidebar());
 
 	type NavItem = { href: string; label: string; icon: typeof MessageSquare; match?: string[] };
-	const nav: NavItem[] = [
+	const nav = $derived<NavItem[]>([
 		{ href: '/', label: 'Assistant', icon: MessageSquare },
 		{ href: '/matters', label: 'Projects', icon: FolderKanban },
 		{
@@ -27,8 +29,9 @@
 			match: ['/workflows', '/skills', '/playbooks', '/prompts', '/automations']
 		},
 		{ href: '/tabular', label: 'Tabular', icon: Table },
-		{ href: '/research', label: 'Research', icon: Scale }
-	];
+		{ href: '/research', label: 'Research', icon: Scale },
+		...(canAudit ? [{ href: '/audit', label: 'Review', icon: ShieldCheck, match: ['/audit'] }] : [])
+	]);
 
 	function toggle() {
 		open = !open;
