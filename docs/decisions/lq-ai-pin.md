@@ -2,11 +2,39 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `5aa9135` (bumped 2026-07-01 from `5ad9f9e`)
+- Pinned SHA: `e40b98c` (bumped 2026-07-03 from `5aa9135`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `5aa9135` → `e40b98c` (2026-07-03): lq-ai **#266 — cross-user auditor/compliance role** —
+  resolving Donna upstream ask `docs/upstream-requests/lq-ai-cross-user-auditor-role.md` and
+  unblocking the fiduciary segment's **reviewer-facing half**. New Donna-facing contract in
+  `backend.d.ts`: the `users.role` enum gains **`auditor`** (migration 0065) across `UserOut`,
+  `UserProfile`, and `PATCH /api/v1/admin/users/{user_id}/role` (grant via the same admin endpoint
+  used for viewer/member; `is_admin` stays `false`). The role is a **read-only, deployment-wide
+  privileged reader** — the set `{admin, auditor}` may now cross-user read `GET /chats/{id}/ledger`,
+  `…/messages/{id}/sources`, `GET /autonomous/sessions/{id}/ledger`, and `…/receipts[.export.jsonl]`
+  for **another user's** work (previously 404 even to admin on the ledger endpoints). **Note: the
+  authz change is runtime-only — no endpoint _shape_ changed**, so the ledger/session-ledger/sources
+  response types are unchanged; only the enum widened. Failure matrix (from §2.6a of the integration
+  doc): owner → 200 (no audit row); privileged non-owner → 200 **+ one `audit_log` row**
+  (`action ∈ {auditor.ledger_viewed, auditor.sources_viewed, auditor.session_ledger_viewed,
+auditor.receipts_viewed, auditor.receipts_exported}`, `details.viewed_user_id` = owner);
+  member/viewer non-owner → 404 (ledger/sources/session, existence-safe) or 403 (receipts);
+  nonexistent id → 404. **Out of scope (be honest in the UI):** no cross-user listing/discovery
+  (read by known id only), no per-matter/per-org scoping (single global role), writes stay
+  owner-scoped. Global read-only _enforcement_ of the role beyond the 5 listed endpoints is LQ-AI
+  **DE-378** (unwired MutatingUser gate; writes safe via owner-scoping regardless). Ask #2 (signed
+  attestation export) was **deferred by LQ-AI as DE-379** — its reviewer variant will compose on this
+  auditor role when picked up. **This bump also pulls in the intervening backend work on lq-ai main:**
+  SEC **EDGAR** authority source (#254), **EUR-Lex** get-by-CELEX (#257), a code-generated OpenAPI
+  export plus CI drift-guard (#255, closes DE-373), a claims-vs-reality honesty audit (#260), and the
+  fiduciary Learn playgrounds (#262). EDGAR + EUR-Lex now appear in `GET /research/sources` (verified
+  live: 4 sources, `edgar`/`eurlex` both `enabled:false` until operator keys are set) and render
+  through the data-driven `ResearchSourcesCard` unchanged. Authoritative reference:
+  `vendor/lq-ai/docs/integration/2026-07-01-donna-fiduciary-auditability-integration.md` **§2.6a**.
 
 - `5ad9f9e` → `5aa9135` (2026-07-01): lq-ai **WS-E/WS-D fiduciary-grade auditability** — unblocking the
   Donna fiduciary segment (citation ledger, fiduciary gate, provenance, caselaw + authority
