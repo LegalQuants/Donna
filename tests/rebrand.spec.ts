@@ -22,10 +22,12 @@ test('user display name is rebranded LQ.AI → Donna in the UI', async ({ page }
 	).toBeVisible();
 	await expect(page.getByText(/LQ\.AI/)).toHaveCount(0);
 
-	// Settings → Account profile name.
+	// Settings → Account profile name. The dd also holds an inline "Edit" affordance
+	// (EditableDisplayName), so assert the rebranded name is present rather than an
+	// exact whole-cell match.
 	await page.goto('/settings/account');
 	const nameCell = page.locator('dt:has-text("Name") + dd');
-	await expect(nameCell).toHaveText('Donna Administrator');
+	await expect(nameCell).toContainText('Donna Administrator');
 
 	// Email is a real credential — it is NOT rebranded.
 	await expect(page.locator('dt:has-text("Email") + dd')).toHaveText('admin@lq.ai');
