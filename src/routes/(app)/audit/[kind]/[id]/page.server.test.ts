@@ -78,4 +78,17 @@ describe('/audit/[kind]/[id] loader', () => {
 			status: 502
 		});
 	});
+
+	it('502s a 200 response whose body is not valid JSON', async () => {
+		lqFetch.mockResolvedValue({
+			ok: true,
+			status: 200,
+			json: async () => {
+				throw new SyntaxError('bad json');
+			}
+		});
+		await expect(load(ev({ role: 'auditor' }, 'chat', 'c1'))).rejects.toMatchObject({
+			status: 502
+		});
+	});
 });
