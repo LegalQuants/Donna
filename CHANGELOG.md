@@ -3,7 +3,9 @@
 All notable changes to Donna are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
-## [Unreleased] — Fiduciary auditability
+## [0.6.2] — 2026-07-04 — Fiduciary auditability, auditor reviewer & research sources
+
+Version aligns Donna with the LQ-AI **v0.6.x** backend it vendors (pin `44a1de54`).
 
 ### Added
 
@@ -12,6 +14,12 @@ All notable changes to Donna are documented here. The format follows
 - **Autonomous matter audit timeline** — the session ledger + a session-level trust pill on the receipt, alongside cost.
 - **Provenance export** — download any chat turn or session receipt as a structured JSON envelope + printable Markdown, honestly labelled as not a signed attestation.
 - **Authoritative sources** card on Research, and a new **About → Fiduciary receipts** guide with an interactive trust-states explorer.
+- **Cross-user auditor reviewer** — a read-only `/audit` surface where an `auditor`- or `admin`-role user verifies another user's citation ledger + fiduciary gate (chat or autonomous session), by known id; access is recorded in the deployment audit log.
+- **Research sources** admin card (Settings → Research sources): enable/disable the authority sources (CourtListener, GovInfo, EDGAR, EUR-Lex) and set the keyed ones' API keys in-app, hot-applied, secrets write-only. **EDGAR and EUR-Lex are enabled by default** (they need no key).
+
+### Fixed
+
+- **In-app key-setting now works**: the gateway's `LQ_AI_GATEWAY_MASTER_KEY` (which encrypts runtime provider/research keys at rest) is now provisioned across the release compose and the desktop launcher (and backfilled into existing installs), so setting a CourtListener/GovInfo research key — or an inference BYOK key — in Settings succeeds instead of failing with "runtime key storage disabled".
 
 ## [0.3.0] — 2026-06-24 — Sticky skills
 

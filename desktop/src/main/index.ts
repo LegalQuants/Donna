@@ -80,7 +80,7 @@ ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 		const cfg: LauncherConfig = {
 			secrets: generateSecrets(),
 			ports: resolvePorts(DEFAULT_PORTS, isPortFreeSync),
-			imageTag: 'v0.3.0',
+			imageTag: 'v0.6.2',
 			inference: input.inference,
 			adminEmail: input.adminEmail,
 			courtlistenerToken: input.courtlistenerToken
