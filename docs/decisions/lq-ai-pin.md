@@ -15,7 +15,7 @@ Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
   `{tool_providers:[{type, enabled, name, has_key, key_required, egress_tier}]}`; `POST …` body
   `{type, api_key?}` (enable + optional key); `PATCH …/{provider_type}` body `{api_key?, enabled?}`
   (rotate/toggle); `DELETE …/{provider_type}` → 204 (disable). `type ∈ {courtlistener, govinfo, edgar,
-  eurlex}`; `key_required` true for CL/govinfo, false for edgar/eurlex. Bodies are `extra="forbid"`
+eurlex}`; `key_required` true for CL/govinfo, false for edgar/eurlex. Bodies are `extra="forbid"`
   (can't set base_url/allowlist — gateway-owned SSRF boundary). Errors: 400 = gateway master key unset;
   404 = unknown type; 409 = env-configured entry ("edit gateway.yaml"). **DE-383 gotcha:** use
   `GET /admin/tool-providers` for authoritative admin status, NOT `/research/sources` (the latter derives
