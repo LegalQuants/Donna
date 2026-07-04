@@ -8,7 +8,8 @@ const base: LauncherConfig = {
 		MINIO_ROOT_PASSWORD: 'minio-secret',
 		S3_SECRET_KEY: 'minio-secret',
 		LQ_AI_GATEWAY_KEY: 'gw-secret',
-		JWT_SECRET: 'jwt-secret'
+		JWT_SECRET: 'jwt-secret',
+		LQ_AI_GATEWAY_MASTER_KEY: 'master-key-fernet'
 	},
 	ports: {
 		donnaWeb: 13002,
@@ -32,6 +33,7 @@ describe('renderEnv', () => {
 		expect(env.S3_SECRET_KEY).toBe('minio-secret');
 		expect(env.LQ_AI_GATEWAY_KEY).toBe('gw-secret');
 		expect(env.JWT_SECRET).toBe('jwt-secret');
+		expect(env.LQ_AI_GATEWAY_MASTER_KEY).toBe('master-key-fernet');
 	});
 
 	it('keeps ORIGIN in lockstep with the donna-web host port (adapter-node 403s otherwise)', () => {
