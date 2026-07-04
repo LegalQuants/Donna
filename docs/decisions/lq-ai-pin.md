@@ -2,11 +2,25 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `44a1de54` (bumped 2026-07-04 from `e40b98c`)
+- Pinned SHA: `7d788d91` (bumped 2026-07-04 from `44a1de54`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `44a1de54` → `7d788d91` (2026-07-04): lq-ai **#278 — forward `LQ_AI_GATEWAY_MASTER_KEY` in the
+  gateway service** (Donna #3 follow-up) — closes the source-dev half of the master-key fix. The
+  vendored `docker-compose.yml` gateway `environment:` now forwards
+  `LQ_AI_GATEWAY_MASTER_KEY: ${LQ_AI_GATEWAY_MASTER_KEY:-}` (beside `LQ_AI_GATEWAY_KEY`), so a plain
+  `docker compose up` enables the runtime encrypted-at-rest key store — no per-consumer override
+  needed. Set the key in `.env` to turn it on (documented in `.env.example`; mint with
+  `python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'`); empty =
+  the store stays off and the in-app key setters (Provider keys, Research sources) return 400
+  `failed_precondition`. **Verified live** on a clean fresh stack with the override removed:
+  `POST /admin/tool-providers {courtlistener} → 200`. Also sweeps in lq-ai `v0.6.1` (#274, their
+  version bump for the tool-provider admin API) + a desktop pull-order fix (#277, their launcher) + a
+  DE-385 doc — none touch Donna's typegen (`gen:api` produced no change to `backend.d.ts`). No new
+  Donna-facing API surface. This is the pin Donna **v0.6.2** ships on.
 
 - `e40b98c` → `44a1de54` (2026-07-04): lq-ai **#273 — runtime tool/authority-provider admin API**
   (v0.6.x) — resolving Donna upstream ask `docs/upstream-requests/lq-ai-tool-provider-admin-config.md`
