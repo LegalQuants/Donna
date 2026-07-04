@@ -78,6 +78,11 @@ services:
         condition: service_healthy
     environment:
       LQ_AI_GATEWAY_KEY: ${LQ_AI_GATEWAY_KEY:?LQ_AI_GATEWAY_KEY is required}
+      # Fernet master key that encrypts runtime provider/research keys at rest. Without
+      # it the gateway disables runtime key storage, so setting a CourtListener/GovInfo
+      # or inference BYOK key in-app fails with a 400. Generate one with:
+      #   docker compose -f docker-compose.release.yml run --rm gateway python -m app.cli generate-master-key
+      LQ_AI_GATEWAY_MASTER_KEY: ${LQ_AI_GATEWAY_MASTER_KEY:-}
       LQ_AI_API_URL: ${LQ_AI_API_URL:-http://api:8000}
       LQ_AI_SKILL_CACHE_TTL_SECONDS: ${LQ_AI_SKILL_CACHE_TTL_SECONDS:-60}
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-lq_ai}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lq_ai}}
