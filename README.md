@@ -1,6 +1,6 @@
 # Donna
 
-**v0.3.0** · Apache-2.0 · a [LegalQuants](https://github.com/LegalQuants) project
+**v0.6.2** · Apache-2.0 · a [LegalQuants](https://github.com/LegalQuants) project
 
 **A friendly, document-forward frontend for the [LQ.AI](https://github.com/LegalQuants/lq-ai) legal-AI backend** — conversational legal work with character-verified citations, **U.S. case-law research**, and a **governed tool-loop** (the assistant asks your approval before it reaches for case law or connected **MCP** tools), plus transparent receipts and autonomous runs, under a clean reading-first interface inspired by [MikeOSS](https://github.com/willchen96/mike).
 
@@ -33,8 +33,8 @@ The browser talks only to Donna's SvelteKit server (a **backend-for-frontend**).
 
 ### Option A — Desktop app (macOS, easiest)
 
-Download **`Donna-0.3.0-arm64.dmg`** from the
-[latest desktop release](https://github.com/LegalQuants/Donna/releases/tag/desktop-v0.3.0), drag it to
+Download **`Donna-0.6.2-arm64.dmg`** from the
+[latest desktop release](https://github.com/LegalQuants/Donna/releases/tag/desktop-v0.6.2), drag it to
 Applications, and open it (signed + notarized — no Gatekeeper warning). A one-time wizard sets your
 password and starts the engine; then sign in and you're working. No terminal, no GitHub, no `.env`.
 Docker Desktop is the one prerequisite — the app links you to it if it's not installed.
@@ -52,7 +52,7 @@ curl -O https://raw.githubusercontent.com/LegalQuants/Donna/main/docker-compose.
 curl -o .env https://raw.githubusercontent.com/LegalQuants/Donna/main/.env.example
 
 # 2. Edit .env — set the required secrets (POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD,
-#    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). Pin a release with DONNA_IMAGE_TAG=v0.3.0
+#    S3_*, LQ_AI_GATEWAY_KEY, JWT_SECRET). Pin a release with DONNA_IMAGE_TAG=v0.6.2
 #    (default: latest). Add ANTHROPIC_API_KEY / OPENAI_API_KEY for cloud inference,
 #    or leave them blank and run Ollama on the host (set OLLAMA_BASE_URL=http://host.docker.internal:11434).
 #    To enable case-law research, set COURTLISTENER_API_TOKEN in .env; the desktop wizard also accepts it optionally.
@@ -167,9 +167,9 @@ static/learn/         interactive playgrounds served by the /about guide
 ## Documentation
 
 - **[docs/GUIDE.md](docs/GUIDE.md)** — the friendly, non-technical guide: what Donna is, what you can do with it today, how it works in plain terms, and what else you could build on LQ-AI (for practitioners, firms, students, professors, and access-to-justice builders). Start here if you're new.
-- **[About Donna — v0.3.0 (PDF)](docs/About-Donna-v0.3.0.pdf)** — a downloadable export of the in-app **About** guide (v0.3.0): a full tour of every feature — Assistant, Projects, Workflows, Automations, Tabular, **Research**, Knowledge, Models, **Tools & connections**, and Trust & citations — for readers who'd like the overview without standing up the app. The interactive version, with playgrounds, lives at **/about** once Donna is running.
+- **[About Donna — v0.6.2 (PDF)](docs/About-Donna-v0.6.2.pdf)** — a downloadable export of the in-app **About** guide (v0.6.2): a full tour of every feature — Assistant, Projects, Workflows, Automations, Tabular, **Research**, Knowledge, Models, **Tools & connections**, and Trust & citations — for readers who'd like the overview without standing up the app. The interactive version, with playgrounds, lives at **/about** once Donna is running.
 - **[docs/PRODUCT.md](docs/PRODUCT.md)** — what Donna is, who it's for, the full capability set, design principles, and non-goals.
-- **[CHANGELOG.md](CHANGELOG.md)** — release history (latest: v0.3.0 — sticky skills).
+- **[CHANGELOG.md](CHANGELOG.md)** — release history (latest: v0.6.2 — fiduciary auditability, auditor reviewer, research sources).
 - **[CLAUDE.md](CLAUDE.md)** — the engineering guide: architecture, the build workflow, conventions, gotchas, and how to pick up a roadmap item. Written for a coding co-pilot (human or AI) joining the project.
 - **[docs/roadmap/donna-future-roadmap.md](docs/roadmap/donna-future-roadmap.md)** — what's deferred and why, with enough context to pick up cleanly.
 - **[docs/README.md](docs/README.md)** — index of the `docs/` tree (specs, plans, decisions, upstream requests, research).
