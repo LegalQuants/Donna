@@ -1,5 +1,6 @@
 # Donna packaging: CourtListener case-law research, active only when
 # COURTLISTENER_API_TOKEN is set (the gateway skips it with a warning otherwise).
+# EDGAR + EUR-Lex are keyless (User-Agent only) and enabled by default.
 tool_providers:
   - name: courtlistener
     type: courtlistener
@@ -8,6 +9,26 @@ tool_providers:
     egress_tier: 4
     allowlist:
       hosts: [www.courtlistener.com]
+    rate_limit:
+      requests_per_minute: 60
+    anonymize_outbound: false
+  - name: edgar
+    type: edgar
+    base_url: https://efts.sec.gov
+    user_agent: 'Donna research (github.com/LegalQuants/Donna)'
+    egress_tier: 4
+    allowlist:
+      hosts: [efts.sec.gov, www.sec.gov]
+    rate_limit:
+      requests_per_minute: 300
+    anonymize_outbound: false
+  - name: eurlex
+    type: eurlex
+    base_url: https://publications.europa.eu
+    user_agent: 'Donna research (github.com/LegalQuants/Donna)'
+    egress_tier: 4
+    allowlist:
+      hosts: [publications.europa.eu]
     rate_limit:
       requests_per_minute: 60
     anonymize_outbound: false
