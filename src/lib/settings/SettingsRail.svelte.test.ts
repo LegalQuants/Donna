@@ -101,4 +101,17 @@ describe('SettingsRail', () => {
 		render(SettingsRail, { isAdmin: true });
 		expect(screen.getByRole('link', { name: 'MCP' })).toHaveAttribute('href', '/settings/mcp');
 	});
+
+	it('shows Research sources for an admin', () => {
+		render(SettingsRail, { isAdmin: true });
+		expect(screen.getByRole('link', { name: 'Research sources' })).toHaveAttribute(
+			'href',
+			'/settings/research'
+		);
+	});
+
+	it('hides Research sources for a non-admin', () => {
+		render(SettingsRail, { isAdmin: false });
+		expect(screen.queryByRole('link', { name: 'Research sources' })).toBeNull();
+	});
 });

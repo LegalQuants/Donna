@@ -2,11 +2,38 @@
 
 Donna vendors `LegalQuants/lq-ai` at `vendor/lq-ai` as a git submodule.
 
-- Pinned SHA: `e40b98c` (bumped 2026-07-03 from `5aa9135`)
+- Pinned SHA: `44a1de54` (bumped 2026-07-04 from `e40b98c`)
 - Why: the UX/behavior reference docs and the build target must track the same
   backend version. Bump deliberately (one PR per bump), regenerating API types.
 
 ### Bump log
+
+- `e40b98c` → `44a1de54` (2026-07-04): lq-ai **#273 — runtime tool/authority-provider admin API**
+  (v0.6.x) — resolving Donna upstream ask `docs/upstream-requests/lq-ai-tool-provider-admin-config.md`
+  and unblocking the in-app **Research sources** admin card. New admin surface (all `AdminUser`-gated,
+  secrets write-only, hot-applied, audit-logged): `GET /api/v1/admin/tool-providers` →
+  `{tool_providers:[{type, enabled, name, has_key, key_required, egress_tier}]}`; `POST …` body
+  `{type, api_key?}` (enable + optional key); `PATCH …/{provider_type}` body `{api_key?, enabled?}`
+  (rotate/toggle); `DELETE …/{provider_type}` → 204 (disable). `type ∈ {courtlistener, govinfo, edgar,
+eurlex}`; `key_required` true for CL/govinfo, false for edgar/eurlex. Bodies are `extra="forbid"`
+  (can't set base_url/allowlist — gateway-owned SSRF boundary). Errors: 400 = gateway master key unset;
+  404 = unknown type; 409 = env-configured entry ("edit gateway.yaml"). **DE-383 gotcha:** use
+  `GET /admin/tool-providers` for authoritative admin status, NOT `/research/sources` (the latter derives
+  `enabled` from entry presence and lags a mid-toggle disable).
+
+  **⚠️ OpenAPI-export migration finding (Donna-side, important):** the new routes are NOT in the
+  hand-maintained `vendor/lq-ai/docs/api/backend-openapi.yaml` — DE-373 introduced a **separate
+  code-generated export** `docs/api/backend-openapi.generated.yaml` that carries them. **We did NOT
+  migrate `gen:api` to it:** the generated export uses FastAPI's **module-qualified schema names**
+  (e.g. `app__schemas__knowledge__AttachFileRequest` instead of `File`/`SkillSummary`), so pointing
+  `gen:api` at it regenerates a ~22k-line `backend.d.ts` and breaks **85** existing type references
+  across tabular/models/trust/knowledge. So `gen:api` still reads the hand-maintained sketch (type
+  surface unchanged, check 0/0), and the 4 tool-provider endpoints are **hand-typed** in
+  `src/lib/research/toolProviders.ts` (defensive-parser precedent: `providerKeys.ts`/`ledger.ts`).
+  **Follow-up:** migrating Donna to the generated export (and reconciling the ~85 renamed schemas) is a
+  separate, tracked effort — until then, new backend routes remain invisible to typegen and must be
+  hand-typed. Reference UI shipped by LQ-AI at
+  `vendor/lq-ai/web/src/routes/lq-ai/admin/research-sources/+page.svelte`.
 
 - `5aa9135` → `e40b98c` (2026-07-03): lq-ai **#266 — cross-user auditor/compliance role** —
   resolving Donna upstream ask `docs/upstream-requests/lq-ai-cross-user-auditor-role.md` and

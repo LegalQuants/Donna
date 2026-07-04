@@ -10,7 +10,12 @@
 		{ href: '/settings/trust', label: 'Trust' },
 		{ href: '/settings/models', label: 'Models' },
 		{ href: '/settings/connections', label: 'Connections' },
-		...(isAdmin ? [{ href: '/settings/mcp', label: 'MCP' }] : [])
+		...(isAdmin
+			? [
+					{ href: '/settings/mcp', label: 'MCP' },
+					{ href: '/settings/research', label: 'Research sources' }
+				]
+			: [])
 	]);
 	const isActive = (href: string) =>
 		page.url.pathname === href || page.url.pathname.startsWith(href + '/');
