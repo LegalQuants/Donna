@@ -31,7 +31,7 @@ tool_providers:
   - name: edgar
     type: edgar
     base_url: https://efts.sec.gov
-    user_agent: "Donna research (github.com/LegalQuants/Donna)"
+    user_agent: 'Donna research (github.com/LegalQuants/Donna)'
     egress_tier: 4
     allowlist:
       hosts: [efts.sec.gov, www.sec.gov]
@@ -41,7 +41,7 @@ tool_providers:
   - name: eurlex
     type: eurlex
     base_url: https://publications.europa.eu
-    user_agent: "Donna research (github.com/LegalQuants/Donna)"
+    user_agent: 'Donna research (github.com/LegalQuants/Donna)'
     egress_tier: 4
     allowlist:
       hosts: [publications.europa.eu]
