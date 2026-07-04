@@ -23,8 +23,10 @@ test('streams an assistant reply with a resolved tier, and it persists on reload
 	await expect(page).toHaveURL(/\/chats\/[0-9a-f-]+/i);
 
 	// Assistant content streams in (prose contains real words); tier chip resolves to a number.
+	// The footer shows the tier in more than one place (routing chip + provenance label), so scope
+	// the assertion to the first match rather than the ambiguous whole-page text.
 	await expect(page.locator('.prose-mlq').last()).toContainText(/\w/, { timeout: 30000 });
-	await expect(page.getByText(/Tier \d/)).toBeVisible({ timeout: 30000 });
+	await expect(page.getByText(/Tier \d/).first()).toBeVisible({ timeout: 30000 });
 
 	// Wait until the answer is fully complete (Copy appears once the `complete` frame
 	// lands and the assistant row is persisted), then let the DB write settle.
