@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { join } from 'node:path';
 import { composeBaseArgs, logsArgs } from '../core/compose';
 import { resolvePorts } from '../core/ports';
-import { generateSecrets } from '../core/secrets';
+import { generateSecrets, ensureMasterKey } from '../core/secrets';
 import { DEFAULT_PORTS } from '../core/types';
 import type { InferenceChoice, LauncherConfig } from '../core/config';
 import { loadConfig, saveConfig, writeEnvFile, clearConfig } from './store';
@@ -124,7 +124,22 @@ ipcMain.handle('wizard:complete', async (_e, input: WizardInput) => {
 });
 
 ipcMain.handle('stack:status', () => snapshot(base()));
-ipcMain.handle('stack:start', () => startStack(base(), process.env));
+// Backfill LQ_AI_GATEWAY_MASTER_KEY for installs minted before it existed, so
+// in-app research/BYOK key-setting works after an app update — without touching
+// the volume-bound secrets. First run (no config) is handled by the wizard.
+function migrateEnvForExistingInstall(): void {
+	const cfg = loadConfig();
+	if (!cfg) return;
+	const secrets = ensureMasterKey(cfg.secrets);
+	if (secrets === cfg.secrets) return;
+	const migrated = { ...cfg, secrets };
+	saveConfig(migrated);
+	writeEnvFile(migrated);
+}
+ipcMain.handle('stack:start', () => {
+	migrateEnvForExistingInstall();
+	return startStack(base(), process.env);
+});
 ipcMain.handle('stack:stop', () => stopStack(base()));
 ipcMain.handle('stack:openDonna', () => {
 	const cfg = loadConfig();
