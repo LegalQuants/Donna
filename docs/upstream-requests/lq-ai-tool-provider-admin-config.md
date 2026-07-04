@@ -64,7 +64,7 @@ the BFF.
 Mirror the inference provider-keys ergonomics, scoped to `tool_providers`. A shape that would unblock us:
 
 - `GET /api/v1/admin/tool-providers` → for each **registry** type (`SOURCE_REGISTRY`): `{ type,
-  enabled, name?, has_key, key_required, egress_tier? }` — status only, **never** the secret (same P3 /
+enabled, name?, has_key, key_required, egress_tier? }` — status only, **never** the secret (same P3 /
   ADR 0016 posture as `/research/sources` and `/admin/provider-keys`).
 - `POST /api/v1/admin/tool-providers` (or `PUT /…/{type}`) → **enable** a registered type: create/enable
   the `tool_providers` entry (with the registry's `base_url`/allowlist defaults) and, if a key is
@@ -88,6 +88,7 @@ Bump `vendor/lq-ai` to the new SHA → `npm run gen:api` → build an admin **"R
 Available/Unavailable badge, a masked write-only key input for the key-bearing ones (CourtListener,
 GovInfo), and an enable/disable toggle — hot-applied, no restart, no file editing. This closes the
 "skipped the token at first-run" case the desktop launcher can't otherwise recover from.
+
 ---
 
 ## ✅ DELIVERED — LQ.AI reply (2026-07-03)
@@ -98,18 +99,26 @@ GovInfo), and an enable/disable toggle — hot-applied, no restart, no file edit
 
 All `AdminUser`-gated (bearer token of an admin user); secrets are **write-only, never returned**; every write records an `audit_log` row.
 
-| Verb | Path | Body | Success | Errors |
-|---|---|---|---|---|
-| GET | `/api/v1/admin/tool-providers` | — | `200 {tool_providers: [{type, enabled, name, has_key, key_required, egress_tier}]}` — one row per registered type | `403` non-admin |
-| POST | `/api/v1/admin/tool-providers` | `{type, api_key?}` | `200` single status row | `400` no master key (only when a key is supplied), `404` unknown type, `403` |
-| PATCH | `/api/v1/admin/tool-providers/{type}` | `{api_key?, enabled?}` | `200` single status row | `400`, `404`, `409` env-key, `403` |
-| DELETE | `/api/v1/admin/tool-providers/{type}` | — | `204` (empty body) | `404`, `409` env-key, `403` |
+| Verb   | Path                                  | Body                   | Success                                                                                                           | Errors                                                                       |
+| ------ | ------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| GET    | `/api/v1/admin/tool-providers`        | —                      | `200 {tool_providers: [{type, enabled, name, has_key, key_required, egress_tier}]}` — one row per registered type | `403` non-admin                                                              |
+| POST   | `/api/v1/admin/tool-providers`        | `{type, api_key?}`     | `200` single status row                                                                                           | `400` no master key (only when a key is supplied), `404` unknown type, `403` |
+| PATCH  | `/api/v1/admin/tool-providers/{type}` | `{api_key?, enabled?}` | `200` single status row                                                                                           | `400`, `404`, `409` env-key, `403`                                           |
+| DELETE | `/api/v1/admin/tool-providers/{type}` | —                      | `204` (empty body)                                                                                                | `404`, `409` env-key, `403`                                                  |
 
 **Status row shape** (GET list items and POST/PATCH responses):
+
 ```json
-{ "type": "courtlistener", "enabled": true, "name": "courtlistener-prod",
-  "has_key": true, "key_required": true, "egress_tier": 4 }
+{
+	"type": "courtlistener",
+	"enabled": true,
+	"name": "courtlistener-prod",
+	"has_key": true,
+	"key_required": true,
+	"egress_tier": 4
+}
 ```
+
 - `type` ∈ `{"courtlistener","govinfo","edgar","eurlex"}` — keyed by **type**, not name (LQ.AI owns the canonical `name`).
 - `key_required`: `true` for `courtlistener`/`govinfo` (show a key input), `false` for `edgar`/`eurlex` (keyless — User-Agent only; show an Enable toggle, no key field).
 - `enabled`: the source has a live adapter (available to the research loop right now).
@@ -129,5 +138,6 @@ All `AdminUser`-gated (bearer token of an admin user); secrets are **write-only,
 LQ.AI ships its own in-app card in this PR — `web/src/routes/lq-ai/admin/research-sources/+page.svelte` (mirrors the Provider keys card): Available/Unavailable badge from `enabled`, masked write-only key input for `key_required` sources, Enable/Disable, re-fetch after each write. The generated OpenAPI (`docs/api/backend-openapi.generated.yaml`) has the two new paths + `ToolProviderSetRequest`/`ToolProviderPatchRequest` schemas.
 
 ### Related deferrals (filed as DEs, tracked LQ.AI-side)
-- **DE-383** — `GET /api/v1/research/sources` currently reports `enabled` off entry *presence*, not the entry's `enabled` flag; a mid-toggle `enabled:false` isn't yet reflected there. Use `GET /api/v1/admin/tool-providers` for authoritative admin status.
+
+- **DE-383** — `GET /api/v1/research/sources` currently reports `enabled` off entry _presence_, not the entry's `enabled` flag; a mid-toggle `enabled:false` isn't yet reflected there. Use `GET /api/v1/admin/tool-providers` for authoritative admin status.
 - **DE-384** — a keyless env-configured entry (edgar/eurlex hand-added to `gateway.yaml`) is currently runtime-removable (no `409`); a `managed_by: runtime` marker is the fix.
