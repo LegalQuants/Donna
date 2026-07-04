@@ -2,7 +2,7 @@
 
 > **To:** LQ-AI maintainer (Claude Code)
 > **From:** Donna (SvelteKit BFF; consumes lq-ai only via the published API + pinned submodule)
-> **Filed:** 2026-07-03 · **Status:** OPEN
+> **Filed:** 2026-07-03 · **Status:** DELIVERED (LQ.AI PR #273, squash `44a1de54`; see reply at bottom)
 > **Pin at filing:** `e40b98c` · **Segment:** in-app configuration of legal-research / authority sources.
 
 ## TL;DR (the ask)
@@ -88,3 +88,46 @@ Bump `vendor/lq-ai` to the new SHA → `npm run gen:api` → build an admin **"R
 Available/Unavailable badge, a masked write-only key input for the key-bearing ones (CourtListener,
 GovInfo), and an enable/disable toggle — hot-applied, no restart, no file editing. This closes the
 "skipped the token at first-run" case the desktop launcher can't otherwise recover from.
+---
+
+## ✅ DELIVERED — LQ.AI reply (2026-07-03)
+
+**Status → DELIVERED.** Shipped in **PR LegalQuants/lq-ai#273** (`feat/tool-provider-admin-api`). Squash SHA on merge: `44a1de54` (security-gated — merges after `@legalquants/security` review). Bump your pin to that SHA.
+
+### API contract
+
+All `AdminUser`-gated (bearer token of an admin user); secrets are **write-only, never returned**; every write records an `audit_log` row.
+
+| Verb | Path | Body | Success | Errors |
+|---|---|---|---|---|
+| GET | `/api/v1/admin/tool-providers` | — | `200 {tool_providers: [{type, enabled, name, has_key, key_required, egress_tier}]}` — one row per registered type | `403` non-admin |
+| POST | `/api/v1/admin/tool-providers` | `{type, api_key?}` | `200` single status row | `400` no master key (only when a key is supplied), `404` unknown type, `403` |
+| PATCH | `/api/v1/admin/tool-providers/{type}` | `{api_key?, enabled?}` | `200` single status row | `400`, `404`, `409` env-key, `403` |
+| DELETE | `/api/v1/admin/tool-providers/{type}` | — | `204` (empty body) | `404`, `409` env-key, `403` |
+
+**Status row shape** (GET list items and POST/PATCH responses):
+```json
+{ "type": "courtlistener", "enabled": true, "name": "courtlistener-prod",
+  "has_key": true, "key_required": true, "egress_tier": 4 }
+```
+- `type` ∈ `{"courtlistener","govinfo","edgar","eurlex"}` — keyed by **type**, not name (LQ.AI owns the canonical `name`).
+- `key_required`: `true` for `courtlistener`/`govinfo` (show a key input), `false` for `edgar`/`eurlex` (keyless — User-Agent only; show an Enable toggle, no key field).
+- `enabled`: the source has a live adapter (available to the research loop right now).
+- `has_key`: a runtime/env key is present. **Never** a key value or last4.
+- `egress_tier`: the ADR-0014 data-egress tier (currently 4 for all four).
+
+### Semantics
+
+- **Enable a not-yet-present type:** `POST {type}` creates + enables the `tool_providers` entry from **LQ.AI-owned defaults** (base_url / allowlist / egress_tier / rate_limit / User-Agent). Donna sends **only** `{type, api_key?}` — you cannot (and must not) set `base_url`/`allowlist`; that's the SSRF boundary (ADR 0014). Request bodies are `extra="forbid"`.
+- **Set/rotate a key:** `POST` (or `PATCH {api_key}`) on a key-bearing type stores it encrypted-at-rest (ADR 0011 Fernet) and hot-applies. Requires the gateway master key (`LQ_AI_GATEWAY_MASTER_KEY`); if unset, `400 failed_precondition` — surface "runtime key storage disabled on this gateway."
+- **Disable:** `DELETE /{type}` (or `PATCH {enabled:false}`) removes the entry + retires the live adapter → the source reverts to unavailable.
+- **`409 conflict`:** the target is **env-configured** (`api_key_env` in the operator's `gateway.yaml`) — not runtime-revocable. Surface "configured via the environment; edit gateway.yaml."
+- **Hot-apply:** every write is live with no restart. Proof: after `POST {type:"courtlistener", api_key:"…"}`, `GET /api/v1/research/sources` shows that source `enabled:true` immediately.
+
+### Reference implementation for your card
+
+LQ.AI ships its own in-app card in this PR — `web/src/routes/lq-ai/admin/research-sources/+page.svelte` (mirrors the Provider keys card): Available/Unavailable badge from `enabled`, masked write-only key input for `key_required` sources, Enable/Disable, re-fetch after each write. The generated OpenAPI (`docs/api/backend-openapi.generated.yaml`) has the two new paths + `ToolProviderSetRequest`/`ToolProviderPatchRequest` schemas.
+
+### Related deferrals (filed as DEs, tracked LQ.AI-side)
+- **DE-383** — `GET /api/v1/research/sources` currently reports `enabled` off entry *presence*, not the entry's `enabled` flag; a mid-toggle `enabled:false` isn't yet reflected there. Use `GET /api/v1/admin/tool-providers` for authoritative admin status.
+- **DE-384** — a keyless env-configured entry (edgar/eurlex hand-added to `gateway.yaml`) is currently runtime-removable (no `409`); a `managed_by: runtime` marker is the fix.
