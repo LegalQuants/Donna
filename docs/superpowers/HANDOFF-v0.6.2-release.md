@@ -16,7 +16,7 @@ Fiduciary-grade auditability segment (per-turn receipts, ledger, treatment, auto
 ## What REMAINS (small)
 
 1. **About PDF** → `docs/About-Donna-v0.6.2.pdf`. The README **already links it**, so that link 404s until regenerated. Docs-only, does not affect images/DMG. **Recipe** (manual headless-Chromium, per `docs/superpowers/plans/2026-06-23-sticky-skills.md`): drive a logged-in stack, print the 11 `/about` rail pages with the print CSS, `pdfunite` → the PDF, delete `docs/About-Donna-v0.3.0.pdf` (already removed from README refs), commit to `main` + mirror. A running stack with current `/about` is fine as the print source. **Not done this session (context exhausted).**
-2. **Fresh-Mac DMG smoke test** — the user is running it now (this session). If it fails, see `desktop/VERIFICATION.md` (prior gotchas: first-run ~10 GB pull can look frozen — fixed in v0.2.1 via a visible pull message).
+2. **Fresh-Mac DMG smoke test** — ✅ PASSED (2026-07-04). If it fails, see `desktop/VERIFICATION.md` (prior gotchas: first-run ~10 GB pull can look frozen — fixed in v0.2.1 via a visible pull message).
 3. **`docker login ghcr.io`** — I ran `docker logout ghcr.io` for the anonymous-pull test; re-login when convenient (public images pull anon fine without it).
 
 ## Environment state (for whoever resumes)
