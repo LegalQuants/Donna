@@ -26,4 +26,3 @@ Fiduciary-grade auditability segment (per-turn receipts, ledger, treatment, auto
 ## Open follow-ups (not blocking; tracked)
 - **OpenAPI-export migration debt:** `gen:api` still reads the hand-maintained `vendor/lq-ai/docs/api/backend-openapi.yaml`; lq-ai's DE-373 generated export (`backend-openapi.generated.yaml`) uses module-qualified schema names that would break ~85 Donna type refs. New backend routes are invisible to typegen until migrated (hand-typed in the meantime, e.g. `src/lib/research/toolProviders.ts`). Details in the `44a1de54` entry of `docs/decisions/lq-ai-pin.md`.
 - **Signed attestation export** — deferred by lq-ai as **DE-379**; the Slice-4 `Export ▾` stays on the honest client-side provenance record. Reviewer variant composes on the shipped auditor role when picked up.
-- **Marketing doc** at `docs/marketing/Donna-v0.6.2-launch.md` (uncommitted) — launch narrative + comparison matrix + viz hooks for the announcement.
