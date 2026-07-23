@@ -189,6 +189,17 @@ describe('createSkillAttach', () => {
 		expect(s.allRequiredFilled).toBe(true);
 	});
 
+	it('does not let a required document-type input block sending (documents travel as attachments)', async () => {
+		const s = createSkillAttach();
+		const f = vi
+			.fn()
+			.mockImplementation(() =>
+				inputsRes([{ name: 'contract', type: 'document', required: true }])
+			);
+		await s.attach(NDA, f);
+		expect(s.allRequiredFilled).toBe(true);
+	});
+
 	it('blocks sending while a skill is still loading its inputs', () => {
 		const s = createSkillAttach();
 		let resolveFetch: (r: Response) => void = () => {};

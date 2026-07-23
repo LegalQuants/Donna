@@ -78,13 +78,15 @@ export function createSkillAttach() {
 			return out;
 		},
 		/** True when no skill is still loading inputs and every attached skill's required
-		 *  (non-file) inputs are provided. File-type inputs are never rendered (separate
-		 *  channel), so they must not block sending. */
+		 *  (non-file) inputs are provided. File- and document-type inputs are never rendered
+		 *  as typed fields (they travel as message attachments), so they must not block sending. */
 		get allRequiredFilled() {
 			return attached.every(
 				(a) =>
 					!a.inputsLoading &&
-					a.required.filter((d) => d.type !== 'file').every((d) => provided(a.values[d.name]))
+					a.required
+						.filter((d) => d.type !== 'file' && d.type !== 'document')
+						.every((d) => provided(a.values[d.name]))
 			);
 		},
 		open: (fetchFn: typeof fetch = fetch) => fetchResults('', fetchFn),
