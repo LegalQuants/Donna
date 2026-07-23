@@ -126,14 +126,17 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	// Attach/detach go through the project-side endpoints (Wave D.1 T3). The legacy
+	// `PATCH /api/v1/knowledge-bases/{kb_id}` with {project_id} silently no-ops.
 	linkKb: async (event) => {
 		const data = await event.request.formData();
 		const kb_id = String(data.get('kb_id') ?? '');
 		if (!kb_id) return fail(400, { error: 'Missing kb_id.' });
-		const res = await lqFetch(event, `/api/v1/knowledge-bases/${kb_id}`, {
-			method: 'PATCH',
-			body: JSON.stringify({ project_id: event.params.id })
+		const res = await lqFetch(event, `/api/v1/projects/${event.params.id}/knowledge-bases`, {
+			method: 'POST',
+			body: JSON.stringify({ knowledge_base_id: kb_id })
 		});
+		// 200 = attached (idempotent — repeat attach returns 200, not 409).
 		if (!res.ok) {
 			if (res.status === 404) return fail(404, { error: 'Knowledge base no longer exists.' });
 			return fail(502, { error: 'Could not link the knowledge base.' });
@@ -145,11 +148,12 @@ export const actions: Actions = {
 		const data = await event.request.formData();
 		const kb_id = String(data.get('kb_id') ?? '');
 		if (!kb_id) return fail(400, { error: 'Missing kb_id.' });
-		const res = await lqFetch(event, `/api/v1/knowledge-bases/${kb_id}`, {
-			method: 'PATCH',
-			body: JSON.stringify({ project_id: null })
-		});
-		// 200 + 404 → success (already gone is fine for the UI).
+		const res = await lqFetch(
+			event,
+			`/api/v1/projects/${event.params.id}/knowledge-bases/${kb_id}`,
+			{ method: 'DELETE' }
+		);
+		// 204 (idempotent, incl. not-attached) + 404 (project gone) → success for the UI.
 		if (!res.ok && res.status !== 404) {
 			return fail(502, { error: 'Could not unlink the knowledge base.' });
 		}
