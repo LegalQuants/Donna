@@ -253,6 +253,8 @@ services:
     environment:
       ORIGIN: ${ORIGIN:-http://localhost:3000}
       LQ_API_INTERNAL_URL: http://api:8000
+      # SvelteKit adapter-node defaults to 512K, breaking KB uploads >0.5MB with an opaque 500.
+      BODY_SIZE_LIMIT: ${DONNA_WEB_BODY_SIZE_LIMIT:-512M}
     ports:
       - '127.0.0.1:${DONNA_WEB_HOST_PORT:-3000}:3000'
     healthcheck:
