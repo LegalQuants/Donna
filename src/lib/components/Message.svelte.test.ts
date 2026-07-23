@@ -59,6 +59,42 @@ describe('Message', () => {
 		expect(retried).toBe(true);
 	});
 
+	it('renders the backend error code alongside its message when present', () => {
+		const { getByText } = render(Message, {
+			props: {
+				message: {
+					key: 'a1',
+					id: 'a1',
+					role: 'assistant',
+					content: '',
+					status: 'error',
+					error: 'Provider rejected the request',
+					errorCode: 'upstream_error'
+				}
+			}
+		});
+		expect(getByText(/\[upstream_error\] Provider rejected the request/)).toBeInTheDocument();
+	});
+
+	it('shows the real error, not the canned empty-response hint, when an errored turn ends empty', () => {
+		const { getByText, queryByText, getByRole } = render(Message, {
+			props: {
+				message: {
+					key: 'a1',
+					id: 'a1',
+					role: 'assistant',
+					content: '',
+					status: 'done',
+					error: 'timed out waiting for the model',
+					errorCode: 'gateway_timeout'
+				}
+			}
+		});
+		expect(queryByText(/empty response/i)).toBeNull();
+		expect(getByText(/\[gateway_timeout\] timed out waiting for the model/)).toBeInTheDocument();
+		expect(getByRole('button', { name: /retry/i })).toBeInTheDocument();
+	});
+
 	it('shows an empty-response fallback with Retry when a done turn has no content', () => {
 		let retried = false;
 		const { getByRole, getByText } = render(Message, {

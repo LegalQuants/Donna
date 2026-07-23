@@ -97,9 +97,9 @@
 			</span>
 		{/if}
 
-		{#if message.status === 'error'}
+		{#if message.status === 'error' || (message.status === 'done' && message.error && message.content.trim() === '')}
 			<p class="text-mlq-error">
-				⚠ {message.error}
+				⚠ {message.errorCode ? `[${message.errorCode}] ` : ''}{message.error}
 				<button
 					type="button"
 					onclick={() => onretry?.()}
@@ -174,7 +174,9 @@
 					citations={message.citations as Citation[]}
 					onactivate={onactivatecitation}
 				/>
-			{:else if message.status === 'done' && message.content.trim() === '' && !(message.sources && message.sources.length > 0)}
+				<!-- Canned empty-response hint: only for a genuinely completed stream with no
+				     error and no content — an errored turn renders its real error above. -->
+			{:else if message.status === 'done' && message.content.trim() === '' && !message.error && !(message.sources && message.sources.length > 0)}
 				<p class="text-mlq-muted">
 					The model returned an empty response. This can happen with smaller local models on
 					requests that need tools. Try again, or switch to a more capable model.
