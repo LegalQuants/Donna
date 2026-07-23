@@ -46,7 +46,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div bind:this={root} class="relative" {onkeydown}>
+<div bind:this={root} class="relative min-w-0" {onkeydown}>
 	<button
 		type="button"
 		data-testid="model-picker"
@@ -54,11 +54,14 @@
 		aria-expanded={open}
 		aria-label="Model"
 		onclick={() => (open = !open)}
-		class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
+		class="inline-flex max-w-56 min-w-0 items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs whitespace-nowrap text-mlq-text"
 	>
-		<span class="font-medium">{selected}</span>
-		{#if current?.label}<span class="text-mlq-muted">· {current.label}</span>{/if}
-		<ChevronDown size={13} />
+		<span class="min-w-0 truncate">
+			<span class="font-medium">{selected}</span>{#if current?.label}<span class="text-mlq-muted">
+					· {current.label}</span
+				>{/if}
+		</span>
+		<ChevronDown class="shrink-0" size={13} />
 	</button>
 
 	{#if open}

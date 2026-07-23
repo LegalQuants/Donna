@@ -89,7 +89,7 @@
 		aria-expanded={open}
 		aria-label="Prompts"
 		onclick={toggle}
-		class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text"
+		class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs whitespace-nowrap text-mlq-text"
 		><BookMarked size={13} /> Prompts</button
 	>
 

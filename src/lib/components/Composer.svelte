@@ -61,6 +61,32 @@
 	let fileInput = $state<HTMLInputElement>();
 	let dragging = $state(false);
 
+	// Overflow ("⋯") group: below the composer's own container-width breakpoint the
+	// trust pill + Prompts + Enhance collapse behind this toggle. The controls exist
+	// exactly once in the DOM; CSS (a container query, so browser sidebars count)
+	// decides whether they render inline or inside the popover.
+	let moreOpen = $state(false);
+	let moreBtn = $state<HTMLElement>();
+	let morePanel = $state<HTMLElement>();
+
+	$effect(() => {
+		if (!moreOpen) return;
+		const onDown = (e: MouseEvent) => {
+			const t = e.target as Node | null;
+			if (moreBtn?.contains(t) || morePanel?.contains(t)) return;
+			moreOpen = false;
+		};
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') moreOpen = false;
+		};
+		document.addEventListener('mousedown', onDown);
+		document.addEventListener('keydown', onKey);
+		return () => {
+			document.removeEventListener('mousedown', onDown);
+			document.removeEventListener('keydown', onKey);
+		};
+	});
+
 	onMount(() => {
 		modelStore.load();
 	});
@@ -110,7 +136,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="rounded-t-mlq-composer border bg-mlq-surface p-3 shadow-sm {dragging
+	class="@container/composer rounded-t-mlq-composer border bg-mlq-surface p-3 shadow-sm {dragging
 		? 'border-mlq-workflow'
 		: 'border-mlq-subtle'}"
 	ondragover={(e) => {
@@ -223,7 +249,7 @@
 		class="max-h-48 w-full resize-none bg-transparent font-serif text-mlq-text outline-none placeholder:text-mlq-muted"
 	></textarea>
 
-	<div class="mt-2 flex items-center gap-2 border-t border-mlq-subtle pt-2">
+	<div class="relative mt-2 flex items-center gap-2 border-t border-mlq-subtle pt-2">
 		<ModelPicker
 			options={modelStore.options}
 			selected={modelStore.selectedModel}
@@ -231,10 +257,56 @@
 			{minimumTier}
 			onselect={modelStore.setModel}
 		/>
-		<TrustPill
-			option={modelStore.selectedOption}
-			format={page.data.user?.trust_pills ?? 'labels'}
-		/>
+		<!-- Collapsible group: inline (display: contents) at comfortable container
+		     widths; below @3xl it becomes the "⋯" popover so the row never wraps. -->
+		<div
+			bind:this={morePanel}
+			data-testid="composer-overflow"
+			class="contents {moreOpen
+				? '@max-3xl/composer:absolute @max-3xl/composer:bottom-full @max-3xl/composer:left-0 @max-3xl/composer:z-20 @max-3xl/composer:mb-1 @max-3xl/composer:flex @max-3xl/composer:flex-col @max-3xl/composer:items-start @max-3xl/composer:gap-2 @max-3xl/composer:rounded-mlq-control @max-3xl/composer:border @max-3xl/composer:border-mlq-subtle @max-3xl/composer:bg-mlq-surface @max-3xl/composer:p-2 @max-3xl/composer:shadow-md'
+				: '@max-3xl/composer:hidden'}"
+		>
+			<TrustPill
+				option={modelStore.selectedOption}
+				format={page.data.user?.trust_pills ?? 'labels'}
+			/>
+			{#if promptLibrary}
+				<PromptPicker
+					prompts={promptLibrary.prompts}
+					loading={promptLibrary.loading}
+					error={promptLibrary.error}
+					draft={value}
+					onopen={promptLibrary.ensureLoaded}
+					oninsert={insertAtCursor}
+					onsave={promptLibrary.create}
+				/>
+			{/if}
+			{#if enhance}
+				{#if enhance.status === 'loading'}
+					<span
+						class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs whitespace-nowrap text-mlq-muted"
+					>
+						Enhancing…
+						<button
+							type="button"
+							aria-label="Cancel enhance"
+							onclick={enhance.cancel}
+							class="hover:text-mlq-text"><X size={12} /></button
+						>
+					</span>
+				{:else}
+					<button
+						type="button"
+						data-testid="enhance-button"
+						onclick={() => enhance.run(value)}
+						disabled={!value.trim()}
+						class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs whitespace-nowrap text-mlq-text disabled:opacity-40"
+					>
+						<Sparkles size={13} /> Enhance
+					</button>
+				{/if}
+			{/if}
+		</div>
 		{#if matters}
 			<MatterPicker {matters} bind:selectedId={selectedMatterId} />
 		{/if}
@@ -255,22 +327,22 @@
 				aria-checked={sticky.enabled}
 				data-testid="sticky-toggle"
 				onclick={() => sticky.toggle(skillAttach?.names ?? [])}
-				class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs {sticky.enabled
+				class="inline-flex items-center gap-1.5 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs whitespace-nowrap {sticky.enabled
 					? 'bg-mlq-subtle text-mlq-strong'
 					: 'text-mlq-text'}"
 				title="Keep the skills applied in this chat on for follow-up messages"
 			>
 				<span
-					class="inline-block h-2 w-2 rounded-full {sticky.enabled
+					class="inline-block h-2 w-2 shrink-0 rounded-full {sticky.enabled
 						? 'bg-mlq-strong'
 						: 'bg-mlq-muted'}"
 				></span>
-				Keep skills on
+				<span class="whitespace-nowrap">Skills stay on</span>
 				{#if sticky.enabled && sticky.set.length > 0}
 					<span
-						class="text-mlq-muted"
+						class="whitespace-nowrap text-mlq-muted"
 						title={sticky.set.map(prettifySkillSlug).join(', ')}
-						data-testid="sticky-count">· Keeping {sticky.set.length} on</span
+						data-testid="sticky-count">· {sticky.set.length}</span
 					>
 				{/if}
 			</button>
@@ -298,42 +370,17 @@
 				<Paperclip size={13} />
 			</button>
 		{/if}
-		{#if promptLibrary}
-			<PromptPicker
-				prompts={promptLibrary.prompts}
-				loading={promptLibrary.loading}
-				error={promptLibrary.error}
-				draft={value}
-				onopen={promptLibrary.ensureLoaded}
-				oninsert={insertAtCursor}
-				onsave={promptLibrary.create}
-			/>
-		{/if}
-		{#if enhance}
-			{#if enhance.status === 'loading'}
-				<span
-					class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-muted"
-				>
-					Enhancing…
-					<button
-						type="button"
-						aria-label="Cancel enhance"
-						onclick={enhance.cancel}
-						class="hover:text-mlq-text"><X size={12} /></button
-					>
-				</span>
-			{:else}
-				<button
-					type="button"
-					data-testid="enhance-button"
-					onclick={() => enhance.run(value)}
-					disabled={!value.trim()}
-					class="inline-flex items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs text-mlq-text disabled:opacity-40"
-				>
-					<Sparkles size={13} /> Enhance
-				</button>
-			{/if}
-		{/if}
+		<button
+			bind:this={moreBtn}
+			type="button"
+			data-testid="composer-more"
+			aria-label="More options"
+			aria-expanded={moreOpen}
+			onclick={() => (moreOpen = !moreOpen)}
+			class="hidden items-center rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs whitespace-nowrap text-mlq-text @max-3xl/composer:inline-flex"
+		>
+			⋯
+		</button>
 		<span class="flex-1"></span>
 		{#if streaming}
 			<button

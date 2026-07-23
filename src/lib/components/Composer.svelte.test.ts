@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, within } from '@testing-library/svelte';
 
 vi.mock('$app/state', () => ({ page: { data: { user: null } } }));
 
@@ -9,6 +9,8 @@ import Composer from './Composer.svelte';
 import { createPromptLibrary } from '$lib/prompts/promptLibrary.svelte';
 import { createSkillAttach } from '$lib/skills/attach.svelte';
 import { createFileAttach } from '$lib/files/fileAttach.svelte';
+import { createStickySkills } from '$lib/skills/sticky.svelte';
+import { createEnhance } from '$lib/enhance/enhance.svelte';
 
 describe('Composer matter picker', () => {
 	it('shows the matter picker only when matters are provided', async () => {
@@ -93,5 +95,47 @@ describe('Composer file attach', () => {
 		render(Composer, { props: { value: 'hello', fileAttach: fa } as never });
 		expect(screen.getByText('a.txt')).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+	});
+});
+
+describe('Composer responsive bottom bar', () => {
+	it('renders the keep-skills toggle as a compact single-line label', () => {
+		const sticky = createStickySkills();
+		render(Composer, { props: { value: '', sticky } as never });
+		const toggle = screen.getByTestId('sticky-toggle');
+		expect(toggle.className).toContain('whitespace-nowrap');
+		const label = within(toggle).getByText('Skills stay on');
+		expect(label.className).toContain('whitespace-nowrap');
+	});
+
+	it('shows a compact count when the sticky set is on', async () => {
+		const sticky = createStickySkills();
+		sticky.toggle(['nda-review', 'comms-log']);
+		render(Composer, { props: { value: '', sticky } as never });
+		const count = screen.getByTestId('sticky-count');
+		expect(count).toHaveTextContent('· 2');
+		expect(count.className).toContain('whitespace-nowrap');
+	});
+
+	it('groups the trust pill, Prompts and Enhance into the collapsible overflow group', () => {
+		const lib = createPromptLibrary();
+		lib.seed([{ id: 'p1', name: 'Risk', prompt_text: 'X', tags: [] }] as never);
+		const enhance = createEnhance(null, () => []);
+		render(Composer, { props: { value: '', promptLibrary: lib, enhance } as never });
+		const overflow = screen.getByTestId('composer-overflow');
+		expect(within(overflow).getByRole('button', { name: /prompts/i })).toBeInTheDocument();
+		expect(within(overflow).getByTestId('enhance-button')).toBeInTheDocument();
+	});
+
+	it('exposes a "More options" toggle that opens and closes the overflow popover', async () => {
+		const lib = createPromptLibrary();
+		render(Composer, { props: { value: '', promptLibrary: lib } as never });
+		const more = screen.getByTestId('composer-more');
+		expect(more).toHaveAttribute('aria-label', 'More options');
+		expect(more).toHaveAttribute('aria-expanded', 'false');
+		await fireEvent.click(more);
+		expect(more).toHaveAttribute('aria-expanded', 'true');
+		await fireEvent.click(more);
+		expect(more).toHaveAttribute('aria-expanded', 'false');
 	});
 });
