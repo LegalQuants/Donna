@@ -373,13 +373,14 @@ const kbEvent = (kb_id: string, id = 'p1') =>
 	}) as never;
 
 describe('/matters/[id] linkKb / unlinkKb actions', () => {
-	it('linkKb PATCHes the KB with the matter id', async () => {
+	it('linkKb POSTs { knowledge_base_id } to the project attach endpoint', async () => {
 		lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
 		const r = await actions.linkKb(kbEvent('k1'));
 		expect(r).toEqual({ success: true });
-		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/knowledge-bases/k1');
-		expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
-		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ project_id: 'p1' });
+		expect(lqFetch).toHaveBeenCalledTimes(1);
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/knowledge-bases');
+		expect(lqFetch.mock.calls[0][2].method).toBe('POST');
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ knowledge_base_id: 'k1' });
 	});
 
 	it('linkKb maps 404 to a friendly error', async () => {
@@ -394,17 +395,29 @@ describe('/matters/[id] linkKb / unlinkKb actions', () => {
 		expect(r).toMatchObject({ status: 502, data: { error: 'Could not link the knowledge base.' } });
 	});
 
-	it('unlinkKb PATCHes the KB with project_id: null', async () => {
-		lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+	it('unlinkKb DELETEs the project-scoped KB join', async () => {
+		lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
 		const r = await actions.unlinkKb(kbEvent('k1'));
 		expect(r).toEqual({ success: true });
-		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ project_id: null });
+		expect(lqFetch).toHaveBeenCalledTimes(1);
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/knowledge-bases/k1');
+		expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
 	});
 
 	it('unlinkKb treats 404 as silent success', async () => {
 		lqFetch.mockResolvedValue(new Response('not found', { status: 404 }));
 		const r = await actions.unlinkKb(kbEvent('k1'));
 		expect(r).toEqual({ success: true });
+	});
+
+	it('never calls the legacy KB PATCH endpoint (silent no-op upstream)', async () => {
+		lqFetch.mockResolvedValue(new Response(null, { status: 204 }));
+		await actions.linkKb(kbEvent('k1'));
+		await actions.unlinkKb(kbEvent('k1'));
+		for (const call of lqFetch.mock.calls) {
+			expect(call[1]).not.toBe('/api/v1/knowledge-bases/k1');
+			expect(call[2].method).not.toBe('PATCH');
+		}
 	});
 
 	it('unlinkKb maps other failures to a 502', async () => {
