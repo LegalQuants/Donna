@@ -23,6 +23,9 @@ export interface ChatMessage {
 	routed_inference_tier?: number | null;
 	status?: 'streaming' | 'done' | 'error' | 'awaiting_confirmation' | 'awaiting_auth';
 	error?: string;
+	/** Machine-readable code accompanying `error` when the backend supplied one
+	 *  (SSE error-frame `code` / api error-envelope `detail.code`). */
+	errorCode?: string;
 	citations?: Citation[];
 	/** External-source provenance (case law consulted), lazy-fetched post-stream (PR6c). */
 	sources?: ToolSource[];
@@ -54,9 +57,10 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 	let status = $state<'idle' | 'streaming' | 'error'>('idle');
 	let controller: AbortController | null = null;
 
-	function setError(idx: number, msg: string) {
+	function setError(idx: number, msg: string, code?: string) {
 		messages[idx].status = 'error';
 		messages[idx].error = msg;
+		messages[idx].errorCode = code;
 		status = 'error';
 	}
 
@@ -95,7 +99,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 			m.mcpAuth = { server: frame.server, authorize_url: frame.authorize_url };
 			m.status = 'awaiting_auth';
 		} else if (frame.type === 'error') {
-			setError(idx, frame.message);
+			setError(idx, frame.message, frame.code);
 		}
 	}
 
@@ -274,16 +278,23 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 				signal: controller.signal
 			});
 			if (!res.ok || !res.body) {
+				// Surface the backend's own error envelope (FastAPI `detail` — a plain
+				// string or {code, message}) instead of a canned line when one is present.
 				let msg = 'Could not reach the model. Please try again.';
-				if (res.status === 400) {
-					try {
-						const env = (await res.json()) as { detail?: unknown };
-						if (typeof env.detail === 'string' && env.detail) msg = env.detail;
-					} catch {
-						/* keep the generic message */
+				let code: string | undefined;
+				try {
+					const env = (await res.json()) as { detail?: unknown };
+					if (typeof env.detail === 'string' && env.detail) {
+						msg = env.detail;
+					} else if (env.detail && typeof env.detail === 'object') {
+						const d = env.detail as { code?: unknown; message?: unknown };
+						if (typeof d.message === 'string' && d.message) msg = d.message;
+						if (typeof d.code === 'string' && d.code) code = d.code;
 					}
+				} catch {
+					/* keep the generic message */
 				}
-				setError(idx, msg);
+				setError(idx, msg, code);
 				return false;
 			}
 			accepted = true; // POST accepted — set_sticky (if any) reached the backend
@@ -294,7 +305,14 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 				messages[idx].status = 'done';
 				status = 'idle';
 			} else {
-				setError(idx, 'The connection was lost. Please try again.');
+				// Keep the underlying failure visible instead of hiding it behind a canned line.
+				const detail = (e as Error).message;
+				setError(
+					idx,
+					detail
+						? `The connection was lost (${detail}). Please try again.`
+						: 'The connection was lost. Please try again.'
+				);
 			}
 			return accepted; // an abort AFTER acceptance still dispatched set_sticky
 		} finally {
@@ -346,6 +364,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		if (idx < 0 || messages[idx].role !== 'assistant') return;
 		messages[idx].content = '';
 		messages[idx].error = undefined;
+		messages[idx].errorCode = undefined;
 		messages[idx].routed_inference_tier = undefined;
 		messages[idx].citations = undefined;
 		messages[idx].sources = undefined;
@@ -369,6 +388,7 @@ export function createChatStream(chatId: string, initial: ChatMessage[] = []) {
 		if (!pendingId) return;
 		m.confirmation = undefined;
 		m.error = undefined;
+		m.errorCode = undefined;
 		m.status = 'streaming';
 		status = 'streaming';
 		controller = new AbortController();

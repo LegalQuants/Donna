@@ -59,7 +59,60 @@ describe('createChatStream', () => {
 		await chat.send('hi');
 		expect(chat.messages[1].status).toBe('error');
 		expect(chat.messages[1].error).toMatch(/timed out/);
+		expect(chat.messages[1].errorCode).toBe('gateway_timeout');
 		expect(chat.status).toBe('error');
+	});
+
+	it('captures code + message from a typed error frame', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi
+				.fn()
+				.mockResolvedValue(
+					streamResponse([
+						'data: {"type":"start","lq_ai_message_id":"a1","chat_id":"c1"}\n\n',
+						'data: {"type":"error","code":"upstream_error","message":"Provider rejected the request"}\n\n'
+					])
+				)
+		);
+		const chat = createChatStream('c1');
+		await chat.send('hi');
+		expect(chat.messages[1]).toMatchObject({
+			status: 'error',
+			error: 'Provider rejected the request',
+			errorCode: 'upstream_error'
+		});
+		expect(chat.status).toBe('error');
+	});
+
+	it('surfaces code + message from a non-2xx api error envelope (not only 400)', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				new Response(
+					JSON.stringify({
+						detail: { code: 'model_unavailable', message: 'Model smart is not available' }
+					}),
+					{ status: 503, headers: { 'content-type': 'application/json' } }
+				)
+			)
+		);
+		const chat = createChatStream('c1');
+		await chat.send('hi');
+		expect(chat.messages[1]).toMatchObject({
+			status: 'error',
+			error: 'Model smart is not available',
+			errorCode: 'model_unavailable'
+		});
+	});
+
+	it('keeps the generic message when the failure body carries no envelope', async () => {
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('boom', { status: 500 })));
+		const chat = createChatStream('c1');
+		await chat.send('hi');
+		expect(chat.messages[1].status).toBe('error');
+		expect(chat.messages[1].error).toMatch(/could not reach the model/i);
+		expect(chat.messages[1].errorCode).toBeUndefined();
 	});
 
 	it('marks the assistant done (keeps partial text) when aborted', async () => {
@@ -107,6 +160,9 @@ describe('createChatStream', () => {
 			content: 'ok now',
 			status: 'done'
 		});
+		// The previous failure's error + code are fully cleared by the retry.
+		expect(chat.messages[1].error).toBeUndefined();
+		expect(chat.messages[1].errorCode).toBeUndefined();
 		expect(chat.status).toBe('idle');
 	});
 
