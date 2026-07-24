@@ -74,13 +74,13 @@
 	to a single message; each is sent alongside your prompt.
 </p>
 
-<h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">Keep skills on</h2>
+<h2 class="mt-6 mb-2 text-sm font-medium tracking-wide text-mlq-muted uppercase">Skills stay on</h2>
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">
-	Once you have a skill attached to a message, the <strong>Keep skills on</strong> toggle in the
+	Once you have a skill attached to a message, the <strong>Skills stay on</strong> toggle in the
 	composer toolbar lets you carry that skill — and any others attached — into every follow-up turn
-	of the same chat without re-attaching. When active, a quiet <strong>"Keeping N on"</strong>
-	indicator appears alongside the toggle; hover it to see the skill names that are being carried forward.
+	of the same chat without re-attaching. When active, a quiet <strong>"· N"</strong> count appears inside
+	the toggle; hover it to see the skill names that are being carried forward.
 </p>
 
 <p class="mb-3 max-w-prose text-sm leading-relaxed text-mlq-text">

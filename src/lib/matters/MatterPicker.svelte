@@ -45,7 +45,7 @@
 		aria-expanded={open}
 		aria-label={current ? `Matter: ${current.name}` : 'Choose matter'}
 		onclick={() => (open = !open)}
-		class="inline-flex max-w-[180px] items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs {current
+		class="inline-flex max-w-[180px] items-center gap-1 rounded-mlq-control border border-mlq-subtle px-2.5 py-1 text-xs whitespace-nowrap {current
 			? 'text-mlq-text'
 			: 'text-mlq-muted'}"
 	>
