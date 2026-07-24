@@ -11,6 +11,7 @@
 - Gates green throughout: check 0/0, lint, vitest 1609.
 
 ### What shipped in v0.6.2 (since 0.3.0)
+
 Fiduciary-grade auditability segment (per-turn receipts, ledger, treatment, autonomous audit timeline, provenance export, docs/playgrounds, discovery hints) · **cross-user auditor reviewer** (`/audit`, PR #116) · **Research sources admin card** + **keyless EDGAR/EUR-Lex default-on** (PR #118) · **`LQ_AI_GATEWAY_MASTER_KEY` provisioning fix** so in-app key-setting works (PR #119) + the source-dev compose-forward follow-up (pin `7d788d91`, lq-ai #278) · e2e brittleness fixes (PR #120). CHANGELOG `[0.6.2]` has the full list.
 
 ## What REMAINS (small)
@@ -20,9 +21,11 @@ Fiduciary-grade auditability segment (per-turn receipts, ledger, treatment, auto
 3. **`docker login ghcr.io`** — I ran `docker logout ghcr.io` for the anonymous-pull test; re-login when convenient (public images pull anon fine without it).
 
 ## Environment state (for whoever resumes)
+
 - The **dev stack images were REMOVED** (deliberate, for the from-scratch test) — rebuild with `docker compose up -d --build …` when you next need the dev stack; its **volumes (`donna_pgdata` etc.) are intact** (dev acceptance data preserved).
 - A **source-build stack `donnafresh`** at `/Users/kevinkeller/Code/Donna-freshtest` may still be up on the standard ports (13002/18000/…); it's a throwaway (its submodule was bumped to `7d788d91`, override removed). `docker compose -p donnafresh down -v` to clear it.
 
 ## Open follow-ups (not blocking; tracked)
+
 - **OpenAPI-export migration debt:** `gen:api` still reads the hand-maintained `vendor/lq-ai/docs/api/backend-openapi.yaml`; lq-ai's DE-373 generated export (`backend-openapi.generated.yaml`) uses module-qualified schema names that would break ~85 Donna type refs. New backend routes are invisible to typegen until migrated (hand-typed in the meantime, e.g. `src/lib/research/toolProviders.ts`). Details in the `44a1de54` entry of `docs/decisions/lq-ai-pin.md`.
 - **Signed attestation export** — deferred by lq-ai as **DE-379**; the Slice-4 `Export ▾` stays on the honest client-side provenance record. Reviewer variant composes on the shipped auditor role when picked up.
