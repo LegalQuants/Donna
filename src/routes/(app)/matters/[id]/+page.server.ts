@@ -18,19 +18,24 @@ export const load: PageServerLoad = async (event) => {
 	const matter = (await mRes.json()) as Matter;
 	const chats = cRes.ok ? (((await cRes.json()) as { items: Chat[] }).items ?? []) : [];
 
-	const [filesArr, kbLinkedRes, kbAllRes] = await Promise.all([
+	const [filesArr, kbAllRes] = await Promise.all([
 		Promise.all(
 			(matter.attached_file_ids ?? []).map(async (id) => {
 				const r = await lqFetch(event, `/api/v1/files/${id}`);
 				return r.ok ? ((await r.json()) as ProjectFile) : null;
 			})
 		),
-		lqFetch(event, `/api/v1/knowledge-bases?project_id=${event.params.id}`),
 		lqFetch(event, '/api/v1/knowledge-bases')
 	]);
 	const files = filesArr.filter((f): f is ProjectFile => f !== null);
-	const linked = kbLinkedRes.ok ? ((await kbLinkedRes.json()) as KnowledgeBase[]) : [];
 	const allKbs = kbAllRes.ok ? ((await kbAllRes.json()) as KnowledgeBase[]) : [];
+	// Linked KBs come from the project's junction-table ids, NOT from
+	// `GET /knowledge-bases?project_id=` — that filter matches the legacy
+	// `knowledge_bases.project_id` column, so junction attaches never show up.
+	const byId = new Map(allKbs.map((k) => [k.id, k]));
+	const linked = (matter.attached_knowledge_base_ids ?? [])
+		.map((id) => byId.get(id))
+		.filter((k): k is KnowledgeBase => k !== undefined);
 	const linkedIds = new Set(linked.map((k) => k.id));
 	const available = allKbs.filter((k) => !linkedIds.has(k.id));
 

@@ -163,7 +163,6 @@ describe('/matters/[id] load — files + KBs', () => {
 				)
 			)
 			.mockResolvedValueOnce(new Response('not found', { status: 404 })) // GET /files/gone → filtered
-			.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // GET /knowledge-bases?project_id=p1
 			.mockResolvedValueOnce(
 				new Response(
 					JSON.stringify([
@@ -190,13 +189,14 @@ describe('/matters/[id] load — files + KBs', () => {
 		expect(out.kbs.available.map((k) => k.id)).toEqual(['k1']);
 	});
 
-	it('subtracts linked KBs from the available picker list', async () => {
+	it('resolves linked KBs from attached_knowledge_base_ids and subtracts them from the picker list', async () => {
 		const matter = {
 			id: 'p1',
 			name: 'Acme',
 			privileged: false,
 			minimum_inference_tier: null,
-			attached_file_ids: []
+			attached_file_ids: [],
+			attached_knowledge_base_ids: ['k1']
 		};
 		const linkedKb = {
 			id: 'k1',
@@ -221,7 +221,6 @@ describe('/matters/[id] load — files + KBs', () => {
 		lqFetch
 			.mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))
 			.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
-			.mockResolvedValueOnce(new Response(JSON.stringify([linkedKb]), { status: 200 })) // linked
 			.mockResolvedValueOnce(new Response(JSON.stringify([linkedKb, otherKb]), { status: 200 })); // all
 		const out = (await load(loadEv())) as {
 			kbs: { linked: { id: string }[]; available: { id: string }[] };
@@ -230,18 +229,18 @@ describe('/matters/[id] load — files + KBs', () => {
 		expect(out.kbs.available.map((k) => k.id)).toEqual(['k2']);
 	});
 
-	it('degrades gracefully when KB fetches fail (returns empty arrays)', async () => {
+	it('degrades gracefully when the KB list fetch fails (returns empty arrays)', async () => {
 		const matter = {
 			id: 'p1',
 			name: 'Acme',
 			privileged: false,
 			minimum_inference_tier: null,
-			attached_file_ids: []
+			attached_file_ids: [],
+			attached_knowledge_base_ids: ['k1']
 		};
 		lqFetch
 			.mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))
 			.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
-			.mockResolvedValueOnce(new Response('boom', { status: 502 }))
 			.mockResolvedValueOnce(new Response('boom', { status: 502 }));
 		const out = (await load(loadEv())) as { kbs: { linked: unknown[]; available: unknown[] } };
 		expect(out.kbs.linked).toEqual([]);
