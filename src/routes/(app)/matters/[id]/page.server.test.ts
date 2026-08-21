@@ -14,6 +14,17 @@ const loadEv = (id = 'p1') => ({ params: { id } }) as never;
 
 beforeEach(() => lqFetch.mockReset());
 
+/** Fetch order in `load`, for the positional mocks below:
+ *
+ *    1. GET /projects/{id}
+ *    2. GET /chats?project_id={id}
+ *    3. GET /projects/{id}/members
+ *    4..n GET /files/{id}   (one per attached_file_id)
+ *    n+1  GET /knowledge-bases
+ *    n+2  GET /users/directory   (leads only)
+ */
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+
 describe('/matters/[id] load', () => {
 	it('loads the matter and its chats', async () => {
 		lqFetch
@@ -126,60 +137,35 @@ describe('/matters/[id] actions', () => {
 });
 
 describe('/matters/[id] load — files + KBs', () => {
+	const matter = (over: Record<string, unknown> = {}) => ({
+		id: 'p1',
+		name: 'Acme',
+		privileged: false,
+		minimum_inference_tier: null,
+		attached_file_ids: [],
+		attached_knowledge_base_ids: [],
+		...over
+	});
+	const kb = (id: string, name: string) => ({
+		id,
+		name,
+		owner_id: 'u',
+		hybrid_alpha: 0.5,
+		file_count: 0,
+		chunk_count: 0,
+		created_at: '',
+		updated_at: ''
+	});
+
 	it('fans out file metadata for each attached_file_id and filters out 404s', async () => {
-		const matter = {
-			id: 'p1',
-			name: 'Acme',
-			description: 'd',
-			privileged: false,
-			minimum_inference_tier: null,
-			attached_file_ids: ['a', 'b', 'gone']
-		};
 		lqFetch
-			.mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 })) // GET /projects/p1
-			.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 })) // GET /chats?project_id=p1
-			.mockResolvedValueOnce(
-				new Response(
-					JSON.stringify({
-						id: 'a',
-						filename: 'a.pdf',
-						size_bytes: 1,
-						mime_type: 'application/pdf',
-						ingestion_status: 'ready'
-					}),
-					{ status: 200 }
-				)
-			)
-			.mockResolvedValueOnce(
-				new Response(
-					JSON.stringify({
-						id: 'b',
-						filename: 'b.pdf',
-						size_bytes: 2,
-						mime_type: 'application/pdf',
-						ingestion_status: 'pending'
-					}),
-					{ status: 200 }
-				)
-			)
-			.mockResolvedValueOnce(new Response('not found', { status: 404 })) // GET /files/gone → filtered
-			.mockResolvedValueOnce(
-				new Response(
-					JSON.stringify([
-						{
-							id: 'k1',
-							name: 'KB',
-							owner_id: 'u',
-							hybrid_alpha: 0.5,
-							file_count: 0,
-							chunk_count: 0,
-							created_at: '',
-							updated_at: ''
-						}
-					]),
-					{ status: 200 }
-				)
-			); // GET /knowledge-bases
+			.mockResolvedValueOnce(json(matter({ attached_file_ids: ['a', 'b', 'gone'] })))
+			.mockResolvedValueOnce(json({ items: [] }))
+			.mockResolvedValueOnce(json([])) // members
+			.mockResolvedValueOnce(json({ id: 'a', filename: 'a.pdf', size_bytes: 1 }))
+			.mockResolvedValueOnce(json({ id: 'b', filename: 'b.pdf', size_bytes: 2 }))
+			.mockResolvedValueOnce(new Response('not found', { status: 404 })) // /files/gone
+			.mockResolvedValueOnce(json([kb('k1', 'KB')]));
 		const out = (await load(loadEv())) as {
 			files: { id: string }[];
 			kbs: { linked: unknown[]; available: { id: string }[] };
@@ -190,38 +176,11 @@ describe('/matters/[id] load — files + KBs', () => {
 	});
 
 	it('resolves linked KBs from attached_knowledge_base_ids and subtracts them from the picker list', async () => {
-		const matter = {
-			id: 'p1',
-			name: 'Acme',
-			privileged: false,
-			minimum_inference_tier: null,
-			attached_file_ids: [],
-			attached_knowledge_base_ids: ['k1']
-		};
-		const linkedKb = {
-			id: 'k1',
-			name: 'Linked',
-			owner_id: 'u',
-			hybrid_alpha: 0.5,
-			file_count: 1,
-			chunk_count: 1,
-			created_at: '',
-			updated_at: ''
-		};
-		const otherKb = {
-			id: 'k2',
-			name: 'Other',
-			owner_id: 'u',
-			hybrid_alpha: 0.5,
-			file_count: 0,
-			chunk_count: 0,
-			created_at: '',
-			updated_at: ''
-		};
 		lqFetch
-			.mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))
-			.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
-			.mockResolvedValueOnce(new Response(JSON.stringify([linkedKb, otherKb]), { status: 200 })); // all
+			.mockResolvedValueOnce(json(matter({ attached_knowledge_base_ids: ['k1'] })))
+			.mockResolvedValueOnce(json({ items: [] }))
+			.mockResolvedValueOnce(json([])) // members
+			.mockResolvedValueOnce(json([kb('k1', 'Linked'), kb('k2', 'Other')]));
 		const out = (await load(loadEv())) as {
 			kbs: { linked: { id: string }[]; available: { id: string }[] };
 		};
@@ -230,21 +189,172 @@ describe('/matters/[id] load — files + KBs', () => {
 	});
 
 	it('degrades gracefully when the KB list fetch fails (returns empty arrays)', async () => {
-		const matter = {
-			id: 'p1',
-			name: 'Acme',
-			privileged: false,
-			minimum_inference_tier: null,
-			attached_file_ids: [],
-			attached_knowledge_base_ids: ['k1']
-		};
 		lqFetch
-			.mockResolvedValueOnce(new Response(JSON.stringify(matter), { status: 200 }))
-			.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+			.mockResolvedValueOnce(json(matter({ attached_knowledge_base_ids: ['k1'] })))
+			.mockResolvedValueOnce(json({ items: [] }))
+			.mockResolvedValueOnce(json([])) // members
 			.mockResolvedValueOnce(new Response('boom', { status: 502 }));
 		const out = (await load(loadEv())) as { kbs: { linked: unknown[]; available: unknown[] } };
 		expect(out.kbs.linked).toEqual([]);
 		expect(out.kbs.available).toEqual([]);
+	});
+});
+
+describe('/matters/[id] load — roster + attribution', () => {
+	const base = {
+		id: 'p1',
+		name: 'Acme',
+		privileged: false,
+		minimum_inference_tier: null,
+		attached_file_ids: [],
+		attached_knowledge_base_ids: []
+	};
+	const members = [
+		{
+			user_id: 'u1',
+			email: 'dana@example.com',
+			display_name: 'Dana Okafor',
+			role: 'lead',
+			is_owner: true,
+			added_by_user_id: 'u1',
+			created_at: ''
+		},
+		{
+			user_id: 'u2',
+			email: 'ana@example.com',
+			display_name: null,
+			role: 'contributor',
+			is_owner: false,
+			added_by_user_id: 'u1',
+			created_at: ''
+		}
+	];
+
+	it('returns the roster and an author lookup for the chat list', async () => {
+		lqFetch
+			.mockResolvedValueOnce(json({ ...base, caller_access: 'lead', share_scope: 'org' }))
+			.mockResolvedValueOnce(json({ items: [{ id: 'c1', title: 'T', owner_id: 'u2' }] }))
+			.mockResolvedValueOnce(json(members))
+			.mockResolvedValueOnce(json([])) // knowledge-bases
+			.mockResolvedValueOnce(json([{ id: 'u3', email: 'luis@example.com', display_name: 'Luis' }]));
+		const out = (await load(loadEv())) as {
+			members: unknown[];
+			directory: { id: string }[];
+			authors: Record<string, string>;
+		};
+		expect(lqFetch.mock.calls[2][1]).toBe('/api/v1/projects/p1/members');
+		expect(lqFetch.mock.calls[4][1]).toBe('/api/v1/users/directory');
+		expect(out.members).toHaveLength(2);
+		expect(out.directory.map((d) => d.id)).toEqual(['u3']);
+		// Falls back to the email when there is no display name — an
+		// unattributed thread is exactly what privilege work cannot afford.
+		expect(out.authors).toEqual({ u1: 'Dana Okafor', u2: 'ana@example.com' });
+	});
+
+	it('skips the directory fetch for anyone who cannot staff the matter', async () => {
+		lqFetch
+			.mockResolvedValueOnce(json({ ...base, caller_access: 'write' }))
+			.mockResolvedValueOnce(json({ items: [] }))
+			.mockResolvedValueOnce(json(members))
+			.mockResolvedValueOnce(json([])); // knowledge-bases
+		const out = (await load(loadEv())) as { directory: unknown[] };
+		expect(out.directory).toEqual([]);
+		expect(lqFetch.mock.calls.some((c) => String(c[1]).includes('/users/directory'))).toBe(false);
+	});
+
+	it('still renders against an API that predates matter membership', async () => {
+		lqFetch
+			.mockResolvedValueOnce(json(base))
+			.mockResolvedValueOnce(json({ items: [] }))
+			.mockResolvedValueOnce(new Response('not found', { status: 404 })) // no /members route
+			.mockResolvedValueOnce(json([])); // knowledge-bases
+		const out = (await load(loadEv())) as { members: unknown[]; authors: Record<string, string> };
+		expect(out.members).toEqual([]);
+		expect(out.authors).toEqual({});
+	});
+});
+
+describe('/matters/[id] roster actions', () => {
+	it('addMember POSTs the chosen person and role', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 201 }));
+		const r = await actions.addMember(ev({ user_id: 'u2', role: 'contributor' }));
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/members');
+		expect(lqFetch.mock.calls[0][2].method).toBe('POST');
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({
+			user_id: 'u2',
+			role: 'contributor'
+		});
+		expect(r).toMatchObject({ success: true });
+	});
+
+	it('addMember refuses an empty selection without calling the backend', async () => {
+		const r = await actions.addMember(ev({ user_id: '' }));
+		expect(r).toMatchObject({ status: 400 });
+		expect(lqFetch).not.toHaveBeenCalled();
+	});
+
+	it('addMember surfaces the duplicate case in words a user can act on', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 409 }));
+		const r = (await actions.addMember(ev({ user_id: 'u2', role: 'reader' }))) as {
+			status: number;
+			data: { error: string };
+		};
+		expect(r.status).toBe(409);
+		expect(r.data.error).toMatch(/already have a role/i);
+	});
+
+	it('addMember surfaces the non-lead case', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 403 }));
+		const r = (await actions.addMember(ev({ user_id: 'u2', role: 'reader' }))) as {
+			status: number;
+			data: { error: string };
+		};
+		expect(r.status).toBe(403);
+		expect(r.data.error).toMatch(/lead/i);
+	});
+
+	it('changeMemberRole PATCHes the membership row', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+		const r = await actions.changeMemberRole(ev({ user_id: 'u2', role: 'blocked' }));
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/members/u2');
+		expect(lqFetch.mock.calls[0][2].method).toBe('PATCH');
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ role: 'blocked' });
+		expect(r).toMatchObject({ success: true });
+	});
+
+	it('changeMemberRole explains why the owner cannot be demoted', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 409 }));
+		const r = (await actions.changeMemberRole(ev({ user_id: 'u1', role: 'reader' }))) as {
+			status: number;
+			data: { error: string };
+		};
+		expect(r.data.error).toMatch(/owner is always lead/i);
+	});
+
+	it('removeMember DELETEs, and treats an already-gone row as success', async () => {
+		lqFetch.mockResolvedValue(new Response('', { status: 404 }));
+		const r = await actions.removeMember(ev({ user_id: 'u2' }));
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1/members/u2');
+		expect(lqFetch.mock.calls[0][2].method).toBe('DELETE');
+		expect(r).toMatchObject({ success: true });
+	});
+
+	it('setShareScope PATCHes the matter', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+		const r = await actions.setShareScope(ev({ share_scope: 'org' }));
+		expect(lqFetch.mock.calls[0][1]).toBe('/api/v1/projects/p1');
+		expect(JSON.parse(lqFetch.mock.calls[0][2].body)).toEqual({ share_scope: 'org' });
+		expect(r).toMatchObject({ success: true });
+	});
+
+	it('setShareScope surfaces the non-lead case', async () => {
+		lqFetch.mockResolvedValue(new Response('{}', { status: 403 }));
+		const r = (await actions.setShareScope(ev({ share_scope: 'org' }))) as {
+			status: number;
+			data: { error: string };
+		};
+		expect(r.status).toBe(403);
+		expect(r.data.error).toMatch(/lead/i);
 	});
 });
 

@@ -1,13 +1,13 @@
 import { error, fail, redirect, type Actions } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
-import { activeMatters, type Matter } from '$lib/matters/types';
+import { activeMatters, type Matter, type SharedMatter } from '$lib/matters/types';
 import { parsePrivilegeFields } from '$lib/matters/parseFormFields';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const res = await lqFetch(event, '/api/v1/projects');
 	if (!res.ok) throw error(502, 'Could not load matters.');
-	return { matters: activeMatters((await res.json()) as Matter[]) };
+	return { matters: activeMatters((await res.json()) as SharedMatter[]) };
 };
 
 export const actions: Actions = {

@@ -6,8 +6,11 @@
 	import KnowledgeSection from '$lib/matters/sections/KnowledgeSection.svelte';
 	import SkillsSection from '$lib/matters/sections/SkillsSection.svelte';
 	import ContextSection from '$lib/matters/sections/ContextSection.svelte';
+	import TeamSection from '$lib/matters/sections/TeamSection.svelte';
+	import { canManageMatter } from '$lib/matters/types';
 
 	let { data, form } = $props();
+	const canManage = $derived(canManageMatter(data.matter));
 	let showRename = $state(false);
 	let confirmArchive = $state(false);
 
@@ -58,18 +61,30 @@
 				class="rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-xs text-mlq-text"
 				>Rename</button
 			>
-			<button
-				type="button"
-				onclick={() => (confirmArchive = true)}
-				class="rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-xs text-mlq-error"
-				>Archive</button
-			>
+			{#if canManage}
+				<button
+					type="button"
+					onclick={() => (confirmArchive = true)}
+					class="rounded-mlq-control border border-mlq-subtle px-3 py-1.5 text-xs text-mlq-error"
+					>Archive</button
+				>
+			{/if}
 		</div>
 	</div>
 
 	<FilesSection files={data.files} error={form?.error ?? ''} />
 	<KnowledgeSection kbs={data.kbs} />
 	<SkillsSection attached={data.matter.attached_skill_names ?? []} />
+	{#if data.members.length > 0}
+		<TeamSection
+			members={data.members}
+			directory={data.directory}
+			shareScope={data.matter.share_scope ?? 'personal'}
+			{canManage}
+			privileged={data.matter.privileged}
+			error={form?.error ?? ''}
+		/>
+	{/if}
 	<ContextSection value={data.matter.context_md ?? ''} />
 
 	<h2 class="mt-8 mb-2 text-xs font-medium tracking-wide text-mlq-muted uppercase">
@@ -87,7 +102,14 @@
 					>
 						<MessageSquare size={14} class="text-mlq-muted" />
 						<span class="min-w-0 truncate text-mlq-text">{c.title}</span>
-						<span class="ml-auto shrink-0 text-xs text-mlq-muted">{c.message_count ?? 0} msgs</span>
+						{#if data.authors[c.owner_id]}
+							<span class="ml-auto shrink-0 text-xs text-mlq-muted">{data.authors[c.owner_id]}</span
+							>
+							<span class="shrink-0 text-xs text-mlq-muted">·</span>
+						{/if}
+						<span class="shrink-0 text-xs text-mlq-muted" class:ml-auto={!data.authors[c.owner_id]}
+							>{c.message_count ?? 0} msgs</span
+						>
 					</a>
 				</li>
 			{/each}

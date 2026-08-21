@@ -225,6 +225,42 @@ so sensitive work can't silently route to an underpowered or lower-trust model. 
 matter and it opens already scoped: standing context applied, knowledge and skills available, tier
 floor enforced.
 
+### People on a matter — working it together
+
+A matter has a **People** section: who is on it, and in what capacity. Colleagues you add see the
+matter's files, knowledge bases, standing context, and — importantly — **each other's chats in it**,
+each labelled with its author. That is the point of sharing a matter: see the work already done on
+it rather than repeat it.
+
+Four roles:
+
+- **Lead** — everything, plus deciding who else is on the matter and who can see it.
+- **Contributor** — read the matter and add to it: edit the standing context, attach documents,
+  start chats.
+- **Reader** — read it. Change nothing.
+- **Screened** — an ethical wall. See below.
+
+Above the roster, **who can see this matter** sets the ambient reach: _Just me_, _Named people only_,
+or _Everyone at the firm_. Firm-wide grants **reading** and nothing more — contributing still needs a
+place on the list, so the roster stays a truthful record of who actually worked the matter. That
+record is what you will want months later, when the question is who did what.
+
+**Screening someone off a matter.** Set their role to **Screened** and the matter disappears for
+them: not a permission error, just gone, along with every chat in it. A screen overrides everything
+else — firm-wide visibility, an explicit role, and **administrator rights**. An administrator who
+must see a screened matter has to lift the screen, which is recorded against their name. That is
+deliberate: a wall the administrator can walk through is not a wall, and in a small firm the
+administrator is usually also a practising lawyer. Screened people are listed separately from the
+working team, so the wall is visible rather than buried in a roster.
+
+Every change to the roster is written to the audit log — who was added, who changed a role, and
+specifically when a screen went up and when it came down.
+
+**One thing you cannot do:** post into a colleague's chat. You can read every thread in a shared
+matter; only its author can add to it — a matter lead included. Interleaving two lawyers' turns in
+one conversation would blur which of them directed which answer, and that is exactly the record
+that has to stay unambiguous. To act on a shared matter, start your own thread in it.
+
 ### Knowledge bases — grounding answers in your documents
 
 A **knowledge base** is a named collection of documents Donna searches when answering — the mechanism

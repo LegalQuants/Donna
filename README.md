@@ -71,6 +71,41 @@ docker compose -f docker-compose.release.yml exec api \
 
 Open **http://localhost:13002** — or whatever `DONNA_WEB_HOST_PORT` you set in `.env` (`13002` is the default in `.env.example`) — and sign in with `admin@lq.ai` / `DonnaE2ePassw0rd!`.
 
+### Adding your colleagues
+
+The first-run admin is one account. To put other people on the deployment, create them from the
+admin account — each gets a one-time password and is forced to change it on first login:
+
+```bash
+TOKEN=... # an access token for the admin account
+curl -X POST http://localhost:18000/api/v1/admin/users \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"email":"colleague@yourfirm.example","display_name":"A Colleague","role":"member"}'
+```
+
+The response carries `initial_password` **once** — it is never stored or logged, so hand it over
+then. If it is lost, `POST /api/v1/admin/users/{id}/reset-password` issues a new one and signs the
+user out everywhere.
+
+Roles are `admin` (manage users and deployment settings), `member` (ordinary use), `viewer`, and
+`auditor` (read-only cross-user review of citation ledgers and receipts). Change one with
+`PATCH /api/v1/admin/users/{id}/role`.
+
+**A new matter reaches only its creator by default.** To share matters, add people to a matter's
+**People** section in the app, or flip the deployment default so new matters are readable
+firm-wide:
+
+```bash
+LQ_AI_MATTER_DEFAULT_SHARE_SCOPE=org   # default: personal
+```
+
+Firm-wide grants _reading_; contributing to a matter always needs an explicit place on its roster.
+See [docs/GUIDE.md → People on a matter](docs/GUIDE.md#people-on-a-matter--working-it-together) for
+the practitioner view, and lq-ai's
+[`docs/security/matter-access-control.md`](https://github.com/LegalQuants/lq-ai/blob/main/docs/security/matter-access-control.md)
+for the operator view — including ethical screens, which override administrator rights, and the
+limits of what application-layer authorization guarantees.
+
 Images are published from this repo to GHCR — `ghcr.io/legalquants/donna-web`, `donna-api`, and
 `donna-gateway` (multi-arch: Intel/AMD + Apple Silicon). This still needs a filled `.env`; it removes
 the _build_, not the _config_. For a fully free, no-cloud setup, leave the provider keys blank and run **Ollama on your host**, then set `OLLAMA_BASE_URL=http://host.docker.internal:11434` in `.env` (the pre-built stack does not bundle an Ollama container) — then pick a local model in the app's Models settings. Deploying beyond `localhost` still requires TLS in front of `donna-web` (see
