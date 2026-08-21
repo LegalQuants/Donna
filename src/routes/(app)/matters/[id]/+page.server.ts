@@ -1,6 +1,6 @@
 import { error, fail, redirect, type Actions } from '@sveltejs/kit';
 import { lqFetch } from '$lib/server/lqClient';
-import type { Matter } from '$lib/matters/types';
+import type { DirectoryEntry, MatterMember, SharedMatter } from '$lib/matters/types';
 import { parsePrivilegeFields } from '$lib/matters/parseFormFields';
 import type { components } from '$lib/api/backend';
 import type { PageServerLoad } from './$types';
@@ -10,31 +10,58 @@ type KnowledgeBase = components['schemas']['KnowledgeBase'];
 type ProjectFile = components['schemas']['File'];
 
 export const load: PageServerLoad = async (event) => {
-	const [mRes, cRes] = await Promise.all([
+	const [mRes, cRes, memRes] = await Promise.all([
 		lqFetch(event, `/api/v1/projects/${event.params.id}`),
-		lqFetch(event, `/api/v1/chats?project_id=${event.params.id}`)
+		lqFetch(event, `/api/v1/chats?project_id=${event.params.id}`),
+		lqFetch(event, `/api/v1/projects/${event.params.id}/members`)
 	]);
 	if (!mRes.ok) throw error(mRes.status === 404 ? 404 : 502, 'Could not load this matter.');
-	const matter = (await mRes.json()) as Matter;
+	const matter = (await mRes.json()) as SharedMatter;
 	const chats = cRes.ok ? (((await cRes.json()) as { items: Chat[] }).items ?? []) : [];
+	// An API that predates matter membership 404s here; the page still renders,
+	// just without the People section.
+	const members = memRes.ok ? ((await memRes.json()) as MatterMember[]) : [];
 
-	const [filesArr, kbLinkedRes, kbAllRes] = await Promise.all([
+	// Chats in a shared matter belong to whoever started them, so the list has
+	// to say so — an unattributed thread is exactly what privilege work cannot
+	// afford. Resolve author names from the roster; fall back to the email.
+	const authorById = new Map(members.map((m) => [m.user_id, m.display_name?.trim() || m.email]));
+
+	// The people-picker only matters to someone who can staff the matter, so
+	// skip that round-trip otherwise. It rides the second batch rather than
+	// sitting between the two, so a lead does not pay an extra serial hop.
+	const [filesArr, kbAllRes, dirRes] = await Promise.all([
 		Promise.all(
 			(matter.attached_file_ids ?? []).map(async (id) => {
 				const r = await lqFetch(event, `/api/v1/files/${id}`);
 				return r.ok ? ((await r.json()) as ProjectFile) : null;
 			})
 		),
-		lqFetch(event, `/api/v1/knowledge-bases?project_id=${event.params.id}`),
-		lqFetch(event, '/api/v1/knowledge-bases')
+		lqFetch(event, '/api/v1/knowledge-bases'),
+		matter.caller_access === 'lead' ? lqFetch(event, '/api/v1/users/directory') : null
 	]);
+	const directory = dirRes?.ok ? ((await dirRes.json()) as DirectoryEntry[]) : [];
 	const files = filesArr.filter((f): f is ProjectFile => f !== null);
-	const linked = kbLinkedRes.ok ? ((await kbLinkedRes.json()) as KnowledgeBase[]) : [];
 	const allKbs = kbAllRes.ok ? ((await kbAllRes.json()) as KnowledgeBase[]) : [];
+	// Linked KBs come from the project's junction-table ids, NOT from
+	// `GET /knowledge-bases?project_id=` — that filter matches the legacy
+	// `knowledge_bases.project_id` column, so junction attaches never show up.
+	const byId = new Map(allKbs.map((k) => [k.id, k]));
+	const linked = (matter.attached_knowledge_base_ids ?? [])
+		.map((id) => byId.get(id))
+		.filter((k): k is KnowledgeBase => k !== undefined);
 	const linkedIds = new Set(linked.map((k) => k.id));
 	const available = allKbs.filter((k) => !linkedIds.has(k.id));
 
-	return { matter, chats, files, kbs: { linked, available } };
+	return {
+		matter,
+		chats,
+		files,
+		kbs: { linked, available },
+		members,
+		directory,
+		authors: Object.fromEntries(authorById)
+	};
 };
 
 export const actions: Actions = {
@@ -200,6 +227,84 @@ export const actions: Actions = {
 		if (!res.ok) {
 			if (res.status === 422) return fail(422, { error: 'Context exceeds the 100 KiB limit.' });
 			return fail(502, { error: 'Could not save the context.' });
+		}
+		return { success: true };
+	},
+
+	addMember: async (event) => {
+		const data = await event.request.formData();
+		const user_id = String(data.get('user_id') ?? '');
+		const role = String(data.get('role') ?? 'contributor');
+		if (!user_id) return fail(400, { error: 'Choose someone to add.' });
+		const res = await lqFetch(event, `/api/v1/projects/${event.params.id}/members`, {
+			method: 'POST',
+			body: JSON.stringify({ user_id, role })
+		});
+		if (!res.ok) {
+			if (res.status === 409)
+				return fail(409, { error: 'They already have a role on this matter.' });
+			if (res.status === 403)
+				return fail(403, { error: 'Only a matter lead can change who is on it.' });
+			if (res.status === 404) return fail(404, { error: 'That person no longer exists.' });
+			return fail(502, { error: 'Could not add them to the matter.' });
+		}
+		return { success: true };
+	},
+
+	changeMemberRole: async (event) => {
+		const data = await event.request.formData();
+		const user_id = String(data.get('user_id') ?? '');
+		const role = String(data.get('role') ?? '');
+		if (!user_id || !role) return fail(400, { error: 'Missing user or role.' });
+		const res = await lqFetch(event, `/api/v1/projects/${event.params.id}/members/${user_id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({ role })
+		});
+		if (!res.ok) {
+			if (res.status === 409)
+				return fail(409, {
+					error: 'The matter owner is always lead. Transfer ownership to change this.'
+				});
+			if (res.status === 403)
+				return fail(403, { error: 'Only a matter lead can change who is on it.' });
+			return fail(502, { error: 'Could not change their role.' });
+		}
+		return { success: true };
+	},
+
+	removeMember: async (event) => {
+		const data = await event.request.formData();
+		const user_id = String(data.get('user_id') ?? '');
+		if (!user_id) return fail(400, { error: 'Missing user.' });
+		const res = await lqFetch(event, `/api/v1/projects/${event.params.id}/members/${user_id}`, {
+			method: 'DELETE'
+		});
+		// 204 = removed; 404 = already gone → idempotent success.
+		if (!res.ok && res.status !== 404) {
+			if (res.status === 409)
+				return fail(409, {
+					error: 'The matter owner cannot be removed. Transfer ownership instead.'
+				});
+			if (res.status === 403)
+				return fail(403, { error: 'Only a matter lead can change who is on it.' });
+			return fail(502, { error: 'Could not remove them from the matter.' });
+		}
+		return { success: true };
+	},
+
+	setShareScope: async (event) => {
+		const data = await event.request.formData();
+		const share_scope = String(data.get('share_scope') ?? '');
+		if (!share_scope) return fail(400, { error: 'Missing share scope.' });
+		const res = await lqFetch(event, `/api/v1/projects/${event.params.id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({ share_scope })
+		});
+		if (!res.ok) {
+			if (res.status === 403)
+				return fail(403, { error: 'Only a matter lead can change who can see this matter.' });
+			if (res.status === 422) return fail(422, { error: 'A sandbox matter cannot be shared.' });
+			return fail(502, { error: 'Could not change who can see this matter.' });
 		}
 		return { success: true };
 	},

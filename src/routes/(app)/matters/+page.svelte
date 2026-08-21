@@ -2,6 +2,8 @@
 	import { Plus, FolderKanban } from '@lucide/svelte';
 	import MatterForm from '$lib/matters/MatterForm.svelte';
 	import PrivilegedChip from '$lib/matters/PrivilegedChip.svelte';
+	import SharedChip from '$lib/matters/SharedChip.svelte';
+	import { isSharedWithCaller } from '$lib/matters/types';
 
 	let { data, form } = $props();
 	let showCreate = $state(false);
@@ -47,6 +49,7 @@
 							<div class="flex items-center gap-2 font-serif text-sm text-mlq-text">
 								<span class="min-w-0 truncate">{m.name}</span>
 								{#if m.privileged}<PrivilegedChip />{/if}
+								{#if isSharedWithCaller(m)}<SharedChip basis={m.caller_access_basis} />{/if}
 							</div>
 							{#if m.description}<div class="truncate text-xs text-mlq-muted">
 									{m.description}
