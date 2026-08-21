@@ -20,7 +20,17 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  NAMESPACE: legalquants
+  # Publish under whoever owns the repository the workflow is running in.
+  # Hard-coding `legalquants` meant a fork could never publish its own images:
+  # the run authenticates as the fork owner, then tries to push to a namespace
+  # it has no write access to, and fails at the first push. Anyone maintaining
+  # a fork — to carry a patch while it is in review, or to run a modified
+  # build — has to edit this file to do so, which then shows up as a diff in
+  # every PR they send back.
+  #
+  # `github.repository_owner` resolves to `legalquants` for this repo, so
+  # upstream behaviour is unchanged.
+  NAMESPACE: ${{ github.repository_owner }}
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
